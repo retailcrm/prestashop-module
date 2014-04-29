@@ -15,24 +15,24 @@ Installation
 ### 1. Manual installation
 
 
-##### Clone module.
+#### Clone module.
 ```
 git clone git@github.com:/intarocrm/prestashop-module.git
 ```
 
-##### Install Rest API Client.
+#### Install Rest API Client.
 
 ```
 cd prestashop-module
 composer update
 ```
 
-##### Create .zip file.
+#### Create .zip file.
 ```
 zip -r intarocrm.zip intarocrm
 ```
 
-##### Install module via Admin interface.
+#### Install module via Admin interface.
 
 
 Go to Admin -> Modules -> Add module. After that upload your .zip archive and activate module.
