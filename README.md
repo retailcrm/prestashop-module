@@ -33,6 +33,5 @@ zip -r intarocrm.zip intarocrm
 ```
 
 ###### Install module via Admin interface
-
 Go to Admin -> Modules -> Add module. After that upload your .zip archive and activate module.
 
