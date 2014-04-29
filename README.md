@@ -12,7 +12,7 @@ Module allows:
 Installation
 -------------
 
-### 1. Manual instalation
+### 1. Manual installation
 
 
 ##### Clone module
