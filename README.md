@@ -32,7 +32,7 @@ composer update
 zip -r intarocrm.zip intarocrm
 ```
 
-#### Install module via Admin interface.
+#### Install via Admin interface.
 
 
-Go to Admin -> Modules -> Add module. After that upload your .zip archive and activate module.
+Go to Modules -> Add module. After that upload your .zip archive and activate module.
