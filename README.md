@@ -17,7 +17,7 @@ Installation
 
 ##### Clone module
 ```
-git Clone git@github.com:/intarocrm/prestashop-module.git
+git clone git@github.com:/intarocrm/prestashop-module.git
 ```
 
 ##### Install Rest API Client
