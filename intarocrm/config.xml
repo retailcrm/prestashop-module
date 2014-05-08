@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<module>
-  <name>intarocrm</name>
-  <displayName><![CDATA[IntaroCRM]]></displayName>
-  <version><![CDATA[0.1]]></version>
-  <description><![CDATA[Integration module for IntaroCRM]]></description>
-  <author><![CDATA[Intaro Ltd.]]></author>
-  <tab><![CDATA[market_place]]></tab>
-  <confirmUninstall>Are you sure you want to uninstall?</confirmUninstall>
-  <is_configurable>1</is_configurable>
-  <need_instance>0</need_instance>
-  <limited_countries></limited_countries>
-</module>
+        <module>
+            <name>intarocrm</name>
+            <displayName><![CDATA[IntaroCRM]]></displayName>
+            <version><![CDATA[0.1]]></version>
+            <description><![CDATA[Модуль интеграции с IntaroCRM]]></description>
+            <author><![CDATA[Intaro Ltd.]]></author>
+            <tab><![CDATA[market_place]]></tab>
+	<confirmUninstall>Вы уверены, что хотите удалить модуль?</confirmUninstall>
+            <is_configurable>1</is_configurable>
+            <need_instance>1</need_instance>
+	<limited_countries></limited_countries>
+        </module>
