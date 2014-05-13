@@ -24,6 +24,8 @@ class IntaroCRM extends Module
             Configuration::get('INTAROCRM_API_TOKEN')
         );
 
+        $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+
         parent::__construct();
     }
 
@@ -32,7 +34,8 @@ class IntaroCRM extends Module
         return (
             parent::install() &&
             $this->registerHook('newOrder') &&
-            $this->registerHook('actionOrderStatusPostUpdate')
+            $this->registerHook('actionOrderStatusPostUpdate') &&
+            $this->registerHook('actionPaymentConfirmation')
         );
     }
 
@@ -49,7 +52,6 @@ class IntaroCRM extends Module
 
     public function getContent()
     {
-
         $output = null;
 
         $address = Configuration::get('INTAROCRM_ADDRESS');
@@ -91,9 +93,10 @@ class IntaroCRM extends Module
 
     public function displayForm()
     {
+
         $this->displayConfirmation($this->l('Settings updated'));
 
-        $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $default_lang = $this->default_lang;
 
          $intaroCrm = $this->intaroCRM;
 
@@ -249,6 +252,18 @@ class IntaroCRM extends Module
         return $this->hookActionOrderStatusPostUpdate($params);
     }
 
+    public function hookActionPaymentConfirmation($params)
+    {
+        $this->intaroCRM->orderEdit(
+            array(
+                'externalId'      => $params['id_order'],
+                'paymentStatus'   => 'paid',
+                'createdAt'       => $params['cart']->date_upd
+            )
+        );
+        return $this->hookActionOrderStatusPostUpdate($params);
+    }
+
     public function hookActionOrderStatusPostUpdate($params)
     {
         $address_id = Address::getFirstCustomerAddressId($params['cart']->id_customer);
@@ -310,10 +325,11 @@ class IntaroCRM extends Module
                         'lastName'        => $params['customer']->lastname,
                         'phone'           => $address['phone'],
                         'email'           => $params['customer']->email,
+                        'paymentStatus'   => 'not-paid',
+                        //'paymentType'     => 'cash',
                         'deliveryType'    => $delivery->$dTypeKey,
                         'deliveryCost'    => $params['order']->total_shipping,
                         'status'          => 'new',
-                        //'paymentType'     => 'cash',
                         'deliveryAddress' => array(
                             'city'    => $address['city'],
                             'index'   => $address['postcode'],
@@ -335,9 +351,29 @@ class IntaroCRM extends Module
         }
 
         if (isset($params['newOrderStatus']) && !empty($params['newOrderStatus'])) {
-            //var_dump($params['newOrderStatus']);
+            $statuses = OrderState::getOrderStates($this->default_lang);
+            $aStatuses = json_decode(Configuration::get('INTAROCRM_API_STATUS'));
+            foreach ($statuses as $status) {
+                if ($status['name'] == $params['newOrderStatus']->name) {
+                    $currStatus = $status['id_order_state'];
+                    try {
+                        $this->intaroCRM->orderEdit(
+                            array(
+                                'externalId'      => $params['id_order'],
+                                'status'          => $aStatuses->$currStatus,
+                                'createdAt'       => $params['cart']->date_upd
+                            )
+                        );
+                    }
+                    catch (\IntaroCrm\Exception\CurlException $e) {
+                        error_log('orderStatusUpdate: connection error');
+                    }
+                    catch (\IntaroCrm\Exception\ApiException $e) {
+                        error_log('orderStatusUpdate: ' . $e->getMessage());
+                    }
+                }
+            }
         }
-
     }
 
     protected function getApiDeliveryTypes($intaroCrm)
@@ -655,5 +691,81 @@ class IntaroCRM extends Module
         }
 
         return $addressFields;
+    }
+
+    public function exportCatalog()
+    {
+        global $smarty;
+        $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
+        $id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+        if ($currency->iso_code == 'RUB')
+            $currency->iso_code = 'RUR';
+
+        // Get currencies
+        $currencies = Currency::getCurrencies();
+
+        // Get categories
+        $categories = Category::getCategories($id_lang, true, false);
+
+        // Get products
+        $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
+        foreach ($products AS $product)
+        {
+            // Check for home category
+            $category = $product['id_category_default'];
+            if ($category == Configuration::get('PS_HOME_CATEGORY')) {
+                $temp_categories = Product::getProductCategories($product['id_product']);
+
+                foreach ($temp_categories AS $category) {
+                    if ($category != Configuration::get('PS_HOME_CATEGORY'))
+                        break;
+                }
+
+                if ($category == Configuration::get('PS_HOME_CATEGORY')) {
+                    continue;
+                }
+
+            }
+            $link = new Link();
+            $cover = Image::getCover($product['id_product']);
+
+            $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'].'-'.$cover['id_image'], 'large_default');
+            if (!(substr($picture, 0, strlen($shop_url)) === $shop_url))
+                $picture = rtrim($shop_url,"/") . $picture;
+            $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
+            $url = $link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
+            $version = substr(_PS_VERSION_, 0, 3);
+            if ($version == "1.3")
+                $available_for_order  = $product['active'] && $product['quantity'];
+            else {
+                $prod = new Product($product['id_product']);
+                $available_for_order = $product['active'] && $product['available_for_order'] && $prod->checkQty(1);
+            }
+            $items[] = array('id_product' => $product['id_product'],
+                             'available_for_order' => $available_for_order,
+                             'price' => $product['price'],
+                             'purchase_price' => $product['wholesale_price'],
+                             'name' => htmlspecialchars(strip_tags($product['name'])),
+                             'article' => htmlspecialchars($product['reference']),
+                             'id_category_default' => $category,
+                             'picture' => $picture,
+                             'url' => $url
+            );
+        }
+
+        foreach ($this->custom_attributes as $i => $value) {
+            $attr = Configuration::get($value);
+            $smarty->assign(strtolower($value), $attr);
+        }
+
+        $smarty->assign('currencies', $currencies);
+        $smarty->assign('currency', $currency->iso_code);
+        $smarty->assign('categories', $categories);
+        $smarty->assign('products', $items);
+        $smarty->assign('shop_name', Configuration::get('PS_SHOP_NAME'));
+        $smarty->assign('company', Configuration::get('PS_SHOP_NAME'));
+        $smarty->assign('shop_url', $shop_url . __PS_BASE_URI__);
+        return $this->display(__FILE__, 'export.tpl');
     }
 }
