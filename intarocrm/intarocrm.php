@@ -36,6 +36,7 @@ class IntaroCRM extends Module
             $this->registerHook('newOrder') &&
             $this->registerHook('actionOrderStatusPostUpdate') &&
             $this->registerHook('actionPaymentConfirmation')
+
         );
     }
 
@@ -97,8 +98,7 @@ class IntaroCRM extends Module
         $this->displayConfirmation($this->l('Settings updated'));
 
         $default_lang = $this->default_lang;
-
-         $intaroCrm = $this->intaroCRM;
+        $intaroCrm = $this->intaroCRM;
 
         /*
          * Network connection form
@@ -271,6 +271,7 @@ class IntaroCRM extends Module
         $address = Db::getInstance()->ExecuteS($sql);
         $address = $address[0];
         $delivery = json_decode(Configuration::get('INTAROCRM_API_DELIVERY'));
+        $payment = json_decode(Configuration::get('INTAROCRM_API_PAYMENT'));
         $inCart = $params['cart']->getProducts();
 
         if (isset($params['orderStatus'])) {
@@ -315,6 +316,11 @@ class IntaroCRM extends Module
                 }
 
                 $dTypeKey = $params['cart']->id_carrier;
+                if (Module::getInstanceByName('advancedcheckout') === false) {
+                    $pTypeKey = $params['order']->module;
+                } else {
+                    $pTypeKey = $params['order']->payment;
+                }
                 $this->intaroCRM->orderCreate(
                     array(
                         'externalId'      => $params['order']->id,
@@ -326,7 +332,7 @@ class IntaroCRM extends Module
                         'phone'           => $address['phone'],
                         'email'           => $params['customer']->email,
                         'paymentStatus'   => 'not-paid',
-                        //'paymentType'     => 'cash',
+                        'paymentType'     => $payment->$pTypeKey,
                         'deliveryType'    => $delivery->$dTypeKey,
                         'deliveryCost'    => $params['order']->total_shipping,
                         'status'          => 'new',
@@ -522,7 +528,7 @@ class IntaroCRM extends Module
                 $paymentTypes[] = array(
                     'type' => 'select',
                     'label' => $payment['name'],
-                    'name' => 'INTAROCRM_API_PAYMENT[' . $payment['id'] . ']',
+                    'name' => 'INTAROCRM_API_PAYMENT[' . $payment['code'] . ']',
                     'required' => false,
                     'options' => array(
                         'query' => $this->getApiPaymentTypes($intaroCrm),
@@ -543,55 +549,71 @@ class IntaroCRM extends Module
         /* Get all modules then select only payment ones */
         $modules = Module::getModulesOnDisk(true);
 
-        foreach ($modules as $module) {
-            if ($module->tab == 'payments_gateways')
-            {
-                if ($module->id)
+        /*
+         * Hack for knivesland
+         */
+        if (Module::getInstanceByName('advancedcheckout') === false) {
+            foreach ($modules as $module) {
+                if ($module->tab == 'payments_gateways')
                 {
-                    if (!get_class($module) == 'SimpleXMLElement')
-                        $module->country = array();
-                    $countries = DB::getInstance()->executeS('
+                    if ($module->id)
+                    {
+                        if (!get_class($module) == 'SimpleXMLElement')
+                            $module->country = array();
+                        $countries = DB::getInstance()->executeS('
                         SELECT id_country
                         FROM '._DB_PREFIX_.'module_country
                         WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                    );
-                    foreach ($countries as $country)
-                        $module->country[] = $country['id_country'];
+                        );
+                        foreach ($countries as $country)
+                            $module->country[] = $country['id_country'];
 
-                    if (!get_class($module) == 'SimpleXMLElement')
-                        $module->currency = array();
-                    $currencies = DB::getInstance()->executeS('
+                        if (!get_class($module) == 'SimpleXMLElement')
+                            $module->currency = array();
+                        $currencies = DB::getInstance()->executeS('
                         SELECT id_currency
                         FROM '._DB_PREFIX_.'module_currency
                         WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                    );
-                    foreach ($currencies as $currency)
-                        $module->currency[] = $currency['id_currency'];
+                        );
+                        foreach ($currencies as $currency)
+                            $module->currency[] = $currency['id_currency'];
 
-                    if (!get_class($module) == 'SimpleXMLElement')
-                        $module->group = array();
-                    $groups = DB::getInstance()->executeS('
+                        if (!get_class($module) == 'SimpleXMLElement')
+                            $module->group = array();
+                        $groups = DB::getInstance()->executeS('
                         SELECT id_group
                         FROM '._DB_PREFIX_.'module_group
                         WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                    );
-                    foreach ($groups as $group)
-                        $module->group[] = $group['id_group'];
-                }
-                else
-                {
-                    $module->country = null;
-                    $module->currency = null;
-                    $module->group = null;
-                }
+                        );
+                        foreach ($groups as $group)
+                            $module->group[] = $group['id_group'];
+                    }
+                    else
+                    {
+                        $module->country = null;
+                        $module->currency = null;
+                        $module->group = null;
+                    }
 
-                if ($module->active != 0) {
-                    $this->payment_modules[] = array(
-                        'id' => $module->id,
-                        'name' => $module->displayName
-                    );
-                }
+                    if ($module->active != 0) {
+                        $this->payment_modules[] = array(
+                            'id' => $module->id,
+                            'code' => $module->name,
+                            'name' => $module->displayName
+                        );
+                    }
 
+                }
+            }
+        } else {
+            require_once(dirname(__FILE__) . '/../advancedcheckout/classes/Payment.php');
+            $modules = Payment::getPaymentMethods();
+            foreach ($modules as $module) {
+                $this->payment_modules[] = array(
+                    'id' => $module['id_payment'],
+                    'code' => $module['name'],
+                    'name' => $module['name']
+                );
             }
         }
 
