@@ -6,7 +6,7 @@ Prestashop module for interaction with [IntaroCRM](http://www.intarocrm.com) thr
 Module allows:
 
 * Send to IntaroCRM new orders
-* Configure relations between dictionaries of IntaroCRM and Bitrix (statuses, payments, delivery types and etc)
+* Configure relations between dictionaries of IntaroCRM and Prestashop (statuses, payments, delivery types and etc)
 * Generate [ICML](http://docs.intarocrm.ru/index.php?n=Пользователи.ФорматICML) (IntaroCRM Markup Language) for catalog loading by IntaroCRM
 
 Installation
@@ -35,4 +35,4 @@ zip -r intarocrm.zip intarocrm
 #### Install via Admin interface.
 
 
-Go to Modules -> Add module. After that upload your .zip archive and activate module.
+Go to Modules -> Add module. After that upload your zipped module and activate it.

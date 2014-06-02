@@ -1,0 +1,36 @@
+<?php
+
+global $_MODULE;
+$_MODULE = array();
+$_MODULE['<{intarocrm}prestashop>intarocrm_03c4d9465b9b3a7533d18cacc79c7fe4'] = 'IntaroCRM';
+$_MODULE['<{intarocrm}prestashop>intarocrm_5e695dc9fe273b7bc074e608113f4662'] = 'Модуль интеграции с IntaroCRM';
+$_MODULE['<{intarocrm}prestashop>intarocrm_876f23178c29dc2552c0b48bf23cd9bd'] = 'Вы уверены, что хотите удалить модуль?';
+$_MODULE['<{intarocrm}prestashop>intarocrm_5effd5157947e8ba4a08883f198b2e31'] = 'Неверный адрес CRM';
+$_MODULE['<{intarocrm}prestashop>intarocrm_576300f5b6faeb746bb6d034d98e7afd'] = 'Неверный API ключ';
+$_MODULE['<{intarocrm}prestashop>intarocrm_fba05687b61bc936d1a9a92371ba8bcf'] = 'Внимание! Часовой пояс в CRM должен совпадать с часовым поясом в магазине, настроки часового пояса CRM можно задать по адресу:';
+$_MODULE['<{intarocrm}prestashop>intarocrm_c888438d14855d7d96a2724ee9c306bd'] = 'Настройки обновлены';
+$_MODULE['<{intarocrm}prestashop>intarocrm_51af428aa0dcceb5230acb267ecb91c5'] = 'Настройка соединения';
+$_MODULE['<{intarocrm}prestashop>intarocrm_4cbd5dbeeef7392e50358b1bc00dd592'] = 'Адрес CRM';
+$_MODULE['<{intarocrm}prestashop>intarocrm_7f775042e08eddee6bbfd8fbe0add4a3'] = 'Ключ авторизации';
+$_MODULE['<{intarocrm}prestashop>intarocrm_c9cc8cce247e49bae79f15173ce97354'] = 'Сохранить';
+$_MODULE['<{intarocrm}prestashop>intarocrm_065ab3a28ca4f16f55f103adc7d0226f'] = 'Способы доставки';
+$_MODULE['<{intarocrm}prestashop>intarocrm_33af8066d3c83110d4bd897f687cedd2'] = 'Статусы заказов';
+$_MODULE['<{intarocrm}prestashop>intarocrm_bab959acc06bb03897b294fbb892be6b'] = 'Способы оплаты';
+$_MODULE['<{intarocrm}prestashop>intarocrm_dd7bf230fde8d4836917806aff6a6b27'] = 'Адрес';
+$_MODULE['<{intarocrm}prestashop>intarocrm_630f6dc397fe74e52d5189e2c80f282b'] = 'Вернуться к списку';
+$_MODULE['<{intarocrm}prestashop>intarocrm_5c1cf6cfec2dad86c8ca5286a0294516'] = 'Имя';
+$_MODULE['<{intarocrm}prestashop>intarocrm_c695cfe527a6fcd680114851b86b7555'] = 'Фамилия';
+$_MODULE['<{intarocrm}prestashop>intarocrm_f9dd946cc89c1f3b41a0edbe0f36931d'] = 'Телефон';
+$_MODULE['<{intarocrm}prestashop>intarocrm_61a649a33f2869e5e35fbb7aff3a80d9'] = 'Email';
+$_MODULE['<{intarocrm}prestashop>intarocrm_2664f03ac6b8bb9eee4287720e407db3'] = 'Адрес';
+$_MODULE['<{intarocrm}prestashop>intarocrm_6ddc09dc456001d9854e9fe670374eb2'] = 'Страна';
+$_MODULE['<{intarocrm}prestashop>intarocrm_69aede266809f89b89fe70681f6a129f'] = 'Область/Край/Республика';
+$_MODULE['<{intarocrm}prestashop>intarocrm_859214628431995197c0558f7b5f8ffc'] = 'Город';
+$_MODULE['<{intarocrm}prestashop>intarocrm_4348f938bbddd8475e967ccb47ecb234'] = 'Почтовый индекс';
+$_MODULE['<{intarocrm}prestashop>intarocrm_78fce82336bbbdca7f6da7564b8f9325'] = 'Улица';
+$_MODULE['<{intarocrm}prestashop>intarocrm_71a6834884666147c0334f0c40bc7295'] = 'Дом/Строение';
+$_MODULE['<{intarocrm}prestashop>intarocrm_f88a77e3d68d251c3dc4008c327b5a0c'] = 'Квартира';
+$_MODULE['<{intarocrm}prestashop>intarocrm_d977f846d110fcb7f71c6f97330c9d10'] = 'Код домофона';
+$_MODULE['<{intarocrm}prestashop>intarocrm_56c1e354d36beb85b0d881c5b2e24cbe'] = 'Этаж';
+$_MODULE['<{intarocrm}prestashop>intarocrm_4d34f53389ed7f28ca91fc31ea360a66'] = 'Корпус';
+$_MODULE['<{intarocrm}prestashop>intarocrm_49354b452ec305136a56fe7731834156'] = 'Дом/Строение';
