@@ -813,9 +813,8 @@ class IntaroCRM extends Module
         /*
          * get last sync date
          */
-        //$lastSync = Configuration::get('INTAROCRM_LAST_SYNC');
+        $lastSync = Configuration::get('INTAROCRM_LAST_SYNC');
 
-        $lastSync = false;
         $startFrom = ($lastSync === false) ? null : $lastSync;
         $endTime = date('Y-m-d H:i:s');
 
