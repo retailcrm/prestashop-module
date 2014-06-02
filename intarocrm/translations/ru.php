@@ -7,6 +7,7 @@ $_MODULE['<{intarocrm}prestashop>intarocrm_5e695dc9fe273b7bc074e608113f4662'] = 
 $_MODULE['<{intarocrm}prestashop>intarocrm_876f23178c29dc2552c0b48bf23cd9bd'] = 'Вы уверены, что хотите удалить модуль?';
 $_MODULE['<{intarocrm}prestashop>intarocrm_5effd5157947e8ba4a08883f198b2e31'] = 'Неверный адрес CRM';
 $_MODULE['<{intarocrm}prestashop>intarocrm_576300f5b6faeb746bb6d034d98e7afd'] = 'Неверный API ключ';
+$_MODULE['<{intarocrm}prestashop>intarocrm_fba05687b61bc936d1a9a92371ba8bcf'] = 'Внимание! Часовой пояс в CRM должен совпадать с часовым поясом в магазине, настроки часового пояса CRM можно задать по адресу:';
 $_MODULE['<{intarocrm}prestashop>intarocrm_c888438d14855d7d96a2724ee9c306bd'] = 'Настройки обновлены';
 $_MODULE['<{intarocrm}prestashop>intarocrm_51af428aa0dcceb5230acb267ecb91c5'] = 'Настройка соединения';
 $_MODULE['<{intarocrm}prestashop>intarocrm_4cbd5dbeeef7392e50358b1bc00dd592'] = 'Адрес CRM';

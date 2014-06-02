@@ -25,6 +25,17 @@ class IntaroCRM extends Module
         );
 
         $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $this->default_currency = (int)Configuration::get('PS_CURRENCY_DEFAULT');
+        $this->default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+
+        $this->response = array();
+        $this->customerFix = array();
+        $this->orderFix = array();
+
+        $this->address_id = null;
+        $this->customer_id = null;
+
+        $this->customer = null;
 
         parent::__construct();
     }
@@ -47,6 +58,7 @@ class IntaroCRM extends Module
             Configuration::deleteByName('INTAROCRM_API_TOKEN') &&
             Configuration::deleteByName('INTAROCRM_API_STATUS') &&
             Configuration::deleteByName('INTAROCRM_API_DELIVERY') &&
+            Configuration::deleteByName('INTAROCRM_LAST_SYNC') &&
             Configuration::deleteByName('INTAROCRM_API_ADDR')
         ;
     }
@@ -62,6 +74,11 @@ class IntaroCRM extends Module
             $output .= $this->displayError( $this->l('Invalid crm address') );
         } elseif (!$token || $token == '') {
             $output .= $this->displayError( $this->l('Invalid crm api token') );
+        } else {
+            $output .= $this->displayConfirmation(
+                $this->l('Timezone settings must be identical to both of your crm and shop') .
+                " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
+            );
         }
 
         if (Tools::isSubmit('submit'.$this->name))
@@ -297,10 +314,10 @@ class IntaroCRM extends Module
                 );
             }
             catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log('customerCreate: connection error');
+                error_log("customerCreate: connection error", 3, "intarocrm.log");
             }
             catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('customerCreate: ' . $e->getMessage());
+                error_log('customerCreate: ' . $e->getMessage(), 3, "intarocrm.log");
             }
 
             try {
@@ -348,10 +365,10 @@ class IntaroCRM extends Module
                 );
             }
             catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log('orderCreate: connection error');
+                error_log('orderCreate: connection error', 3, "intarocrm.log");
             }
             catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('orderCreate: ' . $e->getMessage());
+                error_log('orderCreate: ' . $e->getMessage(), 3, "intarocrm.log");
             }
 
         }
@@ -372,10 +389,10 @@ class IntaroCRM extends Module
                         );
                     }
                     catch (\IntaroCrm\Exception\CurlException $e) {
-                        error_log('orderStatusUpdate: connection error');
+                        error_log('orderStatusUpdate: connection error', 3, "intarocrm.log");
                     }
                     catch (\IntaroCrm\Exception\ApiException $e) {
-                        error_log('orderStatusUpdate: ' . $e->getMessage());
+                        error_log('orderStatusUpdate: ' . $e->getMessage(), 3, "intarocrm.log");
                     }
                 }
             }
@@ -390,10 +407,10 @@ class IntaroCRM extends Module
             $deliveryTypes = $intaroCrm->deliveryTypesList();
         }
         catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('deliveryTypesList: connection error');
+            error_log('deliveryTypesList: connection error', 3, "intarocrm.log");
         }
         catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('deliveryTypesList: ' . $e->getMessage());
+            error_log('deliveryTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
         }
 
         if (!empty($deliveryTypes)) {
@@ -446,10 +463,10 @@ class IntaroCRM extends Module
             $statusTypes = $intaroCrm->orderStatusesList();
         }
         catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('statusTypesList: connection error');
+            error_log('statusTypesList: connection error', 3, "intarocrm.log");
         }
         catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('statusTypesList: ' . $e->getMessage());
+            error_log('statusTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
         }
 
         if (!empty($statusTypes)) {
@@ -499,10 +516,10 @@ class IntaroCRM extends Module
             $paymentTypes = $intaroCrm->paymentTypesList();
         }
         catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('paymentTypesList: connection error');
+            error_log('paymentTypesList: connection error', 3, "intarocrm.log");
         }
         catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('paymentTypesList: ' . $e->getMessage());
+            error_log('paymentTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
         }
 
         if (!empty($paymentTypes)) {
@@ -548,7 +565,6 @@ class IntaroCRM extends Module
 
         /* Get all modules then select only payment ones */
         $modules = Module::getModulesOnDisk(true);
-
         /*
          * Hack for knivesland
          */
@@ -721,8 +737,9 @@ class IntaroCRM extends Module
         $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
         $id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-        if ($currency->iso_code == 'RUB')
+        if ($currency->iso_code == 'RUB') {
             $currency->iso_code = 'RUR';
+        }
 
         // Get currencies
         $currencies = Currency::getCurrencies();
@@ -789,5 +806,461 @@ class IntaroCRM extends Module
         $smarty->assign('company', Configuration::get('PS_SHOP_NAME'));
         $smarty->assign('shop_url', $shop_url . __PS_BASE_URI__);
         return $this->display(__FILE__, 'export.tpl');
+    }
+
+    public function orderHistory()
+    {
+        /*
+         * get last sync date
+         */
+        //$lastSync = Configuration::get('INTAROCRM_LAST_SYNC');
+
+        $lastSync = false;
+        $startFrom = ($lastSync === false) ? null : $lastSync;
+        $endTime = date('Y-m-d H:i:s');
+
+        $data = array();
+        $counter = 0;
+
+        /*
+         * retrive orders from crm since last update
+         */
+        do {
+            try {
+                $this->response = $this->intaroCRM->orderHistory(
+                    $startDate = $startFrom, $endDate = $endTime,
+                    $limit = 250, $offset = $counter
+                );
+                $data = array_merge($data, $this->response);
+                $counter += 250;
+            }
+            catch (\IntaroCrm\Exception\CurlException $e) {
+                error_log('orderHistory: connection error', 3, "intarocrm.log");
+            }
+            catch (\IntaroCrm\Exception\ApiException $e) {
+                error_log('orderHistory: ' . $e->getMessage(), 3, "intarocrm.log");
+            }
+        } while (!empty($response));
+
+        /*
+         * store recieved data into shop database
+         */
+        if (!empty($data)) {
+            $toUpdate = array();
+
+            /*
+             * Customer object. Will be used for further updates.
+             */
+            $this->customer = new Customer();
+
+            $statuses = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_STATUS')));
+            $deliveries = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_DELIVERY')));
+            $payments = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_PAYMENT')));
+
+            foreach ($data as $order) {
+                if (!array_key_exists('externalId', $order)) {
+                    /*
+                     * create customer if not exist
+                     */
+                    $this->customer->getByEmail($order['customer']['email']);
+
+                    if (!array_key_exists('externalId', $order['customer'])) {
+                        if (Validate::isEmail($order['customer']['email'])) {
+
+                            if (!$this->customer->id)
+                            {
+                                $this->customer->firstname = $order['customer']['firstName'];
+                                $this->customer->lastname = $order['customer']['lastName'];
+                                $this->customer->email = $order['customer']['email'];
+                                $this->customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
+
+                                if($this->customer->add()) {
+
+                                    /*
+                                     * create customer address for delivery data
+                                     */
+
+                                    $this->customer->getByEmail($order['customer']['email']);
+                                    $this->customer_id = $this->customer->id;
+
+                                    $address = new Address();
+                                    $address->id_customer = $this->customer->id;
+                                    $address->id_country = $this->default_country;
+                                    $address->lastname = $this->customer->lastname;
+                                    $address->firstname = $this->customer->firstname;
+                                    $address->alias = 'default';
+                                    $address->postcode = $order['deliveryAddress']['index'];
+                                    $address->city = $order['deliveryAddress']['city'];
+                                    $address->address1 = $order['deliveryAddress']['text'];
+                                    $address->phone = $order['phone'];
+                                    $address->phone_mobile = $order['phone'];
+
+                                    $address->add();
+
+                                    /*
+                                     * store address record id for handle order data
+                                     */
+                                    $addr = $this->customer->getAddresses($this->default_lang);
+                                    $this->address_id = $addr[0]['id_address'];
+                                }
+                            } else {
+                                $addresses =  $this->customer->getAddresses($this->default_lang);
+                                $this->address_id = $addresses[0]['id_address'];
+                                $this->customer_id = $this->customer->id;
+                            }
+
+                            /*
+                             * collect customer ids for single fix request
+                             */
+                            array_push(
+                                $this->customerFix,
+                                array(
+                                    'id' => $order['customer']['id'],
+                                    'externalId' => $this->customer_id
+                                )
+                            );
+                        }
+                    } else {
+                        $addresses =  $this->customer->getAddresses($this->default_lang);
+                        $this->address_id = $addresses[0]['id_address'];
+                        $this->customer_id = $order['customer']['externalId'];
+                    }
+
+                    $delivery = $order['deliveryType'];
+                    $payment = $order['paymentType'];
+                    $state = $order['status'];
+
+                    $cart = new Cart();
+                    $cart->id_currency = $this->default_currency;
+                    $cart->id_lang = $this->default_lang;
+                    $cart->id_customer = $this->customer_id;
+                    $cart->id_address_delivery = (int)$this->address_id;
+                    $cart->id_address_invoice = (int)$this->address_id;
+                    $cart->id_carrier = (int)$deliveries[$delivery];
+
+                    $cart->add();
+
+                    $products = array();
+                    if(!empty($order['items'])) {
+                        foreach ($order['items'] as $item) {
+                            $product = array();
+                            $product['id_product'] = (int)$item['offer']['externalId'];
+                            $product['quantity'] = $item['quantity'];
+                            $product['id_address_delivery'] = (int)$this->address_id;
+                            $products[] = $product;
+                        }
+                    }
+
+                    $cart->setWsCartRows($products);
+                    $cart->update();
+
+                    /*
+                     * Create order
+                     */
+
+                    $newOrder = new Order();
+                    $newOrder->id_address_delivery = (int)$this->address_id;
+                    $newOrder->id_address_invoice = (int)$this->address_id;
+                    $newOrder->id_cart = (int)$cart->id;
+                    $newOrder->id_currency = $this->default_currency;
+                    $newOrder->id_lang = $this->default_lang;
+                    $newOrder->id_customer = (int)$this->customer_id;
+                    $newOrder->id_carrier = (int)$deliveries[$delivery];
+                    $newOrder->payment =  $payments[$payment];
+                    $newOrder->module = (Module::getInstanceByName('advancedcheckout') === false)
+                        ? $payments[$payment]
+                        : 'advancedcheckout'
+                        ;
+                    $newOrder->total_paid = $order['summ'] + $order['deliveryCost'];
+                    $newOrder->total_paid_tax_incl = $order['summ'] + $order['deliveryCost'];
+                    $newOrder->total_paid_tax_excl = $order['summ'] + $order['deliveryCost'];
+                    $newOrder->total_paid_real = $order['summ'] + $order['deliveryCost'];
+                    $newOrder->total_products = $order['summ'];
+                    $newOrder->total_products_wt = $order['summ'];
+                    $newOrder->total_shipping = $order['deliveryCost'];
+                    $newOrder->total_shipping_tax_incl = $order['deliveryCost'];
+                    $newOrder->total_shipping_tax_excl = $order['deliveryCost'];
+                    $newOrder->conversion_rate = 1.000000;
+                    $newOrder->current_state = (int)$statuses[$state];
+                    $newOrder->delivery_date = $order['deliveryDate'];
+                    $newOrder->date_add = $order['createdAt'];
+                    $newOrder->date_upd = $order['createdAt'];
+                    $newOrder->valid = 1;
+                    $newOrder->secure_key = md5(time());
+
+                    if (isset($order['discount']))
+                    {
+                        $newOrder->total_discounts = $order['discount'];
+                    }
+
+                    $newOrder->add(false, false);
+
+                    /*
+                     * collect order ids for single fix request
+                     */
+                    array_push(
+                        $this->orderFix,
+                        array(
+                            'id' => $order['id'],
+                            'externalId' => $newOrder->id
+                        )
+                    );
+
+                    /*
+                     * Create order details
+                     */
+                    $product_list = array();
+                    foreach ($order['items'] as $item) {
+                        $product = new Product((int)$item['offer']['externalId'], false, $this->default_lang);
+                        $qty = $item['quantity'];
+                        $product_list[] = array('product' =>$product, 'quantity' => $qty);
+                    }
+
+                    $query = 'INSERT `'._DB_PREFIX_.'order_detail`
+                        (
+                            `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
+                            `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
+                            `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
+                            `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
+                        )
+
+                        VALUES';
+
+                    foreach ($product_list as $product) {
+                        $query .= '('
+                            .(int)$newOrder->id.',
+                            0,
+                            '. $this->context->shop->id.',
+                            '.(int)$product['product']->id.',
+                            0,
+                            '.implode('', array('\'', $product['product']->name, '\'')).',
+                            '.(int)$product['quantity'].',
+                            '.(int)$product['quantity'].',
+                            '.$product['product']->price.',
+                            '.implode('', array('\'', $product['product']->reference, '\'')).',
+                            '.$product['product']->price.',
+                            '.$product['product']->price.',
+                            '.$product['product']->price.',
+                            '.$product['product']->price.',
+                            '.$product['product']->price.'
+                        ),';
+                    }
+
+                    Db::getInstance()->execute(rtrim($query, ','));
+
+                    try {
+                        $this->intaroCRM->customerFixExternalIds($this->customerFix);
+                        $this->intaroCRM->orderFixExternalIds($this->orderFix);
+                    }
+                    catch (\IntaroCrm\Exception\CurlException $e) {
+                        error_log('fixExternalId: connection error', 3, "intarocrm.log");
+                        continue;
+                    }
+                    catch (\IntaroCrm\Exception\ApiException $e) {
+                        error_log('fixExternalId: ' . $e->getMessage(), 3, "intarocrm.log");
+                        continue;
+                    }
+
+                } else {
+                    if (!in_array($order['id'], $toUpdate))
+                    {
+                        /*
+                         * take last order update only
+                         */
+                        $toUpdate[] = $order['id'];
+                        if ($order['paymentType'] != null && $order['deliveryType'] != null && $order['status'] != null) {
+                            $orderToUpdate = new Order((int)$order['externalId']);
+
+                            /*
+                             * check status
+                             */
+                            $stype = $order['status'];
+                            if ($statuses[$stype] != null) {
+                                if ($statuses[$stype] != $orderToUpdate->current_state) {
+                                    Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'orders`
+                                        SET `current_state` = \''.$statuses[$stype].'\'
+                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                }
+                            }
+
+                            /*
+                             * check delivery type
+                             */
+                            $dtype = $order['deliveryType'];
+                            if ($deliveries[$dtype] != null) {
+                                if ($deliveries[$dtype] != $orderToUpdate->id_carrier) {
+                                    Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'orders`
+                                        SET `id_carrier` = \''.$deliveries[$dtype].'\'
+                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                    Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'order_carrier`
+                                        SET `id_carrier` = \''.$deliveries[$dtype].'\'
+                                        WHERE `id_order` = \''.$orderToUpdate->id.'\'');
+                                }
+                            }
+
+                            /*
+                             * check payment type
+                             */
+                            $ptype = $order['paymentType'];
+                            if ($payments[$ptype] != null) {
+                                if ($payments[$ptype] != $orderToUpdate->payment) {
+                                    Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'orders`
+                                        SET `payment` = \''.$payments[$ptype].'\'
+                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                    Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'order_payment`
+                                        SET `payment_method` = \''.$payments[$ptype].'\'
+                                        WHERE `order_reference` = \''.$orderToUpdate->reference.'\'');
+
+                                }
+                            }
+
+                            /*
+                             * check items
+                             */
+
+                            /*
+                             * Clean deleted
+                             */
+                            foreach ($order['items'] as $key => $item) {
+                                if (isset($item['deleted']) && $item['deleted'] == true) {
+                                    Db::getInstance()->execute('
+                                        DELETE FROM `'._DB_PREFIX_.'order_detail`
+                                        WHERE `id_order` = '. $orderToUpdate->id .'
+                                        AND `product_id` = '.$item['id']);
+
+                                    unset($order['items'][$key]);
+                                }
+                            }
+
+                            /*
+                             * check quantity
+                             */
+
+                            foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
+                                foreach ($order['items'] as $key => $item) {
+                                    if ($item['offer']['externalId'] == $orderItem['product_id']) {
+                                        if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
+                                            Db::getInstance()->execute('
+                                                UPDATE `'._DB_PREFIX_.'order_detail`
+                                                SET `product_quantity` = '.$item['quantity'].',
+                                                `product_quantity_in_stock` = '.$item['quantity'].'
+                                                WHERE `id_order_detail` = '.$orderItem['id_order_detail']);
+                                        }
+
+                                        unset($order['items'][$key]);
+                                    }
+                                }
+                            }
+
+                            /*
+                             * check new items
+                             */
+                            if (!empty($order['items'])) {
+                                foreach ($order['items'] as $key => $newItem) {
+                                    $product = new Product((int)$newItem['offer']['externalId'], false, $this->default_lang);
+                                    $qty = $newItem['quantity'];
+                                    $product_list[] = array('product' =>$product, 'quantity' => $qty);
+                                }
+
+
+                                $query = 'INSERT `'._DB_PREFIX_.'order_detail`
+                                (
+                                    `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
+                                    `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
+                                    `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
+                                    `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
+                                )
+
+                                VALUES';
+
+                                foreach ($product_list as $product) {
+                                    $query .= '('
+                                        .(int)$orderToUpdate->id.',
+                                        0,
+                                        '. $this->context->shop->id.',
+                                        '.(int)$product['product']->id.',
+                                        0,
+                                        '.implode('', array('\'', $product['product']->name, '\'')).',
+                                        '.(int)$product['quantity'].',
+                                        '.(int)$product['quantity'].',
+                                        '.$product['product']->price.',
+                                        '.implode('', array('\'', $product['product']->reference, '\'')).',
+                                        '.$product['product']->price.',
+                                        '.$product['product']->price.',
+                                        '.$product['product']->price.',
+                                        '.$product['product']->price.',
+                                        '.$product['product']->price.'
+                                    ),';
+                                }
+
+                                Db::getInstance()->execute(rtrim($query, ','));
+                                unset($order['items'][$key]);
+                            }
+
+                            /*
+                             * Fix prices & discounts
+                             * Discounts only for whole order
+                             */
+                            $orderDiscout = null;
+                            $orderTotal = $order['summ'];
+
+                            if (isset($order['discount']) && $order['discount'] > 0) {
+                                if ($order['discount'] != $orderToUpdate->total_discounts) {
+                                    $orderDiscout = ($orderDiscout == null) ? $order['discount'] : $order['discount'] + $orderDiscout;
+                                }
+                            }
+
+                            if (isset($order['discountPercent']) && $order['discountPercent'] > 0) {
+                                $percent = ($order['summ'] * $order['discountPercent'])/100;
+                                if ($percent != $orderToUpdate->total_discounts) {
+                                    $orderDiscout = ($orderDiscout == null) ? $percent : $percent + $orderDiscout;
+                                }
+                            }
+
+                            $totalDiscount = ($orderDiscout == null) ? $orderToUpdate->total_discounts : $orderDiscout;
+
+                            if ($totalDiscount != $orderToUpdate->total_discounts || $orderTotal != $orderToUpdate->total_paid) {
+                                Db::getInstance()->execute('
+                                        UPDATE `'._DB_PREFIX_.'orders`
+                                        SET `total_discounts` = '.$totalDiscount.',
+                                        `total_discounts_tax_incl` = '.$totalDiscount.',
+                                        `total_discounts_tax_excl` = '.$totalDiscount.',
+                                        `total_paid` = '.$orderTotal.',
+                                        `total_paid_tax_incl` = '.$orderTotal.',
+                                        `total_paid_tax_excl` = '.$orderTotal.'
+                                        WHERE `id_order` = '.(int)$order['externalId']);
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Update last sync timestamp
+             */
+            try {
+                Configuration::updateValue(
+                    'INTAROCRM_LAST_SYNC',
+                    date_format($this->intaroCRM->getGeneratedAt(), 'Y-m-d H:i:s')
+                );
+            }
+            catch (\IntaroCrm\Exception\CurlException $e) {
+                error_log('getLastSync: connection error', 3, "intarocrm.log");
+            }
+            catch (\IntaroCrm\Exception\ApiException $e) {
+                error_log('getLastSync: ' . $e->getMessage(), 3, "intarocrm.log");
+            }
+
+            return count($data) . " records was synced";
+
+        } else {
+            return 'Nothing to sync';
+        }
+
     }
 }
