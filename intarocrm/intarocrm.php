@@ -748,54 +748,56 @@ class IntaroCRM extends Module
         $categories = Category::getCategories($id_lang, true, false);
 
         // Get products
-        $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
-        foreach ($products AS $product)
-        {
-            // Check for home category
-            $category = $product['id_category_default'];
-            if ($category == Configuration::get('PS_HOME_CATEGORY')) {
-                $temp_categories = Product::getProductCategories($product['id_product']);
+        $sql = 'SELECT count(*) as `total` FROM `'._DB_PREFIX_.'product`';
+        $rq = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
-                foreach ($temp_categories AS $category) {
-                    if ($category != Configuration::get('PS_HOME_CATEGORY'))
-                        break;
-                }
+        $items = array();
+        $total_products = $rq[0]['total'];
+        $limit = 100;
+        $start = 0;
+        $parts = (int)($total_products/$limit) + 1;
 
+        for ($i = 0; $i < $parts; $i++) {
+            $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
+            foreach ($products AS $product) {
+                // Check for home category
+                $category = $product['id_category_default'];
                 if ($category == Configuration::get('PS_HOME_CATEGORY')) {
-                    continue;
+                    $temp_categories = Product::getProductCategories($product['id_product']);
+
+                    foreach ($temp_categories AS $category) {
+                        if ($category != Configuration::get('PS_HOME_CATEGORY'))
+                            break;
+                    }
+
+                    if ($category == Configuration::get('PS_HOME_CATEGORY')) {
+                        continue;
+                    }
+
                 }
-
+                $link = new Link();
+                $cover = Image::getCover($product['id_product']);
+                $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'].'-'.$cover['id_image'], 'large_default');
+                if (!(substr($picture, 0, strlen($shop_url)) === $shop_url)) {
+                    $picture = rtrim($shop_url,"/") . $picture;
+                }
+                $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
+                $url = $link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
+                $items[] = array(
+                    'id_product' => $product['id_product'],
+                    'price' => $product['price'],
+                    'purchase_price' => $product['wholesale_price'],
+                    'name' => htmlspecialchars(strip_tags($product['name'])),
+                    'article' => htmlspecialchars($product['reference']),
+                    'id_category_default' => $category,
+                    'picture' => $picture,
+                    'url' => $url
+                );
             }
-            $link = new Link();
-            $cover = Image::getCover($product['id_product']);
 
-            $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'].'-'.$cover['id_image'], 'large_default');
-            if (!(substr($picture, 0, strlen($shop_url)) === $shop_url))
-                $picture = rtrim($shop_url,"/") . $picture;
-            $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
-            $url = $link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
-            $version = substr(_PS_VERSION_, 0, 3);
-            if ($version == "1.3")
-                $available_for_order  = $product['active'] && $product['quantity'];
-            else {
-                $prod = new Product($product['id_product']);
-                $available_for_order = $product['active'] && $product['available_for_order'] && $prod->checkQty(1);
-            }
-            $items[] = array('id_product' => $product['id_product'],
-                             'available_for_order' => $available_for_order,
-                             'price' => $product['price'],
-                             'purchase_price' => $product['wholesale_price'],
-                             'name' => htmlspecialchars(strip_tags($product['name'])),
-                             'article' => htmlspecialchars($product['reference']),
-                             'id_category_default' => $category,
-                             'picture' => $picture,
-                             'url' => $url
-            );
-        }
-
-        foreach ($this->custom_attributes as $i => $value) {
-            $attr = Configuration::get($value);
-            $smarty->assign(strtolower($value), $attr);
+            $start += 100;
+            $limit += 100;
+            unset($products);
         }
 
         $smarty->assign('currencies', $currencies);
