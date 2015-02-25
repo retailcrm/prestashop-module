@@ -22,9 +22,11 @@ git clone git@github.com:/intarocrm/prestashop-module.git
 
 #### Install Rest API Client.
 
+Install api-client-php via [composer](http://getcomposer.org)
+
 ```
 cd prestashop-module
-composer install
+/path/to/composer.phar install
 ```
 
 #### Create .zip file.
