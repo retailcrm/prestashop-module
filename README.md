@@ -24,7 +24,7 @@ git clone git@github.com:/intarocrm/prestashop-module.git
 
 ```
 cd prestashop-module
-composer update
+composer install
 ```
 
 #### Create .zip file.
