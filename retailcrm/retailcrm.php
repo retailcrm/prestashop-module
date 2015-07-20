@@ -1,28 +1,35 @@
 <?php
 
-require 'classes/autoload.php';
+require 'classes/Retailcrm.php';
+require 'classes/Service.php';
+require 'classes/Icml.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class IntaroCRM extends Module
+class RetailCRM extends Module
 {
     function __construct()
     {
-        $this->name = 'intarocrm';
+        $this->name = 'retailcrm';
         $this->tab = 'market_place';
-        $this->version = '0.1';
-        $this->author = 'Intaro Ltd.';
+        $this->version = '0.2';
+        $this->author = 'Retail Driver LCC';
 
-        $this->displayName = $this->l('IntaroCRM');
-        $this->description = $this->l('Integration module for IntaroCRM');
+        $this->displayName = $this->l('RetailCRM');
+        $this->description = $this->l('Integration module for RetailCRM');
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
 
-        $this->intaroCRM = new \IntaroCrm\RestApi(
-            Configuration::get('INTAROCRM_ADDRESS'),
-            Configuration::get('INTAROCRM_API_TOKEN')
-        );
+        $this->apiUrl = Configuration::get('RETAILCRM_ADDRESS');
+        $this->apiKey = Configuration::get('RETAILCRM_API_TOKEN');
+
+        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+            $this->api = new ApiClient(
+                $this->apiUrl,
+                $this->apiKey
+            );
+        }
 
         $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
         $this->default_currency = (int)Configuration::get('PS_CURRENCY_DEFAULT');
@@ -54,12 +61,12 @@ class IntaroCRM extends Module
     function uninstall()
     {
         return parent::uninstall() &&
-            Configuration::deleteByName('INTAROCRM_ADDRESS') &&
-            Configuration::deleteByName('INTAROCRM_API_TOKEN') &&
-            Configuration::deleteByName('INTAROCRM_API_STATUS') &&
-            Configuration::deleteByName('INTAROCRM_API_DELIVERY') &&
-            Configuration::deleteByName('INTAROCRM_LAST_SYNC') &&
-            Configuration::deleteByName('INTAROCRM_API_ADDR')
+            Configuration::deleteByName('RETAILCRM_ADDRESS') &&
+            Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
+            Configuration::deleteByName('RETAILCRM_API_STATUS') &&
+            Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
+            Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_API_ADDR')
         ;
     }
 
@@ -67,8 +74,8 @@ class IntaroCRM extends Module
     {
         $output = null;
 
-        $address = Configuration::get('INTAROCRM_ADDRESS');
-        $token = Configuration::get('INTAROCRM_API_TOKEN');
+        $address = Configuration::get('RETAILCRM_ADDRESS');
+        $token = Configuration::get('RETAILCRM_API_TOKEN');
 
         if (!$address || $address == '') {
             $output .= $this->displayError( $this->l('Invalid crm address') );
@@ -83,24 +90,24 @@ class IntaroCRM extends Module
 
         if (Tools::isSubmit('submit'.$this->name))
         {
-            $address = strval(Tools::getValue('INTAROCRM_ADDRESS'));
-            $token = strval(Tools::getValue('INTAROCRM_API_TOKEN'));
-            $delivery = json_encode(Tools::getValue('INTAROCRM_API_DELIVERY'));
-            $status = json_encode(Tools::getValue('INTAROCRM_API_STATUS'));
-            $payment = json_encode(Tools::getValue('INTAROCRM_API_PAYMENT'));
-            $order_address = json_encode(Tools::getValue('INTAROCRM_API_ADDR'));
+            $address = strval(Tools::getValue('RETAILCRM_ADDRESS'));
+            $token = strval(Tools::getValue('RETAILCRM_API_TOKEN'));
+            $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
+            $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
+            $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
+            $order_address = json_encode(Tools::getValue('RETAILCRM_API_ADDR'));
 
             if (!$address || empty($address) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError( $this->l('Invalid crm address') );
             } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
                 $output .= $this->displayError( $this->l('Invalid crm api token') );
             } else {
-                Configuration::updateValue('INTAROCRM_ADDRESS', $address);
-                Configuration::updateValue('INTAROCRM_API_TOKEN', $token);
-                Configuration::updateValue('INTAROCRM_API_DELIVERY', $delivery);
-                Configuration::updateValue('INTAROCRM_API_STATUS', $status);
-                Configuration::updateValue('INTAROCRM_API_PAYMENT', $payment);
-                Configuration::updateValue('INTAROCRM_API_ADDR', $order_address);
+                Configuration::updateValue('RETAILCRM_ADDRESS', $address);
+                Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
+                Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
+                Configuration::updateValue('RETAILCRM_API_STATUS', $status);
+                Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
+                Configuration::updateValue('RETAILCRM_API_ADDR', $order_address);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -115,7 +122,7 @@ class IntaroCRM extends Module
         $this->displayConfirmation($this->l('Settings updated'));
 
         $default_lang = $this->default_lang;
-        $intaroCrm = $this->intaroCRM;
+        $intaroCrm = $this->api;
 
         /*
          * Network connection form
@@ -128,14 +135,14 @@ class IntaroCRM extends Module
                 array(
                     'type' => 'text',
                     'label' => $this->l('CRM address'),
-                    'name' => 'INTAROCRM_ADDRESS',
+                    'name' => 'RETAILCRM_ADDRESS',
                     'size' => 20,
                     'required' => true
                 ),
                 array(
                     'type' => 'text',
                     'label' => $this->l('CRM token'),
-                    'name' => 'INTAROCRM_API_TOKEN',
+                    'name' => 'RETAILCRM_API_TOKEN',
                     'size' => 20,
                     'required' => true
                 )
@@ -146,35 +153,38 @@ class IntaroCRM extends Module
             )
         );
 
-        /*
-         * Delivery
-         */
-        $fields_form[1]['form'] = array(
-            'legend' => array(
-                'title' => $this->l('Delivery'),
-            ),
-            'input' => $this->getDeliveryTypes($default_lang, $intaroCrm),
-        );
 
-        /*
-         * Order status
-         */
-        $fields_form[2]['form'] = array(
-            'legend' => array(
-                'title' => $this->l('Order statuses'),
-            ),
-            'input' => $this->getStatusTypes($default_lang, $intaroCrm),
-        );
+        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+            /*
+             * Delivery
+             */
+            $fields_form[1]['form'] = array(
+                'legend' => array(
+                    'title' => $this->l('Delivery'),
+                ),
+                'input' => $this->getDeliveryTypes(),
+            );
 
-        /*
-         * Payment
-         */
-        $fields_form[3]['form'] = array(
-            'legend' => array(
-                'title' => $this->l('Payment types'),
-            ),
-            'input' => $this->getPaymentTypes($intaroCrm),
-        );
+            /*
+             * Order status
+             */
+            $fields_form[2]['form'] = array(
+                'legend' => array(
+                    'title' => $this->l('Order statuses'),
+                ),
+                'input' => $this->getStatusTypes(),
+            );
+
+            /*
+             * Payment
+             */
+            $fields_form[3]['form'] = array(
+                'legend' => array(
+                    'title' => $this->l('Payment types'),
+                ),
+                'input' => $this->getPaymentTypes(),
+            );
+        }
 
         /*
          * Address fields
@@ -218,45 +228,45 @@ class IntaroCRM extends Module
             )
         );
 
-        $helper->fields_value['INTAROCRM_ADDRESS'] = Configuration::get('INTAROCRM_ADDRESS');
-        $helper->fields_value['INTAROCRM_API_TOKEN'] = Configuration::get('INTAROCRM_API_TOKEN');
+        $helper->fields_value['RETAILCRM_ADDRESS'] = Configuration::get('RETAILCRM_ADDRESS');
+        $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
 
-        $deliverySettings = Configuration::get('INTAROCRM_API_DELIVERY');
+        $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '')
         {
             $deliveryTypes = json_decode($deliverySettings);
             foreach ($deliveryTypes as $idx => $delivery) {
-                $name = 'INTAROCRM_API_DELIVERY[' . $idx . ']';
+                $name = 'RETAILCRM_API_DELIVERY[' . $idx . ']';
                 $helper->fields_value[$name] = $delivery;
             }
         }
 
-        $statusSettings = Configuration::get('INTAROCRM_API_STATUS');
+        $statusSettings = Configuration::get('RETAILCRM_API_STATUS');
         if (isset($statusSettings) && $statusSettings != '')
         {
             $statusTypes = json_decode($statusSettings);
             foreach ($statusTypes as $idx => $status) {
-                $name = 'INTAROCRM_API_STATUS[' . $idx . ']';
+                $name = 'RETAILCRM_API_STATUS[' . $idx . ']';
                 $helper->fields_value[$name] = $status;
             }
         }
 
-        $paymentSettings = Configuration::get('INTAROCRM_API_PAYMENT');
+        $paymentSettings = Configuration::get('RETAILCRM_API_PAYMENT');
         if (isset($paymentSettings) && $paymentSettings != '')
         {
             $paymentTypes = json_decode($paymentSettings);
             foreach ($paymentTypes as $idx => $payment) {
-                $name = 'INTAROCRM_API_PAYMENT[' . $idx . ']';
+                $name = 'RETAILCRM_API_PAYMENT[' . $idx . ']';
                 $helper->fields_value[$name] = $payment;
             }
         }
 
-        $addressSettings = Configuration::get('INTAROCRM_API_ADDR');
+        $addressSettings = Configuration::get('RETAILCRM_API_ADDR');
         if (isset($addressSettings) && $addressSettings != '')
         {
             $addressTypes = json_decode($addressSettings);
             foreach ($addressTypes as $idx => $address) {
-                $name = 'INTAROCRM_API_ADDR[' . $idx . ']';
+                $name = 'RETAILCRM_API_ADDR[' . $idx . ']';
                 $helper->fields_value[$name] = $address;
             }
         }
@@ -271,13 +281,14 @@ class IntaroCRM extends Module
 
     public function hookActionPaymentConfirmation($params)
     {
-        $this->intaroCRM->orderEdit(
+        $this->api->ordersEdit(
             array(
                 'externalId'      => $params['id_order'],
                 'paymentStatus'   => 'paid',
                 'createdAt'       => $params['cart']->date_upd
             )
         );
+
         return $this->hookActionOrderStatusPostUpdate($params);
     }
 
@@ -287,13 +298,13 @@ class IntaroCRM extends Module
         $sql = 'SELECT * FROM '._DB_PREFIX_.'address WHERE id_address='.(int)$address_id;
         $address = Db::getInstance()->ExecuteS($sql);
         $address = $address[0];
-        $delivery = json_decode(Configuration::get('INTAROCRM_API_DELIVERY'));
-        $payment = json_decode(Configuration::get('INTAROCRM_API_PAYMENT'));
+        $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'));
+        $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'));
         $inCart = $params['cart']->getProducts();
 
         if (isset($params['orderStatus'])) {
             try {
-                $crmCustomerId = $this->intaroCRM->customerCreate(
+                $this->api->customersCreate(
                     array(
                         'externalId' => $params['cart']->id_customer,
                         'lastName'   => $params['customer']->lastname,
@@ -313,11 +324,11 @@ class IntaroCRM extends Module
                     )
                 );
             }
-            catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log("customerCreate: connection error", 3, "intarocrm.log");
+            catch (CurlException $e) {
+                error_log("customerCreate: connection error", 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
-            catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('customerCreate: ' . $e->getMessage(), 3, "intarocrm.log");
+            catch (InvalidJsonException $e) {
+                error_log('customerCreate: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
 
             try {
@@ -338,7 +349,7 @@ class IntaroCRM extends Module
                 } else {
                     $pTypeKey = $params['order']->payment;
                 }
-                $this->intaroCRM->orderCreate(
+                $this->api->ordersCreate(
                     array(
                         'externalId'      => $params['order']->id,
                         'orderType'       => 'eshop-individual',
@@ -364,23 +375,23 @@ class IntaroCRM extends Module
                     )
                 );
             }
-            catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log('orderCreate: connection error', 3, "intarocrm.log");
+            catch (CurlException $e) {
+                error_log('orderCreate: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
-            catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('orderCreate: ' . $e->getMessage(), 3, "intarocrm.log");
+            catch (InvalidJsonException $e) {
+                error_log('orderCreate: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
 
         }
 
         if (isset($params['newOrderStatus']) && !empty($params['newOrderStatus'])) {
             $statuses = OrderState::getOrderStates($this->default_lang);
-            $aStatuses = json_decode(Configuration::get('INTAROCRM_API_STATUS'));
+            $aStatuses = json_decode(Configuration::get('RETAILCRM_API_STATUS'));
             foreach ($statuses as $status) {
                 if ($status['name'] == $params['newOrderStatus']->name) {
                     $currStatus = $status['id_order_state'];
                     try {
-                        $this->intaroCRM->orderEdit(
+                        $this->api->ordersEdit(
                             array(
                                 'externalId'      => $params['id_order'],
                                 'status'          => $aStatuses->$currStatus,
@@ -388,38 +399,40 @@ class IntaroCRM extends Module
                             )
                         );
                     }
-                    catch (\IntaroCrm\Exception\CurlException $e) {
-                        error_log('orderStatusUpdate: connection error', 3, "intarocrm.log");
+                    catch (CurlException $e) {
+                        error_log('orderStatusUpdate: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
                     }
-                    catch (\IntaroCrm\Exception\ApiException $e) {
-                        error_log('orderStatusUpdate: ' . $e->getMessage(), 3, "intarocrm.log");
+                    catch (InvalidJsonException $e) {
+                        error_log('orderStatusUpdate: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
                     }
                 }
             }
         }
     }
 
-    protected function getApiDeliveryTypes($intaroCrm)
+    protected function getApiDeliveryTypes()
     {
         $crmDeliveryTypes = array();
 
-        try {
-            $deliveryTypes = $intaroCrm->deliveryTypesList();
-        }
-        catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('deliveryTypesList: connection error', 3, "intarocrm.log");
-        }
-        catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('deliveryTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
-        }
+        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+            try {
+                $deliveryTypes = $this->api->deliveryTypesList();
+            }
+            catch (CurlException $e) {
+                error_log('deliveryTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
+            catch (InvalidJsonException $e) {
+                error_log('deliveryTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
 
-        if (!empty($deliveryTypes)) {
-            $crmDeliveryTypes[] = array();
-            foreach ($deliveryTypes as $dType) {
-                $crmDeliveryTypes[] = array(
-                    'id_option' => $dType['code'],
-                    'name' => $dType['name'],
-                );
+            if (!empty($deliveryTypes)) {
+                $crmDeliveryTypes[] = array();
+                foreach ($deliveryTypes as $dType) {
+                    $crmDeliveryTypes[] = array(
+                        'id_option' => $dType['code'],
+                        'name' => $dType['name'],
+                    );
+                }
             }
         }
 
@@ -427,12 +440,12 @@ class IntaroCRM extends Module
 
     }
 
-    protected function getDeliveryTypes($default_lang, $intaroCrm)
+    protected function getDeliveryTypes()
     {
         $deliveryTypes = array();
 
         $carriers = Carrier::getCarriers(
-            $default_lang, true, false, false,
+            $this->default_lang, true, false, false,
             null, PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE
         );
 
@@ -441,10 +454,10 @@ class IntaroCRM extends Module
                 $deliveryTypes[] = array(
                     'type' => 'select',
                     'label' => $carrier['name'],
-                    'name' => 'INTAROCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
+                    'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
                     'required' => false,
                     'options' => array(
-                        'query' => $this->getApiDeliveryTypes($intaroCrm),
+                        'query' => $this->getApiDeliveryTypes(),
                         'id' => 'id_option',
                         'name' => 'name'
                     )
@@ -455,37 +468,39 @@ class IntaroCRM extends Module
         return $deliveryTypes;
     }
 
-    protected function getApiStatuses($intaroCrm)
+    protected function getApiStatuses()
     {
         $crmStatusTypes = array();
 
-        try {
-            $statusTypes = $intaroCrm->orderStatusesList();
-        }
-        catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('statusTypesList: connection error', 3, "intarocrm.log");
-        }
-        catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('statusTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
-        }
+        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+            try {
+                $statusTypes = $this->api->statusesList();
+            }
+            catch (CurlException $e) {
+                error_log('statusTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
+            catch (InvalidJsonException $e) {
+                error_log('statusTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
 
-        if (!empty($statusTypes)) {
-            $crmStatusTypes[] = array();
-            foreach ($statusTypes as $sType) {
-                $crmStatusTypes[] = array(
-                    'id_option' => $sType['code'],
-                    'name' => $sType['name']
-                );
+            if (!empty($statusTypes)) {
+                $crmStatusTypes[] = array();
+                foreach ($statusTypes as $sType) {
+                    $crmStatusTypes[] = array(
+                        'id_option' => $sType['code'],
+                        'name' => $sType['name']
+                    );
+                }
             }
         }
 
         return $crmStatusTypes;
     }
 
-    protected function getStatusTypes($default_lang, $intaroCrm)
+    protected function getStatusTypes()
     {
         $statusTypes = array();
-        $states = OrderState::getOrderStates($default_lang, true);
+        $states = OrderState::getOrderStates($this->default_lang, true);
 
         if (!empty($states)) {
             foreach ($states as $state) {
@@ -493,10 +508,10 @@ class IntaroCRM extends Module
                     $statusTypes[] = array(
                         'type' => 'select',
                         'label' => $state['name'],
-                        'name' => 'INTAROCRM_API_STATUS[' . $state['id_order_state'] . ']',
+                        'name' => 'RETAILCRM_API_STATUS[' . $state['id_order_state'] . ']',
                         'required' => false,
                         'options' => array(
-                            'query' => $this->getApiStatuses($intaroCrm),
+                            'query' => $this->getApiStatuses(),
                             'id' => 'id_option',
                             'name' => 'name'
                         )
@@ -508,34 +523,36 @@ class IntaroCRM extends Module
         return $statusTypes;
     }
 
-    protected function getApiPaymentTypes($intaroCrm)
+    protected function getApiPaymentTypes()
     {
         $crmPaymentTypes = array();
 
-        try {
-            $paymentTypes = $intaroCrm->paymentTypesList();
-        }
-        catch (\IntaroCrm\Exception\CurlException $e) {
-            error_log('paymentTypesList: connection error', 3, "intarocrm.log");
-        }
-        catch (\IntaroCrm\Exception\ApiException $e) {
-            error_log('paymentTypesList: ' . $e->getMessage(), 3, "intarocrm.log");
-        }
+        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+            try {
+                $paymentTypes = $this->api->paymentTypesList();
+            }
+            catch (CurlException $e) {
+                error_log('paymentTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
+            catch (InvalidJsonException $e) {
+                error_log('paymentTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
+            }
 
-        if (!empty($paymentTypes)) {
-            $crmPaymentTypes[] = array();
-            foreach ($paymentTypes as $pType) {
-                $crmPaymentTypes[] = array(
-                    'id_option' => $pType['code'],
-                    'name' => $pType['name']
-                );
+            if (!empty($paymentTypes)) {
+                $crmPaymentTypes[] = array();
+                foreach ($paymentTypes as $pType) {
+                    $crmPaymentTypes[] = array(
+                        'id_option' => $pType['code'],
+                        'name' => $pType['name']
+                    );
+                }
             }
         }
 
         return $crmPaymentTypes;
     }
 
-    protected function getPaymentTypes($intaroCrm)
+    protected function getPaymentTypes()
     {
         $payments = $this->getSystemPaymentModules();
         $paymentTypes = array();
@@ -545,10 +562,10 @@ class IntaroCRM extends Module
                 $paymentTypes[] = array(
                     'type' => 'select',
                     'label' => $payment['name'],
-                    'name' => 'INTAROCRM_API_PAYMENT[' . $payment['code'] . ']',
+                    'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
                     'required' => false,
                     'options' => array(
-                        'query' => $this->getApiPaymentTypes($intaroCrm),
+                        'query' => $this->getApiPaymentTypes(),
                         'id' => 'id_option',
                         'name' => 'name'
                     )
@@ -647,7 +664,7 @@ class IntaroCRM extends Module
                     $addressFields[] = array(
                         'type' => 'select',
                         'label' => $this->l((string)$a),
-                        'name' => 'INTAROCRM_API_ADDR[' . $idx . ']',
+                        'name' => 'RETAILCRM_API_ADDR[' . $idx . ']',
                         'required' => false,
                         'options' => array(
                             'query' => array(
@@ -775,16 +792,18 @@ class IntaroCRM extends Module
             $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
             $url = $link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
             $version = substr(_PS_VERSION_, 0, 3);
+
             if ($version == "1.3")
-                $available_for_order  = $product['active'] && $product['quantity'];
+                $available_for_order = $product['active'] && $product['quantity'];
             else {
                 $prod = new Product($product['id_product']);
                 $available_for_order = $product['active'] && $product['available_for_order'] && $prod->checkQty(1);
             }
+
             $items[] = array('id_product' => $product['id_product'],
                              'available_for_order' => $available_for_order,
-                             'price' => $product['price'],
-                             'purchase_price' => $product['wholesale_price'],
+                             'price' => round($product['price'],2),
+                             'purchase_price' => round($product['wholesale_price'], 2),
                              'name' => htmlspecialchars(strip_tags($product['name'])),
                              'article' => htmlspecialchars($product['reference']),
                              'id_category_default' => $category,
@@ -813,7 +832,7 @@ class IntaroCRM extends Module
         /*
          * get last sync date
          */
-        $lastSync = Configuration::get('INTAROCRM_LAST_SYNC');
+        $lastSync = Configuration::get('RETAILCRM_LAST_SYNC');
 
         $startFrom = ($lastSync === false) ? null : $lastSync;
         $endTime = date('Y-m-d H:i:s');
@@ -826,18 +845,18 @@ class IntaroCRM extends Module
          */
         do {
             try {
-                $this->response = $this->intaroCRM->orderHistory(
+                $this->response = $this->api->ordersHistory(
                     $startDate = $startFrom, $endDate = $endTime,
                     $limit = 250, $offset = $counter
                 );
                 $data = array_merge($data, $this->response);
                 $counter += 250;
             }
-            catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log('orderHistory: connection error', 3, "intarocrm.log");
+            catch (CurlException $e) {
+                error_log('orderHistory: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
-            catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('orderHistory: ' . $e->getMessage(), 3, "intarocrm.log");
+            catch (InvalidJsonException $e) {
+                error_log('orderHistory: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
         } while (!empty($response));
 
@@ -852,9 +871,9 @@ class IntaroCRM extends Module
              */
             $this->customer = new Customer();
 
-            $statuses = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_STATUS')));
-            $deliveries = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_DELIVERY')));
-            $payments = array_flip((array)json_decode(Configuration::get('INTAROCRM_API_PAYMENT')));
+            $statuses = array_flip((array)json_decode(Configuration::get('RETAILCRM_API_STATUS')));
+            $deliveries = array_flip((array)json_decode(Configuration::get('RETAILCRM_API_DELIVERY')));
+            $payments = array_flip((array)json_decode(Configuration::get('RETAILCRM_API_PAYMENT')));
 
             foreach ($data as $order) {
                 if (!array_key_exists('externalId', $order)) {
@@ -1048,15 +1067,15 @@ class IntaroCRM extends Module
                     Db::getInstance()->execute(rtrim($query, ','));
 
                     try {
-                        $this->intaroCRM->customerFixExternalIds($this->customerFix);
-                        $this->intaroCRM->orderFixExternalIds($this->orderFix);
+                        $this->api->customersFixExternalIds($this->customerFix);
+                        $this->api->ordesrFixExternalIds($this->orderFix);
                     }
-                    catch (\IntaroCrm\Exception\CurlException $e) {
-                        error_log('fixExternalId: connection error', 3, "intarocrm.log");
+                    catch (CurlException $e) {
+                        error_log('fixExternalId: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
                         continue;
                     }
-                    catch (\IntaroCrm\Exception\ApiException $e) {
-                        error_log('fixExternalId: ' . $e->getMessage(), 3, "intarocrm.log");
+                    catch (InvalidJsonException $e) {
+                        error_log('fixExternalId: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
                         continue;
                     }
 
@@ -1244,15 +1263,15 @@ class IntaroCRM extends Module
              */
             try {
                 Configuration::updateValue(
-                    'INTAROCRM_LAST_SYNC',
-                    date_format($this->intaroCRM->getGeneratedAt(), 'Y-m-d H:i:s')
+                    'RETAILCRM_LAST_SYNC',
+                    date_format($this->api->getGeneratedAt(), 'Y-m-d H:i:s')
                 );
             }
-            catch (\IntaroCrm\Exception\CurlException $e) {
-                error_log('getLastSync: connection error', 3, "intarocrm.log");
+            catch (CurlException $e) {
+                error_log('getLastSync: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
-            catch (\IntaroCrm\Exception\ApiException $e) {
-                error_log('getLastSync: ' . $e->getMessage(), 3, "intarocrm.log");
+            catch (InvalidJsonException $e) {
+                error_log('getLastSync: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
             }
 
             return count($data) . " records was synced";
