@@ -20,16 +20,10 @@ Installation
 git clone git@github.com:/intarocrm/prestashop-module.git
 ```
 
-#### Install Rest API Client.
-
-```
-cd prestashop-module
-composer update
-```
-
 #### Create .zip file.
 ```
-zip -r intarocrm.zip intarocrm
+cd prestashop-module
+zip -r retailcrm.zip retailcrm
 ```
 
 #### Install via Admin interface.
