@@ -4,6 +4,12 @@ require 'classes/Retailcrm.php';
 require 'classes/Service.php';
 require 'classes/Icml.php';
 
+if (file_exists('classes/ReferencesCustom.php')) {
+    require 'classes/ReferencesCustom.php';
+} else {
+    require 'classes/References.php';
+}
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -31,9 +37,9 @@ class RetailCRM extends Module
             );
         }
 
-        $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-        $this->default_currency = (int)Configuration::get('PS_CURRENCY_DEFAULT');
-        $this->default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        $this->default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+        $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
 
         $this->response = array();
         $this->customerFix = array();
@@ -43,6 +49,8 @@ class RetailCRM extends Module
         $this->customer_id = null;
 
         $this->customer = null;
+
+        $this->ref = new References($this->api);
 
         parent::__construct();
     }
@@ -78,9 +86,9 @@ class RetailCRM extends Module
         $token = Configuration::get('RETAILCRM_API_TOKEN');
 
         if (!$address || $address == '') {
-            $output .= $this->displayError( $this->l('Invalid crm address') );
+            $output .= $this->displayError( $this->l('Invalid or empty crm address') );
         } elseif (!$token || $token == '') {
-            $output .= $this->displayError( $this->l('Invalid crm api token') );
+            $output .= $this->displayError( $this->l('Invalid or empty crm api token') );
         } else {
             $output .= $this->displayConfirmation(
                 $this->l('Timezone settings must be identical to both of your crm and shop') .
@@ -162,7 +170,7 @@ class RetailCRM extends Module
                 'legend' => array(
                     'title' => $this->l('Delivery'),
                 ),
-                'input' => $this->getDeliveryTypes(),
+                'input' => $this->ref->getDeliveryTypes(),
             );
 
             /*
@@ -172,7 +180,7 @@ class RetailCRM extends Module
                 'legend' => array(
                     'title' => $this->l('Order statuses'),
                 ),
-                'input' => $this->getStatusTypes(),
+                'input' => $this->ref->getStatuses(),
             );
 
             /*
@@ -182,7 +190,7 @@ class RetailCRM extends Module
                 'legend' => array(
                     'title' => $this->l('Payment types'),
                 ),
-                'input' => $this->getPaymentTypes(),
+                'input' => $this->ref->getPaymentTypes(),
             );
         }
 
@@ -295,7 +303,7 @@ class RetailCRM extends Module
     public function hookActionOrderStatusPostUpdate($params)
     {
         $address_id = Address::getFirstCustomerAddressId($params['cart']->id_customer);
-        $sql = 'SELECT * FROM '._DB_PREFIX_.'address WHERE id_address='.(int)$address_id;
+        $sql = 'SELECT * FROM '._DB_PREFIX_.'address WHERE id_address='.(int) $address_id;
         $address = Db::getInstance()->ExecuteS($sql);
         $address = $address[0];
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'));
@@ -410,349 +418,11 @@ class RetailCRM extends Module
         }
     }
 
-    protected function getApiDeliveryTypes()
-    {
-        $crmDeliveryTypes = array();
-
-        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
-            try {
-                $deliveryTypes = $this->api->deliveryTypesList();
-            }
-            catch (CurlException $e) {
-                error_log('deliveryTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-            catch (InvalidJsonException $e) {
-                error_log('deliveryTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-
-            if (!empty($deliveryTypes)) {
-                $crmDeliveryTypes[] = array();
-                foreach ($deliveryTypes as $dType) {
-                    $crmDeliveryTypes[] = array(
-                        'id_option' => $dType['code'],
-                        'name' => $dType['name'],
-                    );
-                }
-            }
-        }
-
-        return $crmDeliveryTypes;
-
-    }
-
-    protected function getDeliveryTypes()
-    {
-        $deliveryTypes = array();
-
-        $carriers = Carrier::getCarriers(
-            $this->default_lang, true, false, false,
-            null, PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE
-        );
-
-        if (!empty($carriers)) {
-            foreach ($carriers as $carrier) {
-                $deliveryTypes[] = array(
-                    'type' => 'select',
-                    'label' => $carrier['name'],
-                    'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
-                    'required' => false,
-                    'options' => array(
-                        'query' => $this->getApiDeliveryTypes(),
-                        'id' => 'id_option',
-                        'name' => 'name'
-                    )
-                );
-            }
-        }
-
-        return $deliveryTypes;
-    }
-
-    protected function getApiStatuses()
-    {
-        $crmStatusTypes = array();
-
-        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
-            try {
-                $statusTypes = $this->api->statusesList();
-            }
-            catch (CurlException $e) {
-                error_log('statusTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-            catch (InvalidJsonException $e) {
-                error_log('statusTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-
-            if (!empty($statusTypes)) {
-                $crmStatusTypes[] = array();
-                foreach ($statusTypes as $sType) {
-                    $crmStatusTypes[] = array(
-                        'id_option' => $sType['code'],
-                        'name' => $sType['name']
-                    );
-                }
-            }
-        }
-
-        return $crmStatusTypes;
-    }
-
-    protected function getStatusTypes()
-    {
-        $statusTypes = array();
-        $states = OrderState::getOrderStates($this->default_lang, true);
-
-        if (!empty($states)) {
-            foreach ($states as $state) {
-                if ($state['name'] != ' ') {
-                    $statusTypes[] = array(
-                        'type' => 'select',
-                        'label' => $state['name'],
-                        'name' => 'RETAILCRM_API_STATUS[' . $state['id_order_state'] . ']',
-                        'required' => false,
-                        'options' => array(
-                            'query' => $this->getApiStatuses(),
-                            'id' => 'id_option',
-                            'name' => 'name'
-                        )
-                    );
-                }
-            }
-        }
-
-        return $statusTypes;
-    }
-
-    protected function getApiPaymentTypes()
-    {
-        $crmPaymentTypes = array();
-
-        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
-            try {
-                $paymentTypes = $this->api->paymentTypesList();
-            }
-            catch (CurlException $e) {
-                error_log('paymentTypesList: connection error', 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-            catch (InvalidJsonException $e) {
-                error_log('paymentTypesList: ' . $e->getMessage(), 3, _PS_ROOT_DIR . "log/retailcrm.log");
-            }
-
-            if (!empty($paymentTypes)) {
-                $crmPaymentTypes[] = array();
-                foreach ($paymentTypes as $pType) {
-                    $crmPaymentTypes[] = array(
-                        'id_option' => $pType['code'],
-                        'name' => $pType['name']
-                    );
-                }
-            }
-        }
-
-        return $crmPaymentTypes;
-    }
-
-    protected function getPaymentTypes()
-    {
-        $payments = $this->getSystemPaymentModules();
-        $paymentTypes = array();
-
-        if (!empty($payments)) {
-            foreach ($payments as $payment) {
-                $paymentTypes[] = array(
-                    'type' => 'select',
-                    'label' => $payment['name'],
-                    'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
-                    'required' => false,
-                    'options' => array(
-                        'query' => $this->getApiPaymentTypes(),
-                        'id' => 'id_option',
-                        'name' => 'name'
-                    )
-                );
-            }
-        }
-
-        return $paymentTypes;
-    }
-
-    protected function getSystemPaymentModules()
-    {
-        $shop_id = Context::getContext()->shop->id;
-
-        /* Get all modules then select only payment ones */
-        $modules = Module::getModulesOnDisk(true);
-        /*
-         * Hack for knivesland
-         */
-        if (Module::getInstanceByName('advancedcheckout') === false) {
-            foreach ($modules as $module) {
-                if ($module->tab == 'payments_gateways')
-                {
-                    if ($module->id)
-                    {
-                        if (!get_class($module) == 'SimpleXMLElement')
-                            $module->country = array();
-                        $countries = DB::getInstance()->executeS('
-                        SELECT id_country
-                        FROM '._DB_PREFIX_.'module_country
-                        WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                        );
-                        foreach ($countries as $country)
-                            $module->country[] = $country['id_country'];
-
-                        if (!get_class($module) == 'SimpleXMLElement')
-                            $module->currency = array();
-                        $currencies = DB::getInstance()->executeS('
-                        SELECT id_currency
-                        FROM '._DB_PREFIX_.'module_currency
-                        WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                        );
-                        foreach ($currencies as $currency)
-                            $module->currency[] = $currency['id_currency'];
-
-                        if (!get_class($module) == 'SimpleXMLElement')
-                            $module->group = array();
-                        $groups = DB::getInstance()->executeS('
-                        SELECT id_group
-                        FROM '._DB_PREFIX_.'module_group
-                        WHERE id_module = '.(int)$module->id.' AND `id_shop`='.(int)$shop_id
-                        );
-                        foreach ($groups as $group)
-                            $module->group[] = $group['id_group'];
-                    }
-                    else
-                    {
-                        $module->country = null;
-                        $module->currency = null;
-                        $module->group = null;
-                    }
-
-                    if ($module->active != 0) {
-                        $this->payment_modules[] = array(
-                            'id' => $module->id,
-                            'code' => $module->name,
-                            'name' => $module->displayName
-                        );
-                    }
-
-                }
-            }
-        } else {
-            require_once(dirname(__FILE__) . '/../advancedcheckout/classes/Payment.php');
-            $modules = Payment::getPaymentMethods();
-            foreach ($modules as $module) {
-                $this->payment_modules[] = array(
-                    'id' => $module['id_payment'],
-                    'code' => $module['name'],
-                    'name' => $module['name']
-                );
-            }
-        }
-
-        return $this->payment_modules;
-    }
-
-    protected function getAddressFields()
-    {
-        $addressFields = array();
-        $address = explode(' ', str_replace("\n", ' ', AddressFormat::getAddressCountryFormat($this->context->country->id)));
-
-        if (!empty($address)) {
-            foreach ($address as $idx => $a) {
-                if (!strpos($a, ':')) {
-                    $addressFields[] = array(
-                        'type' => 'select',
-                        'label' => $this->l((string)$a),
-                        'name' => 'RETAILCRM_API_ADDR[' . $idx . ']',
-                        'required' => false,
-                        'options' => array(
-                            'query' => array(
-                                array(
-                                    'name' => '',
-                                    'id_option' => ''
-                                ),
-                                array(
-                                    'name' => $this->l('FIRST_NAME'),
-                                    'id_option' => 'first_name'
-                                ),
-                                array(
-                                    'name' => $this->l('LAST_NAME'),
-                                    'id_option' => 'last_name'
-                                ),
-                                array(
-                                    'name' => $this->l('PHONE'),
-                                    'id_option' => 'phone'
-                                ),
-                                array(
-                                    'name' => $this->l('EMAIL'),
-                                    'id_option' => 'email'
-                                ),
-                                array(
-                                    'name' => $this->l('ADDRESS'),
-                                    'id_option' => 'address'
-                                ),
-                                array(
-                                    'name' => $this->l('COUNTRY'),
-                                    'id_option' => 'country'
-                                ),
-                                array(
-                                    'name' => $this->l('REGION'),
-                                    'id_option' => 'region'
-                                ),
-                                array(
-                                    'name' => $this->l('CITY'),
-                                    'id_option' => 'city'
-                                ),
-                                array(
-                                    'name' => $this->l('ZIP'),
-                                    'id_option' => 'index'
-                                ),
-                                array(
-                                    'name' => $this->l('STREET'),
-                                    'id_option' => 'street'
-                                ),
-                                array(
-                                    'name' => $this->l('BUILDING'),
-                                    'id_option' => 'building'
-                                ),
-                                array(
-                                    'name' => $this->l('FLAT'),
-                                    'id_option' => 'flat'
-                                ),
-                                array(
-                                    'name' => $this->l('INTERCOMCODE'),
-                                    'id_option' => 'intercomcode'
-                                ),
-                                array(
-                                    'name' => $this->l('FLOOR'),
-                                    'id_option' => 'floor'
-                                ),
-                                array(
-                                    'name' => $this->l('BLOCK'),
-                                    'id_option' => 'block'
-                                ),
-                                array(
-                                    'name' => $this->l('HOUSE'),
-                                    'ID' => 'house'
-                                )
-                            ),
-                            'id' => 'id_option',
-                            'name' => 'name'
-                        )
-                    );
-                }
-            }
-        }
-
-        return $addressFields;
-    }
-
     public function exportCatalog()
     {
         global $smarty;
         $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
-        $id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
         if ($currency->iso_code == 'RUB') {
             $currency->iso_code = 'RUR';
@@ -952,9 +622,9 @@ class RetailCRM extends Module
                     $cart->id_currency = $this->default_currency;
                     $cart->id_lang = $this->default_lang;
                     $cart->id_customer = $this->customer_id;
-                    $cart->id_address_delivery = (int)$this->address_id;
-                    $cart->id_address_invoice = (int)$this->address_id;
-                    $cart->id_carrier = (int)$deliveries[$delivery];
+                    $cart->id_address_delivery = (int) $this->address_id;
+                    $cart->id_address_invoice = (int) $this->address_id;
+                    $cart->id_carrier = (int) $deliveries[$delivery];
 
                     $cart->add();
 
@@ -962,9 +632,9 @@ class RetailCRM extends Module
                     if(!empty($order['items'])) {
                         foreach ($order['items'] as $item) {
                             $product = array();
-                            $product['id_product'] = (int)$item['offer']['externalId'];
+                            $product['id_product'] = (int) $item['offer']['externalId'];
                             $product['quantity'] = $item['quantity'];
-                            $product['id_address_delivery'] = (int)$this->address_id;
+                            $product['id_address_delivery'] = (int) $this->address_id;
                             $products[] = $product;
                         }
                     }
@@ -977,13 +647,13 @@ class RetailCRM extends Module
                      */
 
                     $newOrder = new Order();
-                    $newOrder->id_address_delivery = (int)$this->address_id;
-                    $newOrder->id_address_invoice = (int)$this->address_id;
-                    $newOrder->id_cart = (int)$cart->id;
+                    $newOrder->id_address_delivery = (int) $this->address_id;
+                    $newOrder->id_address_invoice = (int) $this->address_id;
+                    $newOrder->id_cart = (int) $cart->id;
                     $newOrder->id_currency = $this->default_currency;
                     $newOrder->id_lang = $this->default_lang;
-                    $newOrder->id_customer = (int)$this->customer_id;
-                    $newOrder->id_carrier = (int)$deliveries[$delivery];
+                    $newOrder->id_customer = (int) $this->customer_id;
+                    $newOrder->id_carrier = (int) $deliveries[$delivery];
                     $newOrder->payment =  $payments[$payment];
                     $newOrder->module = (Module::getInstanceByName('advancedcheckout') === false)
                         ? $payments[$payment]
@@ -999,7 +669,7 @@ class RetailCRM extends Module
                     $newOrder->total_shipping_tax_incl = $order['deliveryCost'];
                     $newOrder->total_shipping_tax_excl = $order['deliveryCost'];
                     $newOrder->conversion_rate = 1.000000;
-                    $newOrder->current_state = (int)$statuses[$state];
+                    $newOrder->current_state = (int) $statuses[$state];
                     $newOrder->delivery_date = $order['deliveryDate'];
                     $newOrder->date_add = $order['createdAt'];
                     $newOrder->date_upd = $order['createdAt'];
@@ -1029,7 +699,7 @@ class RetailCRM extends Module
                      */
                     $product_list = array();
                     foreach ($order['items'] as $item) {
-                        $product = new Product((int)$item['offer']['externalId'], false, $this->default_lang);
+                        $product = new Product((int) $item['offer']['externalId'], false, $this->default_lang);
                         $qty = $item['quantity'];
                         $product_list[] = array('product' =>$product, 'quantity' => $qty);
                     }
@@ -1046,14 +716,14 @@ class RetailCRM extends Module
 
                     foreach ($product_list as $product) {
                         $query .= '('
-                            .(int)$newOrder->id.',
+                            .(int) $newOrder->id.',
                             0,
                             '. $this->context->shop->id.',
-                            '.(int)$product['product']->id.',
+                            '.(int) $product['product']->id.',
                             0,
                             '.implode('', array('\'', $product['product']->name, '\'')).',
-                            '.(int)$product['quantity'].',
-                            '.(int)$product['quantity'].',
+                            '.(int) $product['quantity'].',
+                            '.(int) $product['quantity'].',
                             '.$product['product']->price.',
                             '.implode('', array('\'', $product['product']->reference, '\'')).',
                             '.$product['product']->price.',
@@ -1087,7 +757,7 @@ class RetailCRM extends Module
                          */
                         $toUpdate[] = $order['id'];
                         if ($order['paymentType'] != null && $order['deliveryType'] != null && $order['status'] != null) {
-                            $orderToUpdate = new Order((int)$order['externalId']);
+                            $orderToUpdate = new Order((int) $order['externalId']);
 
                             /*
                              * check status
@@ -1098,7 +768,7 @@ class RetailCRM extends Module
                                     Db::getInstance()->execute('
                                         UPDATE `'._DB_PREFIX_.'orders`
                                         SET `current_state` = \''.$statuses[$stype].'\'
-                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                        WHERE `id_order` = '.(int) $order['externalId']);
                                 }
                             }
 
@@ -1111,7 +781,7 @@ class RetailCRM extends Module
                                     Db::getInstance()->execute('
                                         UPDATE `'._DB_PREFIX_.'orders`
                                         SET `id_carrier` = \''.$deliveries[$dtype].'\'
-                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                        WHERE `id_order` = '.(int) $order['externalId']);
                                     Db::getInstance()->execute('
                                         UPDATE `'._DB_PREFIX_.'order_carrier`
                                         SET `id_carrier` = \''.$deliveries[$dtype].'\'
@@ -1128,7 +798,7 @@ class RetailCRM extends Module
                                     Db::getInstance()->execute('
                                         UPDATE `'._DB_PREFIX_.'orders`
                                         SET `payment` = \''.$payments[$ptype].'\'
-                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                        WHERE `id_order` = '.(int) $order['externalId']);
                                     Db::getInstance()->execute('
                                         UPDATE `'._DB_PREFIX_.'order_payment`
                                         SET `payment_method` = \''.$payments[$ptype].'\'
@@ -1180,7 +850,7 @@ class RetailCRM extends Module
                              */
                             if (!empty($order['items'])) {
                                 foreach ($order['items'] as $key => $newItem) {
-                                    $product = new Product((int)$newItem['offer']['externalId'], false, $this->default_lang);
+                                    $product = new Product((int) $newItem['offer']['externalId'], false, $this->default_lang);
                                     $qty = $newItem['quantity'];
                                     $product_list[] = array('product' =>$product, 'quantity' => $qty);
                                 }
@@ -1198,14 +868,14 @@ class RetailCRM extends Module
 
                                 foreach ($product_list as $product) {
                                     $query .= '('
-                                        .(int)$orderToUpdate->id.',
+                                        .(int) $orderToUpdate->id.',
                                         0,
                                         '. $this->context->shop->id.',
-                                        '.(int)$product['product']->id.',
+                                        '.(int) $product['product']->id.',
                                         0,
                                         '.implode('', array('\'', $product['product']->name, '\'')).',
-                                        '.(int)$product['quantity'].',
-                                        '.(int)$product['quantity'].',
+                                        '.(int) $product['quantity'].',
+                                        '.(int) $product['quantity'].',
                                         '.$product['product']->price.',
                                         '.implode('', array('\'', $product['product']->reference, '\'')).',
                                         '.$product['product']->price.',
@@ -1251,7 +921,7 @@ class RetailCRM extends Module
                                         `total_paid` = '.$orderTotal.',
                                         `total_paid_tax_incl` = '.$orderTotal.',
                                         `total_paid_tax_excl` = '.$orderTotal.'
-                                        WHERE `id_order` = '.(int)$order['externalId']);
+                                        WHERE `id_order` = '.(int) $order['externalId']);
                             }
                         }
                     }
@@ -1280,5 +950,102 @@ class RetailCRM extends Module
             return 'Nothing to sync';
         }
 
+    }
+
+    public function getAddressFields()
+    {
+        $addressFields = array();
+        $address = explode(' ', str_replace("\n", ' ', AddressFormat::getAddressCountryFormat($this->context->country->id)));
+
+        if (!empty($address)) {
+            foreach ($address as $idx => $a) {
+                if (!strpos($a, ':')) {
+                    $a = preg_replace('/_/', ' ', $a);
+                    $a = preg_replace('/[\,\.]/', '', $a);
+                    $addressFields[] = array(
+                        'type' => 'select',
+                        'label' => $this->l((string) ucfirst($a)),
+                        'name' => 'RETAILCRM_API_ADDR[' . $idx . ']',
+                        'required' => false,
+                        'options' => array(
+                            'query' => array(
+                                array(
+                                    'name' => '',
+                                    'id_option' => ''
+                                ),
+                                array(
+                                    'name' => $this->l('FIRST_NAME'),
+                                    'id_option' => 'first_name'
+                                ),
+                                array(
+                                    'name' => $this->l('LAST_NAME'),
+                                    'id_option' => 'last_name'
+                                ),
+                                array(
+                                    'name' => $this->l('PHONE'),
+                                    'id_option' => 'phone'
+                                ),
+                                array(
+                                    'name' => $this->l('EMAIL'),
+                                    'id_option' => 'email'
+                                ),
+                                array(
+                                    'name' => $this->l('ADDRESS'),
+                                    'id_option' => 'address'
+                                ),
+                                array(
+                                    'name' => $this->l('COUNTRY'),
+                                    'id_option' => 'country'
+                                ),
+                                array(
+                                    'name' => $this->l('REGION'),
+                                    'id_option' => 'region'
+                                ),
+                                array(
+                                    'name' => $this->l('CITY'),
+                                    'id_option' => 'city'
+                                ),
+                                array(
+                                    'name' => $this->l('ZIP'),
+                                    'id_option' => 'index'
+                                ),
+                                array(
+                                    'name' => $this->l('STREET'),
+                                    'id_option' => 'street'
+                                ),
+                                array(
+                                    'name' => $this->l('BUILDING'),
+                                    'id_option' => 'building'
+                                ),
+                                array(
+                                    'name' => $this->l('FLAT'),
+                                    'id_option' => 'flat'
+                                ),
+                                array(
+                                    'name' => $this->l('INTERCOMCODE'),
+                                    'id_option' => 'intercomcode'
+                                ),
+                                array(
+                                    'name' => $this->l('FLOOR'),
+                                    'id_option' => 'floor'
+                                ),
+                                array(
+                                    'name' => $this->l('BLOCK'),
+                                    'id_option' => 'block'
+                                ),
+                                array(
+                                    'name' => $this->l('HOUSE'),
+                                    'ID' => 'house'
+                                )
+                            ),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
+                    );
+                }
+            }
+        }
+
+        return $addressFields;
     }
 }

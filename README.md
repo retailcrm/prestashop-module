@@ -1,32 +1,31 @@
 Prestashop module
-=============
+=================
 
-Prestashop module for interaction with [IntaroCRM](http://www.intarocrm.com) through [REST API](http://docs.intarocrm.ru/rest-api/).
+Модуль интеграции CMS Prestashop c [RetailCRM](http://www.retailcrm.com)
 
-Module allows:
+Модуль позволяет:
 
-* Send to IntaroCRM new orders
-* Configure relations between dictionaries of IntaroCRM and Prestashop (statuses, payments, delivery types and etc)
-* Generate [ICML](http://docs.intarocrm.ru/index.php?n=Пользователи.ФорматICML) (IntaroCRM Markup Language) for catalog loading by IntaroCRM
+* Экспортировать в CRM заказы
+* Синхронизировать справочники (способы доставки и оплаты, статусы заказов и т.п.)
+* Выгружать каталог товаров в формате [ICML](http://retailcrm.ru/docs/Разработчики/ФорматICML) (IntaroCRM Markup Language)
 
-Installation
+Установка
 -------------
 
-### 1. Manual installation
+### 1. Ручная установка
 
 
-#### Clone module.
+#### Скопируйте модуль
 ```
 git clone git@github.com:/intarocrm/prestashop-module.git
 ```
 
-#### Create .zip file.
+#### Создайте загружаемый .zip архив.
 ```
 cd prestashop-module
 zip -r retailcrm.zip retailcrm
 ```
 
-#### Install via Admin interface.
+#### Установите через административный интерфейс управления модулями.
 
-
-Go to Modules -> Add module. After that upload your zipped module and activate it.
+![Установка модуля](/docs/images/add.png)
