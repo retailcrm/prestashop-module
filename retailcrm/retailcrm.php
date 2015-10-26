@@ -521,7 +521,7 @@ class RetailCRM extends Module
 
         }
 
-        if (isset($params['newOrderStatus']) && !empty($params['newOrderStatus'])) {
+        if (!empty($params['newOrderStatus'])) {
             $statuses = OrderState::getOrderStates($this->default_lang);
             $aStatuses = json_decode(Configuration::get('RETAILCRM_API_STATUS'));
             foreach ($statuses as $status) {
@@ -531,8 +531,7 @@ class RetailCRM extends Module
                         $this->api->ordersEdit(
                             array(
                                 'externalId'      => $params['id_order'],
-                                'status'          => $aStatuses->$currStatus,
-                                'createdAt'       => $params['cart']->date_upd
+                                'status'          => $aStatuses->$currStatus
                             )
                         );
                     }
