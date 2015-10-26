@@ -9,7 +9,7 @@ class Catalog
         $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
     }
 
-    public function exportCatalog()
+    public function getData()
     {
 
         $id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
@@ -39,6 +39,7 @@ class Catalog
 
         // Get products
         $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
+
         foreach ($products AS $product)
         {
             // Check for home category
@@ -77,19 +78,57 @@ class Catalog
                 $available_for_order = $product['active'] && $product['available_for_order'] && $prod->checkQty(1);
             }
 
-            $items[] = array(
+            $item = array(
                 'id' => $product['id_product'],
                 'productId' => $product['id_product'],
                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                'initialPrice' => round($product['price'],2),
-                'purchasePrice' => round($product['wholesale_price'], 2),
                 'name' => htmlspecialchars(strip_tags($product['name'])),
                 'productName' => htmlspecialchars(strip_tags($product['name'])),
                 'categoryId' => array($category),
                 'picture' => $picture,
-                'url' => $url,
-                'article' => htmlspecialchars($product['reference'])
+                'url' => $url
             );
+
+            if (!empty($product['wholesale_price'])) {
+                $item['purchasePrice'] = round($product['wholesale_price'], 2);
+            }
+
+            $item['initialPrice'] = !empty($product['rate'])
+                ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
+                : round($product['price'], 2)
+                ;
+
+
+            if (!empty($product['manufacturer_name'])) {
+                $item['vendor'] = $product['manufacturer_name'];
+            }
+
+            if (!empty($product['reference'])) {
+                $item['article'] = htmlspecialchars($product['reference']);
+            }
+
+            $weight = round($product['weight'], 2);
+
+            if (!empty($weight)) {
+                $item['weight'] = $weight;
+            }
+
+            $width = round($product['width'], 2);
+            $height = round($product['height'], 2);
+            $depth = round($product['depth'], 2);
+
+            if (!empty($width)) {
+                if (!empty($height)) {
+                    if (!empty($depth)) {
+                        $item['size'] = implode('x', array($width, $height, $depth));
+                    } else {
+                        $item['size'] = implode('x', array($width, $height));
+                    }
+                }
+            }
+
+            $items[] = $item;
+
         }
 
         return array($categories, $items);

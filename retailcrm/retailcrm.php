@@ -68,8 +68,8 @@ class RetailCRM extends Module
             parent::install() &&
             $this->registerHook('newOrder') &&
             $this->registerHook('actionOrderStatusPostUpdate') &&
-            $this->registerHook('actionPaymentConfirmation')
-
+            $this->registerHook('actionPaymentConfirmation') &&
+            $this->registerHook('actionCustomerAccountAdd')
         );
     }
 
@@ -387,6 +387,27 @@ class RetailCRM extends Module
         return $addressFields;
     }
 
+    public function hookActionCustomerAccountAdd($params)
+    {
+        try {
+            $this->api->customersCreate(
+                array(
+                    'externalId'      => $params['newCustomer']->id,
+                    'firstName'       => $params['newCustomer']->firstname,
+                    'lastName'        => $params['newCustomer']->lastname,
+                    'email'           => $params['newCustomer']->email,
+                    'createdAt'       => $params['newCustomer']->date_add
+                )
+            );
+        }
+        catch (CurlException $e) {
+            error_log('customerCreate: connection error', 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
+        }
+        catch (InvalidJsonException $e) {
+            error_log('customerCreate: ' . $e->getMessage(), 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
+        }
+    }
+
     public function hookNewOrder($params)
     {
         return $this->hookActionOrderStatusPostUpdate($params);
@@ -448,7 +469,7 @@ class RetailCRM extends Module
                 $items = array();
                 foreach ($inCart as $item) {
                     $items[] = array(
-                        'initialPrice' => $item['price'],
+                        'initialPrice' => (!empty($item['rate'])) ? $item['price'] + ($item['price'] * $item['rate'] / 100) : $item['price'],
                         'quantity'      => $item['quantity'],
                         'productId'     => $item['id_product'],
                         'productName'   => $item['name'],
@@ -457,30 +478,33 @@ class RetailCRM extends Module
                 }
 
                 $dTypeKey = $params['cart']->id_carrier;
+
                 if (Module::getInstanceByName('advancedcheckout') === false) {
                     $pTypeKey = $params['order']->module;
                 } else {
                     $pTypeKey = $params['order']->payment;
                 }
+
                 $this->api->ordersCreate(
                     array(
                         'externalId'      => $params['order']->id,
                         'orderType'       => 'eshop-individual',
                         'orderMethod'     => 'shopping-cart',
+                        'status'          => 'new',
                         'customerId'      => $params['cart']->id_customer,
                         'firstName'       => $params['customer']->firstname,
                         'lastName'        => $params['customer']->lastname,
                         'phone'           => $address['phone'],
                         'email'           => $params['customer']->email,
-                        'paymentStatus'   => 'not-paid',
                         'paymentType'     => $payment->$pTypeKey,
-                        'deliveryType'    => $delivery->$dTypeKey,
-                        'deliveryCost'    => $params['order']->total_shipping,
-                        'status'          => 'new',
-                        'deliveryAddress' => array(
-                            'city'    => $address['city'],
-                            'index'   => $address['postcode'],
-                            'text'    => $address['address1'],
+                        'delivery'        => array(
+                            'code' => $delivery->$dTypeKey,
+                            'cost' => $params['order']->total_shipping,
+                            'address' => array(
+                                'city'    => $address['city'],
+                                'index'   => $address['postcode'],
+                                'text'    => $address['address1'],
+                            )
                         ),
                         'discount'        => $params['order']->total_discounts,
                         'items'           => $items,

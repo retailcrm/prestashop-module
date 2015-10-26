@@ -11,7 +11,7 @@ if (file_exists(dirname(__FILE__) . '/../lib/custom/Catalog.php')) {
 }
 
 $job = new Catalog();
-$data = $job->exportCatalog();
+$data = $job->getData();
 
 $icml = new Icml(
     Configuration::get('PS_SHOP_NAME'),
