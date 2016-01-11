@@ -1,13 +1,8 @@
 <?php
-include(dirname(__FILE__). '/../../../config/config.inc.php');
-include(dirname(__FILE__). '/../../../init.php');
-include(dirname(__FILE__). '/../lib/vendor/Retailcrm.php');
 
-if (file_exists(dirname(__FILE__) . '/../lib/custom/References.php')) {
-    require(dirname(__FILE__) . '/../lib/custom/References.php');
-} else {
-    require(dirname(__FILE__) . '/../lib/classes/References.php');
-}
+require(dirname(__FILE__) . '/../../../config/config.inc.php');
+require(dirname(__FILE__) . '/../../../init.php');
+require(dirname(__FILE__) . '/../bootstrap.php');
 
 $default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
 $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
@@ -17,9 +12,9 @@ $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
 $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new ApiClient($apiUrl, $apiKey);
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
 } else {
-    error_log('orderHistory: set api key & url first', 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
+    error_log('orderHistory: set api key & url first', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
     exit();
 }
 
@@ -30,123 +25,68 @@ $startFrom = ($lastSync === false)
     : $lastSync
 ;
 
-$history = array();
 $customerFix = array();
 $orderFix = array();
-
 $address_id = 0;
 
-/*
- * retrive orders from crm since last update
- */
-try {
-    $history = $api->ordersHistory(new DateTime($startFrom));
-}
-catch (CurlException $e) {
-    error_log('orderHistory: connection error', 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-}
-catch (InvalidJsonException $e) {
-    error_log('orderHistory: ' . $e->getMessage(), 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-}
+$history = $api->ordersHistory(new DateTime($startFrom));
 
-/*
- * store recieved data into shop database
-*/
-if (count($history->orders) > 0) {
+if ($history->isSuccess() && count($history->orders) > 0) {
 
-    /*
-     * Customer object. Will be used for further updates.
-    */
-
-    $statuses = array_filter(
-        json_decode(
-            Configuration::get('RETAILCRM_API_STATUS'), true
-        )
-    );
-
-    $statuses = array_flip($statuses);
-
-    $deliveries = array_filter(
-        json_decode(
-            Configuration::get('RETAILCRM_API_DELIVERY'), true
-        )
-    );
-
-    $deliveries = array_flip($deliveries);
-
-    $payments = array_filter(
-        json_decode(
-            Configuration::get('RETAILCRM_API_PAYMENT'), true
-        )
-    );
-
-    $payments = array_flip($payments);
+    $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
+    $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
+    $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
 
     foreach ($history->orders as $order) {
 
         if (!array_key_exists('externalId', $order)) {
-            /*
-             * create customer if not exist
-             */
 
             $customer = new Customer();
             $customer->getByEmail($order['customer']['email']);
 
-            if (!array_key_exists('externalId', $order['customer'])) {
-                if (Validate::isEmail($order['customer']['email'])) {
+            if (
+                !array_key_exists('externalId', $order['customer']) &&
+                Validate::isEmail($order['customer']['email'])
+            ) {
+                if (!$customer->id)
+                {
+                    $customer->firstname = $order['customer']['firstName'];
+                    $customer->lastname = $order['customer']['lastName'];
+                    $customer->email = $order['customer']['email'];
+                    $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
 
-                    if (!$customer->id)
-                    {
-                        $customer->firstname = $order['customer']['firstName'];
-                        $customer->lastname = $order['customer']['lastName'];
-                        $customer->email = $order['customer']['email'];
-                        $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
-
-                        if($customer->add()) {
-
-                            /*
-                             * create customer address for delivery data
-                             */
-
-                            $customer->getByEmail($order['customer']['email']);
-                            $customer_id = $customer->id;
-
-                            $address = new Address();
-                            $address->id_customer = $customer->id;
-                            $address->id_country = $default_country;
-                            $address->lastname = $customer->lastname;
-                            $address->firstname = $customer->firstname;
-                            $address->alias = 'default';
-                            $address->postcode = $customer['address']['index'];
-                            $address->city = $customer['address']['city'];
-                            $address->address1 = $customer['address']['text'];
-                            $address->phone = $customer['phones'][0]['number'];
-
-                            $address->add();
-
-                            /*
-                             * store address record id for handle order data
-                            */
-                            $addr = $customer->getAddresses($default_lang);
-                            $address_id = $addr[0]['id_address'];
-                        }
-                    } else {
-                        $addresses =  $customer->getAddresses($default_lang);
-                        $address_id = $addresses[0]['id_address'];
+                    if($customer->add()) {
+                        $customer->getByEmail($order['customer']['email']);
                         $customer_id = $customer->id;
-                    }
 
-                    /*
-                     * collect customer ids for single fix request
-                     */
-                    array_push(
-                        $customerFix,
-                        array(
-                            'id' => $order['customer']['id'],
-                            'externalId' => $customer_id
-                        )
-                    );
+                        $address = new Address();
+                        $address->id_customer = $customer->id;
+                        $address->id_country = $default_country;
+                        $address->lastname = $customer->lastname;
+                        $address->firstname = $customer->firstname;
+                        $address->alias = 'default';
+                        $address->postcode = $customer['address']['index'];
+                        $address->city = $customer['address']['city'];
+                        $address->address1 = $customer['address']['text'];
+                        $address->phone = $customer['phones'][0]['number'];
+
+                        $address->add();
+                        $addr = $customer->getAddresses($default_lang);
+                        $address_id = $addr[0]['id_address'];
+                    }
+                } else {
+                    $addresses =  $customer->getAddresses($default_lang);
+                    $address_id = $addresses[0]['id_address'];
+                    $customer_id = $customer->id;
                 }
+
+                array_push(
+                    $customerFix,
+                    array(
+                        'id' => $order['customer']['id'],
+                        'externalId' => $customer_id
+                    )
+                );
             } else {
                 $addresses =  $customer->getAddresses($default_lang);
                 $address_id = $addresses[0]['id_address'];
@@ -185,7 +125,6 @@ if (count($history->orders) > 0) {
             /*
              * Create order
             */
-
             $newOrder = new Order();
             $newOrder->id_address_delivery = (int) $address_id;
             $newOrder->id_address_invoice = (int) $address_id;
@@ -270,34 +209,12 @@ if (count($history->orders) > 0) {
 
             Db::getInstance()->execute(rtrim($query, ','));
 
-            try {
-                $this->api->customersFixExternalIds($customerFix);
-            }
-            catch (CurlException $e) {
-                error_log('customersFixExternalId: connection error', 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-                continue;
-            }
-            catch (InvalidJsonException $e) {
-                error_log('customersFixExternalId: ' . $e->getMessage(), 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-                continue;
-            }
-
-            try {
-                $this->api->ordersFixExternalIds($orderFix);
-            }
-            catch (CurlException $e) {
-                error_log('ordersFixExternalId: connection error', 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-                continue;
-            }
-            catch (InvalidJsonException $e) {
-                error_log('ordersFixExternalId: ' . $e->getMessage(), 3, _PS_ROOT_DIR_ . "log/retailcrm.log");
-                continue;
-            }
+            $this->api->customersFixExternalIds($customerFix);
+            $this->api->ordersFixExternalIds($orderFix);
         } else {
             /*
              * take last order update only
              */
-
             if ($order['paymentType'] != null && $order['deliveryType'] != null && $order['status'] != null) {
                 $orderToUpdate = new Order((int) $order['externalId']);
 
@@ -355,11 +272,7 @@ if (count($history->orders) > 0) {
                 }
 
                 /*
-                 * check items
-                 */
-
-                /*
-                 * Clean deleted
+                 * Clean deleted items
                  */
                 foreach ($order['items'] as $key => $item) {
                     if (isset($item['deleted']) && $item['deleted'] == true) {
@@ -374,9 +287,8 @@ if (count($history->orders) > 0) {
                 }
 
                 /*
-                 * check quantity
+                 * Check items quantity
                  */
-
                 foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                     foreach ($order['items'] as $key => $item) {
                         if ($item['offer']['externalId'] == $orderItem['product_id']) {
@@ -395,7 +307,7 @@ if (count($history->orders) > 0) {
                 }
 
                 /*
-                 * check new items
+                 * Check new items
                  */
                 if (!empty($order['items'])) {
                     foreach ($order['items'] as $key => $newItem) {
