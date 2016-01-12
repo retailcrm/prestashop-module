@@ -22,13 +22,12 @@ class RetailcrmProxy
             $response = call_user_func_array(array($this->api, $method), $arguments);
 
             if (!$response->isSuccessful()) {
-                $response = false;
                 error_log("[$method] " . $response->getErrorMsg() . "\n", 3, $this->log);
-            }
-
-            if (isset($response['errors'])) {
-                $error = implode("\n", $response['errors']);
-                error_log($error . "\n", 3, $this->log);
+                if (isset($response['errors'])) {
+                    $error = implode("\n", $response['errors']);
+                    error_log($error . "\n", 3, $this->log);
+                }
+                $response = false;
             }
 
             return $response;

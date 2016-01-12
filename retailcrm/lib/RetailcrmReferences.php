@@ -7,15 +7,20 @@ class RetailcrmReferences
     {
         $this->api = $client;
         $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        $this->default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
-        $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
     }
 
     public function getDeliveryTypes()
     {
         $deliveryTypes = array();
 
-        $carriers = Carrier::getCarriers($this->default_lang, true, false, false, null, PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
+        $carriers = Carrier::getCarriers(
+            $this->default_lang,
+            true,
+            false,
+            false,
+            null,
+            PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE
+        );
 
         if (!empty($carriers)) {
             foreach ($carriers as $carrier) {
@@ -47,10 +52,14 @@ class RetailcrmReferences
         if (!empty($states)) {
             foreach ($states as $state) {
                 if ($state['name'] != ' ') {
+                    $key = isset($state['id_order_state'])
+                        ? $state['id_order_state']
+                        : $state['id_order_return_state']
+                        ;
                     $statusTypes[] = array(
                         'type' => 'select',
                         'label' => $state['name'],
-                        'name' => 'RETAILCRM_API_STATUS[' . $state['id_order_state'] . ']',
+                        'name' => "RETAILCRM_API_STATUS[$key]",
                         'required' => false,
                         'options' => array(
                             'query' => $this->getApiStatuses(),
@@ -138,8 +147,11 @@ class RetailcrmReferences
         $crmDeliveryTypes = array();
         $request = $this->api->deliveryTypesList();
 
-        if ($request->isSuccessful()) {
-            $crmDeliveryTypes[] = array();
+        if ($request) {
+            $crmDeliveryTypes[] = array(
+                'id_option' => '',
+                'name' => '',
+            );
             foreach ($request->deliveryTypes as $dType) {
                 $crmDeliveryTypes[] = array(
                     'id_option' => $dType['code'],
@@ -156,8 +168,11 @@ class RetailcrmReferences
         $crmStatusTypes = array();
         $request = $this->api->statusesList();
 
-        if ($request->isSuccessful()) {
-            $crmStatusTypes[] = array();
+        if ($request) {
+            $crmStatusTypes[] = array(
+                'id_option' => '',
+                'name' => '',
+            );
             foreach ($request->statuses as $sType) {
                 $crmStatusTypes[] = array(
                     'id_option' => $sType['code'],
@@ -174,8 +189,11 @@ class RetailcrmReferences
         $crmPaymentTypes = array();
         $request = $this->api->paymentTypesList();
 
-        if ($request->isSuccessful()) {
-            $crmPaymentTypes[] = array();
+        if ($request) {
+            $crmPaymentTypes[] = array(
+                'id_option' => '',
+                'name' => '',
+            );
             foreach ($request->paymentTypes as $pType) {
                 $crmPaymentTypes[] = array(
                     'id_option' => $pType['code'],
