@@ -117,7 +117,7 @@ class RetailcrmIcml
                     $e->appendChild(
                             $this->dd->createElement($key)
                     )->appendChild(
-                            $this->dd->createTextNode($offer[$key])
+                            $this->dd->createTextNode(trim($offer[$key]))
                     );
                 }
 

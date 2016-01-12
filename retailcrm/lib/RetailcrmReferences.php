@@ -44,18 +44,25 @@ class RetailcrmReferences
     public function getStatuses()
     {
         $statusTypes = array();
+        /**
+         * TODO: state ids duplicates between both arrays, temporary disable return states
+         *
         $states = array_merge(
             OrderState::getOrderStates($this->default_lang, true),
             OrderReturnState::getOrderReturnStates($this->default_lang, true)
         );
+        */
+
+        $states = OrderState::getOrderStates($this->default_lang, true);
 
         if (!empty($states)) {
             foreach ($states as $state) {
                 if ($state['name'] != ' ') {
-                    $key = isset($state['id_order_state'])
+                    /*$key = isset($state['id_order_state'])
                         ? $state['id_order_state']
                         : $state['id_order_return_state']
-                        ;
+                        ;*/
+                    $key = $state['id_order_state'];
                     $statusTypes[] = array(
                         'type' => 'select',
                         'label' => $state['name'],

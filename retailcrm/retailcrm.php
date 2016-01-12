@@ -63,8 +63,7 @@ class RetailCRM extends Module
         Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
         Configuration::deleteByName('RETAILCRM_API_STATUS') &&
         Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
-        Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
-        Configuration::deleteByName('RETAILCRM_API_ADDR');
+        Configuration::deleteByName('RETAILCRM_LAST_SYNC');
     }
 
     public function getContent()
@@ -91,7 +90,6 @@ class RetailCRM extends Module
             $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
-            $order_address = json_encode(Tools::getValue('RETAILCRM_API_ADDR'));
 
             if (!$address || empty($address) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
@@ -103,7 +101,6 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
                 Configuration::updateValue('RETAILCRM_API_STATUS', $status);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
-                Configuration::updateValue('RETAILCRM_API_ADDR', $order_address);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -177,14 +174,6 @@ class RetailCRM extends Module
         }
 
         /*
-         * Address fields
-         */
-//        $fields_form[4]['form'] = array(
-//            'legend' => array('title' => $this->l('Address')),
-//            'input' => $this->getAddressFields()
-//        );
-
-        /*
          * Diplay forms
          */
 
@@ -256,66 +245,8 @@ class RetailCRM extends Module
             }
         }
 
-//        $addressSettings = Configuration::get('RETAILCRM_API_ADDR');
-//
-//        if (isset($addressSettings) && $addressSettings != '') {
-//            $addressTypes = json_decode($addressSettings);
-//            foreach ($addressTypes as $idx => $address) {
-//                $name = 'RETAILCRM_API_ADDR[' . $idx . ']';
-//                $helper->fields_value[$name] = $address;
-//            }
-//        }
-
         return $helper->generateForm($fields_form);
     }
-
-//    public function getAddressFields()
-//    {
-//        $addressFields = array();
-//        $address = explode(' ', str_replace("\n", ' ', AddressFormat::getAddressCountryFormat($this->context->country->id)));
-//
-//        if (!empty($address)) {
-//            foreach ($address as $idx => $a) {
-//                if (!in_array($a, array('vat_number', 'phone_mobile', 'company'))) {
-//                    if (!strpos($a, ':')) {
-//                        $a = preg_replace('/_/', ' ', $a);
-//                        $a = preg_replace('/[\,\.]/', '', $a);
-//                        $addressFields[] = array(
-//                            'type' => 'select',
-//                            'label' => $this->l((string)ucfirst($a)),
-//                            'name' => 'RETAILCRM_API_ADDR[' . $idx . ']',
-//                            'required' => false,
-//                            'options' => array(
-//                                'query' => array(
-//                                    array('name' => '', 'id_option' => ''),
-//                                    array('name' => $this->l('FIRST_NAME'), 'id_option' => 'first_name'),
-//                                    array('name' => $this->l('LAST_NAME'), 'id_option' => 'last_name'),
-//                                    array('name' => $this->l('PHONE'), 'id_option' => 'phone'),
-//                                    array('name' => $this->l('EMAIL'), 'id_option' => 'email'),
-//                                    array('name' => $this->l('ADDRESS'), 'id_option' => 'address'),
-//                                    array('name' => $this->l('COUNTRY'), 'id_option' => 'country'),
-//                                    array('name' => $this->l('REGION'), 'id_option' => 'region'),
-//                                    array('name' => $this->l('CITY'), 'id_option' => 'city'),
-//                                    array('name' => $this->l('ZIP'), 'id_option' => 'index'),
-//                                    array('name' => $this->l('STREET'), 'id_option' => 'street'),
-//                                    array('name' => $this->l('BUILDING'), 'id_option' => 'building'),
-//                                    array('name' => $this->l('FLAT'), 'id_option' => 'flat'),
-//                                    array('name' => $this->l('INTERCOMCODE'), 'id_option' => 'intercomcode'),
-//                                    array('name' => $this->l('FLOOR'), 'id_option' => 'floor'),
-//                                    array('name' => $this->l('BLOCK'), 'id_option' => 'block'),
-//                                    array('name' => $this->l('HOUSE'), 'ID' => 'house')
-//                                ),
-//                                'id' => 'id_option',
-//                                'name' => 'name'
-//                            )
-//                        );
-//                    }
-//                }
-//            }
-//        }
-//
-//        return $addressFields;
-//    }
 
     public function hookActionCustomerAccountAdd($params)
     {
@@ -365,14 +296,7 @@ class RetailCRM extends Module
                     'lastName' => $params['customer']->lastname,
                     'firstName' => $params['customer']->firstname,
                     'email' => $params['customer']->email,
-                    'phones' => array(
-                        array(
-                            'number' => $address['phone'],
-                        ),
-                        array(
-                            'number' => $address['phone_mobile'],
-                        )
-                    ),
+                    'phones' => array(array('number' => $address['phone'])),
                     'createdAt' => $params['customer']->date_add
                 )
             );
