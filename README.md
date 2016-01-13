@@ -1,40 +1,54 @@
 Prestashop module
-=============
+=================
 
-Prestashop module for interaction with [IntaroCRM](http://www.intarocrm.com) through [REST API](http://docs.intarocrm.ru/rest-api/).
+Модуль интеграции CMS Prestashop c [RetailCRM](http://www.retailcrm.com)
 
-Module allows:
+Модуль позволяет:
 
-* Send to IntaroCRM new orders
-* Configure relations between dictionaries of IntaroCRM and Prestashop (statuses, payments, delivery types and etc)
-* Generate [ICML](http://docs.intarocrm.ru/index.php?n=Пользователи.ФорматICML) (IntaroCRM Markup Language) for catalog loading by IntaroCRM
+* Экспортировать в CRM данные о заказах и клиентах и получать обратно изменения по этим данным
+* Синхронизировать справочники (способы доставки и оплаты, статусы заказов и т.п.)
+* Выгружать каталог товаров в формате [ICML](http://retailcrm.ru/docs/Разработчики/ФорматICML) (IntaroCRM Markup Language)
 
-Installation
--------------
+###Установка
 
-### 1. Manual installation
+#####Скачайте модуль
+
+[Cкачать](http://download.retailcrm.pro/modules/prestashop/retailcrm-2.0.zip)
+
+#####Установите через административный интерфейс управления модулями.
+
+![Установка модуля](/docs/images/add.png)
 
 
-#### Clone module.
+###Настройка
+
+#####Перейдите к настройкам
+
+![Настройка модуля](/docs/images/setup.png)
+
+#####Введите адрес и API ключ вашей CRM и задайте соответствие справочников
+
+![Справочники](/docs/images/ref.png)
+
+
+#####Регулярная генерация выгрузки каталога
+
+Добавьте в крон запись вида
+
 ```
-git clone git@github.com:/intarocrm/prestashop-module.git
+* */4 * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/icml.php
 ```
 
-#### Install Rest API Client.
+#####Регулярное получение изменение из RetailCRM
 
-Install api-client-php via [composer](http://getcomposer.org)
+Добавьте в крон запись вида
 
 ```
-cd prestashop-module
-/path/to/composer.phar install
+*/7 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
 ```
 
-#### Create .zip file.
+#####Единоразовая выгрузка архива клиентов и заказов в RetailCRM
+
 ```
-zip -r intarocrm.zip intarocrm
+/usr/bin/php /path/to/your/site/modules/retailcrm/job/export.php
 ```
-
-#### Install via Admin interface.
-
-
-Go to Modules -> Add module. After that upload your zipped module and activate it.
