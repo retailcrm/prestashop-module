@@ -16,14 +16,29 @@ if (!empty($apiUrl) && !empty($apiKey)) {
 
 $orders = array();
 $customers = array();
-$instance = new Order();
-$records = $instance->getOrdersWithInformations(2);
 
-$delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'));
-$payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'));
-$status = json_decode(Configuration::get('RETAILCRM_API_STATUS'));
+$customerInstance = new Customer();
+$orderInstance = new Order();
 
-foreach ($records as $record) {
+$customerRecords = $customerInstance->getCustomers();
+$orderRecords = $orderInstance->getOrdersWithInformations();
+
+$delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
+$payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
+$status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
+
+foreach ($customerRecords as $record) {
+    $customers[$record['id_customer']] = array(
+        'externalId' => $record['id_customer'],
+        'firstName' => $record['firstname'],
+        'lastname' => $record['lastname'],
+        'email' => $record['email']
+    );
+}
+
+unset($customerRecords);
+
+foreach ($orderRecords as $record) {
 
     $object = new Order($record['id_order']);
 
@@ -33,29 +48,66 @@ foreach ($records as $record) {
         $paymentType = $record['payment'];
     }
 
+    if ($record['current_state'] == 0) {
+        $order_status = 'completed';
+    } else {
+        $order_status = array_key_exists($record['current_state'], $status)
+            ? $status[$record['current_state']]
+            : 'completed'
+        ;
+    }
+
     $cart = new Cart($object->getCartIdStatic($record['id_order']));
     $addressCollection = $cart->getAddressCollection();
     $address = array_shift($addressCollection);
 
+    if ($address instanceof Address) {
+        $phone = is_null($address->phone)
+            ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
+            : $address->phone
+        ;
+
+        $postcode = $address->postcode;
+        $city = $address->city;
+        $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+    }
+
     $order = array(
         'externalId' => $record['id_order'],
         'createdAt' => $record['date_add'],
-        'status' => $record['current_state'] == 0 ? 'new' : $status->$record['current_state'],
+        'status' => $order_status,
         'firstName' => $record['firstname'],
         'lastName' => $record['lastname'],
         'email' => $record['email'],
-        'phone' => $address->phone,
-        'delivery' => array(
-            'code' => $delivery->$record['id_carrier'],
-            'cost' => $record['total_shipping_tax_incl'],
-            'address' => array(
-                'index' => $address->postcode,
-                'city' => $address->city,
-                'street' => sprintf("%s %s", $address->address1, $address->address2)
-            )
-        ),
-        'paymentType' => $payment->$paymentType
     );
+
+    if (isset($postcode)) {
+        $order['delivery']['address']['postcode'] = $postcode;
+    }
+
+    if (isset($city)) {
+        $order['delivery']['address']['city'] = $city;
+    }
+
+    if (isset($addres_line)) {
+        $order['delivery']['address']['text'] = $addres_line;
+    }
+
+    if ($phone) {
+        $order['phone'] = $phone;
+    }
+
+    if (array_key_exists($paymentType, $payment)) {
+        $order['paymentType'] = $payment[$paymentType];
+    }
+
+    if (array_key_exists($record['id_carrier'], $delivery)) {
+        $order['delivery']['code'] = $delivery[$record['id_carrier']];
+    }
+
+    if (isset($record['total_shipping_tax_incl']) && (int) $record['total_shipping_tax_incl'] > 0) {
+        $order['delivery']['cost'] = round($record['total_shipping_tax_incl'], 2);
+    }
 
     $products = $object->getProducts();
 
@@ -73,27 +125,23 @@ foreach ($records as $record) {
 
     if ($record['id_customer']) {
         $order['customer']['externalId'] = $record['id_customer'];
-
-        $customer = new Customer($record['id_customer']);
-        $customerCRM = array(
-            'externalId' => $customer->id,
-            'firstName' => $customer->firstname,
-            'lastname' => $customer->lastname,
-            'email' => $customer->email,
-            'phones' => array(array('number' => $address->phone)),
-            'createdAt' => $customer->date_add,
-            'address' => array(
-                'index' => $address->postcode,
-                'city' => $address->city,
-                'street' => sprintf("%s %s", $address->address1, $address->address2)
-            )
-        );
-
-        $customers[$customer->id] = $customerCRM;
     }
 
-    $orders[] = $order;
+    $orders[$record['id_order']] = $order;
 }
 
-var_dump(count($customers));
-var_dump(count($orders));
+unset($orderRecords);
+
+$customers = array_chunk($customers, 50);
+
+foreach ($customers as $chunk) {
+    $api->customersUpload($chunk);
+    time_nanosleep(0, 200000000);
+}
+
+$orders = array_chunk($orders, 50);
+
+foreach ($orders as $chunk) {
+    $api->ordersUpload($chunk);
+    time_nanosleep(0, 200000000);
+}
