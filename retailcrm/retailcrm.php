@@ -21,6 +21,7 @@ class RetailCRM extends Module
         $this->name = 'retailcrm';
         $this->tab = 'export';
         $this->version = '2.0.1';
+        $this->version = '2.0';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
