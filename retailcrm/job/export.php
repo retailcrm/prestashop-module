@@ -82,7 +82,7 @@ foreach ($orderRecords as $record) {
     );
 
     if (isset($postcode)) {
-        $order['delivery']['address']['postcode'] = $postcode;
+        $order['delivery']['address']['index'] = $postcode;
     }
 
     if (isset($city)) {

@@ -31,13 +31,14 @@ $address_id = 0;
 
 $history = $api->ordersHistory(new DateTime($startFrom));
 
-if ($history->isSuccess() && count($history->orders) > 0) {
+if ($history->isSuccessful() && count($history->orders) > 0) {
 
     $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
     $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
     $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
 
     foreach ($history->orders as $order) {
+        if (isset($order['deleted']) && $order['deleted'] == true) continue;
 
         if (!array_key_exists('externalId', $order)) {
 
@@ -56,51 +57,51 @@ if ($history->isSuccess() && count($history->orders) > 0) {
                     $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
 
                     if($customer->add()) {
-                        $customer->getByEmail($order['customer']['email']);
-                        $customer_id = $customer->id;
-
                         $address = new Address();
                         $address->id_customer = $customer->id;
                         $address->id_country = $default_country;
                         $address->lastname = $customer->lastname;
                         $address->firstname = $customer->firstname;
                         $address->alias = 'default';
-                        $address->postcode = $customer['address']['index'];
-                        $address->city = $customer['address']['city'];
-                        $address->address1 = $customer['address']['text'];
-                        $address->phone = $customer['phones'][0]['number'];
-
+                        $address->postcode = $order['address']['index'];
+                        $address->city = $order['address']['city'];
+                        $address->address1 = $order['address']['text'];
+                        $address->phone = $order['phone'];
                         $address->add();
-                        $addr = $customer->getAddresses($default_lang);
-                        $address_id = $addr[0]['id_address'];
                     }
-                } else {
-                    $addresses =  $customer->getAddresses($default_lang);
-                    $address_id = $addresses[0]['id_address'];
-                    $customer_id = $customer->id;
                 }
 
                 array_push(
                     $customerFix,
                     array(
                         'id' => $order['customer']['id'],
-                        'externalId' => $customer_id
+                        'externalId' => $customer->id
                     )
                 );
-            } else {
-                $addresses =  $customer->getAddresses($default_lang);
-                $address_id = $addresses[0]['id_address'];
-                $customer_id = $order['customer']['externalId'];
             }
 
             $delivery = $order['delivery']['code'];
+
+            if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
+                $deliveryType = $deliveries[$delivery];
+            }
+
             $payment = $order['paymentType'];
+
+            if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
+                $paymentType = $payments[$payment];
+            }
+
             $state = $order['status'];
+
+            if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
+                $orderStatus = $statuses[$state];
+            }
 
             $cart = new Cart();
             $cart->id_currency = $default_currency;
             $cart->id_lang = $default_lang;
-            $cart->id_customer = $customer_id;
+            $cart->id_customer = $customer->id;
             $cart->id_address_delivery = (int) $address_id;
             $cart->id_address_invoice = (int) $address_id;
             $cart->id_carrier = (int) $deliveries[$delivery];
@@ -131,13 +132,15 @@ if ($history->isSuccess() && count($history->orders) > 0) {
             $newOrder->id_cart = (int) $cart->id;
             $newOrder->id_currency = $default_currency;
             $newOrder->id_lang = $default_lang;
-            $newOrder->id_customer = (int) $customer_id;
-            $newOrder->id_carrier = (int) $deliveries[$delivery];
+            $newOrder->id_customer = (int) $customer->id;
+            if (isset($deliveryType)) $newOrder->id_carrier = (int) $deliveryType;
             $newOrder->payment =  $payments[$payment];
-            $newOrder->module = (Module::getInstanceByName('advancedcheckout') === false)
-                ? $payments[$payment]
-                : 'advancedcheckout'
+            if (isset($paymentType)) {
+                $newOrder->module = (Module::getInstanceByName('advancedcheckout') === false)
+                    ? $paymentType
+                    : 'advancedcheckout'
                 ;
+            }
             $newOrder->total_paid = $order['summ'] + $order['delivery']['cost'];
             $newOrder->total_paid_tax_incl = $order['summ'] + $order['delivery']['cost'];
             $newOrder->total_paid_tax_excl = $order['summ'] + $order['delivery']['cost'];
@@ -148,8 +151,8 @@ if ($history->isSuccess() && count($history->orders) > 0) {
             $newOrder->total_shipping_tax_incl = $order['delivery']['cost'];
             $newOrder->total_shipping_tax_excl = $order['delivery']['cost'];
             $newOrder->conversion_rate = 1.000000;
-            $newOrder->current_state = (int) $statuses[$state];
-            $newOrder->delivery_date = $order['delivery']['date'];
+            if (isset($orderStatus)) $newOrder->current_state = (int) $orderStatus;
+            if (!empty($order['delivery']['date'])) $newOrder->delivery_date = $order['delivery']['date'];
             $newOrder->date_add = $order['createdAt'];
             $newOrder->date_upd = $order['createdAt'];
             $newOrder->valid = 1;
@@ -171,10 +174,11 @@ if ($history->isSuccess() && count($history->orders) > 0) {
              * Create order details
             */
             $product_list = array();
+
             foreach ($order['items'] as $item) {
                 $product = new Product((int) $item['offer']['externalId'], false, $default_lang);
                 $qty = $item['quantity'];
-                $product_list[] = array('product' =>$product, 'quantity' => $qty);
+                $product_list[] = array('product' => $product, 'quantity' => $qty);
             }
 
             $query = 'INSERT `'._DB_PREFIX_.'order_detail`
@@ -187,11 +191,12 @@ if ($history->isSuccess() && count($history->orders) > 0) {
 
                 VALUES';
 
+            $context = new Context();
             foreach ($product_list as $product) {
                 $query .= '('
                     .(int) $newOrder->id.',
                         0,
-                        '. $this->context->shop->id.',
+                        '. Context::getContext()->shop->id.',
                         '.(int) $product['product']->id.',
                         0,
                         '.implode('', array('\'', $product['product']->name, '\'')).',
@@ -209,13 +214,16 @@ if ($history->isSuccess() && count($history->orders) > 0) {
 
             Db::getInstance()->execute(rtrim($query, ','));
 
-            $this->api->customersFixExternalIds($customerFix);
-            $this->api->ordersFixExternalIds($orderFix);
+            $api->customersFixExternalIds($customerFix);
+            $api->ordersFixExternalIds($orderFix);
         } else {
             /*
              * take last order update only
              */
-            if ($order['paymentType'] != null && $order['deliveryType'] != null && $order['status'] != null) {
+            if (!empty($order['paymentType']) &&
+                !empty($order['delivery']['code']) &&
+                !empty($order['status'])
+            ) {
                 $orderToUpdate = new Order((int) $order['externalId']);
 
                 /*
@@ -235,7 +243,7 @@ if ($history->isSuccess() && count($history->orders) > 0) {
                 /*
                  * check delivery type
                  */
-                $dtype = $order['deliveryType'];
+                $dtype = $order['delivery']['code'];
                 if ($deliveries[$dtype] != null) {
                     if ($deliveries[$dtype] != $orderToUpdate->id_carrier) {
                         Db::getInstance()->execute('
@@ -331,7 +339,7 @@ if ($history->isSuccess() && count($history->orders) > 0) {
                         $query .= '('
                             .(int) $orderToUpdate->id.',
                             0,
-                            '. $this->context->shop->id.',
+                            '. Context::getContext()->shop->id.',
                             '.(int) $product['product']->id.',
                             0,
                             '.implode('', array('\'', $product['product']->name, '\'')).',
