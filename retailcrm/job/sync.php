@@ -217,182 +217,222 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             $api->customersFixExternalIds($customerFix);
             $api->ordersFixExternalIds($orderFix);
         } else {
-            /*
-             * take last order update only
-             */
-            if (!empty($order['paymentType']) &&
-                !empty($order['delivery']['code']) &&
-                !empty($order['status'])
-            ) {
-                $orderToUpdate = new Order((int) $order['externalId']);
+            $orderToUpdate = new Order((int) $order['externalId']);
 
-                /*
-                 * check status
-                */
+            /*
+             * check status
+            */
+            if(!empty($order['status'])) {
                 $stype = $order['status'];
+
                 if ($statuses[$stype] != null) {
                     if ($statuses[$stype] != $orderToUpdate->current_state) {
                         Db::getInstance()->execute('
-                            UPDATE `'._DB_PREFIX_.'orders`
-                            SET `current_state` = \''.$statuses[$stype].'\'
-                            WHERE `id_order` = '.(int) $order['externalId']
+                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`) 
+                        VALUES (
+                            0,
+                            ' . $orderToUpdate->id . ',
+                            ' . $statuses[$stype] . ',
+                            "' . date('Y-m-d H:i:s') . '"
+                        )
+                        ');
+
+                        Db::getInstance()->execute('
+                        UPDATE `' . _DB_PREFIX_ . 'orders`
+                        SET `current_state` = \'' . $statuses[$stype] . '\'
+                        WHERE `id_order` = ' . (int)$order['externalId']
                         );
                     }
                 }
+            }
 
-                /*
-                 * check delivery type
-                 */
+            /*
+             * check delivery type
+             */
+            if(!empty($order['delivery']['code'])) {
                 $dtype = $order['delivery']['code'];
+                $dcost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
+
                 if ($deliveries[$dtype] != null) {
-                    if ($deliveries[$dtype] != $orderToUpdate->id_carrier) {
+                    if ($deliveries[$dtype] != $orderToUpdate->id_carrier OR $dcost != null) {
+
+                        if($dtype != null) {
+                            Db::getInstance()->execute('
+                            UPDATE `' . _DB_PREFIX_ . 'orders`
+                            SET `id_carrier` = \'' . $deliveries[$dtype] . '\'
+                            WHERE `id_order` = ' . (int)$order['externalId']
+                            );
+                        }
+
+                        $updateCarrierFields = array();
+                        if($dtype != null) {
+                            $updateCarrierFields[] = '`id_carrier` = \'' . $deliveries[$dtype] . '\' ';
+                        }
+                        if($dcost != null) {
+                            $updateCarrierFields[] = '`shipping_cost_tax_incl` = \'' . $dcost . '\' ';
+                            $updateCarrierFields[] = '`shipping_cost_tax_excl` = \'' . $dcost . '\' ';
+                        }
+                        $updateCarrierFields = implode(', ', $updateCarrierFields);
+
                         Db::getInstance()->execute('
-                            UPDATE `'._DB_PREFIX_.'orders`
-                            SET `id_carrier` = \''.$deliveries[$dtype].'\'
-                            WHERE `id_order` = '.(int) $order['externalId']
-                        );
-                        Db::getInstance()->execute('
-                            UPDATE `'._DB_PREFIX_.'order_carrier`
-                            SET `id_carrier` = \''.$deliveries[$dtype].'\'
-                            WHERE `id_order` = \''.$orderToUpdate->id.'\''
+                        UPDATE `' . _DB_PREFIX_ . 'order_carrier` SET 
+                        '.$updateCarrierFields.'
+                        WHERE `id_order` = \'' . $orderToUpdate->id . '\''
                         );
                     }
                 }
+            }
 
-                /*
-                 * check payment type
-                 */
+            /*
+             * check payment type
+             */
+            if(!empty($order['paymentType'])) {
                 $ptype = $order['paymentType'];
+
                 if ($payments[$ptype] != null) {
                     if ($payments[$ptype] != $orderToUpdate->payment) {
                         Db::getInstance()->execute('
-                            UPDATE `'._DB_PREFIX_.'orders`
-                            SET `payment` = \''.$payments[$ptype].'\'
-                            WHERE `id_order` = '.(int) $order['externalId']
+                        UPDATE `' . _DB_PREFIX_ . 'orders`
+                        SET `payment` = \'' . $payments[$ptype] . '\'
+                        WHERE `id_order` = ' . (int)$order['externalId']
                         );
                         Db::getInstance()->execute('
-                            UPDATE `'._DB_PREFIX_.'order_payment`
-                            SET `payment_method` = \''.$payments[$ptype].'\'
-                            WHERE `order_reference` = \''.$orderToUpdate->reference.'\''
+                        UPDATE `' . _DB_PREFIX_ . 'order_payment`
+                        SET `payment_method` = \'' . $payments[$ptype] . '\'
+                        WHERE `order_reference` = \'' . $orderToUpdate->reference . '\''
                         );
 
                     }
                 }
+            }
 
-                /*
-                 * Clean deleted items
-                 */
+            /*
+             * Clean deleted items
+             */
+            foreach ($order['items'] as $key => $item) {
+                if (isset($item['deleted']) && $item['deleted'] == true) {
+                    Db::getInstance()->execute('
+                        DELETE FROM `'._DB_PREFIX_.'order_detail`
+                        WHERE `id_order` = '. $orderToUpdate->id .'
+                        AND `product_id` = '.$item['id']
+                    );
+
+                    unset($order['items'][$key]);
+                }
+            }
+
+            /*
+             * Check items quantity
+             */
+            foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
-                    if (isset($item['deleted']) && $item['deleted'] == true) {
-                        Db::getInstance()->execute('
-                            DELETE FROM `'._DB_PREFIX_.'order_detail`
-                            WHERE `id_order` = '. $orderToUpdate->id .'
-                            AND `product_id` = '.$item['id']
-                        );
+                    if ($item['offer']['externalId'] == $orderItem['product_id']) {
+                        if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
+                            Db::getInstance()->execute('
+                                UPDATE `'._DB_PREFIX_.'order_detail`
+                                SET `product_quantity` = '.$item['quantity'].',
+                                `product_quantity_in_stock` = '.$item['quantity'].'
+                                WHERE `id_order_detail` = '.$orderItem['id_order_detail']
+                            );
+                        }
 
                         unset($order['items'][$key]);
                     }
                 }
+            }
 
-                /*
-                 * Check items quantity
-                 */
-                foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
-                    foreach ($order['items'] as $key => $item) {
-                        if ($item['offer']['externalId'] == $orderItem['product_id']) {
-                            if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
-                                Db::getInstance()->execute('
-                                    UPDATE `'._DB_PREFIX_.'order_detail`
-                                    SET `product_quantity` = '.$item['quantity'].',
-                                    `product_quantity_in_stock` = '.$item['quantity'].'
-                                    WHERE `id_order_detail` = '.$orderItem['id_order_detail']
-                                );
-                            }
-
-                            unset($order['items'][$key]);
-                        }
-                    }
+            /*
+             * Check new items
+             */
+            if (!empty($order['items'])) {
+                foreach ($order['items'] as $key => $newItem) {
+                    $product = new Product((int) $newItem['offer']['externalId'], false, $default_lang);
+                    $qty = $newItem['quantity'];
+                    $product_list[] = array('product' =>$product, 'quantity' => $qty);
                 }
 
-                /*
-                 * Check new items
-                 */
-                if (!empty($order['items'])) {
-                    foreach ($order['items'] as $key => $newItem) {
-                        $product = new Product((int) $newItem['offer']['externalId'], false, $default_lang);
-                        $qty = $newItem['quantity'];
-                        $product_list[] = array('product' =>$product, 'quantity' => $qty);
-                    }
 
+                $query = 'INSERT `'._DB_PREFIX_.'order_detail`
+                    (
+                        `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
+                        `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
+                        `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
+                        `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
+                    )
 
-                    $query = 'INSERT `'._DB_PREFIX_.'order_detail`
-                        (
-                            `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
-                            `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
-                            `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
-                            `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
-                        )
+                    VALUES';
 
-                        VALUES';
-
-                    foreach ($product_list as $product) {
-                        $query .= '('
-                            .(int) $orderToUpdate->id.',
-                            0,
-                            '. Context::getContext()->shop->id.',
-                            '.(int) $product['product']->id.',
-                            0,
-                            '.implode('', array('\'', $product['product']->name, '\'')).',
-                            '.(int) $product['quantity'].',
-                            '.(int) $product['quantity'].',
-                            '.$product['product']->price.',
-                            '.implode('', array('\'', $product['product']->reference, '\'')).',
-                            '.$product['product']->price.',
-                            '.$product['product']->price.',
-                            '.$product['product']->price.',
-                            '.$product['product']->price.',
-                            '.$product['product']->price.'
-                        ),';
-                    }
-
-                    Db::getInstance()->execute(rtrim($query, ','));
-                    unset($order['items'][$key]);
+                foreach ($product_list as $product) {
+                    $query .= '('
+                        .(int) $orderToUpdate->id.',
+                        0,
+                        '. Context::getContext()->shop->id.',
+                        '.(int) $product['product']->id.',
+                        0,
+                        '.implode('', array('\'', $product['product']->name, '\'')).',
+                        '.(int) $product['quantity'].',
+                        '.(int) $product['quantity'].',
+                        '.$product['product']->price.',
+                        '.implode('', array('\'', $product['product']->reference, '\'')).',
+                        '.$product['product']->price * $product['quantity'].',
+                        '.($product['product']->price + $product['product']->price / 100 * 18) * $product['quantity'].',
+                        '.$product['product']->price.',
+                        '.($product['product']->price + $product['product']->price / 100 * 18).',
+                        '.$product['product']->price.'
+                    ),';
                 }
 
-                /*
-                 * Fix prices & discounts
-                 * Discounts only for whole order
-                 */
-                $orderDiscout = null;
-                $orderTotal = $order['summ'];
+                Db::getInstance()->execute(rtrim($query, ','));
+                unset($order['items'][$key]);
+            }
 
-                if (isset($order['discount']) && $order['discount'] > 0) {
-                    if ($order['discount'] != $orderToUpdate->total_discounts) {
-                        $orderDiscout = ($orderDiscout == null) ? $order['discount'] : $order['discount'] + $orderDiscout;
-                    }
+            /*
+             * Fix prices & discounts
+             * Discounts only for whole order
+             */
+            $orderDiscout = null;
+            $orderTotalProducts = $order['summ'];
+
+            if (isset($order['discount']) && $order['discount'] > 0) {
+                if ($order['discount'] != $orderToUpdate->total_discounts) {
+                    $orderDiscout = ($orderDiscout == null) ? $order['discount'] : $order['discount'] + $orderDiscout;
                 }
+            }
 
-                if (isset($order['discountPercent']) && $order['discountPercent'] > 0) {
-                    $percent = ($order['summ'] * $order['discountPercent'])/100;
-                    if ($percent != $orderToUpdate->total_discounts) {
-                        $orderDiscout = ($orderDiscout == null) ? $percent : $percent + $orderDiscout;
-                    }
+            if (isset($order['discountPercent']) && $order['discountPercent'] > 0) {
+                $percent = ($order['summ'] * $order['discountPercent'])/100;
+                if ($percent != $orderToUpdate->total_discounts) {
+                    $orderDiscout = ($orderDiscout == null) ? $percent : $percent + $orderDiscout;
                 }
+            }
 
-                $totalDiscount = ($orderDiscout == null) ? $orderToUpdate->total_discounts : $orderDiscout;
+            $totalDiscount = ($orderDiscout == null) ? $orderToUpdate->total_discounts : $orderDiscout;
 
-                if ($totalDiscount != $orderToUpdate->total_discounts || $orderTotal != $orderToUpdate->total_paid) {
-                    Db::getInstance()->execute('
-                        UPDATE `'._DB_PREFIX_.'orders`
-                        SET `total_discounts` = '.$totalDiscount.',
-                        `total_discounts_tax_incl` = '.$totalDiscount.',
-                        `total_discounts_tax_excl` = '.$totalDiscount.',
-                        `total_paid` = '.$orderTotal.',
-                        `total_paid_tax_incl` = '.$orderTotal.',
-                        `total_paid_tax_excl` = '.$orderTotal.'
-                        WHERE `id_order` = '.(int) $order['externalId']
-                    );
-                }
+            $deliveryCost = $orderToUpdate->total_shipping;
+            if(!empty($order['delivery']['cost'])) {
+                $deliveryCost = $order['delivery']['cost'];
+            }
+
+            $totalPaid = $deliveryCost + $orderTotalProducts;
+
+            if ($totalDiscount != $orderToUpdate->total_discounts ||
+                $orderTotalProducts != $orderToUpdate->total_products_wt ||
+                $deliveryCost != $orderToUpdate->total_shipping
+            ) {
+                Db::getInstance()->execute('
+                    UPDATE `'._DB_PREFIX_.'orders`
+                    SET `total_discounts` = '.$totalDiscount.',
+                    `total_discounts_tax_incl` = '.$totalDiscount.',
+                    `total_discounts_tax_excl` = '.$totalDiscount.',
+                    `total_shipping` = '.$deliveryCost.',
+                    `total_shipping_tax_incl` = '.$deliveryCost.',
+                    `total_shipping_tax_excl` = '.$deliveryCost.',
+                    `total_paid` = '.$totalPaid.',
+                    `total_paid_tax_incl` = '.$totalPaid.',
+                    `total_paid_tax_excl` = '.$totalPaid.',
+                    `total_products_wt` = '.$orderTotalProducts.'
+                    WHERE `id_order` = '.(int) $order['externalId']
+                );
             }
         }
     }
