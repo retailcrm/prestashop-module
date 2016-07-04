@@ -1,4 +1,5 @@
 <?php
+$_SERVER['HTTPS'] = 1;
 
 $shortopts = 'o:';
 $options = getopt($shortopts);

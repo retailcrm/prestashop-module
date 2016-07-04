@@ -38,7 +38,7 @@ class RetailCRM extends Module
             $this->bootstrap = true;
         }
 
-        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+        if ($this->validateCrmAddress($this->apiUrl) && !empty($this->apiKey)) {
             $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
             $this->reference = new RetailcrmReferences($this->api);
         }
@@ -74,7 +74,7 @@ class RetailCRM extends Module
         $address = Configuration::get('RETAILCRM_ADDRESS');
         $token = Configuration::get('RETAILCRM_API_TOKEN');
 
-        if (!$address || $address == '') {
+        if (!$this->validateCrmAddress($this->apiUrl)) {
             $output .= $this->displayError($this->l('Invalid or empty crm address'));
         } elseif (!$token || $token == '') {
             $output .= $this->displayError($this->l('Invalid or empty crm api token'));
@@ -92,7 +92,7 @@ class RetailCRM extends Module
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
 
-            if (!$address || empty($address) || !Validate::isGenericName($address)) {
+            if (!$this->validateCrmAddress($this->apiUrl) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
             } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
                 $output .= $this->displayError($this->l('Invalid crm api token'));
@@ -148,7 +148,7 @@ class RetailCRM extends Module
         );
 
 
-        if (!empty($this->apiUrl) && !empty($this->apiKey)) {
+        if ($this->api) {
             /*
              * Delivery
              */
@@ -385,5 +385,12 @@ class RetailCRM extends Module
             $order['customer']['externalId'] = $customer['externalId'];
             $this->api->ordersCreate($order);
         }
+    }
+
+    private function validateCrmAddress($address) {
+        if(preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1)
+            return true;
+
+        return false;
     }
 }

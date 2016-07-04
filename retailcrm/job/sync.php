@@ -1,4 +1,5 @@
 <?php
+$_SERVER['HTTPS'] = 1;
 
 require(dirname(__FILE__) . '/../../../config/config.inc.php');
 require(dirname(__FILE__) . '/../../../init.php');
@@ -41,7 +42,6 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
         if (isset($order['deleted']) && $order['deleted'] == true) continue;
 
         if (!array_key_exists('externalId', $order)) {
-
             $customer = new Customer();
             $customer->getByEmail($order['customer']['email']);
 
@@ -127,6 +127,10 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              * Create order
             */
             $newOrder = new Order();
+            $shops = Shop::getShops();
+            $newOrder->id_shop = Shop::getCurrentShop();
+            $newOrder->id_shop_group = (int)$shops[Shop::getCurrentShop()]['id_shop_group'];
+
             $newOrder->id_address_delivery = (int) $address_id;
             $newOrder->id_address_invoice = (int) $address_id;
             $newOrder->id_cart = (int) $cart->id;
