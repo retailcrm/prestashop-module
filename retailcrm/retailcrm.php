@@ -92,7 +92,7 @@ class RetailCRM extends Module
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
 
-            if (!$this->validateCrmAddress($this->apiUrl) || !Validate::isGenericName($address)) {
+            if (!$this->validateCrmAddress($address) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
             } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
                 $output .= $this->displayError($this->l('Invalid crm api token'));
