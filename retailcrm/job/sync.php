@@ -28,7 +28,6 @@ $startFrom = ($lastSync === false)
 
 $customerFix = array();
 $orderFix = array();
-$address_id = 0;
 
 $history = $api->ordersHistory(new DateTime($startFrom));
 
@@ -43,32 +42,18 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
 
         if (!array_key_exists('externalId', $order)) {
             $customer = new Customer();
-            $customer->getByEmail($order['customer']['email']);
+            if(!empty($order['customer']['email']))
+                $customer->getByEmail($order['customer']['email']);
 
-            if (
-                !array_key_exists('externalId', $order['customer']) &&
-                Validate::isEmail($order['customer']['email'])
-            ) {
+            if (!array_key_exists('externalId', $order['customer'])) {
                 if (!$customer->id)
                 {
-                    $customer->firstname = $order['customer']['firstName'];
-                    $customer->lastname = $order['customer']['lastName'];
-                    $customer->email = $order['customer']['email'];
+                    $customer->firstname = !empty($order['customer']['firstName']) ? $order['customer']['firstName'] : '-';
+                    $customer->lastname = !empty($order['customer']['lastName']) ? $order['customer']['lastName'] : '-';
+                    $customer->email = Validate::isEmail($order['customer']['email']) ? $order['customer']['email'] : 'noemail@domain.null';
                     $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
 
-                    if($customer->add()) {
-                        $address = new Address();
-                        $address->id_customer = $customer->id;
-                        $address->id_country = $default_country;
-                        $address->lastname = $customer->lastname;
-                        $address->firstname = $customer->firstname;
-                        $address->alias = 'default';
-                        $address->postcode = $order['address']['index'];
-                        $address->city = $order['address']['city'];
-                        $address->address1 = $order['address']['text'];
-                        $address->phone = $order['phone'];
-                        $address->add();
-                    }
+                    $customer->add();
                 }
 
                 array_push(
@@ -80,6 +65,18 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
                 );
             }
 
+            $address = new Address();
+            $address->id_customer = $customer->id;
+            $address->id_country = $default_country;
+            $address->lastname = $customer->lastname;
+            $address->firstname = $customer->firstname;
+            $address->alias = 'default';
+            $address->postcode = $order['delivery']['address']['index'];
+            $address->city = !empty($order['delivery']['address']['city']) ? $order['delivery']['address']['city'] : '-';
+            $address->address1 = !empty($order['delivery']['address']['text']) ? $order['delivery']['address']['text'] : '-';
+            $address->phone = $order['phone'];
+            $address->add();
+
             $delivery = $order['delivery']['code'];
 
             if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
@@ -89,7 +86,11 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             $payment = $order['paymentType'];
 
             if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
-                $paymentType = $payments[$payment];
+                if(Module::getInstanceByName($payments[$payment])) {
+                    $paymentType = Module::getModuleName($payments[$payment]);
+                } else {
+                    $paymentType = $payments[$payment];
+                }
             }
 
             $state = $order['status'];
@@ -102,8 +103,8 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             $cart->id_currency = $default_currency;
             $cart->id_lang = $default_lang;
             $cart->id_customer = $customer->id;
-            $cart->id_address_delivery = (int) $address_id;
-            $cart->id_address_invoice = (int) $address_id;
+            $cart->id_address_delivery = (int) $address->id;
+            $cart->id_address_invoice = (int) $address->id;
             $cart->id_carrier = (int) $deliveries[$delivery];
 
             $cart->add();
@@ -115,7 +116,7 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
                     $product = array();
                     $product['id_product'] = (int) $item['offer']['externalId'];
                     $product['quantity'] = $item['quantity'];
-                    $product['id_address_delivery'] = (int) $address_id;
+                    $product['id_address_delivery'] = (int) $address->id;
                     $products[] = $product;
                 }
             }
@@ -131,19 +132,16 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             $newOrder->id_shop = Shop::getCurrentShop();
             $newOrder->id_shop_group = (int)$shops[Shop::getCurrentShop()]['id_shop_group'];
 
-            $newOrder->id_address_delivery = (int) $address_id;
-            $newOrder->id_address_invoice = (int) $address_id;
+            $newOrder->id_address_delivery = (int) $address->id;
+            $newOrder->id_address_invoice = (int) $address->id;
             $newOrder->id_cart = (int) $cart->id;
             $newOrder->id_currency = $default_currency;
             $newOrder->id_lang = $default_lang;
             $newOrder->id_customer = (int) $customer->id;
             if (isset($deliveryType)) $newOrder->id_carrier = (int) $deliveryType;
-            $newOrder->payment =  $payments[$payment];
             if (isset($paymentType)) {
-                $newOrder->module = (Module::getInstanceByName('advancedcheckout') === false)
-                    ? $paymentType
-                    : 'advancedcheckout'
-                ;
+                $newOrder->payment = $paymentType;
+                $newOrder->module = $payments[$payment];
             }
             $newOrder->total_paid = $order['summ'] + $order['delivery']['cost'];
             $newOrder->total_paid_tax_incl = $order['summ'] + $order['delivery']['cost'];
@@ -159,6 +157,7 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             if (!empty($order['delivery']['date'])) $newOrder->delivery_date = $order['delivery']['date'];
             $newOrder->date_add = $order['createdAt'];
             $newOrder->date_upd = $order['createdAt'];
+            $newOrder->invoice_date = $order['createdAt'];
             $newOrder->valid = 1;
             $newOrder->secure_key = md5(time());
 
@@ -168,6 +167,14 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             }
 
             $newOrder->add(false, false);
+
+            $carrier = new OrderCarrierCore();
+            $carrier->id_order = $newOrder->id;
+            $carrier->id_carrier = $deliveryType;
+            $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
+            $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
+            $carrier->date_add = $order['delivery']['date'];
+            $carrier->add(false, false);
 
             /*
              * collect order ids for single fix request
@@ -218,8 +225,10 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
 
             Db::getInstance()->execute(rtrim($query, ','));
 
-            $api->customersFixExternalIds($customerFix);
-            $api->ordersFixExternalIds($orderFix);
+            if(!empty($customerFix))
+                $api->customersFixExternalIds($customerFix);
+            if(!empty($orderFix))
+                $api->ordersFixExternalIds($orderFix);
         } else {
             $orderToUpdate = new Order((int) $order['externalId']);
 
