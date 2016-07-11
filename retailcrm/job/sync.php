@@ -48,9 +48,9 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
             if (!array_key_exists('externalId', $order['customer'])) {
                 if (!$customer->id)
                 {
-                    $customer->firstname = !empty($order['customer']['firstName']) ? $order['customer']['firstName'] : '-';
+                    $customer->firstname = $order['customer']['firstName'];
                     $customer->lastname = !empty($order['customer']['lastName']) ? $order['customer']['lastName'] : '-';
-                    $customer->email = Validate::isEmail($order['customer']['email']) ? $order['customer']['email'] : 'noemail@domain.null';
+                    $customer->email = Validate::isEmail($order['customer']['email']) ? $order['customer']['email'] : md5($order['customer']['firstName']) . '@retailcrm.ru';
                     $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
 
                     $customer->add();

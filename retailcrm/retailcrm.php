@@ -92,7 +92,7 @@ class RetailCRM extends Module
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
 
-            if (!$this->validateCrmAddress($address) || !Validate::isGenericName($address)) {
+            if (!$this->validateCrmAddress($this->apiUrl) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
             } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
                 $output .= $this->displayError($this->l('Invalid crm api token'));
@@ -286,104 +286,104 @@ class RetailCRM extends Module
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
 
         if (isset($params['orderStatus'])) {
-
-            $customer = array(
-                'externalId' => $params['customer']->id,
-                'lastName' => $params['customer']->lastname,
-                'firstName' => $params['customer']->firstname,
-                'email' => $params['customer']->email,
-                'createdAt' => $params['customer']->date_add
-            );
-
-            $order = array(
-                'externalId' => $params['order']->id,
-                'firstName' => $params['customer']->firstname,
-                'lastName' => $params['customer']->lastname,
-                'email' => $params['customer']->email,
-                'discount' => $params['order']->total_discounts,
-                'createdAt' => $params['order']->date_add,
-                'delivery' => array('cost' => $params['order']->total_shipping)
-            );
-
-            $cart = new Cart($params['cart']->id);
-            $addressCollection = $cart->getAddressCollection();
-            $address = array_shift($addressCollection);
-
-            if ($address instanceof Address) {
-                $phone = is_null($address->phone)
-                    ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
-                    : $address->phone
-                ;
-
-                $postcode = $address->postcode;
-                $city = $address->city;
-                $addres_line = sprintf("%s %s", $address->address1, $address->address2);
-            }
-
-            if (!empty($postcode)) {
-                $customer['address']['index'] = $postcode;
-                $order['delivery']['address']['index'] = $postcode;
-            }
-
-            if (!empty($city)) {
-                $customer['address']['city'] = $city;
-                $order['delivery']['address']['city'] = $city;
-            }
-
-            if (!empty($addres_line)) {
-                $customer['address']['text'] = $addres_line;
-                $order['delivery']['address']['text'] = $addres_line;
-            }
-
-            if (!empty($phone)) {
-                $customer['phones'][] = array('number' => $phone);
-                $order['phone'] = $phone;
-            }
-
-            foreach ($cart->getProducts() as $item) {
-                $order['items'][] = array(
-                    'initialPrice' => !empty($item['rate'])
-                        ? $item['price'] + ($item['price'] * $item['rate'] / 100)
-                        : $item['price']
-                        ,
-                    'quantity' => $item['quantity'],
-                    'productId' => $item['id_product'],
-                    'productName' => $item['name']
+            
+                $customer = array(
+                    'externalId' => $params['customer']->id,
+                    'lastName' => $params['customer']->lastname,
+                    'firstName' => $params['customer']->firstname,
+                    'email' => $params['customer']->email,
+                    'createdAt' => $params['customer']->date_add
                 );
-            }
 
-            $deliveryCode = $params['order']->id_carrier;
+                $order = array(
+                    'externalId' => $params['order']->id,
+                    'firstName' => $params['customer']->firstname,
+                    'lastName' => $params['customer']->lastname,
+                    'email' => $params['customer']->email,
+                    'discount' => $params['order']->total_discounts,
+                    'createdAt' => $params['order']->date_add,
+                    'delivery' => array('cost' => $params['order']->total_shipping)
+                );
 
-            if (array_key_exists($deliveryCode, $delivery) && !empty($delivery[$deliveryCode])) {
-                $order['delivery']['code'] = $delivery[$deliveryCode];
-            }
+                $cart = new Cart($params['cart']->id);
+                $addressCollection = $cart->getAddressCollection();
+                $address = array_shift($addressCollection);
 
-            if (Module::getInstanceByName('advancedcheckout') === false) {
-                $paymentCode = $params['order']->module;
-            } else {
-                $paymentCode = $params['order']->payment;
-            }
+                if ($address instanceof Address) {
+                    $phone = is_null($address->phone)
+                        ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
+                        : $address->phone;
 
-            if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
-                $order['paymentType'] = $payment[$paymentCode];
-            }
+                    $postcode = $address->postcode;
+                    $city = $address->city;
+                    $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+                }
 
-            $statusCode = $params['orderStatus']->id;
+                if (!empty($postcode)) {
+                    $customer['address']['index'] = $postcode;
+                    $order['delivery']['address']['index'] = $postcode;
+                }
 
-            if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
-                $order['status'] = $status[$statusCode];
-            } else {
-                $order['status'] = ['new'];
-            }
+                if (!empty($city)) {
+                    $customer['address']['city'] = $city;
+                    $order['delivery']['address']['city'] = $city;
+                }
 
-            $customerCheck = $this->api->customersGet($customer['externalId']);
+                if (!empty($addres_line)) {
+                    $customer['address']['text'] = $addres_line;
+                    $order['delivery']['address']['text'] = $addres_line;
+                }
 
-            if ($customerCheck === false) {
-                $this->api->customersCreate($customer);
-            }
+                if (!empty($phone)) {
+                    $customer['phones'][] = array('number' => $phone);
+                    $order['phone'] = $phone;
+                }
 
-            $order['customer']['externalId'] = $customer['externalId'];
-            $this->api->ordersCreate($order);
+                foreach ($cart->getProducts() as $item) {
+                    $order['items'][] = array(
+                        'initialPrice' => !empty($item['rate'])
+                            ? $item['price'] + ($item['price'] * $item['rate'] / 100)
+                            : $item['price']
+                    ,
+                        'quantity' => $item['quantity'],
+                        'productId' => $item['id_product'],
+                        'productName' => $item['name']
+                    );
+                }
+
+                $deliveryCode = $params['order']->id_carrier;
+
+                if (array_key_exists($deliveryCode, $delivery) && !empty($delivery[$deliveryCode])) {
+                    $order['delivery']['code'] = $delivery[$deliveryCode];
+                }
+
+                if (Module::getInstanceByName('advancedcheckout') === false) {
+                    $paymentCode = $params['order']->module;
+                } else {
+                    $paymentCode = $params['order']->payment;
+                }
+
+                if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
+                    $order['paymentType'] = $payment[$paymentCode];
+                }
+
+                $statusCode = $params['orderStatus']->id;
+
+                if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
+                    $order['status'] = $status[$statusCode];
+                } else {
+                    $order['status'] = ['new'];
+                }
+
+                $customerCheck = $this->api->customersGet($customer['externalId']);
+
+                if ($customerCheck === false) {
+                    $this->api->customersCreate($customer);
+                }
+
+                $order['customer']['externalId'] = $customer['externalId'];
+                $this->api->ordersCreate($order);
+            
         }
     }
 
