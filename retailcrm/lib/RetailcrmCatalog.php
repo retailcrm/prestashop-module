@@ -12,7 +12,6 @@ class RetailcrmCatalog
 
     public function getData()
     {
-
         $id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
         $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
@@ -35,6 +34,8 @@ class RetailcrmCatalog
             );
         }
 
+        $link = new Link();
+
         $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
 
         foreach ($products AS $product) {
@@ -53,78 +54,133 @@ class RetailcrmCatalog
                 }
             }
 
-            $link = new Link();
-            $cover = Image::getCover($product['id_product']);
-
-            $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-            if (!(substr($picture, 0, strlen($shop_url)) === $shop_url)) {
-                $picture = rtrim($shop_url, "/") . $picture;
+            $version = substr(_PS_VERSION_, 0, 3);
+            if ($version == "1.3") {
+                $available_for_order = $product['active'] && $product['quantity'];
+            } else {
+                $available_for_order = $product['active'] && $product['available_for_order'];
             }
 
             $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
             $url = $link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
-            $version = substr(_PS_VERSION_, 0, 3);
-
-            if ($version == "1.3") {
-                $available_for_order = $product['active'] && $product['quantity'];
-                $quantity = $product['quantity'];
-            } else {
-                $prod = new Product($product['id_product']);
-                $available_for_order = $product['active'] && $product['available_for_order'] && $prod->checkQty(1);
-                $quantity = (int) StockAvailable::getQuantityAvailableByProduct($prod->id);
-            }
-
-            $item = array(
-                'id' => $product['id_product'],
-                'productId' => $product['id_product'],
-                'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                'name' => htmlspecialchars(strip_tags($product['name'])),
-                'productName' => htmlspecialchars(strip_tags($product['name'])),
-                'categoryId' => array($category),
-                'picture' => $picture,
-                'url' => $url,
-                'quantity' => $quantity > 0 ? $quantity : 0
-            );
 
             if (!empty($product['wholesale_price'])) {
-                $item['purchasePrice'] = round($product['wholesale_price'], 2);
+                $purchasePrice = round($product['wholesale_price'], 2);
+            } else {
+                $purchasePrice = null;
             }
 
-            $item['price'] = !empty($product['rate'])
+            $price = !empty($product['rate'])
                 ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
                 : round($product['price'], 2)
-                ;
-
+            ;
 
             if (!empty($product['manufacturer_name'])) {
-                $item['vendor'] = $product['manufacturer_name'];
+                $vendor = $product['manufacturer_name'];
+            } else {
+                $vendor = null;
             }
 
             if (!empty($product['reference'])) {
-                $item['article'] = htmlspecialchars($product['reference']);
+                $article = htmlspecialchars($product['reference']);
+            } else {
+                $article = null;
             }
 
             $weight = round($product['weight'], 2);
-
-            if (!empty($weight)) {
-                $item['weight'] = $weight;
+            if (empty($weight)) {
+                $weight = null;
             }
 
             $width = round($product['width'], 2);
             $height = round($product['height'], 2);
             $depth = round($product['depth'], 2);
 
-            if (!empty($width)) {
-                if (!empty($height)) {
-                    if (!empty($depth)) {
-                        $item['size'] = implode('x', array($width, $height, $depth));
-                    } else {
-                        $item['size'] = implode('x', array($width, $height));
-                    }
+            if (!empty($width) && !empty($height)) {
+                if (!empty($depth)) {
+                    $size = implode('x', array($width, $height, $depth));
+                } else {
+                    $size = implode('x', array($width, $height));
                 }
+            } else {
+                $size = null;
             }
 
-            $items[] = $item;
+            $offers = Product::getProductAttributesIds($product['id_product']);
+
+            if(!empty($offers)) {
+                foreach($offers as $offer) {
+                    $pictures = array();
+                    $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
+                    foreach($covers as $cover) {
+                        $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                        $pictures[] = $picture;
+                    }
+
+                    if ($version == "1.3") {
+                        $quantity = $product['quantity'];
+                    } else {
+                        $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
+                    }
+
+                    $offerPrice = Combination::getPrice($offer['id_product_attribute']);
+                    $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+
+                    $item = array(
+                        'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
+                        'productId' => $product['id_product'],
+                        'productActivity' => ($available_for_order) ? 'Y' : 'N',
+                        'name' => htmlspecialchars(strip_tags(Product::getProductName($product['id_product'], $offer['id_product_attribute']))),
+                        'productName' => htmlspecialchars(strip_tags($product['name'])),
+                        'categoryId' => array($category),
+                        'picture' => $pictures,
+                        'url' => $url,
+                        'quantity' => $quantity > 0 ? $quantity : 0,
+                        'purchasePrice' => $purchasePrice,
+                        'price' => round($offerPrice, 2),
+                        'vendor' => $vendor,
+                        'article' => $article,
+                        'weight' => $weight,
+                        'size' => $size
+                    );
+
+                    $items[] = $item;
+                }
+            } else {
+                $pictures = array();
+                $covers = Image::getImages($id_lang, $product['id_product'], null);
+                foreach($covers as $cover) {
+                    $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                    $pictures[] = $picture;
+                }
+
+                if ($version == "1.3") {
+                    $quantity = $product['quantity'];
+                } else {
+                    $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product']);
+                }
+
+                $item = array(
+                    'id' => $product['id_product'],
+                    'productId' => $product['id_product'],
+                    'productActivity' => ($available_for_order) ? 'Y' : 'N',
+                    'name' => htmlspecialchars(strip_tags($product['name'])),
+                    'productName' => htmlspecialchars(strip_tags($product['name'])),
+                    'categoryId' => array($category),
+                    'picture' => $pictures,
+                    'url' => $url,
+                    'quantity' => $quantity > 0 ? $quantity : 0,
+                    'purchasePrice' => round($purchasePrice, 2),
+                    'price' => $price,
+                    'vendor' => $vendor,
+                    'article' => $article,
+                    'weight' => $weight,
+                    'size' => $size
+                );
+
+                $items[] = $item;
+            }
+
         }
 
         return array($categories, $items);

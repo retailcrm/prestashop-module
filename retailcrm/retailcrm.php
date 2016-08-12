@@ -74,17 +74,6 @@ class RetailCRM extends Module
         $address = Configuration::get('RETAILCRM_ADDRESS');
         $token = Configuration::get('RETAILCRM_API_TOKEN');
 
-        if (!$this->validateCrmAddress($this->apiUrl)) {
-            $output .= $this->displayError($this->l('Invalid or empty crm address'));
-        } elseif (!$token || $token == '') {
-            $output .= $this->displayError($this->l('Invalid or empty crm api token'));
-        } else {
-            $output .= $this->displayConfirmation(
-                $this->l('Timezone settings must be identical to both of your crm and shop') .
-                " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
-            );
-        }
-
         if (Tools::isSubmit('submit' . $this->name)) {
             $address = strval(Tools::getValue('RETAILCRM_ADDRESS'));
             $token = strval(Tools::getValue('RETAILCRM_API_TOKEN'));
@@ -92,7 +81,7 @@ class RetailCRM extends Module
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
 
-            if (!$this->validateCrmAddress($this->apiUrl) || !Validate::isGenericName($address)) {
+            if (!$this->validateCrmAddress($address) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
             } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
                 $output .= $this->displayError($this->l('Invalid crm api token'));
@@ -103,7 +92,23 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_STATUS', $status);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
+
+                $this->apiUrl = $address;
+                $this->apiKey = $token;
+                $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+                $this->reference = new RetailcrmReferences($this->api);
             }
+        }
+
+        if (!$this->validateCrmAddress($this->apiUrl)) {
+            $output .= $this->displayError($this->l('Invalid or empty crm address'));
+        } elseif (!$token || $token == '') {
+            $output .= $this->displayError($this->l('Invalid or empty crm api token'));
+        } else {
+            $output .= $this->displayConfirmation(
+                $this->l('Timezone settings must be identical to both of your crm and shop') .
+                " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
+            );
         }
 
         $this->display(__FILE__, 'retailcrm.tpl');
@@ -286,7 +291,7 @@ class RetailCRM extends Module
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
 
         if (isset($params['orderStatus'])) {
-            
+
                 $customer = array(
                     'externalId' => $params['customer']->id,
                     'lastName' => $params['customer']->lastname,
@@ -340,13 +345,19 @@ class RetailCRM extends Module
                 }
 
                 foreach ($cart->getProducts() as $item) {
+                    if(isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
+                        $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
+                    } else {
+                        $productId = $item['id_product'];
+                    }
+
                     $order['items'][] = array(
                         'initialPrice' => !empty($item['rate'])
                             ? $item['price'] + ($item['price'] * $item['rate'] / 100)
                             : $item['price']
                     ,
                         'quantity' => $item['quantity'],
-                        'productId' => $item['id_product'],
+                        'productId' => $productId,
                         'productName' => $item['name']
                     );
                 }
@@ -383,7 +394,7 @@ class RetailCRM extends Module
 
                 $order['customer']['externalId'] = $customer['externalId'];
                 $this->api->ordersCreate($order);
-            
+
         }
     }
 

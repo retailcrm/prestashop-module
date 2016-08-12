@@ -113,8 +113,11 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
 
             if(!empty($order['items'])) {
                 foreach ($order['items'] as $item) {
+                    $productId = explode('#', $item['offer']['externalId']);
+
                     $product = array();
-                    $product['id_product'] = (int) $item['offer']['externalId'];
+                    $product['id_product'] = (int) $productId[0];
+                    $product['id_product_attribute'] = !empty($productId[1]) ? $productId[1] : 0;
                     $product['quantity'] = $item['quantity'];
                     $product['id_address_delivery'] = (int) $address->id;
                     $products[] = $product;
@@ -324,10 +327,20 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              */
             foreach ($order['items'] as $key => $item) {
                 if (isset($item['deleted']) && $item['deleted'] == true) {
+                    if(strpos($item['id'], '#') !== false) {
+                        $itemId = explode('#', $item['id']);
+                        $product_id = $itemId[0];
+                        $product_attribute_id = $itemId[1];
+                    } else {
+                        $product_id = $item['id'];
+                        $product_attribute_id = 0;
+                    }
+
                     Db::getInstance()->execute('
                         DELETE FROM `'._DB_PREFIX_.'order_detail`
                         WHERE `id_order` = '. $orderToUpdate->id .'
-                        AND `product_id` = '.$item['id']
+                        AND `product_id` = '.$product_id. '
+                        AND `product_attribute_id` = '.$product_attribute_id
                     );
 
                     unset($order['items'][$key]);
@@ -339,7 +352,16 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
-                    if ($item['offer']['externalId'] == $orderItem['product_id']) {
+                    if(strpos('#', $item['offer']['externalId']) !== false) {
+                        $itemId = explode('#', $item['offer']['externalId']);
+                        $product_id = $itemId[0];
+                        $product_attribute_id = $itemId[1];
+                    } else {
+                        $product_id = $item['offer']['externalId'];
+                        $product_attribute_id = 0;
+                    }
+
+                    if ($product_id == $orderItem['product_id'] && $product_attribute_id == $orderItem['product_attribute_id']) {
                         if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                             Db::getInstance()->execute('
                                 UPDATE `'._DB_PREFIX_.'order_detail`
@@ -358,13 +380,6 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              * Check new items
              */
             if (!empty($order['items'])) {
-                foreach ($order['items'] as $key => $newItem) {
-                    $product = new Product((int) $newItem['offer']['externalId'], false, $default_lang);
-                    $qty = $newItem['quantity'];
-                    $product_list[] = array('product' =>$product, 'quantity' => $qty);
-                }
-
-
                 $query = 'INSERT `'._DB_PREFIX_.'order_detail`
                     (
                         `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
@@ -375,28 +390,50 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
 
                     VALUES';
 
-                foreach ($product_list as $product) {
+                foreach ($order['items'] as $key => $newItem) {
+                    $product_id = $newItem['offer']['externalId'];
+                    $product_attribute_id = 0;
+                    if(strpos($product_id, '#') !== false) {
+                        $product_id = explode('#', $product_id);
+
+                        $product_attribute_id = $product_id[1];
+                        $product_id = $product_id[0];
+                    }
+
+                    $product = new Product((int) $product_id, false, $default_lang);
+
+                    if($product_attribute_id != 0) {
+                        $productName = htmlspecialchars(strip_tags(Product::getProductName($product_id, $product_attribute_id)));
+
+                        $productPrice = Combination::getPrice($product_attribute_id);
+                        $productPrice = $productPrice > 0 ? $productPrice : $product->price;
+                    } else {
+                        $productName = htmlspecialchars(strip_tags($product->name));
+                        $productPrice = $product->price;
+                    }
+
                     $query .= '('
                         .(int) $orderToUpdate->id.',
                         0,
                         '. Context::getContext()->shop->id.',
-                        '.(int) $product['product']->id.',
-                        0,
-                        '.implode('', array('\'', $product['product']->name, '\'')).',
-                        '.(int) $product['quantity'].',
-                        '.(int) $product['quantity'].',
-                        '.$product['product']->price.',
-                        '.implode('', array('\'', $product['product']->reference, '\'')).',
-                        '.$product['product']->price * $product['quantity'].',
-                        '.($product['product']->price + $product['product']->price / 100 * 18) * $product['quantity'].',
-                        '.$product['product']->price.',
-                        '.($product['product']->price + $product['product']->price / 100 * 18).',
-                        '.$product['product']->price.'
+                        '.(int) $product_id.',
+                        '.(int) $product_attribute_id.',
+                        '.implode('', array('\'', $productName, '\'')).',
+                        '.(int) $newItem['quantity'].',
+                        '.(int) $newItem['quantity'].',
+                        '.$productPrice.',
+                        '.implode('', array('\'', $product->reference, '\'')).',
+                        '.$productPrice * $newItem['quantity'].',
+                        '.($productPrice + $productPrice / 100 * 18) * $newItem['quantity'].',
+                        '.$productPrice.',
+                        '.($productPrice + $productPrice / 100 * 18).',
+                        '.$productPrice.'
                     ),';
+
+                    unset($order['items'][$key]);
                 }
 
                 Db::getInstance()->execute(rtrim($query, ','));
-                unset($order['items'][$key]);
             }
 
             /*
