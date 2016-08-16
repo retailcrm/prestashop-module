@@ -383,7 +383,7 @@ class RetailCRM extends Module
                 if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
                     $order['status'] = $status[$statusCode];
                 } else {
-                    $order['status'] = ['new'];
+                    $order['status'] = array('new');
                 }
 
                 $customerCheck = $this->api->customersGet($customer['externalId']);
