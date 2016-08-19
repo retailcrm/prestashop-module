@@ -29,15 +29,20 @@ $startFrom = ($lastSync === false)
 $customerFix = array();
 $orderFix = array();
 
-$history = $api->ordersHistory(new DateTime($startFrom));
+$startDate = new DateTime($startFrom);
+$history = $api->ordersHistory(array(
+    'startDate' => $startDate->format('Y-m-d H:i:s')
+));
 
-if ($history->isSuccessful() && count($history->orders) > 0) {
+if ($history->isSuccessful() && count($history->history) > 0) {
 
     $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
     $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
     $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
 
-    foreach ($history->orders as $order) {
+    $orders = RetailcrmHistoryHelper::assemblyOrder($history->history);
+
+    foreach ($orders as $order) {
         if (isset($order['deleted']) && $order['deleted'] == true) continue;
 
         if (!array_key_exists('externalId', $order)) {
@@ -191,8 +196,31 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
 
             foreach ($order['items'] as $item) {
                 $product = new Product((int) $item['offer']['externalId'], false, $default_lang);
-                $qty = $item['quantity'];
-                $product_list[] = array('product' => $product, 'quantity' => $qty);
+                $product_id = $item['offer']['externalId'];
+                $product_attribute_id = 0;
+                if(strpos($item['offer']['externalId'], '#') !== false) {
+                    $product_id = explode('#', $item['offer']['externalId']);
+                    $product_attribute_id = $product_id[1];
+                    $product_id = $product_id[0];
+                }
+
+                if($product_attribute_id != 0) {
+                    $productName = htmlspecialchars(strip_tags(Product::getProductName($product_id, $product_attribute_id)));
+
+                    $productPrice = Combination::getPrice($product_attribute_id);
+                    $productPrice = $productPrice > 0 ? $productPrice : $product->price;
+                } else {
+                    $productName = htmlspecialchars(strip_tags($product->name));
+                    $productPrice = $product->price;
+                }
+
+                $product_list[] = array(
+                    'product' => $product,
+                    'product_attribute_id' => $product_attribute_id,
+                    'product_price' => $productPrice,
+                    'product_name' => $productName,
+                    'quantity' => $item['quantity']
+                );
             }
 
             $query = 'INSERT `'._DB_PREFIX_.'order_detail`
@@ -212,17 +240,17 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
                         0,
                         '. Context::getContext()->shop->id.',
                         '.(int) $product['product']->id.',
-                        0,
-                        '.implode('', array('\'', $product['product']->name, '\'')).',
+                        '.$product['product_attribute_id'].',
+                        '.implode('', array('\'', $product['product_name'], '\'')).',
                         '.(int) $product['quantity'].',
                         '.(int) $product['quantity'].',
-                        '.$product['product']->price.',
+                        '.$product['product_price'].',
                         '.implode('', array('\'', $product['product']->reference, '\'')).',
-                        '.$product['product']->price.',
-                        '.$product['product']->price.',
-                        '.$product['product']->price.',
-                        '.$product['product']->price.',
-                        '.$product['product']->price.'
+                        '.$product['product_price'].',
+                        '.$product['product_price'].',
+                        '.$product['product_price'].',
+                        '.$product['product_price'].',
+                        '.$product['product_price'].'
                     ),';
             }
 
@@ -352,7 +380,7 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
-                    if(strpos('#', $item['offer']['externalId']) !== false) {
+                    if(strpos($item['offer']['externalId'], '#') !== false) {
                         $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
                         $product_attribute_id = $itemId[1];
@@ -441,7 +469,11 @@ if ($history->isSuccessful() && count($history->orders) > 0) {
              * Discounts only for whole order
              */
             $orderDiscout = null;
-            $orderTotalProducts = $order['summ'];
+            $orderTotalProducts = 0;
+            foreach($orderToUpdate->getProductsDetail() as $orderItem) {
+                $orderTotalProducts += $orderItem['total_price_tax_incl'];
+            }
+            $orderTotalProducts = round($orderTotalProducts, 2);
 
             if (isset($order['discount']) && $order['discount'] > 0) {
                 if ($order['discount'] != $orderToUpdate->total_discounts) {
