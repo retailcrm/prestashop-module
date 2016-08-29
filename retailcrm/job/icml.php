@@ -1,4 +1,5 @@
 <?php
+$_SERVER['HTTPS'] = 1;
 
 require(dirname(__FILE__) . '/../../../config/config.inc.php');
 require(dirname(__FILE__) . '/../../../init.php');

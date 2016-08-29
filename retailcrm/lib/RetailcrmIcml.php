@@ -113,12 +113,24 @@ class RetailcrmIcml
             $offerKeys = array_keys($offer);
 
             foreach ($offerKeys as $key) {
+                if($offer[$key] == null) continue;
+
                 if (in_array($key, $this->properties)) {
-                    $e->appendChild(
+                    if(is_array($offer[$key])) {
+                        foreach($offer[$key] as $property) {
+                            $e->appendChild(
+                                $this->dd->createElement($key)
+                            )->appendChild(
+                                $this->dd->createTextNode(trim($property))
+                            );
+                        }
+                    } else {
+                        $e->appendChild(
                             $this->dd->createElement($key)
-                    )->appendChild(
+                        )->appendChild(
                             $this->dd->createTextNode(trim($offer[$key]))
-                    );
+                        );
+                    }
                 }
 
                 if (in_array($key, array_keys($this->params))) {
