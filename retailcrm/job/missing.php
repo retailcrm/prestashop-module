@@ -153,6 +153,4 @@ foreach($products as $product) {
     $order['items'][] = $item;
 }
 
-var_dump($order); die();
-
 $api->ordersEdit($order);
