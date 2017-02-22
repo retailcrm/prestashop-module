@@ -370,9 +370,8 @@ class RetailCRM extends Module
                             : $item['price']
                     ,
                         'quantity' => $item['quantity'],
-                        //'productId' => $productId,
                         'offer' => array('externalId' => $productId),
-                        'productName' => $item['name']
+                        'productName' => $item['name'],
                         'properties' => $arProp
                     );
 
