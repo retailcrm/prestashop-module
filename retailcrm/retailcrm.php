@@ -351,6 +351,19 @@ class RetailCRM extends Module
                         $productId = $item['id_product'];
                     }
 
+                    if ($item['attributes']) {
+                        $arProp = array();
+                        $count = 0;
+                        $arAttr = explode(",", $item['attributes']);
+                        foreach ($arAttr  as $valAttr) {
+                            $arItem = explode(":", $valAttr);
+                            $arProp[$count]['name'] = trim($arItem[0]);
+                            $arProp[$count]['value'] = trim($arItem[1]);
+                            $count++;
+
+                        }
+                    }
+                    
                     $order['items'][] = array(
                         'initialPrice' => !empty($item['rate'])
                             ? $item['price'] + ($item['price'] * $item['rate'] / 100)
@@ -360,7 +373,12 @@ class RetailCRM extends Module
                         //'productId' => $productId,
                         'offer' => array('externalId' => $productId),
                         'productName' => $item['name']
+                        'properties' => $arProp
                     );
+
+                    unset($arAttr);
+                    unset($count);
+                    unset($arProp);
                 }
 
                 $deliveryCode = $params['order']->id_carrier;
