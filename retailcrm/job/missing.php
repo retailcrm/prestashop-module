@@ -143,7 +143,8 @@ $products = $orderInstance->getProducts();
 
 foreach($products as $product) {
     $item = array(
-        'productId' => $product['product_id'],
+        //'productId' => $product['product_id'],
+        'offer' => array('externalId' => $product['product_id']),
         'productName' => $product['product_name'],
         'quantity' => $product['product_quantity'],
         'initialPrice' => round($product['product_price'], 2),

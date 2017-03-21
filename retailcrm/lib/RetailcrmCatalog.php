@@ -105,11 +105,26 @@ class RetailcrmCatalog
             } else {
                 $size = null;
             }
-
+            
+            $productForCombination = new Product($product['id_product']);   
+            
             $offers = Product::getProductAttributesIds($product['id_product']);
 
             if(!empty($offers)) {
                 foreach($offers as $offer) {
+
+                    $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute' ], $id_lang);
+                    if (!empty($combinations)) {
+                            
+                        foreach ($combinations as $combination) {
+                                $arSet = array(
+                                    'group_name' => $combination['group_name'],
+                                    'attribute' => $combination['attribute_name'],
+                                );
+                               $arComb[] = $arSet;
+                        }
+                    }
+
                     $pictures = array();
                     $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
                     foreach($covers as $cover) {
@@ -144,6 +159,12 @@ class RetailcrmCatalog
                         'size' => $size
                     );
 
+                    if (!empty($combinations)) {
+                        foreach ($arComb as $itemComb) {
+                            $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
+                        }
+                    }
+                    
                     $items[] = $item;
                 }
             } else {
