@@ -137,8 +137,8 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             */
             $newOrder = new Order();
             $shops = Shop::getShops();
-            $newOrder->id_shop = Shop::getCurrentShop();
-            $newOrder->id_shop_group = (int)$shops[Shop::getCurrentShop()]['id_shop_group'];
+            $newOrder->id_shop = Context::getContext()->shop->id;
+            $newOrder->id_shop_group = (int)$shops[Context::getContext()->shop->id]['id_shop_group'];
 
             $newOrder->id_address_delivery = (int) $address->id;
             $newOrder->id_address_invoice = (int) $address->id;
