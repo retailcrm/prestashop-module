@@ -46,6 +46,31 @@ if ($history->isSuccessful() && count($history->history) > 0) {
         if (isset($order['deleted']) && $order['deleted'] == true) continue;
 
         if (!array_key_exists('externalId', $order)) {
+
+            $delivery = $order['delivery']['code'];
+
+            if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
+                $deliveryType = $deliveries[$delivery];
+            }
+
+            $payment = $order['paymentType'];
+
+            if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
+                if(Module::getInstanceByName($payments[$payment])) {
+                    $paymentType = Module::getModuleName($payments[$payment]);
+                } else {
+                    $paymentType = $payments[$payment];
+                }
+            }
+
+            $state = $order['status'];
+
+            if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
+                $orderStatus = $statuses[$state];
+            }
+            
+            if (!$paymentType || !$deliveryType) continue;
+
             $customer = new Customer();
             if(!empty($order['customer']['email']))
                 $customer->getByEmail($order['customer']['email']);
@@ -81,28 +106,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $address->address1 = !empty($order['delivery']['address']['text']) ? $order['delivery']['address']['text'] : '-';
             $address->phone = $order['phone'];
             $address->add();
-
-            $delivery = $order['delivery']['code'];
-
-            if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
-                $deliveryType = $deliveries[$delivery];
-            }
-
-            $payment = $order['paymentType'];
-
-            if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
-                if(Module::getInstanceByName($payments[$payment])) {
-                    $paymentType = Module::getModuleName($payments[$payment]);
-                } else {
-                    $paymentType = $payments[$payment];
-                }
-            }
-
-            $state = $order['status'];
-
-            if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
-                $orderStatus = $statuses[$state];
-            }
 
             $cart = new Cart();
             $cart->id_currency = $default_currency;
