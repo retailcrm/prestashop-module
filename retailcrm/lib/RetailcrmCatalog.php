@@ -15,6 +15,7 @@ class RetailcrmCatalog
         $id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
         $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
+        $protocol = (Configuration::get('PS_SSL_ENABLED')) ? "https://" : "http://";
 
         $items = array();
         $categories = array();
@@ -128,7 +129,7 @@ class RetailcrmCatalog
                     $pictures = array();
                     $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
                     foreach($covers as $cover) {
-                        $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                        $picture = $protocol . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
                         $pictures[] = $picture;
                     }
 
@@ -171,7 +172,7 @@ class RetailcrmCatalog
                 $pictures = array();
                 $covers = Image::getImages($id_lang, $product['id_product'], null);
                 foreach($covers as $cover) {
-                    $picture = 'http://' . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                    $picture = $protocol . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
                     $pictures[] = $picture;
                 }
 
