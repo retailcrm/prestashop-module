@@ -80,6 +80,8 @@ class RetailCRM extends Module
             $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
+            $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
+            $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
 
             if (!$this->validateCrmAddress($address) || !Validate::isGenericName($address)) {
                 $output .= $this->displayError($this->l('Invalid crm address'));
@@ -91,6 +93,9 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
                 Configuration::updateValue('RETAILCRM_API_STATUS', $status);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
+                Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', $deliveryDefault);
+                Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
+
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
 
                 $this->apiUrl = $address;
@@ -177,6 +182,14 @@ class RetailCRM extends Module
                 'legend' => array('title' => $this->l('Payment types')),
                 'input' => $this->reference->getPaymentTypes(),
             );
+
+            /*
+             * Default
+             */
+            $fields_form[4]['form'] = array(
+                'legend' => array('title' => 'По умолчанию'),
+                'input' => $this->reference->getPaymentAndDeliveryForDefault(),
+            );
         }
 
         /*
@@ -248,6 +261,24 @@ class RetailCRM extends Module
                     $name = 'RETAILCRM_API_PAYMENT[' . $idx . ']';
                     $helper->fields_value[$name] = $payment;
                 }
+            }
+        }
+
+        $paymentSettingsDefault = Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT');
+        if (isset($paymentSettingsDefault) && $paymentSettingsDefault != '') {
+            $paymentTypesDefault = json_decode($paymentSettingsDefault);
+            if ($paymentTypesDefault) {
+                    $name = 'RETAILCRM_API_PAYMENT_DEFAULT';
+                    $helper->fields_value[$name] = $paymentTypesDefault;
+            }
+        }
+
+        $deliverySettingsDefault = Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT');
+        if (isset($deliverySettingsDefault) && $deliverySettingsDefault != '') {
+            $deliveryTypesDefault = json_decode($deliverySettingsDefault);
+            if ($deliveryTypesDefault) {
+                $name = 'RETAILCRM_API_DELIVERY_DEFAULT';
+                $helper->fields_value[$name] = $deliveryTypesDefault;
             }
         }
 
@@ -363,7 +394,7 @@ class RetailCRM extends Module
 
                         }
                     }
-                    
+
                     $order['items'][] = array(
                         'initialPrice' => !empty($item['rate'])
                             ? $item['price'] + ($item['price'] * $item['rate'] / 100)
@@ -413,6 +444,24 @@ class RetailCRM extends Module
                 $order['customer']['externalId'] = $customer['externalId'];
                 $this->api->ordersCreate($order);
 
+        } elseif (isset($params['newOrderStatus'])){
+
+            $statusCode = $params['newOrderStatus']->id;
+
+            if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
+                $orderStatus = $status[$statusCode];
+            }
+
+            if (isset($orderStatus)) {
+
+                $this->api->ordersEdit(
+                    array(
+                        'externalId' => $params['id_order'],
+                        'status' => $orderStatus
+                    )
+                );
+
+            }
         }
     }
 

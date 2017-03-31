@@ -39,6 +39,8 @@ if ($history->isSuccessful() && count($history->history) > 0) {
     $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
     $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
     $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
+    $deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
+    $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
 
     $orders = RetailcrmHistoryHelper::assemblyOrder($history->history);
 
@@ -61,6 +63,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 } else {
                     $paymentType = $payments[$payment];
                 }
+                $paymentId = $payments[$payment];
             }
 
             $state = $order['status'];
@@ -68,8 +71,32 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
                 $orderStatus = $statuses[$state];
             }
-            
-            if (!$paymentType || !$deliveryType) continue;
+
+            if (!$paymentType){
+                if ($paymentDefault) {
+
+                    if(Module::getInstanceByName($paymentDefault)) {
+                        $paymentType = Module::getModuleName($paymentDefault);
+                    } else {
+                        $paymentType = $paymentDefault;
+                    }
+
+                $paymentId = $paymentDefault;
+
+                } else{
+                    error_log('orderHistory: set default payment(error in order where id = '.$order['id'].')', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+                    continue;
+                }
+            }
+
+            if (!$deliveryType){
+                if ($deliveryDefault) {
+                    $deliveryType = $deliveryDefault;
+                } else{
+                    error_log('orderHistory: set default delivery(error in order where id = '.$order['id'].')', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+                    continue;
+                }
+            }
 
             $customer = new Customer();
             if(!empty($order['customer']['email']))
@@ -113,7 +140,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $cart->id_customer = $customer->id;
             $cart->id_address_delivery = (int) $address->id;
             $cart->id_address_invoice = (int) $address->id;
-            $cart->id_carrier = (int) $deliveries[$delivery];
+            $cart->id_carrier = (int) $deliveryType;
 
             $cart->add();
 
@@ -152,7 +179,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (isset($deliveryType)) $newOrder->id_carrier = (int) $deliveryType;
             if (isset($paymentType)) {
                 $newOrder->payment = $paymentType;
-                $newOrder->module = $payments[$payment];
+                $newOrder->module = $paymentId;
             }
             $newOrder->total_paid = $order['summ'] + $order['delivery']['cost'];
             $newOrder->total_paid_tax_incl = $order['summ'] + $order['delivery']['cost'];
@@ -275,7 +302,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 if ($statuses[$stype] != null) {
                     if ($statuses[$stype] != $orderToUpdate->current_state) {
                         Db::getInstance()->execute('
-                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`) 
+                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`)
                         VALUES (
                             0,
                             ' . $orderToUpdate->id . ',
@@ -322,7 +349,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         $updateCarrierFields = implode(', ', $updateCarrierFields);
 
                         Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'order_carrier` SET 
+                        UPDATE `' . _DB_PREFIX_ . 'order_carrier` SET
                         '.$updateCarrierFields.'
                         WHERE `id_order` = \'' . $orderToUpdate->id . '\''
                         );
