@@ -7,13 +7,7 @@ class RetailcrmReferences
     {
         $this->api = $client;
         $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-    }
-
-    public function getDeliveryTypes()
-    {
-        $deliveryTypes = array();
-
-        $carriers = Carrier::getCarriers(
+        $this->carriers = Carrier::getCarriers(
             $this->default_lang,
             true,
             false,
@@ -21,9 +15,14 @@ class RetailcrmReferences
             null,
             PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE
         );
+    }
 
-        if (!empty($carriers)) {
-            foreach ($carriers as $carrier) {
+    public function getDeliveryTypes()
+    {
+        $deliveryTypes = array();
+
+        if (!empty($this->carriers)) {
+            foreach ($this->carriers as $carrier) {
                 $deliveryTypes[] = array(
                     'type' => 'select',
                     'label' => $carrier['name'],
@@ -103,6 +102,69 @@ class RetailcrmReferences
         }
 
         return $paymentTypes;
+    }
+
+public function getPaymentAndDeliveryForDefault()
+    {
+        $paymentTypes = array();
+        $deliveryTypes = array();
+
+        $paymentDeliveryTypes = array();
+
+        if (!empty($this->carriers)) {
+
+            $deliveryTypes[] = array(
+                'id_option' => '',
+                'name' => '',
+            );
+
+            foreach ($this->carriers as $valCarrier) {
+                $deliveryTypes[] = array(
+                    'id_option' => $valCarrier['id_carrier'],
+                    'name' => $valCarrier['name'],
+                );
+            }
+
+            $paymentDeliveryTypes[] = array(
+                'type' => 'select',
+                'label' => "Доставка",
+                'name' => 'RETAILCRM_API_DELIVERY_DEFAULT',
+                'required' => false,
+                'options' => array(
+                    'query' =>  $deliveryTypes,
+                    'id' => 'id_option',
+                    'name' => 'name'
+                )
+            );
+        }
+        if (!empty($this->getSystemPaymentModules())) {
+
+            $paymentTypes[] = array(
+                'id_option' => '',
+                'name' => '',
+            );
+
+            foreach ($this->getSystemPaymentModules() as $valPayment) {
+                $paymentTypes[$valPayment['id']] = array(
+                    'id_option' => $valPayment['code'],
+                    'name' => $valPayment['name'],
+                );
+            }
+
+            $paymentDeliveryTypes[] = array(
+                'type' => 'select',
+                'label' => "Система оплаты",
+                'name' => 'RETAILCRM_API_PAYMENT_DEFAULT',
+                'required' => false,
+                'options' => array(
+                    'query' => $paymentTypes,
+                    'id' => 'id_option',
+                    'name' => 'name'
+                )
+            );
+        }
+
+        return $paymentDeliveryTypes;
     }
 
     protected function getSystemPaymentModules()
