@@ -512,7 +512,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             }
 
             if (isset($order['discountPercent']) && $order['discountPercent'] > 0) {
-                $percent = ($order['summ'] * $order['discountPercent'])/100;
+                $percent = ($orderTotalProducts * $order['discountPercent'])/100;
                 if ($percent != $orderToUpdate->total_discounts) {
                     $orderDiscout = ($orderDiscout == null) ? $percent : $percent + $orderDiscout;
                 }
@@ -525,12 +525,19 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 $deliveryCost = $order['delivery']['cost'];
             }
 
-            $totalPaid = $deliveryCost + $orderTotalProducts;
+            $totalPaid = $deliveryCost + $orderTotalProducts - $totalDiscount;
 
             if ($totalDiscount != $orderToUpdate->total_discounts ||
                 $orderTotalProducts != $orderToUpdate->total_products_wt ||
                 $deliveryCost != $orderToUpdate->total_shipping
             ) {
+                $orderCartRules = $orderToUpdate->getCartRules();
+                foreach ($orderCartRules as $valCartRules) {
+                    $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
+                    $order_cart_rule->delete();
+                }
+                $orderToUpdate->update();
+
                 Db::getInstance()->execute('
                     UPDATE `'._DB_PREFIX_.'orders`
                     SET `total_discounts` = '.$totalDiscount.',
