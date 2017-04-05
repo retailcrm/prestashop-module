@@ -384,13 +384,13 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              * Clean deleted items
              */
             foreach ($order['items'] as $key => $item) {
-                if (isset($item['deleted']) && $item['deleted'] == true) {
-                    if(strpos($item['id'], '#') !== false) {
-                        $itemId = explode('#', $item['id']);
+                if (isset($item['delete']) && $item['delete'] == true) {
+                    if(strpos($item['offer']['externalId'], '#') !== false) {
+                        $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
                         $product_attribute_id = $itemId[1];
                     } else {
-                        $product_id = $item['id'];
+                        $product_id = $item['offer']['externalId'];
                         $product_attribute_id = 0;
                     }
 
@@ -402,6 +402,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     );
 
                     unset($order['items'][$key]);
+                    $ItemDiscount = true
                 }
             }
 
@@ -410,6 +411,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
+                    if (isset($item['discount']) || isset($item['discountPercent'])) $ItemDiscount = true;
                     if(strpos($item['offer']['externalId'], '#') !== false) {
                         $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
@@ -449,6 +451,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     VALUES';
 
                 foreach ($order['items'] as $key => $newItem) {
+                    if ($newItem['discount'] || $newItem['discountPercent']) $ItemDiscount = true;
                     $product_id = $newItem['offer']['externalId'];
                     $product_attribute_id = 0;
                     if(strpos($product_id, '#') !== false) {
@@ -498,39 +501,19 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              * Fix prices & discounts
              * Discounts only for whole order
              */
-            $orderDiscout = null;
-            $orderTotalProducts = 0;
-            foreach($orderToUpdate->getProductsDetail() as $orderItem) {
-                $orderTotalProducts += $orderItem['total_price_tax_incl'];
-            }
-            $orderTotalProducts = round($orderTotalProducts, 2);
+            if (isset($order['discount']) ||
+                isset($order['discountPercent']) ||
+                isset($order['delivery']['cost']) ||
+                $ItemDiscount) {
 
-            if (isset($order['discount']) && $order['discount'] > 0) {
-                if ($order['discount'] != $orderToUpdate->total_discounts) {
-                    $orderDiscout = ($orderDiscout == null) ? $order['discount'] : $order['discount'] + $orderDiscout;
-                }
-            }
+                $infoOrd = $api->ordersGet($order['externalId']);
+                $infoOrder = $infoOrd->order;
 
-            if (isset($order['discountPercent']) && $order['discountPercent'] > 0) {
-                $percent = ($orderTotalProducts * $order['discountPercent'])/100;
-                if ($percent != $orderToUpdate->total_discounts) {
-                    $orderDiscout = ($orderDiscout == null) ? $percent : $percent + $orderDiscout;
-                }
-            }
+                $orderTotalProducts = $infoOrder['summ'];
+                $totalPaid = $infoOrder['totalSumm'];
+                $deliveryCost = $infoOrder['delivery']['cost'];
+                $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
 
-            $totalDiscount = ($orderDiscout == null) ? $orderToUpdate->total_discounts : $orderDiscout;
-
-            $deliveryCost = $orderToUpdate->total_shipping;
-            if(!empty($order['delivery']['cost'])) {
-                $deliveryCost = $order['delivery']['cost'];
-            }
-
-            $totalPaid = $deliveryCost + $orderTotalProducts - $totalDiscount;
-
-            if ($totalDiscount != $orderToUpdate->total_discounts ||
-                $orderTotalProducts != $orderToUpdate->total_products_wt ||
-                $deliveryCost != $orderToUpdate->total_shipping
-            ) {
                 $orderCartRules = $orderToUpdate->getCartRules();
                 foreach ($orderCartRules as $valCartRules) {
                     $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
@@ -552,10 +535,11 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     `total_products_wt` = '.$orderTotalProducts.'
                     WHERE `id_order` = '.(int) $order['externalId']
                 );
+
+                unset($ItemDiscount);
             }
         }
     }
-
     /*
      * Update last sync timestamp
      */
