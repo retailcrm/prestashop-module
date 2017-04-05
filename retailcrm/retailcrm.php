@@ -398,8 +398,7 @@ class RetailCRM extends Module
                     $order['items'][] = array(
                         'initialPrice' => !empty($item['rate'])
                             ? $item['price'] + ($item['price'] * $item['rate'] / 100)
-                            : $item['price']
-                    ,
+                            : $item['price'],
                         'quantity' => $item['quantity'],
                         'offer' => array('externalId' => $productId),
                         'productName' => $item['name'],
