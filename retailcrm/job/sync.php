@@ -402,12 +402,12 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     );
 
                     unset($order['items'][$key]);
-                    $ItemDiscount = true
+                    $ItemDiscount = true;
                 }
             }
 
             /*
-             * Check items quantity
+             * Check items quantity and discount
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
@@ -422,6 +422,35 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     }
 
                     if ($product_id == $orderItem['product_id'] && $product_attribute_id == $orderItem['product_attribute_id']) {
+
+                        // discount
+                        if (isset($item['discount']) || isset($item['discountPercent'])) {
+                            $product = new Product((int) $product_id, false, $default_lang);
+                            $tax = new TaxCore($product->id_tax_rules_group);
+
+                            if($product_attribute_id != 0) {
+                                $prodPrice = Combination::getPrice($product_attribute_id);
+                                $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
+                            } else {
+                                $prodPrice = $product->price;
+                            }
+
+                            $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
+
+                            $productPrice = $prodPrice - $item['discount'];
+                            $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
+                            $ItemDiscount = true;
+
+                            $productPrice = round($productPrice , 2);
+
+                            Db::getInstance()->execute('
+                                UPDATE `'._DB_PREFIX_.'order_detail`
+                                SET `unit_price_tax_incl` = '.$productPrice.'
+                                WHERE `id_order_detail` = '.$orderItem['id_order_detail']
+                            );
+                        }
+
+                        // quantity
                         if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                             Db::getInstance()->execute('
                                 UPDATE `'._DB_PREFIX_.'order_detail`
@@ -462,6 +491,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     }
 
                     $product = new Product((int) $product_id, false, $default_lang);
+                    $tax = new TaxCore($product->id_tax_rules_group);
 
                     if($product_attribute_id != 0) {
                         $productName = htmlspecialchars(strip_tags(Product::getProductName($product_id, $product_attribute_id)));
@@ -471,6 +501,13 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     } else {
                         $productName = htmlspecialchars(strip_tags($product->name));
                         $productPrice = $product->price;
+                    }
+
+                    // discount
+                    if ($newItem['discount'] || $newItem['discountPercent']) {
+                        $productPrice = $productPrice - $newItem['discount'];
+                        $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
+                        $ItemDiscount = true;
                     }
 
                     $query .= '('
@@ -485,9 +522,9 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         '.$productPrice.',
                         '.implode('', array('\'', $product->reference, '\'')).',
                         '.$productPrice * $newItem['quantity'].',
-                        '.($productPrice + $productPrice / 100 * 18) * $newItem['quantity'].',
+                        '.($productPrice + $productPrice / 100 * $tax->rate) * $newItem['quantity'].',
                         '.$productPrice.',
-                        '.($productPrice + $productPrice / 100 * 18).',
+                        '.($productPrice + $productPrice / 100 * $tax->rate).',
                         '.$productPrice.'
                     ),';
 
