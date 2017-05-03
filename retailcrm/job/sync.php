@@ -364,10 +364,11 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 $ptype = $order['paymentType'];
 
                 if ($payments[$ptype] != null) {
+                    $paymentType = Module::getModuleName($payments[$ptype]);
                     if ($payments[$ptype] != $orderToUpdate->payment) {
                         Db::getInstance()->execute('
                         UPDATE `' . _DB_PREFIX_ . 'orders`
-                        SET `payment` = \'' . $payments[$ptype] . '\'
+                        SET `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\'
                         WHERE `id_order` = ' . (int)$order['externalId']
                         );
                         Db::getInstance()->execute('
@@ -411,7 +412,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
-                    if (isset($item['discount']) || isset($item['discountPercent'])) $ItemDiscount = true;
                     if(strpos($item['offer']['externalId'], '#') !== false) {
                         $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
@@ -480,7 +480,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     VALUES';
 
                 foreach ($order['items'] as $key => $newItem) {
-                    if ($newItem['discount'] || $newItem['discountPercent']) $ItemDiscount = true;
                     $product_id = $newItem['offer']['externalId'];
                     $product_attribute_id = 0;
                     if(strpos($product_id, '#') !== false) {
