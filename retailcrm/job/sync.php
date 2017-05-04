@@ -439,7 +439,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
                             $productPrice = $prodPrice - $item['discount'];
                             $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
-                            $ItemDiscount = true;
 
                             $productPrice = round($productPrice , 2);
 
@@ -460,6 +459,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                             );
                         }
 
+                        $ItemDiscount = true;
                         unset($order['items'][$key]);
                     }
                 }
