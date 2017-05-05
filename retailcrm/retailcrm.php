@@ -36,6 +36,7 @@ class RetailCRM extends Module
 
         if ($this->version == '1.6') {
             $this->bootstrap = true;
+            $this->use_new_hooks = false;
         }
 
         if ($this->validateCrmAddress($this->apiUrl) && !empty($this->apiKey)) {
@@ -53,7 +54,9 @@ class RetailCRM extends Module
             $this->registerHook('newOrder') &&
             $this->registerHook('actionOrderStatusPostUpdate') &&
             $this->registerHook('actionPaymentConfirmation') &&
-            $this->registerHook('actionCustomerAccountAdd')
+            $this->registerHook('actionCustomerAccountAdd') &&
+            $this->registerHook('actionOrderEdited') &&
+            ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
         );
     }
 
@@ -298,6 +301,20 @@ class RetailCRM extends Module
         );
     }
 
+    // this hook added in 1.7
+    public function hookActionCustomerAccountUpdate($params)
+    {
+        $this->api->customersEdit(
+            array(
+                'externalId' => $params['customer']->id,
+                'firstName' => $params['customer']->firstname,
+                'lastName' => $params['customer']->lastname,
+                'email' => $params['customer']->email,
+                'birthday' => $params['customer']->birthday
+            )
+        );
+    }
+
     public function hookNewOrder($params)
     {
         return $this->hookActionOrderStatusPostUpdate($params);
@@ -313,6 +330,38 @@ class RetailCRM extends Module
         );
 
         return $this->hookActionOrderStatusPostUpdate($params);
+    }
+
+    public function hookActionOrderEdited($params)
+    {
+        $order = array(
+            'externalId' => $params['order']->id,
+            'firstName' => $params['customer']->firstname,
+            'lastName' => $params['customer']->lastname,
+            'email' => $params['customer']->email,
+            'discount' => $params['order']->total_discounts,
+            'createdAt' => $params['order']->date_add,
+            'delivery' => array('cost' => $params['order']->total_shipping)
+        );
+
+        $orderdb = new Order($params['order']->id);
+        foreach ($orderdb->getProducts() as $item) {
+            if(isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+                $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
+            } else {
+                $productId = $item['product_id'];
+            }
+
+            $order['items'][] = array(
+                'initialPrice' => $item['unit_price_tax_incl'],
+                'quantity' => $item['product_quantity'],
+                'offer' => array('externalId' => $productId),
+                'productName' => $item['product_name'],
+            );
+        }
+
+        $order['customer']['externalId'] = $params['order']->id_customer;
+        $this->api->ordersEdit($order);
     }
 
     public function hookActionOrderStatusPostUpdate($params)
