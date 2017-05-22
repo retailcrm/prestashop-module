@@ -129,7 +129,8 @@ public function getPaymentAndDeliveryForDefault()
                 )
             );
         }
-        if (!empty($this->getSystemPaymentModules())) {
+        $paymentModules = $this->getSystemPaymentModules();
+        if (!empty($paymentModules)) {
 
             $paymentTypes[] = array(
                 'id_option' => '',
