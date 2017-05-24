@@ -294,33 +294,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $orderToUpdate = new Order((int) $order['externalId']);
 
             /*
-             * check status
-            */
-            if(!empty($order['status'])) {
-                $stype = $order['status'];
-
-                if ($statuses[$stype] != null) {
-                    if ($statuses[$stype] != $orderToUpdate->current_state) {
-                        Db::getInstance()->execute('
-                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`)
-                        VALUES (
-                            0,
-                            ' . $orderToUpdate->id . ',
-                            ' . $statuses[$stype] . ',
-                            "' . date('Y-m-d H:i:s') . '"
-                        )
-                        ');
-
-                        Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'orders`
-                        SET `current_state` = \'' . $statuses[$stype] . '\'
-                        WHERE `id_order` = ' . (int)$order['externalId']
-                        );
-                    }
-                }
-            }
-
-            /*
              * check delivery type
              */
             if(!empty($order['delivery']['code'])) {
@@ -574,6 +547,34 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
                 unset($ItemDiscount);
             }
+
+            /*
+             * check status
+            */
+            if(!empty($order['status'])) {
+                $stype = $order['status'];
+
+                if ($statuses[$stype] != null) {
+                    if ($statuses[$stype] != $orderToUpdate->current_state) {
+                        Db::getInstance()->execute('
+                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`)
+                        VALUES (
+                            0,
+                            ' . $orderToUpdate->id . ',
+                            ' . $statuses[$stype] . ',
+                            "' . date('Y-m-d H:i:s') . '"
+                        )
+                        ');
+
+                        Db::getInstance()->execute('
+                        UPDATE `' . _DB_PREFIX_ . 'orders`
+                        SET `current_state` = \'' . $statuses[$stype] . '\'
+                        WHERE `id_order` = ' . (int)$order['externalId']
+                        );
+                    }
+                }
+            }
+
         }
     }
     /*
