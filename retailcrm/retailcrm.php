@@ -395,8 +395,8 @@ class RetailCRM extends Module
                 $address = array_shift($addressCollection);
 
                 if ($address instanceof Address) {
-                    $phone = is_null($address->phone)
-                        ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
+                    $phone = empty($address->phone)
+                        ? empty($address->phone_mobile) ? '' : $address->phone_mobile
                         : $address->phone;
 
                     $postcode = $address->postcode;
