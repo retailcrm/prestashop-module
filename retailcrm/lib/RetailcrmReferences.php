@@ -20,6 +20,7 @@ class RetailcrmReferences
     public function getDeliveryTypes()
     {
         $deliveryTypes = array();
+        $apiDeliveryTypes = $this->getApiDeliveryTypes();
 
         if (!empty($this->carriers)) {
             foreach ($this->carriers as $carrier) {
@@ -29,7 +30,7 @@ class RetailcrmReferences
                     'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
                     'required' => false,
                     'options' => array(
-                        'query' => $this->getApiDeliveryTypes(),
+                        'query' => $apiDeliveryTypes,
                         'id' => 'id_option',
                         'name' => 'name'
                     )
@@ -43,8 +44,8 @@ class RetailcrmReferences
     public function getStatuses()
     {
         $statusTypes = array();
-
         $states = OrderState::getOrderStates($this->default_lang, true);
+        $apiStatuses = $this->getApiStatuses();
 
         if (!empty($states)) {
             foreach ($states as $state) {
@@ -60,7 +61,7 @@ class RetailcrmReferences
                         'name' => "RETAILCRM_API_STATUS[$key]",
                         'required' => false,
                         'options' => array(
-                            'query' => $this->getApiStatuses(),
+                            'query' => $apiStatuses,
                             'id' => 'id_option',
                             'name' => 'name'
                         )
@@ -76,6 +77,7 @@ class RetailcrmReferences
     {
         $payments = $this->getSystemPaymentModules();
         $paymentTypes = array();
+        $apiPaymentTypes = $this->getApiPaymentTypes();
 
         if (!empty($payments)) {
             foreach ($payments as $payment) {
@@ -85,7 +87,7 @@ class RetailcrmReferences
                     'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
                     'required' => false,
                     'options' => array(
-                        'query' => $this->getApiPaymentTypes(),
+                        'query' => $apiPaymentTypes,
                         'id' => 'id_option',
                         'name' => 'name'
                     )
@@ -137,7 +139,7 @@ public function getPaymentAndDeliveryForDefault()
                 'name' => '',
             );
 
-            foreach ($this->getSystemPaymentModules() as $valPayment) {
+            foreach ($paymentModules as $valPayment) {
                 $paymentTypes[$valPayment['id']] = array(
                     'id_option' => $valPayment['code'],
                     'name' => $valPayment['name'],
