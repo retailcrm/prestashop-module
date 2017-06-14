@@ -113,8 +113,13 @@ foreach ($orderRecords as $record) {
     $products = $object->getProducts();
 
     foreach($products as $product) {
+        if(isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
+            $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
+        } else {
+            $productId = $product['product_id'];
+        }
         $item = array(
-            'productId' => $product['product_id'],
+            'offer' => array('externalId' => $productId),
             'productName' => $product['product_name'],
             'quantity' => $product['product_quantity'],
             'initialPrice' => round($product['product_price'], 2),
