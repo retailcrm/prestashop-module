@@ -50,10 +50,6 @@ class RetailcrmReferences
         if (!empty($states)) {
             foreach ($states as $state) {
                 if ($state['name'] != ' ') {
-                    /*$key = isset($state['id_order_state'])
-                        ? $state['id_order_state']
-                        : $state['id_order_return_state']
-                        ;*/
                     $key = $state['id_order_state'];
                     $statusTypes[] = array(
                         'type' => 'select',
@@ -98,7 +94,7 @@ class RetailcrmReferences
         return $paymentTypes;
     }
 
-public function getPaymentAndDeliveryForDefault()
+public function getPaymentAndDeliveryForDefault($arParams)
     {
         $paymentTypes = array();
         $deliveryTypes = array();
@@ -121,7 +117,7 @@ public function getPaymentAndDeliveryForDefault()
 
             $paymentDeliveryTypes[] = array(
                 'type' => 'select',
-                'label' => "Доставка",
+                'label' => $arParams[0],
                 'name' => 'RETAILCRM_API_DELIVERY_DEFAULT',
                 'required' => false,
                 'options' => array(
@@ -148,7 +144,7 @@ public function getPaymentAndDeliveryForDefault()
 
             $paymentDeliveryTypes[] = array(
                 'type' => 'select',
-                'label' => "Система оплаты",
+                'label' => $arParams[1],
                 'name' => 'RETAILCRM_API_PAYMENT_DEFAULT',
                 'required' => false,
                 'options' => array(

@@ -190,8 +190,8 @@ class RetailCRM extends Module
              * Default
              */
             $fields_form[4]['form'] = array(
-                'legend' => array('title' => 'По умолчанию'),
-                'input' => $this->reference->getPaymentAndDeliveryForDefault(),
+                'legend' => array('title' => $this->l('Default')),
+                'input' => $this->reference->getPaymentAndDeliveryForDefault(array($this->l('Delivery method'), $this->l('Payment type'))),
             );
         }
 
