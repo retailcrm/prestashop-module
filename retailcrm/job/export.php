@@ -32,7 +32,7 @@ foreach ($customerRecords as $record) {
     $customers[$record['id_customer']] = array(
         'externalId' => $record['id_customer'],
         'firstName' => $record['firstname'],
-        'lastname' => $record['lastname'],
+        'lastName' => $record['lastname'],
         'email' => $record['email']
     );
 }

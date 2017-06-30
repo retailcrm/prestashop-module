@@ -33,7 +33,10 @@ class RetailcrmIcml
             'color' => 'Цвет',
             'weight' => 'Вес',
             'size' => 'Размер',
-            'tax' => 'Наценка'
+            'tax' => 'Наценка',
+            'width' => 'Ширина',
+            'height' => 'Высота',
+            'depth' => 'Глубина'
         );
     }
 
