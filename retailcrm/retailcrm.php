@@ -20,8 +20,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.1.1';
-        $this->version = '2.1';
+        $this->version = '2.2';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -346,7 +345,7 @@ class RetailCRM extends Module
 
         $orderdb = new Order($params['order']->id);
         foreach ($orderdb->getProducts() as $item) {
-            if(isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
             } else {
                 $productId = $item['product_id'];
@@ -425,7 +424,7 @@ class RetailCRM extends Module
                 }
 
                 foreach ($cart->getProducts() as $item) {
-                    if(isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
+                    if (isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
                         $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
                     } else {
                         $productId = $item['id_product'];
@@ -454,9 +453,7 @@ class RetailCRM extends Module
                         'properties' => $arProp
                     );
 
-                    unset($arAttr);
-                    unset($count);
-                    unset($arProp);
+                    unset($arAttr, $count, $arProp);
                 }
 
                 $deliveryCode = $params['order']->id_carrier;
@@ -492,7 +489,7 @@ class RetailCRM extends Module
                 $order['customer']['externalId'] = $customer['externalId'];
                 $this->api->ordersCreate($order);
 
-        } elseif (isset($params['newOrderStatus'])){
+        } elseif (isset($params['newOrderStatus'])) {
 
             $statusCode = $params['newOrderStatus']->id;
 
@@ -514,7 +511,7 @@ class RetailCRM extends Module
     }
 
     private function validateCrmAddress($address) {
-        if(preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1)
+        if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1)
             return true;
 
         return false;

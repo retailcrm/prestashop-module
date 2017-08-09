@@ -26,7 +26,7 @@ class RetailcrmCatalog
 
         $currencies = Currency::getCurrencies();
 
-        $types = Category::getCategories($id_lang, true, false);
+        $types = Category::getCategories($id_lang, false, false);
         foreach ($types AS $category) {
             $categories[] = array(
                 'id' => $category['id_category'],
@@ -126,6 +126,11 @@ class RetailcrmCatalog
                         }
                     }
 
+                    if (!empty($combinations[0]['reference'])) {
+                        $articleCombination = $combinations[0]['reference'];
+                    } else {
+                        $articleCombination = null;
+                    }
                     $pictures = array();
                     $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
                     foreach($covers as $cover) {
@@ -140,7 +145,8 @@ class RetailcrmCatalog
                     }
 
                     $offerPrice = Combination::getPrice($offer['id_product_attribute']);
-                    $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+                    //$offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+                    $offerPrice = $offerPrice != 0 ? $offerPrice + $price : $price;
 
                     $item = array(
                         'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
@@ -155,7 +161,7 @@ class RetailcrmCatalog
                         'purchasePrice' => $purchasePrice,
                         'price' => round($offerPrice, 2),
                         'vendor' => $vendor,
-                        'article' => $article,
+                        'article' => ($articleCombination) ? $articleCombination : $article,
                         'weight' => $weight,
                         'size' => $size,
                         'width' => $width,

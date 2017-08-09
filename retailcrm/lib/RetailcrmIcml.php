@@ -78,14 +78,14 @@ class RetailcrmIcml
         foreach ($categories as $category) {
             $e = $this->eCategories->appendChild(
                     $this->dd->createElement(
-                            'category', $category['name']
+                            'category', htmlspecialchars($category['name'])
                     )
             );
 
             $e->setAttribute('id', $category['id']);
 
             if ($category['parentId'] > 0) {
-                $e->setAttribute('parentId', $category['parentId']);
+                $e->setAttribute('parentId', htmlspecialchars($category['parentId']));
             }
         }
     }
