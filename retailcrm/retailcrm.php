@@ -119,6 +119,11 @@ class RetailCRM extends Module
             }
         }
 
+        if ($address && $token) {
+            $this->api = new RetailcrmProxy($address, $token, $this->log, $version);
+            $this->reference = new RetailcrmReferences($this->api);
+        }
+        
         $output .= $this->displayConfirmation(
             $this->l('Timezone settings must be identical to both of your crm and shop') .
             " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
