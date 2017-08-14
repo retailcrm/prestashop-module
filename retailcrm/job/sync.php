@@ -11,16 +11,17 @@ $default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
 
 $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
 $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
+$apiVersion = Configuration::get('RETAILCRM_API_VERSION');
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
 } else {
     error_log('orderHistory: set api key & url first', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
     exit();
 }
 
 $lastSync = Configuration::get('RETAILCRM_LAST_SYNC');
-
+$references = new RetailcrmReferences($api);
 $startFrom = ($lastSync === false)
     ? date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s'))))
     : $lastSync
@@ -55,7 +56,20 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 $deliveryType = $deliveries[$delivery];
             }
 
-            $payment = $order['paymentType'];
+            if ($apiVersion != 5) {
+                $payment = $order['paymentType'];
+            } else {
+                if (isset($order['payments']) && count($order['payments']) == 1) {
+                    $paymentCRM = end($order['payments']);
+                    $payment = $paymentCRM['type'];
+                } elseif (isset($order['payments']) && count($order['payments']) > 1) {
+                    foreach ($order['payments'] as $paymentCRM) {
+                        if ($payment['status'] != 'paid') {
+                            $payment = $paymentCRM['type'];
+                        }
+                    }
+                }
+            }
 
             if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
                 if(Module::getInstanceByName($payments[$payment])) {
@@ -169,7 +183,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $shops = Shop::getShops();
             $newOrder->id_shop = Context::getContext()->shop->id;
             $newOrder->id_shop_group = (int)$shops[Context::getContext()->shop->id]['id_shop_group'];
-
+            $newOrder->reference = $newOrder->generateReference();
             $newOrder->id_address_delivery = (int) $address->id;
             $newOrder->id_address_invoice = (int) $address->id;
             $newOrder->id_cart = (int) $cart->id;
@@ -204,24 +218,6 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 $newOrder->total_discounts = $order['discount'];
             }
 
-            $newOrder->add(false, false);
-
-            $carrier = new OrderCarrierCore();
-            $carrier->id_order = $newOrder->id;
-            $carrier->id_carrier = $deliveryType;
-            $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
-            $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
-            $carrier->date_add = $order['delivery']['date'];
-            $carrier->add(false, false);
-
-            /*
-             * collect order ids for single fix request
-            */
-            array_push($orderFix, array('id' => $order['id'], 'externalId' => $newOrder->id));
-
-            /*
-             * Create order details
-            */
             $product_list = array();
 
             foreach ($order['items'] as $item) {
@@ -251,8 +247,55 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     'product_name' => $productName,
                     'quantity' => $item['quantity']
                 );
+
+                if (isset($item['discountTotal']) && $apiVersion == 5) {
+                    $newOrder->total_discounts += $item['discountTotal'] * $item['quantity'];
+                }
             }
 
+            $newOrder->add(false, false);
+
+            foreach ($order['payments'] as $pay) {
+                if (!isset($pay['externalId']) && $pay['status'] == 'paid') {
+                    $ptype = $payment['type'];
+                    $ptypes = $references->getSystemPaymentModules();
+                    if ($payments[$ptype] != null) {
+                        foreach ($ptypes as $pay) {
+                            if ($pay['code'] == $payments[$ptype]) {
+                                $payType = $pay['name'];
+                            }
+                        }
+                        $paymentType = Module::getModuleName($payments[$ptype]);
+                        Db::getInstance()->execute('
+                            INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
+                            (`payment_method`, `order_reference` , `amount`, `date_add`)
+                            VALUES (
+                            \'' . $payType . '\', 
+                            \'' . $orderToUpdate->reference . '\',
+                            \'' . $payment['amount'] . '\',
+                            \'' . $payment['paidAt'] . '\'
+                            )'
+                        );
+                    }
+                }    
+            }
+
+            $carrier = new OrderCarrierCore();
+            $carrier->id_order = $newOrder->id;
+            $carrier->id_carrier = $deliveryType;
+            $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
+            $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
+            $carrier->date_add = $order['delivery']['date'];
+            $carrier->add(false, false);
+
+            /*
+             * collect order ids for single fix request
+            */
+            array_push($orderFix, array('id' => $order['id'], 'externalId' => $newOrder->id));
+
+            /*
+             * Create order details
+            */
             $query = 'INSERT `'._DB_PREFIX_.'order_detail`
                 (
                     `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
@@ -333,7 +376,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             /*
              * check payment type
              */
-            if(!empty($order['paymentType'])) {
+            if(!empty($order['paymentType']) && $apiVersion != 5) {
                 $ptype = $order['paymentType'];
 
                 if ($payments[$ptype] != null) {
@@ -350,6 +393,39 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         WHERE `order_reference` = \'' . $orderToUpdate->reference . '\''
                         );
 
+                    }
+                }
+            } elseif (!empty($order['payments']) && $apiVersion == 5) {
+                if ($order['payments']) {
+                    foreach ($order['payments'] as $payment) {
+                        if (!isset($payment['externalId']) && $payment['status'] == 'paid') {
+                           $ptype = $payment['type'];
+                           $ptypes = $references->getSystemPaymentModules();
+                           if ($payments[$ptype] != null) {
+                                foreach ($ptypes as $pay) {
+                                    if ($pay['code'] == $payments[$ptype]) {
+                                        $payType = $pay['name'];
+                                    }
+                                }
+                                $paymentType = Module::getModuleName($payments[$ptype]);
+                                Db::getInstance()->execute('
+                                    UPDATE `' . _DB_PREFIX_ . 'orders`
+                                    SET `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\'
+                                    WHERE `id_order` = ' . (int)$order['externalId']
+                                );
+
+                                Db::getInstance()->execute('
+                                    INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
+                                    (`payment_method`, `order_reference` , `amount`, `date_add`)
+                                    VALUES (
+                                    \'' . $payType . '\', 
+                                    \'' . $orderToUpdate->reference . '\',
+                                    \'' . $payment['amount'] . '\',
+                                    \'' . $payment['paidAt'] . '\'
+                                    )'
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -397,7 +473,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     if ($product_id == $orderItem['product_id'] && $product_attribute_id == $orderItem['product_attribute_id']) {
 
                         // discount
-                        if (isset($item['discount']) || isset($item['discountPercent'])) {
+                        if (isset($item['discount']) || isset($item['discountPercent']) || isset($item['discountTotal'])) {
                             $product = new Product((int) $product_id, false, $default_lang);
                             $tax = new TaxCore($product->id_tax_rules_group);
 
@@ -412,6 +488,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
                             $productPrice = $prodPrice - $item['discount'];
                             $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
+                            $productPrice = $prodPrice - $item['discountTotal'];
 
                             $productPrice = round($productPrice , 2);
 
@@ -476,8 +553,9 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     }
 
                     // discount
-                    if ($newItem['discount'] || $newItem['discountPercent']) {
+                    if ($newItem['discount'] || $newItem['discountPercent']|| $newItem['discountTotal']) {
                         $productPrice = $productPrice - $newItem['discount'];
+                        $productPrice = $productPrice - $newItem['discountTotal'];
                         $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
                         $ItemDiscount = true;
                     }
@@ -513,6 +591,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (isset($order['discount']) ||
                 isset($order['discountPercent']) ||
                 isset($order['delivery']['cost']) ||
+                isset($order['discountTotal']) ||
                 $ItemDiscount) {
 
                 $infoOrd = $api->ordersGet($order['externalId']);

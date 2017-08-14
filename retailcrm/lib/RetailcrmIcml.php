@@ -33,10 +33,7 @@ class RetailcrmIcml
             'color' => 'Цвет',
             'weight' => 'Вес',
             'size' => 'Размер',
-            'tax' => 'Наценка',
-            'width' => 'Ширина',
-            'height' => 'Высота',
-            'depth' => 'Глубина'
+            'tax' => 'Наценка'
         );
     }
 
@@ -78,14 +75,14 @@ class RetailcrmIcml
         foreach ($categories as $category) {
             $e = $this->eCategories->appendChild(
                     $this->dd->createElement(
-                            'category', htmlspecialchars($category['name'])
+                            'category', $category['name']
                     )
             );
 
             $e->setAttribute('id', $category['id']);
 
             if ($category['parentId'] > 0) {
-                $e->setAttribute('parentId', htmlspecialchars($category['parentId']));
+                $e->setAttribute('parentId', $category['parentId']);
             }
         }
     }

@@ -2,6 +2,7 @@
 
 global $_MODULE;
 $_MODULE = array();
+$_MODULE['<{retailcrm}prestashop>retailcrm_7d1d9327371097419bdf83ffa671d2f2'] = 'Версия API';
 $_MODULE['<{retailcrm}prestashop>retailcrm_463dc31aa1a0b6e871b1a9fed8e9860a'] = 'RetailCRM';
 $_MODULE['<{retailcrm}prestashop>retailcrm_30de6237576b9a24f6fc599c22a35a4b'] = 'Модуль интеграции с RetailCRM';
 $_MODULE['<{retailcrm}prestashop>retailcrm_876f23178c29dc2552c0b48bf23cd9bd'] = 'Вы уверены, что хотите удалить модуль?';

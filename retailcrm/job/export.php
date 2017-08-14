@@ -7,9 +7,10 @@ require(dirname(__FILE__) . '/../bootstrap.php');
 
 $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
 $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
+$apiVersion = Configuration::get('RETAILCRM_API_VERSION');
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
 } else {
     error_log('orderHistory: set api key & url first', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
     exit();
@@ -32,7 +33,7 @@ foreach ($customerRecords as $record) {
     $customers[$record['id_customer']] = array(
         'externalId' => $record['id_customer'],
         'firstName' => $record['firstname'],
-        'lastName' => $record['lastname'],
+        'lastname' => $record['lastname'],
         'email' => $record['email']
     );
 }
@@ -98,8 +99,17 @@ foreach ($orderRecords as $record) {
         $order['phone'] = $phone;
     }
 
-    if (array_key_exists($paymentType, $payment)) {
-        $order['paymentType'] = $payment[$paymentType];
+    if ($apiVersion != 5) {
+        if (array_key_exists($paymentType, $payment)) {
+            $order['paymentType'] = $payment[$paymentType];
+        }
+    } else {
+        $order_payment = array(
+            'externalId' => $record['id_order'] .'#'. $record['reference'],
+            'amount' => $record['total_paid'],
+            'type' => $payment[$paymentType] ? $payment[$paymentType] : ''
+        );
+        $order['payments'][] = $order_payment;
     }
 
     if (array_key_exists($record['id_carrier'], $delivery)) {

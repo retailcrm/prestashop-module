@@ -26,7 +26,7 @@ class RetailcrmCatalog
 
         $currencies = Currency::getCurrencies();
 
-        $types = Category::getCategories($id_lang, false, false);
+        $types = Category::getCategories($id_lang, true, false);
         foreach ($types AS $category) {
             $categories[] = array(
                 'id' => $category['id_category'],
@@ -106,9 +106,9 @@ class RetailcrmCatalog
             } else {
                 $size = null;
             }
-
-            $productForCombination = new Product($product['id_product']);
-
+            
+            $productForCombination = new Product($product['id_product']);   
+            
             $offers = Product::getProductAttributesIds($product['id_product']);
 
             if(!empty($offers)) {
@@ -116,7 +116,7 @@ class RetailcrmCatalog
 
                     $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute' ], $id_lang);
                     if (!empty($combinations)) {
-
+                            
                         foreach ($combinations as $combination) {
                                 $arSet = array(
                                     'group_name' => $combination['group_name'],
@@ -126,11 +126,6 @@ class RetailcrmCatalog
                         }
                     }
 
-                    if (!empty($combinations[0]['reference'])) {
-                        $articleCombination = $combinations[0]['reference'];
-                    } else {
-                        $articleCombination = null;
-                    }
                     $pictures = array();
                     $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
                     foreach($covers as $cover) {
@@ -145,8 +140,7 @@ class RetailcrmCatalog
                     }
 
                     $offerPrice = Combination::getPrice($offer['id_product_attribute']);
-                    //$offerPrice = $offerPrice > 0 ? $offerPrice : $price;
-                    $offerPrice = $offerPrice != 0 ? $offerPrice + $price : $price;
+                    $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
 
                     $item = array(
                         'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
@@ -161,12 +155,9 @@ class RetailcrmCatalog
                         'purchasePrice' => $purchasePrice,
                         'price' => round($offerPrice, 2),
                         'vendor' => $vendor,
-                        'article' => ($articleCombination) ? $articleCombination : $article,
+                        'article' => $article,
                         'weight' => $weight,
-                        'size' => $size,
-                        'width' => $width,
-                        'height' => $height,
-                        'depth' => $depth
+                        'size' => $size
                     );
 
                     if (!empty($combinations)) {
@@ -174,7 +165,7 @@ class RetailcrmCatalog
                             $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
                         }
                     }
-
+                    
                     $items[] = $item;
                 }
             } else {
@@ -206,10 +197,7 @@ class RetailcrmCatalog
                     'vendor' => $vendor,
                     'article' => $article,
                     'weight' => $weight,
-                    'size' => $size,
-                    'width' => $width,
-                    'height' => $height,
-                    'depth' => $depth
+                    'size' => $size
                 );
 
                 $items[] = $item;

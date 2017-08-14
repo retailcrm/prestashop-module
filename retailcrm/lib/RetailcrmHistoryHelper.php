@@ -33,7 +33,24 @@ class RetailcrmHistoryHelper {
             } else {
                 $orders[$change['order']['id']] = $change['order'];
             }
-
+            
+            if($change['payment']) {
+                if($orders[$change['order']['id']]['payments'][$change['payment']['id']]) {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']] = array_merge($orders[$change['order']['id']]['payments'][$change['payment']['id']], $change['payment']);    
+                } else {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']] = $change['payment'];
+                }
+                if($change['oldValue'] == null && $change['field'] == 'payments') {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] = true;
+                }
+                if($change['newValue'] == null && $change['field'] == 'payments') {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']]['delete'] = true;
+                }
+                if(!$orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] && $fields['payment'][$change['field']]) {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = $change['newValue'];
+                }
+            }
+            
             if($change['item']) {
                 if($orders[$change['order']['id']]['items'][$change['item']['id']]) {
                     $orders[$change['order']['id']]['items'][$change['item']['id']] = array_merge($orders[$change['order']['id']]['items'][$change['item']['id']], $change['item']);
@@ -65,6 +82,8 @@ class RetailcrmHistoryHelper {
                     $orders[$change['order']['id']]['customFields'][str_replace('custom_', '', $change['field'])] = self::newValue($change['newValue']);
                 } elseif($fields['order'][$change['field']]) {
                     $orders[$change['order']['id']][$fields['order'][$change['field']]] = self::newValue($change['newValue']);
+                } elseif($fields['payment'][$change['field']]) {
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = self::newValue($change['newValue']);
                 }
 
                 if(isset($change['created'])) {
