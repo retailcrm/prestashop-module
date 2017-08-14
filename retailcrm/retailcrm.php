@@ -79,7 +79,7 @@ class RetailCRM extends Module
     }
 
     public function getContent()
-    {
+    {   
         $output = null;
         $address = Configuration::get('RETAILCRM_ADDRESS');
         $token = Configuration::get('RETAILCRM_API_TOKEN');
@@ -129,7 +129,7 @@ class RetailCRM extends Module
             $this->api = new RetailcrmProxy($address, $token, $this->log, $version);
             $this->reference = new RetailcrmReferences($this->api);
         }
-        
+
         $output .= $this->displayConfirmation(
             $this->l('Timezone settings must be identical to both of your crm and shop') .
             " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
@@ -156,7 +156,9 @@ class RetailCRM extends Module
                 'name' => 'v5'
             )
         );
+
         $fields_form = array();
+
         /*
          * Network connection form
          */
@@ -290,7 +292,7 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
         $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
         $helper->fields_value['RETAILCRM_STATUS_EXPORT'] = Configuration::get('RETAILCRM_STATUS_EXPORT');
-        
+
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '') {
             $deliveryTypes = json_decode($deliverySettings);
@@ -409,7 +411,7 @@ class RetailCRM extends Module
 
         $orderdb = new Order($params['order']->id);
         foreach ($orderdb->getProducts() as $item) {
-            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+            if(isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
             } else {
                 $productId = $item['product_id'];
@@ -428,7 +430,7 @@ class RetailCRM extends Module
     }
 
     public function hookActionOrderStatusPostUpdate($params)
-    {
+    {   
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
         $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
@@ -503,6 +505,7 @@ class RetailCRM extends Module
                     $arProp = array();
                     $count = 0;
                     $arAttr = explode(",", $item['attributes']);
+
                     foreach ($arAttr as $valAttr) {
                         $arItem = explode(":", $valAttr);
                         $arProp[$count]['name'] = trim($arItem[0]);
@@ -645,6 +648,7 @@ class RetailCRM extends Module
     private function validateCrmAddress($address)
     {
         if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1) {
+
             return true;
         }
 
