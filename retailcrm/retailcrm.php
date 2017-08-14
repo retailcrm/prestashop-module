@@ -20,7 +20,8 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2';
+        $this->version = '2.1.1';
+        $this->version = '2.1';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -30,16 +31,18 @@ class RetailCRM extends Module
         $this->default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
         $this->apiUrl = Configuration::get('RETAILCRM_ADDRESS');
         $this->apiKey = Configuration::get('RETAILCRM_API_TOKEN');
+        $this->apiVersion = Configuration::get('RETAILCRM_API_VERSION');
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);
         $this->version = substr(_PS_VERSION_, 0, 3);
+        $this->log = _PS_ROOT_DIR_ . '/retailcrm.log';
 
         if ($this->version == '1.6') {
             $this->bootstrap = true;
             $this->use_new_hooks = false;
         }
 
-        if ($this->validateCrmAddress($this->apiUrl) && !empty($this->apiKey)) {
-            $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+        if ($this->apiUrl && $this->apiKey) {
+            $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, $this->log, $this->apiVersion);
             $this->reference = new RetailcrmReferences($this->api);
         }
 
@@ -66,32 +69,39 @@ class RetailCRM extends Module
         Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
         Configuration::deleteByName('RETAILCRM_API_STATUS') &&
         Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
-        Configuration::deleteByName('RETAILCRM_LAST_SYNC');
+        Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
+        Configuration::deleteByName('RETAILCRM_API_VERSION');
     }
 
     public function getContent()
-    {
+    {   
         $output = null;
 
         $address = Configuration::get('RETAILCRM_ADDRESS');
         $token = Configuration::get('RETAILCRM_API_TOKEN');
+        $version = Configuration::get('RETAILCRM_API_VERSION');
 
         if (Tools::isSubmit('submit' . $this->name)) {
             $address = strval(Tools::getValue('RETAILCRM_ADDRESS'));
             $token = strval(Tools::getValue('RETAILCRM_API_TOKEN'));
+            $version = strval(Tools::getValue('RETAILCRM_API_VERSION'));
             $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
             $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
             $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
             $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
+            $settings  = array(
+                'address' => $address, 
+                'token' => $token, 
+                'version' => $version
+            );
 
-            if (!$this->validateCrmAddress($address) || !Validate::isGenericName($address)) {
-                $output .= $this->displayError($this->l('Invalid crm address'));
-            } elseif (!$token || empty($token) || !Validate::isGenericName($token)) {
-                $output .= $this->displayError($this->l('Invalid crm api token'));
-            } else {
+            $output .= $this->validateForm($settings, $output);
+            
+            if ($output === '') {
                 Configuration::updateValue('RETAILCRM_ADDRESS', $address);
                 Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
+                Configuration::updateValue('RETAILCRM_API_VERSION', $version);
                 Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
                 Configuration::updateValue('RETAILCRM_API_STATUS', $status);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
@@ -99,25 +109,26 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
 
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
+            }
 
-                $this->apiUrl = $address;
-                $this->apiKey = $token;
-                $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
-                $this->reference = new RetailcrmReferences($this->api);
+            if ($version == 5 && $this->isRegisteredInHook('actionPaymentCCAdd') == 0) {
+                $this->registerHook('actionPaymentCCAdd');
+            } elseif ($version == 4 && $this->isRegisteredInHook('actionPaymentCCAdd') == 1) {
+                $hook_id = Hook::getIdByName('actionPaymentCCAdd');
+                $this->unregisterHook($hook_id);
             }
         }
 
-        if (!$this->validateCrmAddress($this->apiUrl)) {
-            $output .= $this->displayError($this->l('Invalid or empty crm address'));
-        } elseif (!$token || $token == '') {
-            $output .= $this->displayError($this->l('Invalid or empty crm api token'));
-        } else {
-            $output .= $this->displayConfirmation(
-                $this->l('Timezone settings must be identical to both of your crm and shop') .
-                " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
-            );
+        if ($address && $token) {
+            $this->api = new RetailcrmProxy($address, $token, $this->log, $version);
+            $this->reference = new RetailcrmReferences($this->api);
         }
-
+        
+        $output .= $this->displayConfirmation(
+            $this->l('Timezone settings must be identical to both of your crm and shop') .
+            " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
+        );
+        
         $this->display(__FILE__, 'retailcrm.tpl');
 
         return $output . $this->displayForm();
@@ -129,7 +140,16 @@ class RetailCRM extends Module
         $this->displayConfirmation($this->l('Settings updated'));
 
         $default_lang = $this->default_lang;
-
+        $apiVersions = array(
+            array(
+                'option_id' => '4',
+                'name' => 'v4'
+            ),
+            array(
+                'option_id' => '5',
+                'name' => 'v5'
+            )
+        );
         /*
          * Network connection form
          */
@@ -138,6 +158,16 @@ class RetailCRM extends Module
                 'title' => $this->l('Network connection'),
             ),
             'input' => array(
+                array(
+                    'type' => 'select',
+                    'name' => 'RETAILCRM_API_VERSION',
+                    'label' => $this->l('API version'),
+                    'options' => array(
+                      'query' => $apiVersions,
+                      'id' => 'option_id', 
+                      'name' => 'name'
+                    )
+                ),
                 array(
                     'type' => 'text',
                     'label' => $this->l('CRM address'),
@@ -232,6 +262,7 @@ class RetailCRM extends Module
 
         $helper->fields_value['RETAILCRM_ADDRESS'] = Configuration::get('RETAILCRM_ADDRESS');
         $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
+        $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
 
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '') {
@@ -332,20 +363,26 @@ class RetailCRM extends Module
     }
 
     public function hookActionOrderEdited($params)
-    {
+    {   
+        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
         $order = array(
             'externalId' => $params['order']->id,
             'firstName' => $params['customer']->firstname,
             'lastName' => $params['customer']->lastname,
             'email' => $params['customer']->email,
-            'discount' => $params['order']->total_discounts,
             'createdAt' => $params['order']->date_add,
             'delivery' => array('cost' => $params['order']->total_shipping)
         );
 
+        if ($apiVersion != 5) {
+            $order['discount'] = $params['order']->total_discounts;
+        } else {
+            $order['discountManualAmount'] = $params['order']->total_discounts;
+        }
+
         $orderdb = new Order($params['order']->id);
         foreach ($orderdb->getProducts() as $item) {
-            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+            if(isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
             } else {
                 $productId = $item['product_id'];
@@ -364,132 +401,150 @@ class RetailCRM extends Module
     }
 
     public function hookActionOrderStatusPostUpdate($params)
-    {
+    {   
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
         $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
+        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
 
         if (isset($params['orderStatus'])) {
+            $customer = array(
+                'externalId' => $params['customer']->id,
+                'lastName' => $params['customer']->lastname,
+                'firstName' => $params['customer']->firstname,
+                'email' => $params['customer']->email,
+                'createdAt' => $params['customer']->date_add
+            );
 
-                $customer = array(
-                    'externalId' => $params['customer']->id,
-                    'lastName' => $params['customer']->lastname,
-                    'firstName' => $params['customer']->firstname,
-                    'email' => $params['customer']->email,
-                    'createdAt' => $params['customer']->date_add
+            $order = array(
+                'externalId' => $params['order']->id,
+                'firstName' => $params['customer']->firstname,
+                'lastName' => $params['customer']->lastname,
+                'email' => $params['customer']->email,
+                'createdAt' => $params['order']->date_add,
+                'delivery' => array('cost' => $params['order']->total_shipping)
+            );
+
+            if ($apiVersion != 5) {
+                $order['discount'] = $params['order']->total_discounts;
+            } else {
+                $order['discountManualAmount'] = $params['order']->total_discounts;
+            }
+
+            $cart = new Cart($params['cart']->id);
+            $addressCollection = $cart->getAddressCollection();
+            $address = array_shift($addressCollection);
+
+            if ($address instanceof Address) {
+                $phone = empty($address->phone)
+                    ? empty($address->phone_mobile) ? '' : $address->phone_mobile
+                    : $address->phone;
+
+                $postcode = $address->postcode;
+                $city = $address->city;
+                $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+            }
+
+            if (!empty($postcode)) {
+                $customer['address']['index'] = $postcode;
+                $order['delivery']['address']['index'] = $postcode;
+            }
+
+            if (!empty($city)) {
+                $customer['address']['city'] = $city;
+                $order['delivery']['address']['city'] = $city;
+            }
+
+            if (!empty($addres_line)) {
+                $customer['address']['text'] = $addres_line;
+                $order['delivery']['address']['text'] = $addres_line;
+            }
+
+            if (!empty($phone)) {
+                $customer['phones'][] = array('number' => $phone);
+                $order['phone'] = $phone;
+            }
+            
+            foreach ($cart->getProducts() as $item) {
+                if(isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
+                    $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
+                } else {
+                    $productId = $item['id_product'];
+                }
+
+                if ($item['attributes']) {
+                    $arProp = array();
+                    $count = 0;
+                    $arAttr = explode(",", $item['attributes']);
+                    foreach ($arAttr  as $valAttr) {
+                        $arItem = explode(":", $valAttr);
+                        $arProp[$count]['name'] = trim($arItem[0]);
+                        $arProp[$count]['value'] = trim($arItem[1]);
+                        $count++;
+
+                    }
+                }
+
+                $order['items'][] = array(
+                    'initialPrice' => !empty($item['rate'])
+                        ? $item['price'] + ($item['price'] * $item['rate'] / 100)
+                        : $item['price'],
+                    'quantity' => $item['quantity'],
+                    'offer' => array('externalId' => $productId),
+                    'productName' => $item['name'],
+                    'properties' => $arProp
                 );
 
-                $order = array(
-                    'externalId' => $params['order']->id,
-                    'firstName' => $params['customer']->firstname,
-                    'lastName' => $params['customer']->lastname,
-                    'email' => $params['customer']->email,
-                    'discount' => $params['order']->total_discounts,
-                    'createdAt' => $params['order']->date_add,
-                    'delivery' => array('cost' => $params['order']->total_shipping)
-                );
+                unset($arAttr);
+                unset($count);
+                unset($arProp);
+            }
 
-                $cart = new Cart($params['cart']->id);
-                $addressCollection = $cart->getAddressCollection();
-                $address = array_shift($addressCollection);
+            $deliveryCode = $params['order']->id_carrier;
 
-                if ($address instanceof Address) {
-                    $phone = empty($address->phone)
-                        ? empty($address->phone_mobile) ? '' : $address->phone_mobile
-                        : $address->phone;
+            if (array_key_exists($deliveryCode, $delivery) && !empty($delivery[$deliveryCode])) {
+                $order['delivery']['code'] = $delivery[$deliveryCode];
+            }
 
-                    $postcode = $address->postcode;
-                    $city = $address->city;
-                    $addres_line = sprintf("%s %s", $address->address1, $address->address2);
-                }
-
-                if (!empty($postcode)) {
-                    $customer['address']['index'] = $postcode;
-                    $order['delivery']['address']['index'] = $postcode;
-                }
-
-                if (!empty($city)) {
-                    $customer['address']['city'] = $city;
-                    $order['delivery']['address']['city'] = $city;
-                }
-
-                if (!empty($addres_line)) {
-                    $customer['address']['text'] = $addres_line;
-                    $order['delivery']['address']['text'] = $addres_line;
-                }
-
-                if (!empty($phone)) {
-                    $customer['phones'][] = array('number' => $phone);
-                    $order['phone'] = $phone;
-                }
-
-                foreach ($cart->getProducts() as $item) {
-                    if (isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
-                        $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
-                    } else {
-                        $productId = $item['id_product'];
-                    }
-
-                    if ($item['attributes']) {
-                        $arProp = array();
-                        $count = 0;
-                        $arAttr = explode(",", $item['attributes']);
-                        foreach ($arAttr  as $valAttr) {
-                            $arItem = explode(":", $valAttr);
-                            $arProp[$count]['name'] = trim($arItem[0]);
-                            $arProp[$count]['value'] = trim($arItem[1]);
-                            $count++;
-
-                        }
-                    }
-
-                    $order['items'][] = array(
-                        'initialPrice' => !empty($item['rate'])
-                            ? $item['price'] + ($item['price'] * $item['rate'] / 100)
-                            : $item['price'],
-                        'quantity' => $item['quantity'],
-                        'offer' => array('externalId' => $productId),
-                        'productName' => $item['name'],
-                        'properties' => $arProp
-                    );
-
-                    unset($arAttr, $count, $arProp);
-                }
-
-                $deliveryCode = $params['order']->id_carrier;
-
-                if (array_key_exists($deliveryCode, $delivery) && !empty($delivery[$deliveryCode])) {
-                    $order['delivery']['code'] = $delivery[$deliveryCode];
-                }
-
-                if (Module::getInstanceByName('advancedcheckout') === false) {
+            if (Module::getInstanceByName('advancedcheckout') === false) {
                     $paymentCode = $params['order']->module;
                 } else {
                     $paymentCode = $params['order']->payment;
                 }
 
+            if ($apiVersion != 5) {
                 if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
                     $order['paymentType'] = $payment[$paymentCode];
                 }
+            } else {
+                $payment = array(
+                    'externalId' => $params['order']->id .'#'. $params['order']->reference,
+                    'amount' => $params['order']->total_paid,
+                    'type' => $payment[$paymentCode] ? $payment[$paymentCode] : ''
+                );
+            }
 
-                $statusCode = $params['orderStatus']->id;
+            if (isset($payment)) $order['payments'][] = $payment;
 
-                if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
-                    $order['status'] = $status[$statusCode];
-                } else {
-                    $order['status'] = 'new';
-                }
+            $statusCode = $params['orderStatus']->id;
 
-                $customerCheck = $this->api->customersGet($customer['externalId']);
+            if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
+                $order['status'] = $status[$statusCode];
+            } else {
+                $order['status'] = 'new';
+            }
 
-                if ($customerCheck === false) {
-                    $this->api->customersCreate($customer);
-                }
+            $customerCheck = $this->api->customersGet($customer['externalId']);
 
-                $order['customer']['externalId'] = $customer['externalId'];
-                $this->api->ordersCreate($order);
+            if ($customerCheck === false) {
+                $this->api->customersCreate($customer);
+            }
 
-        } elseif (isset($params['newOrderStatus'])) {
+            $order['customer']['externalId'] = $customer['externalId'];
+            
+            $this->api->ordersCreate($order);
+
+        } elseif (isset($params['newOrderStatus'])){
 
             $statusCode = $params['newOrderStatus']->id;
 
@@ -510,10 +565,84 @@ class RetailCRM extends Module
         }
     }
 
+    public function hookActionPaymentCCAdd($params)
+    {
+        $order_id = Order::getOrderByCartId($params['cart']->id);
+        $payments = $this->reference->getSystemPaymentModules();
+        $paymentCRM = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
+
+        foreach ($payments as $valPay) {
+            if ($valPay['name'] == $params['paymentCC']->payment_method) {
+                $payCode = $valPay['code'];
+            }
+        }
+
+        if (array_key_exists($payCode, $paymentCRM) && !empty($paymentCRM[$payCode])) {
+            $payment = $paymentCRM[$payCode];
+        }
+        
+        $response = $this->api->ordersGet($order_id);
+
+        if ($response->isSuccessful()) {
+            $orderCRM = $response['order'];
+            if ($orderCRM && $orderCRM['payments']) {
+                foreach ($orderCRM['payments'] as $orderPayment) {
+                    if ($orderPayment['type'] == $payment) {
+                        $updatePayment = $orderPayment;
+                        $updatePayment['amount'] = $params['paymentCC']->amount;
+                        $updatePayment['paidAt'] = $params['paymentCC']->date_add;
+                        if ($params['paymentCC']->amount == $orderCRM['totalSumm']) {
+                            $updatePayment['status'] = 'paid';
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isset($updatePayment)) {
+            $this->api->ordersPaymentEdit($updatePayment);
+        } else {
+            $this->api->ordersPaymentCreate(
+                array(
+                    'externalId' => $params['paymentCC']->id,
+                    'amount'     => $params['paymentCC']->amount,
+                    'paidAt'     => $params['paymentCC']->date_add,
+                    'type'       => $payment,
+                    'status'     => 'paid',
+                    'order'      => array(
+                        'externalId' => $order_id,
+                    ),
+                )
+            );
+        }
+        return true;
+    }
+
     private function validateCrmAddress($address) {
-        if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1)
+        if(preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1)
             return true;
 
         return false;
+    }
+
+    private function validateApiVersion($settings) {
+        $api = new RetailcrmProxy($settings['address'], $settings['token'], _PS_ROOT_DIR_ . '/retailcrm.log', $settings['version']);
+        $response = $api->statisticUpdate();
+
+        if ($response->isSuccessful()) return true;
+
+        return false;
+    }
+
+    private function validateForm($settings, $output) {
+        if (!$this->validateCrmAddress($settings['address']) || !Validate::isGenericName($settings['address'])) {
+            $output .= $this->displayError($this->l('Invalid or empty crm address'));
+        } elseif (!$settings['token'] || $settings['token'] == '') {
+            $output .= $this->displayError($this->l('Invalid or empty crm api token'));
+        } elseif (!$this->validateApiVersion($settings)) {
+            $output .= $this->displayError($this->l('The selected version of the API is unavailable'));
+        }
+
+        return $output;
     }
 }

@@ -94,7 +94,7 @@ class RetailcrmReferences
         return $paymentTypes;
     }
 
-public function getPaymentAndDeliveryForDefault($arParams)
+    public function getPaymentAndDeliveryForDefault($arParams)
     {
         $paymentTypes = array();
         $deliveryTypes = array();
@@ -158,7 +158,7 @@ public function getPaymentAndDeliveryForDefault($arParams)
         return $paymentDeliveryTypes;
     }
 
-    protected function getSystemPaymentModules()
+    public function getSystemPaymentModules()
     {
         $shop_id = Context::getContext()->shop->id;
 

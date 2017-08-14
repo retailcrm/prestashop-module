@@ -2,7 +2,7 @@
 <module>
 	<name>retailcrm</name>
 	<displayName><![CDATA[RetailCRM]]></displayName>
-	<version><![CDATA[2.0.1]]></version>
+	<version><![CDATA[1.6]]></version>
 	<description><![CDATA[Модуль интеграции с RetailCRM]]></description>
 	<author><![CDATA[Retail Driver LCC]]></author>
 	<tab><![CDATA[export]]></tab>
