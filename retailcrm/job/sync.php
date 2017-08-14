@@ -472,6 +472,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                                     }
                                 }
                                 $paymentType = Module::getModuleName($payments[$ptype]);
+
                                 Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
                                     SET 
                                     `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
