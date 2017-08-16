@@ -629,7 +629,7 @@ class RetailCRM extends Module
         $api = new RetailcrmProxy($settings['address'], $settings['token'], _PS_ROOT_DIR_ . '/retailcrm.log', $settings['version']);
         $response = $api->statisticUpdate();
 
-        if ($response->isSuccessful()) return true;
+        if ($response['errorMsg'] != 'API method not found') return true;
 
         return false;
     }
