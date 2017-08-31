@@ -103,6 +103,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (!isset($paymentId) || !$paymentId) {
                 $paymentId = $paymentDefault;
             }
+
             if (!$paymentType) {
                 if ($paymentDefault) {
                     if (Module::getInstanceByName($paymentDefault)) {
@@ -116,6 +117,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         3,
                         _PS_ROOT_DIR_ . '/retailcrm.log'
                     );
+
                     continue;
                 }
             }
