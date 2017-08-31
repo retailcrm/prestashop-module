@@ -35,7 +35,8 @@ class RetailCRM extends Module
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => _PS_VERSION_);
         $this->version = substr(_PS_VERSION_, 0, 3);
         $this->log = _PS_ROOT_DIR_ . '/retailcrm.log';
-
+        $this->module_key = '149c765c6cddcf35e1f13ea6c71e9fa5';
+        
         if ($this->version == '1.6') {
             $this->bootstrap = true;
             $this->use_new_hooks = false;
