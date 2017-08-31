@@ -40,7 +40,7 @@ class RetailCRM extends Module
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = _PS_ROOT_DIR_ . '/retailcrm.log';
         $this->module_key = '149c765c6cddcf35e1f13ea6c71e9fa5';
-        
+
         if ($this->psVersion == '1.6') {
             $this->bootstrap = true;
             $this->use_new_hooks = false;
