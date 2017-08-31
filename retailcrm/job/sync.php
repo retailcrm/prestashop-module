@@ -85,18 +85,16 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
                 $orderStatus = $statuses[$state];
             }
-
+            if (!isset($paymentId) || !$paymentId) {
+                $paymentId = $paymentDefault;
+            }
             if (!$paymentType){
                 if ($paymentDefault) {
-
                     if(Module::getInstanceByName($paymentDefault)) {
                         $paymentType = Module::getModuleName($paymentDefault);
                     } else {
                         $paymentType = $paymentDefault;
                     }
-
-                $paymentId = $paymentDefault;
-
                 } else{
                     error_log('orderHistory: set default payment(error in order where id = '.$order['id'].')', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
                     continue;
