@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.2.0
+ * @version 2.1.2
  * @link https://retailcrm.ru
  *
  */
@@ -80,7 +80,7 @@ class RetailCRM extends Module
     }
 
     public function getContent()
-    {   
+    {
         $output = null;
         $address = Configuration::get('RETAILCRM_ADDRESS');
         $token = Configuration::get('RETAILCRM_API_TOKEN');
@@ -420,7 +420,7 @@ class RetailCRM extends Module
         unset($comment);
 
         foreach ($orderdb->getProducts() as $item) {
-            if(isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
             } else {
                 $productId = $item['product_id'];
@@ -439,7 +439,7 @@ class RetailCRM extends Module
     }
 
     public function hookActionOrderStatusPostUpdate($params)
-    {   
+    {
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
         $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
@@ -679,6 +679,7 @@ class RetailCRM extends Module
         $response = $api->deliveryTypesList();
 
         if ($response !== false) {
+
             return true;
         }
 
