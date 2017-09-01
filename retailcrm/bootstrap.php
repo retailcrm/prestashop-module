@@ -1,6 +1,10 @@
 <?php
-
-/*
+/**
+ * @author Retail Driver LCC
+ * @copyright RetailCRM
+ * @license GPL
+ * @version 2.1.1
+ * @link https://retailcrm.ru
  * The MIT License (MIT)
  *
  * Copyright (c) 2014 Rob Dunham
@@ -33,8 +37,7 @@
  *
  * @package Autoloader
  * @license http://opensource.org/licenses/MIT  MIT License
- * @author  Rob Dunham <contact@robunham.info>
- * @author  Alex Lushpai <lushpai@gmail.com>
+ *
  */
 class RetailcrmAutoloader
 {
@@ -64,11 +67,10 @@ class RetailcrmAutoloader
         $filename = $className . self::$fileExt;
 
         foreach ($fileIterator as $file) {
-            if (strtolower($file->getFilename()) === strtolower($filename) && $file->isReadable()) {
+            if (Tools::strtolower($file->getFilename()) === Tools::strtolower($filename) && $file->isReadable()) {
                 include_once $file->getPathname();
             }
         }
-
     }
 
     /**
@@ -91,7 +93,6 @@ class RetailcrmAutoloader
     {
         self::$pathTop = $path;
     }
-
 }
 
 RetailcrmAutoloader::setPath(realpath(dirname(__FILE__)));

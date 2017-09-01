@@ -1,4 +1,13 @@
 <?php
+/**
+ * @author Retail Driver LCC
+ * @copyright RetailCRM
+ * @license GPL
+ * @version 2.1.1
+ * @link https://retailcrm.ru
+ *
+ */
+
 $_SERVER['HTTPS'] = 1;
 
 require(dirname(__FILE__) . '/../../../config/config.inc.php');

@@ -1,4 +1,13 @@
 <?php
+/**
+ * @author Retail Driver LCC
+ * @copyright RetailCRM
+ * @license GPL
+ * @version 2.1.1
+ * @link https://retailcrm.ru
+ *
+ */
+
 $_SERVER['HTTPS'] = 1;
 
 $shortopts = 'o:';
@@ -142,7 +151,7 @@ if (isset($orderInstance->total_shipping_tax_incl) && (int) $orderInstance->tota
 
 $products = $orderInstance->getProducts();
 
-foreach($products as $product) {
+foreach ($products as $product) {
     $item = array(
         //'productId' => $product['product_id'],
         'offer' => array('externalId' => $product['product_id']),
