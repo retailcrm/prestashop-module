@@ -1,4 +1,13 @@
 <?php
+/**
+ * @author Retail Driver LCC
+ * @copyright RetailCRM
+ * @license GPL
+ * @version 2.1.1
+ * @link https://retailcrm.ru
+ *
+ */
+
 $_SERVER['HTTPS'] = 1;
 
 require(dirname(__FILE__) . '/../../../config/config.inc.php');
@@ -41,7 +50,6 @@ foreach ($customerRecords as $record) {
 unset($customerRecords);
 
 foreach ($orderRecords as $record) {
-
     $object = new Order($record['id_order']);
 
     if (Module::getInstanceByName('advancedcheckout') === false) {
@@ -122,8 +130,8 @@ foreach ($orderRecords as $record) {
 
     $products = $object->getProducts();
 
-    foreach($products as $product) {
-        if(isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
+    foreach ($products as $product) {
+        if (isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
             $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
         } else {
             $productId = $product['product_id'];

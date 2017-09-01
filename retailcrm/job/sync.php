@@ -1,4 +1,13 @@
 <?php
+/**
+ * @author Retail Driver LCC
+ * @copyright RetailCRM
+ * @license GPL
+ * @version 2.1.1
+ * @link https://retailcrm.ru
+ *
+ */
+
 $_SERVER['HTTPS'] = 1;
 
 require(dirname(__FILE__) . '/../../../config/config.inc.php');
@@ -29,27 +38,25 @@ $startFrom = ($lastSync === false)
 
 $customerFix = array();
 $orderFix = array();
-
 $startDate = new DateTime($startFrom);
 $history = $api->ordersHistory(array(
     'startDate' => $startDate->format('Y-m-d H:i:s')
 ));
 
 if ($history->isSuccessful() && count($history->history) > 0) {
-
     $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
     $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
     $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
     $deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
     $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
-
     $orders = RetailcrmHistoryHelper::assemblyOrder($history->history);
 
     foreach ($orders as $order) {
-        if (isset($order['deleted']) && $order['deleted'] == true) continue;
+        if (isset($order['deleted']) && $order['deleted'] == true) {
+            continue;
+        }
 
         if (!array_key_exists('externalId', $order)) {
-
             $delivery = $order['delivery']['code'];
 
             if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
@@ -72,7 +79,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             }
 
             if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
-                if(Module::getInstanceByName($payments[$payment])) {
+                if (Module::getInstanceByName($payments[$payment])) {
                     $paymentType = Module::getModuleName($payments[$payment]);
                 } else {
                     $paymentType = $payments[$payment];
@@ -88,39 +95,49 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (!isset($paymentId) || !$paymentId) {
                 $paymentId = $paymentDefault;
             }
-            if (!$paymentType){
+            if (!$paymentType) {
                 if ($paymentDefault) {
-                    if(Module::getInstanceByName($paymentDefault)) {
+                    if (Module::getInstanceByName($paymentDefault)) {
                         $paymentType = Module::getModuleName($paymentDefault);
                     } else {
                         $paymentType = $paymentDefault;
                     }
-                } else{
-                    error_log('orderHistory: set default payment(error in order where id = '.$order['id'].')', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+                } else {
+                    error_log(
+                        'orderHistory: set default payment(error in order where id = '.$order['id'].')',
+                        3,
+                        _PS_ROOT_DIR_ . '/retailcrm.log'
+                    );
                     continue;
                 }
             }
 
-            if (!$deliveryType){
+            if (!$deliveryType) {
                 if ($deliveryDefault) {
                     $deliveryType = $deliveryDefault;
-                } else{
-                    error_log('orderHistory: set default delivery(error in order where id = '.$order['id'].')', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+                } else {
+                    error_log(
+                        'orderHistory: set default delivery(error in order where id = '.$order['id'].')',
+                        3,
+                        _PS_ROOT_DIR_ . '/retailcrm.log'
+                    );
                     continue;
                 }
             }
 
             $customer = new Customer();
-            if(!empty($order['customer']['email']))
+            if (!empty($order['customer']['email'])) {
                 $customer->getByEmail($order['customer']['email']);
+            }
 
             if (!array_key_exists('externalId', $order['customer'])) {
-                if (!$customer->id)
-                {
+                if (!$customer->id) {
                     $customer->firstname = $order['customer']['firstName'];
                     $customer->lastname = !empty($order['customer']['lastName']) ? $order['customer']['lastName'] : '-';
-                    $customer->email = Validate::isEmail($order['customer']['email']) ? $order['customer']['email'] : md5($order['customer']['firstName']) . '@retailcrm.ru';
-                    $customer->passwd = substr(str_shuffle(strtolower(sha1(rand() . time()))),0, 5);
+                    $customer->email = Validate::isEmail($order['customer']['email']) ?
+                    $order['customer']['email'] :
+                    md5($order['customer']['firstName']) . '@retailcrm.ru';
+                    $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
 
                     $customer->add();
                 }
@@ -141,8 +158,10 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $address->firstname = $customer->firstname;
             $address->alias = 'default';
             $address->postcode = $order['delivery']['address']['index'];
-            $address->city = !empty($order['delivery']['address']['city']) ? $order['delivery']['address']['city'] : '-';
-            $address->address1 = !empty($order['delivery']['address']['text']) ? $order['delivery']['address']['text'] : '-';
+            $address->city = !empty($order['delivery']['address']['city']) ?
+            $order['delivery']['address']['city'] : '-';
+            $address->address1 = !empty($order['delivery']['address']['text']) ?
+            $order['delivery']['address']['text'] : '-';
             $address->phone = $order['phone'];
             $address->add();
 
@@ -158,7 +177,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
             $products = array();
 
-            if(!empty($order['items'])) {
+            if (!empty($order['items'])) {
                 foreach ($order['items'] as $item) {
                     $productId = explode('#', $item['offer']['externalId']);
 
@@ -188,7 +207,9 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $newOrder->id_currency = $default_currency;
             $newOrder->id_lang = $default_lang;
             $newOrder->id_customer = (int) $customer->id;
-            if (isset($deliveryType)) $newOrder->id_carrier = (int) $deliveryType;
+            if (isset($deliveryType)) {
+                $newOrder->id_carrier = (int) $deliveryType;
+            }
             if (isset($paymentType)) {
                 $newOrder->payment = $paymentType;
                 $newOrder->module = $paymentId;
@@ -203,16 +224,19 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             $newOrder->total_shipping_tax_incl = $order['delivery']['cost'];
             $newOrder->total_shipping_tax_excl = $order['delivery']['cost'];
             $newOrder->conversion_rate = 1.000000;
-            if (isset($orderStatus)) $newOrder->current_state = (int) $orderStatus;
-            if (!empty($order['delivery']['date'])) $newOrder->delivery_date = $order['delivery']['date'];
+            if (isset($orderStatus)) {
+                $newOrder->current_state = (int) $orderStatus;
+            }
+            if (!empty($order['delivery']['date'])) {
+                $newOrder->delivery_date = $order['delivery']['date'];
+            }
             $newOrder->date_add = $order['createdAt'];
             $newOrder->date_upd = $order['createdAt'];
             $newOrder->invoice_date = $order['createdAt'];
             $newOrder->valid = 1;
             $newOrder->secure_key = md5(time());
 
-            if (isset($order['discount']))
-            {
+            if (isset($order['discount'])) {
                 $newOrder->total_discounts = $order['discount'];
             }
 
@@ -222,15 +246,16 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 $product = new Product((int) $item['offer']['externalId'], false, $default_lang);
                 $product_id = $item['offer']['externalId'];
                 $product_attribute_id = 0;
-                if(strpos($item['offer']['externalId'], '#') !== false) {
+                if (strpos($item['offer']['externalId'], '#') !== false) {
                     $product_id = explode('#', $item['offer']['externalId']);
                     $product_attribute_id = $product_id[1];
                     $product_id = $product_id[0];
                 }
 
-                if($product_attribute_id != 0) {
-                    $productName = htmlspecialchars(strip_tags(Product::getProductName($product_id, $product_attribute_id)));
-
+                if ($product_attribute_id != 0) {
+                    $productName = htmlspecialchars(
+                        strip_tags(Product::getProductName($product_id, $product_attribute_id))
+                    );
                     $productPrice = Combination::getPrice($product_attribute_id);
                     $productPrice = $productPrice > 0 ? $productPrice : $product->price;
                 } else {
@@ -264,18 +289,15 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                             }
                         }
                         $paymentType = Module::getModuleName($payments[$ptype]);
-                        Db::getInstance()->execute('
-                            INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
-                            (`payment_method`, `order_reference` , `amount`, `date_add`)
-                            VALUES (
-                            \'' . $payType . '\', 
-                            \'' . $orderToUpdate->reference . '\',
-                            \'' . $payment['amount'] . '\',
-                            \'' . $payment['paidAt'] . '\'
-                            )'
-                        );
+                        Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment` 
+                            (`payment_method`, `order_reference` , `amount`, `date_add`) 
+                            VALUES 
+                            (\'' . $payType . '\', 
+                            \'' . $newOrder->reference . '\', 
+                            \'' . $payment['amount'] . '\', 
+                            \'' . $payment['paidAt'] . '\')');
                     }
-                }    
+                }
             }
 
             $carrier = new OrderCarrierCore();
@@ -327,46 +349,47 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
             Db::getInstance()->execute(rtrim($query, ','));
 
-            if(!empty($customerFix))
+            if (!empty($customerFix)) {
                 $api->customersFixExternalIds($customerFix);
-            if(!empty($orderFix))
+            }
+            if (!empty($orderFix)) {
                 $api->ordersFixExternalIds($orderFix);
+            }
         } else {
             $orderToUpdate = new Order((int) $order['externalId']);
 
             /*
              * check delivery type
              */
-            if(!empty($order['delivery']['code'])) {
+            if (!empty($order['delivery']['code'])) {
                 $dtype = $order['delivery']['code'];
                 $dcost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
 
                 if ($deliveries[$dtype] != null) {
-                    if ($deliveries[$dtype] != $orderToUpdate->id_carrier OR $dcost != null) {
-
-                        if($dtype != null) {
-                            Db::getInstance()->execute('
-                            UPDATE `' . _DB_PREFIX_ . 'orders`
-                            SET `id_carrier` = \'' . $deliveries[$dtype] . '\'
-                            WHERE `id_order` = ' . (int)$order['externalId']
-                            );
+                    if ($deliveries[$dtype] != $orderToUpdate->id_carrier or $dcost != null) {
+                        if ($dtype != null) {
+                            Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                                SET 
+                                `id_carrier` = \'' . $deliveries[$dtype] . '\' 
+                                WHERE 
+                                `id_order` = ' . (int)$order['externalId']);
                         }
 
                         $updateCarrierFields = array();
-                        if($dtype != null) {
+                        if ($dtype != null) {
                             $updateCarrierFields[] = '`id_carrier` = \'' . $deliveries[$dtype] . '\' ';
                         }
-                        if($dcost != null) {
+                        if ($dcost != null) {
                             $updateCarrierFields[] = '`shipping_cost_tax_incl` = \'' . $dcost . '\' ';
                             $updateCarrierFields[] = '`shipping_cost_tax_excl` = \'' . $dcost . '\' ';
                         }
                         $updateCarrierFields = implode(', ', $updateCarrierFields);
 
-                        Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'order_carrier` SET
-                        '.$updateCarrierFields.'
-                        WHERE `id_order` = \'' . $orderToUpdate->id . '\''
-                        );
+                        Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'order_carrier` 
+                            SET 
+                            '.$updateCarrierFields.' 
+                            WHERE 
+                            `id_order` = \'' . $orderToUpdate->id . '\'');
                     }
                 }
             }
@@ -374,54 +397,50 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             /*
              * check payment type
              */
-            if(!empty($order['paymentType']) && $apiVersion != 5) {
+            if (!empty($order['paymentType']) && $apiVersion != 5) {
                 $ptype = $order['paymentType'];
 
                 if ($payments[$ptype] != null) {
                     $paymentType = Module::getModuleName($payments[$ptype]);
                     if ($payments[$ptype] != $orderToUpdate->payment) {
-                        Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'orders`
-                        SET `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\'
-                        WHERE `id_order` = ' . (int)$order['externalId']
-                        );
-                        Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'order_payment`
-                        SET `payment_method` = \'' . $payments[$ptype] . '\'
-                        WHERE `order_reference` = \'' . $orderToUpdate->reference . '\''
-                        );
-
+                        Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                            SET 
+                            `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
+                            WHERE 
+                            `id_order` = ' . (int)$order['externalId']);
+                        Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'order_payment` 
+                            SET 
+                            `payment_method` = \'' . $payments[$ptype] . '\' 
+                            WHERE 
+                            `order_reference` = \'' . $orderToUpdate->reference . '\'');
                     }
                 }
             } elseif (!empty($order['payments']) && $apiVersion == 5) {
                 if ($order['payments']) {
                     foreach ($order['payments'] as $payment) {
                         if (!isset($payment['externalId']) && $payment['status'] == 'paid') {
-                           $ptype = $payment['type'];
-                           $ptypes = $references->getSystemPaymentModules();
-                           if ($payments[$ptype] != null) {
+                            $ptype = $payment['type'];
+                            $ptypes = $references->getSystemPaymentModules();
+                            if ($payments[$ptype] != null) {
                                 foreach ($ptypes as $pay) {
                                     if ($pay['code'] == $payments[$ptype]) {
                                         $payType = $pay['name'];
                                     }
                                 }
                                 $paymentType = Module::getModuleName($payments[$ptype]);
-                                Db::getInstance()->execute('
-                                    UPDATE `' . _DB_PREFIX_ . 'orders`
-                                    SET `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\'
-                                    WHERE `id_order` = ' . (int)$order['externalId']
-                                );
+                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                                    SET 
+                                    `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
+                                    WHERE 
+                                    `id_order` = ' . (int)$order['externalId']);
 
-                                Db::getInstance()->execute('
-                                    INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
-                                    (`payment_method`, `order_reference` , `amount`, `date_add`)
-                                    VALUES (
-                                    \'' . $payType . '\', 
-                                    \'' . $orderToUpdate->reference . '\',
-                                    \'' . $payment['amount'] . '\',
-                                    \'' . $payment['paidAt'] . '\'
-                                    )'
-                                );
+                                Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
+                                    (`payment_method`, `order_reference` , `amount`, `date_add`) 
+                                    VALUES 
+                                    (\'' . $payType . '\', 
+                                    \'' . $orderToUpdate->reference . '\', 
+                                    \'' . $payment['amount'] . '\', 
+                                    \'' . $payment['paidAt'] . '\')');
                             }
                         }
                     }
@@ -433,7 +452,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              */
             foreach ($order['items'] as $key => $item) {
                 if (isset($item['delete']) && $item['delete'] == true) {
-                    if(strpos($item['offer']['externalId'], '#') !== false) {
+                    if (strpos($item['offer']['externalId'], '#') !== false) {
                         $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
                         $product_attribute_id = $itemId[1];
@@ -442,12 +461,11 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         $product_attribute_id = 0;
                     }
 
-                    Db::getInstance()->execute('
-                        DELETE FROM `'._DB_PREFIX_.'order_detail`
-                        WHERE `id_order` = '. $orderToUpdate->id .'
-                        AND `product_id` = '.$product_id. '
-                        AND `product_attribute_id` = '.$product_attribute_id
-                    );
+                    Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'order_detail` 
+                        WHERE 
+                        `id_order` = '. $orderToUpdate->id .' 
+                        AND 
+                        `product_id` = '.$product_id. ' AND `product_attribute_id` = '.$product_attribute_id);
 
                     unset($order['items'][$key]);
                     $ItemDiscount = true;
@@ -459,7 +477,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
              */
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 foreach ($order['items'] as $key => $item) {
-                    if(strpos($item['offer']['externalId'], '#') !== false) {
+                    if (strpos($item['offer']['externalId'], '#') !== false) {
                         $itemId = explode('#', $item['offer']['externalId']);
                         $product_id = $itemId[0];
                         $product_attribute_id = $itemId[1];
@@ -468,14 +486,16 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         $product_attribute_id = 0;
                     }
 
-                    if ($product_id == $orderItem['product_id'] && $product_attribute_id == $orderItem['product_attribute_id']) {
-
+                    if ($product_id == $orderItem['product_id'] &&
+                        $product_attribute_id == $orderItem['product_attribute_id']) {
                         // discount
-                        if (isset($item['discount']) || isset($item['discountPercent']) || isset($item['discountTotal'])) {
+                        if (isset($item['discount']) ||
+                            isset($item['discountPercent']) ||
+                            isset($item['discountTotal'])) {
                             $product = new Product((int) $product_id, false, $default_lang);
                             $tax = new TaxCore($product->id_tax_rules_group);
 
-                            if($product_attribute_id != 0) {
+                            if ($product_attribute_id != 0) {
                                 $prodPrice = Combination::getPrice($product_attribute_id);
                                 $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
                             } else {
@@ -488,23 +508,23 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                             $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
                             $productPrice = $prodPrice - $item['discountTotal'];
 
-                            $productPrice = round($productPrice , 2);
+                            $productPrice = round($productPrice, 2);
 
-                            Db::getInstance()->execute('
-                                UPDATE `'._DB_PREFIX_.'order_detail`
-                                SET `unit_price_tax_incl` = '.$productPrice.'
-                                WHERE `id_order_detail` = '.$orderItem['id_order_detail']
-                            );
+                            Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'order_detail` 
+                                SET 
+                                `unit_price_tax_incl` = '.$productPrice.' 
+                                WHERE 
+                                `id_order_detail` = '.$orderItem['id_order_detail']);
                         }
 
                         // quantity
                         if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
-                            Db::getInstance()->execute('
-                                UPDATE `'._DB_PREFIX_.'order_detail`
-                                SET `product_quantity` = '.$item['quantity'].',
-                                `product_quantity_in_stock` = '.$item['quantity'].'
-                                WHERE `id_order_detail` = '.$orderItem['id_order_detail']
-                            );
+                            Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'order_detail` 
+                                SET 
+                                `product_quantity` = '.$item['quantity'].', 
+                                `product_quantity_in_stock` = '.$item['quantity'].' 
+                                WHERE 
+                                `id_order_detail` = '.$orderItem['id_order_detail']);
                         }
 
                         $ItemDiscount = true;
@@ -530,7 +550,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 foreach ($order['items'] as $key => $newItem) {
                     $product_id = $newItem['offer']['externalId'];
                     $product_attribute_id = 0;
-                    if(strpos($product_id, '#') !== false) {
+                    if (strpos($product_id, '#') !== false) {
                         $product_id = explode('#', $product_id);
 
                         $product_attribute_id = $product_id[1];
@@ -540,9 +560,10 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     $product = new Product((int) $product_id, false, $default_lang);
                     $tax = new TaxCore($product->id_tax_rules_group);
 
-                    if($product_attribute_id != 0) {
-                        $productName = htmlspecialchars(strip_tags(Product::getProductName($product_id, $product_attribute_id)));
-
+                    if ($product_attribute_id != 0) {
+                        $productName = htmlspecialchars(
+                            strip_tags(Product::getProductName($product_id, $product_attribute_id))
+                        );
                         $productPrice = Combination::getPrice($product_attribute_id);
                         $productPrice = $productPrice > 0 ? $productPrice : $product->price;
                     } else {
@@ -591,10 +612,8 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 isset($order['delivery']['cost']) ||
                 isset($order['discountTotal']) ||
                 $ItemDiscount) {
-
                 $infoOrd = $api->ordersGet($order['externalId']);
                 $infoOrder = $infoOrd->order;
-
                 $orderTotalProducts = $infoOrder['summ'];
                 $totalPaid = $infoOrder['totalSumm'];
                 $deliveryCost = $infoOrder['delivery']['cost'];
@@ -607,20 +626,19 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 }
                 $orderToUpdate->update();
 
-                Db::getInstance()->execute('
-                    UPDATE `'._DB_PREFIX_.'orders`
-                    SET `total_discounts` = '.$totalDiscount.',
-                    `total_discounts_tax_incl` = '.$totalDiscount.',
-                    `total_discounts_tax_excl` = '.$totalDiscount.',
-                    `total_shipping` = '.$deliveryCost.',
-                    `total_shipping_tax_incl` = '.$deliveryCost.',
-                    `total_shipping_tax_excl` = '.$deliveryCost.',
-                    `total_paid` = '.$totalPaid.',
-                    `total_paid_tax_incl` = '.$totalPaid.',
-                    `total_paid_tax_excl` = '.$totalPaid.',
-                    `total_products_wt` = '.$orderTotalProducts.'
-                    WHERE `id_order` = '.(int) $order['externalId']
-                );
+                Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'orders` 
+                    SET 
+                    `total_discounts` = '.$totalDiscount.', 
+                    `total_discounts_tax_incl` = '.$totalDiscount.', 
+                    `total_discounts_tax_excl` = '.$totalDiscount.', 
+                    `total_shipping` = '.$deliveryCost.', 
+                    `total_shipping_tax_incl` = '.$deliveryCost.', 
+                    `total_shipping_tax_excl` = '.$deliveryCost.', 
+                    `total_paid` = '.$totalPaid.', 
+                    `total_paid_tax_incl` = '.$totalPaid.', 
+                    `total_paid_tax_excl` = '.$totalPaid.', 
+                    `total_products_wt` = '.$orderTotalProducts.' 
+                    WHERE `id_order` = '.(int) $order['externalId']);
 
                 unset($ItemDiscount);
             }
@@ -628,30 +646,26 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             /*
              * check status
             */
-            if(!empty($order['status'])) {
+            if (!empty($order['status'])) {
                 $stype = $order['status'];
 
                 if ($statuses[$stype] != null) {
                     if ($statuses[$stype] != $orderToUpdate->current_state) {
-                        Db::getInstance()->execute('
-                        INSERT INTO `' . _DB_PREFIX_ . 'order_history` (`id_employee`, `id_order`, `id_order_state`, `date_add`)
-                        VALUES (
-                            0,
-                            ' . $orderToUpdate->id . ',
-                            ' . $statuses[$stype] . ',
-                            "' . date('Y-m-d H:i:s') . '"
-                        )
-                        ');
+                        Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_history`
+                            (`id_employee`, `id_order`, `id_order_state`, `date_add`) 
+                            VALUES 
+                            (0, ' . $orderToUpdate->id . ', 
+                            ' . $statuses[$stype] . ', 
+                            "' . date('Y-m-d H:i:s') . '")');
 
-                        Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'orders`
-                        SET `current_state` = \'' . $statuses[$stype] . '\'
-                        WHERE `id_order` = ' . (int)$order['externalId']
-                        );
+                        Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                            SET 
+                            `current_state` = \'' . $statuses[$stype] . '\' 
+                            WHERE 
+                            `id_order` = ' . (int)$order['externalId']);
                     }
                 }
             }
-
         }
     }
     /*
