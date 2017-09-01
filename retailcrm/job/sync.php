@@ -463,31 +463,28 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                 if ($order['payments']) {
                     foreach ($order['payments'] as $payment) {
                         if (!isset($payment['externalId']) && $payment['status'] == 'paid') {
-                           $ptype = $payment['type'];
-                           $ptypes = $references->getSystemPaymentModules();
-                           if ($payments[$ptype] != null) {
+                            $ptype = $payment['type'];
+                            $ptypes = $references->getSystemPaymentModules();
+                            if ($payments[$ptype] != null) {
                                 foreach ($ptypes as $pay) {
                                     if ($pay['code'] == $payments[$ptype]) {
                                         $payType = $pay['name'];
                                     }
                                 }
                                 $paymentType = Module::getModuleName($payments[$ptype]);
-                                Db::getInstance()->execute('
-                                    UPDATE `' . _DB_PREFIX_ . 'orders`
-                                    SET `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\'
-                                    WHERE `id_order` = ' . (int)$order['externalId']
-                                );
+                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                                    SET 
+                                    `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
+                                    WHERE 
+                                    `id_order` = ' . (int)$order['externalId']);
 
-                                Db::getInstance()->execute('
-                                    INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
-                                    (`payment_method`, `order_reference` , `amount`, `date_add`)
-                                    VALUES (
-                                    \'' . $payType . '\', 
-                                    \'' . $orderToUpdate->reference . '\',
-                                    \'' . $payment['amount'] . '\',
-                                    \'' . $payment['paidAt'] . '\'
-                                    )'
-                                );
+                                Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
+                                    (`payment_method`, `order_reference` , `amount`, `date_add`) 
+                                    VALUES 
+                                    (\'' . $payType . '\', 
+                                    \'' . $orderToUpdate->reference . '\', 
+                                    \'' . $payment['amount'] . '\', 
+                                    \'' . $payment['paidAt'] . '\')');
                             }
                         }
                     }
