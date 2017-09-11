@@ -58,13 +58,13 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
         if (!array_key_exists('externalId', $order_history)) {
             $responce = $api->ordersGet($order_history['id'], 'id');
-            
+
             if ($responce->isSuccessful()) {
                 $order = $responce['order'];
             } else {
                 continue;
             }
-                
+
             $delivery = $order['delivery']['code'];
 
             if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
@@ -264,6 +264,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     $productName = htmlspecialchars(
                         strip_tags(Product::getProductName($product_id, $product_attribute_id))
                     );
+
                     $combinationPrice = Combination::getPrice($product_attribute_id);
                     $productPrice = $combinationPrice > 0 ? $product->getPrice()+ $combinationPrice : $product->getPrice();
                 } else {
