@@ -51,12 +51,20 @@ if ($history->isSuccessful() && count($history->history) > 0) {
     $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
     $orders = RetailcrmHistoryHelper::assemblyOrder($history->history);
 
-    foreach ($orders as $order) {
-        if (isset($order['deleted']) && $order['deleted'] == true) {
+    foreach ($orders as $order_history) {
+        if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
             continue;
         }
 
-        if (!array_key_exists('externalId', $order)) {
+        if (!array_key_exists('externalId', $order_history)) {
+            $responce = $api->ordersGet($order_history['id'], 'id');
+
+            if ($responce->isSuccessful()) {
+                $order = $responce['order'];
+            } else {
+                continue;
+            }
+
             $delivery = $order['delivery']['code'];
 
             if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
@@ -256,17 +264,19 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                     $productName = htmlspecialchars(
                         strip_tags(Product::getProductName($product_id, $product_attribute_id))
                     );
-                    $productPrice = Combination::getPrice($product_attribute_id);
-                    $productPrice = $productPrice > 0 ? $productPrice : $product->price;
+
+                    $combinationPrice = Combination::getPrice($product_attribute_id);
+                    $productPrice = $combinationPrice > 0 ? $product->getPrice()+ $combinationPrice : $product->getPrice();
                 } else {
                     $productName = htmlspecialchars(strip_tags($product->name));
-                    $productPrice = $product->price;
+                    $productPrice = $product->getPrice();
                 }
 
                 $product_list[] = array(
                     'product' => $product,
                     'product_attribute_id' => $product_attribute_id,
-                    'product_price' => $productPrice,
+                    'product_price' => $product->price,
+                    'product_price_inc_tax' => $productPrice,
                     'product_name' => $productName,
                     'quantity' => $item['quantity']
                 );
@@ -340,9 +350,9 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         '.$product['product_price'].',
                         '.implode('', array('\'', $product['product']->reference, '\'')).',
                         '.$product['product_price'].',
+                        '.$product['product_price_inc_tax'].',
                         '.$product['product_price'].',
-                        '.$product['product_price'].',
-                        '.$product['product_price'].',
+                        '.$product['product_price_inc_tax'].',
                         '.$product['product_price'].'
                     ),';
             }
