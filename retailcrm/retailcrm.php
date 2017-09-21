@@ -587,7 +587,7 @@ class RetailCRM extends Module
         
         $response = $this->api->ordersGet($order_id);
 
-        if ($response->isSuccessful()) {
+        if ($response !== false) {
             $orderCRM = $response['order'];
             if ($orderCRM && $orderCRM['payments']) {
                 foreach ($orderCRM['payments'] as $orderPayment) {
@@ -641,7 +641,7 @@ class RetailCRM extends Module
         );
         $response = $api->deliveryTypesList();
 
-        if ($response->isSuccessful()) {
+        if ($response !== false) {
             return true;
         }
 
