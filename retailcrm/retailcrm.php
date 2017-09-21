@@ -670,7 +670,6 @@ class RetailCRM extends Module
         $response = $api->deliveryTypesList();
 
         if ($response !== false) {
-
             return true;
         }
 
