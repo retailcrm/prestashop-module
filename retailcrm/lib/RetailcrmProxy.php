@@ -32,7 +32,10 @@ class RetailcrmProxy
         try {
             $response = call_user_func_array(array($this->api, $method), $arguments);
 
-            if (!$response->isSuccessful()) {
+            if (is_null($response)) {
+                error_log("[$date] @ [$method] Response is null\n", 3, $this->log);
+                $response = false;
+            } elseif (!$response->isSuccessful()) {
                 error_log("[$date] @ [$method] " . $response->getErrorMsg() . "\n", 3, $this->log);
                 if (isset($response['errors'])) {
                     $error = implode("\n", $response['errors']);
