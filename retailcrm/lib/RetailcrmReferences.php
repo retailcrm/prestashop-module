@@ -202,6 +202,11 @@ class RetailcrmReferences
         return $this->payment_modules;
     }
 
+    public function getStatuseDefaultExport()
+    {
+        return $this->getApiStatuses();
+    }
+
     protected function getApiDeliveryTypes()
     {
         $crmDeliveryTypes = array();

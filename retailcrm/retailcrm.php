@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.1.1
+ * @version 2.1.2
  * @link https://retailcrm.ru
  *
  */
@@ -25,7 +25,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.1.1';
+        $this->version = '2.1.2';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -94,6 +94,7 @@ class RetailCRM extends Module
             $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
             $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
             $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
+            $statusExport = (string)(Tools::getValue('RETAILCRM_STATUS_EXPORT'));
             $settings  = array(
                 'address' => $address,
                 'token' => $token,
@@ -111,6 +112,7 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
                 Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', $deliveryDefault);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
+                Configuration::updateValue('RETAILCRM_STATUS_EXPORT', $statusExport);
 
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
@@ -229,6 +231,23 @@ class RetailCRM extends Module
                     array($this->l('Delivery method'), $this->l('Payment type'))
                 ),
             );
+
+            /*
+             * Status in export
+             */
+            $fields_form[5]['form'] = array(
+                'legend' => array('title' => $this->l('Default status')),
+                'input' => array(array(
+                    'type' => 'select',
+                    'name' => 'RETAILCRM_STATUS_EXPORT',
+                    'label' => $this->l('Default status in export'),
+                    'options' => array(
+                      'query' => $this->reference->getStatuseDefaultExport(),
+                      'id' => 'id_option',
+                      'name' => 'name'
+                    )
+                )),
+            );
         }
 
         /*
@@ -270,7 +289,8 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_ADDRESS'] = Configuration::get('RETAILCRM_ADDRESS');
         $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
         $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
-
+        $helper->fields_value['RETAILCRM_STATUS_EXPORT'] = Configuration::get('RETAILCRM_STATUS_EXPORT');
+        
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '') {
             $deliveryTypes = json_decode($deliverySettings);
