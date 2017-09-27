@@ -17,6 +17,7 @@ require(dirname(__FILE__) . '/../bootstrap.php');
 $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
 $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
 $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
+$statusExport = Configuration::get('RETAILCRM_STATUS_EXPORT');
 
 if (!empty($apiUrl) && !empty($apiKey)) {
     $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
@@ -59,11 +60,11 @@ foreach ($orderRecords as $record) {
     }
 
     if ($record['current_state'] == 0) {
-        $order_status = 'completed';
+        $order_status = $statusExport;
     } else {
         $order_status = array_key_exists($record['current_state'], $status)
             ? $status[$record['current_state']]
-            : 'completed'
+            : $statusExport
         ;
     }
 
