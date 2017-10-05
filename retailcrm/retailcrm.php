@@ -408,6 +408,14 @@ class RetailCRM extends Module
         }
 
         $orderdb = new Order($params['order']->id);
+
+        $comment = $orderdb->getFirstMessage();
+        if ($comment !== false) {
+            $order['customerComment'] = $comment;
+        }
+        
+        unset($comment);
+
         foreach ($orderdb->getProducts() as $item) {
             if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
