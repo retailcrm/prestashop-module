@@ -3,11 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
-<<<<<<< d471f99fca96b1a4234b27d1a4ba03f4c1c909ac
  * @version 2.1.2
-=======
- * @version 2.1.1
->>>>>>> fix for validation on marketplace, edit validation form for saving settings
  * @link https://retailcrm.ru
  *
  */
@@ -29,7 +25,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.1.2';
+        $this->version = '2.1.3';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');

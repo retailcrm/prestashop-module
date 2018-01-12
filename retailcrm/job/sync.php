@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.1.1
+ * @version 2.1.3
  * @link https://retailcrm.ru
  *
  */
@@ -137,7 +137,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
             $customer = new Customer();
             if (!empty($order['customer']['email'])) {
-                $customer->getByEmail($order['customer']['email']);
+                $customer->getByEmail($order['customer']['email'], null, false);
             }
 
             if (!array_key_exists('externalId', $order['customer'])) {
