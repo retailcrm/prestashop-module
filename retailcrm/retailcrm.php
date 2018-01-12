@@ -25,7 +25,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.1.2';
+        $this->version = '2.1.3';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -40,7 +40,7 @@ class RetailCRM extends Module
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = _PS_ROOT_DIR_ . '/retailcrm.log';
         $this->module_key = '149c765c6cddcf35e1f13ea6c71e9fa5';
-        
+
         if ($this->psVersion == '1.6') {
             $this->bootstrap = true;
             $this->use_new_hooks = false;
@@ -129,7 +129,7 @@ class RetailCRM extends Module
             $this->api = new RetailcrmProxy($address, $token, $this->log, $version);
             $this->reference = new RetailcrmReferences($this->api);
         }
-        
+
         $output .= $this->displayConfirmation(
             $this->l('Timezone settings must be identical to both of your crm and shop') .
             " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
@@ -156,7 +156,9 @@ class RetailCRM extends Module
                 'name' => 'v5'
             )
         );
+
         $fields_form = array();
+
         /*
          * Network connection form
          */
@@ -290,7 +292,7 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
         $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
         $helper->fields_value['RETAILCRM_STATUS_EXPORT'] = Configuration::get('RETAILCRM_STATUS_EXPORT');
-        
+
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '') {
             $deliveryTypes = json_decode($deliverySettings);
@@ -503,6 +505,7 @@ class RetailCRM extends Module
                     $arProp = array();
                     $count = 0;
                     $arAttr = explode(",", $item['attributes']);
+
                     foreach ($arAttr as $valAttr) {
                         $arItem = explode(":", $valAttr);
                         $arProp[$count]['name'] = trim($arItem[0]);
@@ -645,6 +648,7 @@ class RetailCRM extends Module
     private function validateCrmAddress($address)
     {
         if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1) {
+
             return true;
         }
 

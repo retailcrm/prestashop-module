@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.1.1
+ * @version 2.1.3
  * @link https://retailcrm.ru
  *
  */
@@ -103,6 +103,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             if (!isset($paymentId) || !$paymentId) {
                 $paymentId = $paymentDefault;
             }
+
             if (!$paymentType) {
                 if ($paymentDefault) {
                     if (Module::getInstanceByName($paymentDefault)) {
@@ -116,6 +117,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         3,
                         _PS_ROOT_DIR_ . '/retailcrm.log'
                     );
+
                     continue;
                 }
             }
@@ -135,7 +137,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
 
             $customer = new Customer();
             if (!empty($order['customer']['email'])) {
-                $customer->getByEmail($order['customer']['email']);
+                $customer->getByEmail($order['customer']['email'], null, false);
             }
 
             if (!array_key_exists('externalId', $order['customer'])) {
@@ -408,6 +410,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
             /*
              * check payment type
              */
+
             if (!empty($order['paymentType']) && $apiVersion != 5) {
                 $ptype = $order['paymentType'];
 
@@ -424,6 +427,36 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                             `payment_method` = \'' . $payments[$ptype] . '\' 
                             WHERE 
                             `order_reference` = \'' . $orderToUpdate->reference . '\'');
+                    }
+                }
+            } elseif (!empty($order['payments']) && $apiVersion == 5) {
+                if ($order['payments']) {
+                    foreach ($order['payments'] as $payment) {
+                        if (!isset($payment['externalId']) && $payment['status'] == 'paid') {
+                            $ptype = $payment['type'];
+                            $ptypes = $references->getSystemPaymentModules();
+                            if ($payments[$ptype] != null) {
+                                foreach ($ptypes as $pay) {
+                                    if ($pay['code'] == $payments[$ptype]) {
+                                        $payType = $pay['name'];
+                                    }
+                                }
+                                $paymentType = Module::getModuleName($payments[$ptype]);
+                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
+                                    SET 
+                                    `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
+                                    WHERE 
+                                    `id_order` = ' . (int)$order['externalId']);
+
+                                Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
+                                    (`payment_method`, `order_reference` , `amount`, `date_add`) 
+                                    VALUES 
+                                    (\'' . $payType . '\', 
+                                    \'' . $orderToUpdate->reference . '\', 
+                                    \'' . $payment['amount'] . '\', 
+                                    \'' . $payment['paidAt'] . '\')');
+                            }
+                        }
                     }
                 }
             } elseif (!empty($order['payments']) && $apiVersion == 5) {
@@ -503,6 +536,7 @@ if ($history->isSuccessful() && count($history->history) > 0) {
                         if (isset($item['discount']) ||
                             isset($item['discountPercent']) ||
                             isset($item['discountTotal'])) {
+
                             $product = new Product((int) $product_id, false, $default_lang);
                             $tax = new TaxCore($product->id_tax_rules_group);
 
