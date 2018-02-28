@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.1.2
+ * @version 2.2.0
  * @link https://retailcrm.ru
  *
  */
@@ -20,12 +20,11 @@ require_once(dirname(__FILE__) . '/bootstrap.php');
 
 class RetailCRM extends Module
 {
-
     public function __construct()
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.1.3';
+        $this->version = '2.2.0';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -75,7 +74,9 @@ class RetailCRM extends Module
         Configuration::deleteByName('RETAILCRM_API_STATUS') &&
         Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
         Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
-        Configuration::deleteByName('RETAILCRM_API_VERSION');
+        Configuration::deleteByName('RETAILCRM_API_VERSION') &&
+        Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+        Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC');
     }
 
     public function getContent()
@@ -516,8 +517,12 @@ class RetailCRM extends Module
 
                     foreach ($arAttr as $valAttr) {
                         $arItem = explode(":", $valAttr);
-                        $arProp[$count]['name'] = trim($arItem[0]);
-                        $arProp[$count]['value'] = trim($arItem[1]);
+
+                        if ($arItem[0] && $arItem[1]) {
+                            $arProp[$count]['name'] = trim($arItem[0]);
+                            $arProp[$count]['value'] = trim($arItem[1]);
+                        }
+
                         $count++;
                     }
                 }

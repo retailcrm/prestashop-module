@@ -12,10 +12,10 @@ class RetailcrmHistoryHelper {
         $orders = array();
         foreach ($orderHistory as $change) {
             $change['order'] = self::removeEmpty($change['order']);
-            if($change['order']['items']) {
+            if (isset($change['order']['items']) && $change['order']['items']) {
                 $items = array();
                 foreach($change['order']['items'] as $item) {
-                    if(isset($change['created'])) {
+                    if (isset($change['created'])) {
                         $item['create'] = 1;
                     }
                     $items[$item['id']] = $item;
@@ -23,70 +23,84 @@ class RetailcrmHistoryHelper {
                 $change['order']['items'] = $items;
             }
 
-            if($change['order']['contragent']['contragentType']) {
+            if (isset($change['order']['contragent']['contragentType'])) {
                 $change['order']['contragentType'] = $change['order']['contragent']['contragentType'];
                 unset($change['order']['contragent']);
             }
 
-            if($orders[$change['order']['id']]) {
+            if (isset($orders[$change['order']['id']])) {
                 $orders[$change['order']['id']] = array_merge($orders[$change['order']['id']], $change['order']);
             } else {
                 $orders[$change['order']['id']] = $change['order'];
             }
             
-            if($change['payment']) {
-                if($orders[$change['order']['id']]['payments'][$change['payment']['id']]) {
+            if (isset($change['payment'])) {
+                if (isset($orders[$change['order']['id']]['payments'][$change['payment']['id']])) {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']] = array_merge($orders[$change['order']['id']]['payments'][$change['payment']['id']], $change['payment']);    
                 } else {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']] = $change['payment'];
                 }
-                if($change['oldValue'] == null && $change['field'] == 'payments') {
+                if ($change['oldValue'] == null && $change['field'] == 'payments') {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] = true;
                 }
-                if($change['newValue'] == null && $change['field'] == 'payments') {
+                if ($change['newValue'] == null && $change['field'] == 'payments') {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']]['delete'] = true;
                 }
-                if(!$orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] && $fields['payment'][$change['field']]) {
+                if (!$orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] && $fields['payment'][$change['field']]) {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = $change['newValue'];
                 }
             }
             
-            if($change['item']) {
-                if($orders[$change['order']['id']]['items'][$change['item']['id']]) {
+            if (isset($change['item'])) {
+                if (isset($orders[$change['order']['id']]['items'][$change['item']['id']])) {
                     $orders[$change['order']['id']]['items'][$change['item']['id']] = array_merge($orders[$change['order']['id']]['items'][$change['item']['id']], $change['item']);
                 } else {
                     $orders[$change['order']['id']]['items'][$change['item']['id']] = $change['item'];
                 }
 
-                if(empty($change['oldValue']) && $change['field'] == 'order_product') {
+                if (empty($change['oldValue']) && $change['field'] == 'order_product') {
                     $orders[$change['order']['id']]['items'][$change['item']['id']]['create'] = true;
                 }
-                if(empty($change['newValue']) && $change['field'] == 'order_product') {
+                if (empty($change['newValue']) && $change['field'] == 'order_product') {
                     $orders[$change['order']['id']]['items'][$change['item']['id']]['delete'] = true;
                 }
-                if(!$orders[$change['order']['id']]['items'][$change['item']['id']]['create'] && $fields['item'][$change['field']]) {
+                if (!$orders[$change['order']['id']]['items'][$change['item']['id']]['create'] && $fields['item'][$change['field']]) {
                     $orders[$change['order']['id']]['items'][$change['item']['id']][$fields['item'][$change['field']]] = $change['newValue'];
                 }
             } else {
-                if($fields['delivery'][$change['field']] == 'service') {
+                if (isset($fields['delivery'][$change['field']])
+                    && $fields['delivery'][$change['field']] == 'service'
+                ) {
                     $orders[$change['order']['id']]['delivery']['service']['code'] = self::newValue($change['newValue']);
-                } elseif($fields['delivery'][$change['field']]) {
+                } elseif (isset($fields['delivery'][$change['field']])
+                    && $fields['delivery'][$change['field']]
+                ) {
                     $orders[$change['order']['id']]['delivery'][$fields['delivery'][$change['field']]] = self::newValue($change['newValue']);
-                } elseif($fields['orderAddress'][$change['field']]) {
+                } elseif (isset($fields['orderAddress'][$change['field']])
+                    && $fields['orderAddress'][$change['field']]
+                ) {
                     $orders[$change['order']['id']]['delivery']['address'][$fields['orderAddress'][$change['field']]] = $change['newValue'];
-                } elseif($fields['integrationDelivery'][$change['field']]) {
+                } elseif (isset($fields['integrationDelivery'][$change['field']])
+                    && $fields['integrationDelivery'][$change['field']]
+                ) {
                     $orders[$change['order']['id']]['delivery']['service'][$fields['integrationDelivery'][$change['field']]] = self::newValue($change['newValue']);
-                } elseif($fields['customerContragent'][$change['field']]) {
+                } elseif (isset($fields['customerContragent'][$change['field']])
+                    && $fields['customerContragent'][$change['field']]
+                ) {
                     $orders[$change['order']['id']][$fields['customerContragent'][$change['field']]] = self::newValue($change['newValue']);
-                } elseif(strripos($change['field'], 'custom_') !== false) {
+                } elseif (strripos($change['field'], 'custom_') !== false) {
                     $orders[$change['order']['id']]['customFields'][str_replace('custom_', '', $change['field'])] = self::newValue($change['newValue']);
-                } elseif($fields['order'][$change['field']]) {
+                } elseif (isset($fields['order'][$change['field']])
+                    && $fields['order'][$change['field']]
+                ) {
                     $orders[$change['order']['id']][$fields['order'][$change['field']]] = self::newValue($change['newValue']);
-                } elseif($fields['payment'][$change['field']]) {
+                } elseif (isset($fields['payment'][$change['field']])
+                    && $fields['payment'][$change['field']]
+                ) {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = self::newValue($change['newValue']);
                 }
 
-                if(isset($change['created'])) {
+                if (isset($change['created'])) {
                     $orders[$change['order']['id']]['create'] = 1;
                 }
 
@@ -97,6 +111,38 @@ class RetailcrmHistoryHelper {
         }
 
         return $orders;
+    }
+
+    public static function assemblyCustomer($customerHistory)
+    {
+        if (file_exists(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml')) {
+            $objects = simplexml_load_file(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml');
+
+            foreach($objects->fields->field as $object) {
+                if ($object["group"] == 'customer') {
+                    $fields[(string)$object["group"]][(string)$object["id"]] = (string)$object;
+                }
+            }
+        }
+
+        $customers = array();
+        foreach ($customerHistory as $change) {
+            $change['customer'] = self::removeEmpty($change['customer']);
+
+            if (isset($customers[$change['customer']['id']])) {
+                $customers[$change['customer']['id']] = array_merge($customers[$change['customer']['id']], $change['customer']);
+            } else {
+                $customers[$change['customer']['id']] = $change['customer'];
+            }
+
+            if (isset($fields['customer'][$change['field']])
+                && $fields['customer'][$change['field']]
+            ) {
+                $customers[$change['customer']['id']][$fields['customer'][$change['field']]] = self::newValue($change['newValue']);
+            }
+        }
+
+        return $customers;
     }
 
     public static function newValue($value)

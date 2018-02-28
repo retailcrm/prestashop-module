@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.1.3
+ * @version 2.2.0
  * @link https://retailcrm.ru
  *
  */
