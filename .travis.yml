@@ -1,0 +1,48 @@
+language: php
+
+sudo: false
+
+php:
+  - 5.6
+  - 7.0
+  - 7.1
+  - 7.2
+
+env:
+  global:
+    - DB_USER=root
+    - DB_HOST=localhost
+    - DB_NAME=test_prestashop
+
+matrix:
+  include:
+  - php: 5.3
+    dist: precise
+    env: BRANCH=1.6.1.x
+  - php: 5.4
+    env: BRANCH=1.6.1.x
+  - php: 5.5
+    env: BRANCH=1.6.1.x
+  - php: 5.6
+    env: BRANCH=1.6.1.x
+  - php: 7.0
+    env: BRANCH=1.6.1.x
+  - php: 7.1
+    env: BRANCH=1.6.1.x
+  - php: 7.2
+    env: BRANCH=1.6.1.x
+
+before_script:
+  - bash tests/bin/install.sh
+
+script:
+  - phpunit -c phpunit.xml.dist
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: make
+  on:
+    php: 7.2
+    branch: master
+    condition: "$DEPLOY = true"
