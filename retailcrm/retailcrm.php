@@ -21,6 +21,16 @@ require_once(dirname(__FILE__) . '/bootstrap.php');
 class RetailCRM extends Module
 {
     public $api = false;
+    public $default_lang;
+    public $default_currency;
+    public $default_country;
+    public $apiUrl;
+    public $apiKey;
+    public $apiVersion;
+    public $psVersion;
+    public $log;
+    public $confirmUninstall;
+    public $reference;
 
     private $use_new_hooks = true;
 
@@ -570,7 +580,7 @@ class RetailCRM extends Module
             } else {
                 $paymentCode = $params['order']->payment;
             }
-
+var_dump($paymentCode);
             if ($this->apiVersion != 5) {
                 if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
                     $order['paymentType'] = $payment[$paymentCode];

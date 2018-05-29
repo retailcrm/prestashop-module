@@ -4,9 +4,6 @@ sudo: false
 
 php:
   - 5.6
-  - 7.0
-  - 7.1
-  - 7.2
 
 env:
   global:
@@ -14,35 +11,20 @@ env:
     - DB_HOST=localhost
     - DB_NAME=test_prestashop
 
-matrix:
-  include:
-  - php: 5.3
-    dist: precise
-    env: BRANCH=1.6.1.x
-  - php: 5.4
-    env: BRANCH=1.6.1.x
-  - php: 5.5
-    env: BRANCH=1.6.1.x
-  - php: 5.6
-    env: BRANCH=1.6.1.x
-  - php: 7.0
-    env: BRANCH=1.6.1.x
-  - php: 7.1
-    env: BRANCH=1.6.1.x
-  - php: 7.2
-    env: BRANCH=1.6.1.x
-
 before_script:
-  - bash tests/bin/install.sh
+  - bash tests/bin/clone_prestashop.sh
+  - cp ../PrestaShop/tests/parameters.yml.travis ../PrestaShop/app/config/parameters.yml
+  - bash ../PrestaShop/travis-scripts/install-prestashop
 
 script:
-  - phpunit -c phpunit.xml.dist
+  - bash tests/bin/script.sh
+  - php ../PrestaShop/vendor/bin/phpunit -c phpunit.xml.dist
 
 deploy:
   skip_cleanup: true
   provider: script
   script: make
   on:
-    php: 7.2
+    php: 5.6
     branch: master
     condition: "$DEPLOY = true"
