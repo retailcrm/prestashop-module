@@ -13,10 +13,12 @@ env:
 
 before_script:
   - bash tests/bin/clone_prestashop.sh
-  - cp ../PrestaShop/tests/parameters.yml.travis ../PrestaShop/app/config/parameters.yml
-  - bash ../PrestaShop/travis-scripts/install-prestashop
+  - cd ../PrestaShop
+  - cp tests/parameters.yml.travis app/config/parameters.yml
+  - bash travis-scripts/install-prestashop
 
 script:
+  - cd $TRAVIS_BUILD_DIR
   - bash tests/bin/script.sh
   - php ../PrestaShop/vendor/bin/phpunit -c phpunit.xml.dist
 
