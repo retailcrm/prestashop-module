@@ -10,6 +10,7 @@ cd $PRESTASHOP_DIR
 
 if [ -z $BRANCH ]; then
     cp tests/parameters.yml.travis app/config/parameters.yml
+    bash travis-scripts/install-prestashop
+else
+    bash travis-scripts/install-prestashop.sh
 fi
-
-bash travis-scripts/install-prestashop.sh
