@@ -24,10 +24,13 @@ class RetailcrmReferencesTest extends RetailcrmTestCase
     public function testGetSystemPaymentModules()
     {
         $this->assertInternalType('array', $this->retailcrmReferences->payment_modules);
-        $this->assertNotEmpty($this->retailcrmReferences->payment_modules);
-        $this->assertArrayHasKey('name', $this->retailcrmReferences->payment_modules[0]);
-        $this->assertArrayHasKey('code', $this->retailcrmReferences->payment_modules[0]);
-        $this->assertArrayHasKey('id', $this->retailcrmReferences->payment_modules[0]);
+
+        if (version_compare(_PS_VERSION_, '1.7', '>')) {
+            $this->assertNotEmpty($this->retailcrmReferences->payment_modules);
+            $this->assertArrayHasKey('name', $this->retailcrmReferences->payment_modules[0]);
+            $this->assertArrayHasKey('code', $this->retailcrmReferences->payment_modules[0]);
+            $this->assertArrayHasKey('id', $this->retailcrmReferences->payment_modules[0]);
+        }
     }
 
     public function testGetStatuses()

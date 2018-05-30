@@ -580,7 +580,7 @@ class RetailCRM extends Module
             } else {
                 $paymentCode = $params['order']->payment;
             }
-var_dump($paymentCode);
+
             if ($this->apiVersion != 5) {
                 if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
                     $order['paymentType'] = $payment[$paymentCode];

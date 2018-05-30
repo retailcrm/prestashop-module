@@ -12,6 +12,8 @@ cd PrestaShop
 
 if ! [ -z $BRANCH ]; then
     git checkout $BRANCH;
+    cd tests
+    composer install
 else
     composer install --prefer-dist --no-interaction --no-progress
 fi

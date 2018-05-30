@@ -8,8 +8,10 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
     {
         parent::setUp();
 
-        $contextMocker = new \Tests\Unit\ContextMocker();
-        $this->contextMock = $contextMocker->mockContext();
+        if (version_compare(_PS_VERSION_, '1.7', '>')) {
+            $contextMocker = new \Tests\Unit\ContextMocker();
+            $this->contextMock = $contextMocker->mockContext();
+        }
     }
 
     protected function setConfig()

@@ -6,5 +6,10 @@ fi
 
 PRESTASHOP_DIR=$TRAVIS_BUILD_DIR/../PrestaShop
 
-cd $PRESTASHOP_DIR
-composer run-script create-test-db --timeout=0
+if ! [ -z $BRANCH ]; then
+    phpunit
+else
+    cd $PRESTASHOP_DIR
+    composer run-script create-test-db --timeout=0
+    php ../PrestaShop/vendor/bin/phpunit -c $TRAVIS_BUILD_DIR/phpunit.xml.dist
+fi
