@@ -2,7 +2,6 @@
 
 class Service
 {
-
     public static function getDate($file)
     {
         if (file_exists($file)) {

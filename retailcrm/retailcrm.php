@@ -20,11 +20,25 @@ require_once(dirname(__FILE__) . '/bootstrap.php');
 
 class RetailCRM extends Module
 {
+    public $api = false;
+    public $default_lang;
+    public $default_currency;
+    public $default_country;
+    public $apiUrl;
+    public $apiKey;
+    public $apiVersion;
+    public $psVersion;
+    public $log;
+    public $confirmUninstall;
+    public $reference;
+
+    private $use_new_hooks = true;
+
     public function __construct()
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.0';
+        $this->version = '2.2.1';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -135,7 +149,7 @@ class RetailCRM extends Module
             $this->l('Timezone settings must be identical to both of your crm and shop') .
             " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
         );
-        
+
         $this->display(__FILE__, 'retailcrm.tpl');
 
         return $output . $this->displayForm();
@@ -350,29 +364,35 @@ class RetailCRM extends Module
 
     public function hookActionCustomerAccountAdd($params)
     {
-        $this->api->customersCreate(
-            array(
-                'externalId' => $params['newCustomer']->id,
-                'firstName' => $params['newCustomer']->firstname,
-                'lastName' => $params['newCustomer']->lastname,
-                'email' => $params['newCustomer']->email,
-                'createdAt' => $params['newCustomer']->date_add
-            )
+        $customer = $params['newCustomer'];
+        $customerSend = array(
+            'externalId' => $customer->id,
+            'firstName' => $customer->firstname,
+            'lastName' => $customer->lastname,
+            'email' => $customer->email,
+            'createdAt' => $customer->date_add
         );
+
+        $this->api->customersCreate($customerSend);
+
+        return $customerSend;
     }
 
     // this hook added in 1.7
     public function hookActionCustomerAccountUpdate($params)
     {
-        $this->api->customersEdit(
-            array(
-                'externalId' => $params['customer']->id,
-                'firstName' => $params['customer']->firstname,
-                'lastName' => $params['customer']->lastname,
-                'email' => $params['customer']->email,
-                'birthday' => $params['customer']->birthday
-            )
+        $customer = $params['customer'];
+        $customerSend = array(
+            'externalId' => $customer->id,
+            'firstName' => $customer->firstname,
+            'lastName' => $customer->lastname,
+            'email' => $customer->email,
+            'birthday' => $customer->birthday
         );
+
+        $this->api->customersEdit($customerSend);
+
+        return $customerSend;
     }
 
     public function hookNewOrder($params)
@@ -382,19 +402,20 @@ class RetailCRM extends Module
 
     public function hookActionPaymentConfirmation($params)
     {
-        $this->api->ordersEdit(
-            array(
-                'externalId' => $params['id_order'],
-                'paymentStatus' => 'paid'
-            )
-        );
+        if ($this->apiVersion == 4) {
+            $this->api->ordersEdit(
+                array(
+                    'externalId' => $params['id_order'],
+                    'paymentStatus' => 'paid'
+                )
+            );
+        }
 
         return $this->hookActionOrderStatusPostUpdate($params);
     }
 
     public function hookActionOrderEdited($params)
     {
-        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
         $order = array(
             'externalId' => $params['order']->id,
             'firstName' => $params['customer']->firstname,
@@ -404,7 +425,7 @@ class RetailCRM extends Module
             'delivery' => array('cost' => $params['order']->total_shipping)
         );
 
-        if ($apiVersion != 5) {
+        if ($this->apiVersion != 5) {
             $order['discount'] = $params['order']->total_discounts;
         } else {
             $order['discountManualAmount'] = $params['order']->total_discounts;
@@ -436,6 +457,8 @@ class RetailCRM extends Module
 
         $order['customer']['externalId'] = $params['order']->id_customer;
         $this->api->ordersEdit($order);
+
+        return $order;
     }
 
     public function hookActionOrderStatusPostUpdate($params)
@@ -443,7 +466,6 @@ class RetailCRM extends Module
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
         $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
-        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
 
         if (isset($params['orderStatus'])) {
             $customer = array(
@@ -463,13 +485,13 @@ class RetailCRM extends Module
                 'delivery' => array('cost' => $params['order']->total_shipping)
             );
 
-            if ($apiVersion != 5) {
+            if ($this->apiVersion != 5) {
                 $order['discount'] = $params['order']->total_discounts;
             } else {
                 $order['discountManualAmount'] = $params['order']->total_discounts;
             }
 
-            $cart = new Cart($params['cart']->id);
+            $cart = $params['cart'];
             $addressCollection = $cart->getAddressCollection();
             $address = array_shift($addressCollection);
 
@@ -502,7 +524,7 @@ class RetailCRM extends Module
                 $customer['phones'][] = array('number' => $phone);
                 $order['phone'] = $phone;
             }
-            
+
             foreach ($cart->getProducts() as $item) {
                 if (isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
                     $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
@@ -527,15 +549,20 @@ class RetailCRM extends Module
                     }
                 }
 
-                $order['items'][] = array(
+                $orderItem = array(
                     'initialPrice' => !empty($item['rate'])
                         ? $item['price'] + ($item['price'] * $item['rate'] / 100)
                         : $item['price'],
                     'quantity' => $item['quantity'],
                     'offer' => array('externalId' => $productId),
-                    'productName' => $item['name'],
-                    'properties' => $arProp
+                    'productName' => $item['name']
                 );
+
+                if (isset($arProp)) {
+                    $orderItem['properties'] = $arProp;
+                }
+
+                $order['items'][] = $orderItem;
 
                 unset($arAttr);
                 unset($count);
@@ -554,20 +581,20 @@ class RetailCRM extends Module
                 $paymentCode = $params['order']->payment;
             }
 
-            if ($apiVersion != 5) {
+            if ($this->apiVersion != 5) {
                 if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
                     $order['paymentType'] = $payment[$paymentCode];
                 }
             } else {
-                $payment = array(
+                $paymentSend = array(
                     'externalId' => $params['order']->id .'#'. $params['order']->reference,
                     'amount' => $params['order']->total_paid,
                     'type' => $payment[$paymentCode] ? $payment[$paymentCode] : ''
                 );
             }
 
-            if (isset($payment)) {
-                $order['payments'][] = $payment;
+            if (isset($paymentSend)) {
+                $order['payments'][] = $paymentSend;
             }
 
             $statusCode = $params['orderStatus']->id;
@@ -587,6 +614,9 @@ class RetailCRM extends Module
             $order['customer']['externalId'] = $customer['externalId'];
             
             $this->api->ordersCreate($order);
+
+            return $order;
+
         } elseif (isset($params['newOrderStatus'])) {
             $statusCode = $params['newOrderStatus']->id;
 
@@ -601,8 +631,12 @@ class RetailCRM extends Module
                         'status' => $orderStatus
                     )
                 );
+
+                return $orderStatus;
             }
         }
+
+        return false;
     }
 
     public function hookActionPaymentCCAdd($params)
@@ -620,11 +654,12 @@ class RetailCRM extends Module
         if (array_key_exists($payCode, $paymentCRM) && !empty($paymentCRM[$payCode])) {
             $payment = $paymentCRM[$payCode];
         }
-        
+
         $response = $this->api->ordersGet($order_id);
 
         if ($response !== false) {
             $orderCRM = $response['order'];
+
             if ($orderCRM && $orderCRM['payments']) {
                 foreach ($orderCRM['payments'] as $orderPayment) {
                     if ($orderPayment['type'] == $payment) {
@@ -641,27 +676,31 @@ class RetailCRM extends Module
 
         if (isset($updatePayment)) {
             $this->api->ordersPaymentEdit($updatePayment);
+
+            return $updatePayment;
         } else {
-            $this->api->ordersPaymentCreate(
-                array(
-                    'externalId' => $params['paymentCC']->id,
-                    'amount'     => $params['paymentCC']->amount,
-                    'paidAt'     => $params['paymentCC']->date_add,
-                    'type'       => $payment,
-                    'status'     => 'paid',
-                    'order'      => array(
-                        'externalId' => $order_id,
-                    ),
-                )
+            $createPayment = array(
+                'externalId' => $params['paymentCC']->id,
+                'amount'     => $params['paymentCC']->amount,
+                'paidAt'     => $params['paymentCC']->date_add,
+                'type'       => $payment,
+                'status'     => 'paid',
+                'order'      => array(
+                    'externalId' => $order_id,
+                ),
             );
+
+            $this->api->ordersPaymentCreate($createPayment);
+
+            return $createPayment;
         }
-        return true;
+
+        return false;
     }
 
     private function validateCrmAddress($address)
     {
         if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1) {
-
             return true;
         }
 

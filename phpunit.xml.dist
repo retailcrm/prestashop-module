@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        bootstrap="tests/phpunit/bootstrap.php"
+        backupGlobals="false"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        verbose="true"
+        processIsolation="false"
+        stopOnFailure="false"
+        syntaxCheck="true"
+>
+    <testsuites>
+        <testsuite name="Retailcrm PrestaShop Test Suite">
+            <directory>tests/phpunit</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">retailcrm</directory>
+            <exclude>
+                <directory suffix=".php">retailcrm/translations</directory>
+                <directory suffix=".php">retailcrm/job</directory>
+                <file>bootstrap.php</file>
+                <file>index.php</file>
+                <file>logo.gif</file>
+                <file>logo.png</file>
+                <file>objects.xml</file>
+            </exclude>
+        </whitelist>
+    </filter>
+</phpunit>

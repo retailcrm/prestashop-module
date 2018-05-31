@@ -2,6 +2,11 @@
 
 class RetailcrmReferences
 {
+    public $default_lang;
+    public $carriers;
+    public $payment_modules = array();
+
+    private $api;
 
     public function __construct($client)
     {
@@ -158,7 +163,7 @@ class RetailcrmReferences
         return $paymentDeliveryTypes;
     }
 
-    public function getSystemPaymentModules()
+    public function getSystemPaymentModules($active = true)
     {
         $shop_id = Context::getContext()->shop->id;
 
@@ -189,7 +194,7 @@ class RetailcrmReferences
                     $module->group = null;
                 }
 
-                if ($module->active != 0) {
+                if ($module->active != 0 || $active === false) {
                     $this->payment_modules[] = array(
                         'id' => $module->id,
                         'code' => $module->name,
@@ -270,4 +275,60 @@ class RetailcrmReferences
         return $crmPaymentTypes;
     }
 
+    public function getStores()
+    {
+        $storesShop = $this->getShopStores();
+        $retailcrmStores = $this->getApiStores();
+
+        foreach ($storesShop as $key => $storeShop) {
+            $stores[] = array(
+                'type' => 'select',
+                'name' => 'RETAILCRM_STORES['. $key .']',
+                'label' => $storeShop,
+                'options' => array(
+                    'query' => $retailcrmStores,
+                    'id' => 'id_option',
+                    'name' => 'name'
+                )
+            );
+        }
+
+        return $stores;
+    }
+
+    protected function getShopStores()
+    {
+        $stores = array();
+        $warehouses = Warehouse::getWarehouses();
+
+        foreach ($warehouses as $warehouse) {
+            $arrayName = explode('-', $warehouse['name']);
+            $warehouseName = trim($arrayName[1]);
+            $stores[$warehouse['id_warehouse']] = $warehouseName;
+        }
+
+        return $stores;
+    }
+
+    protected function getApiStores()
+    {
+        $crmStores = array();
+        $response = $this->api->storesList();
+
+        if ($response) {
+            $crmStores[] = array(
+                'id_option' => '',
+                'name' => ''
+            );
+
+            foreach ($response->stores as $store) {
+                $crmStores[] = array(
+                    'id_option' => $store['code'],
+                    'name' => $store['name']
+                );
+            }
+        }
+
+        return $crmStores;
+    }
 }

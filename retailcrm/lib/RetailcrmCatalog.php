@@ -2,6 +2,9 @@
 
 class RetailcrmCatalog
 {
+    public $default_lang;
+    public $default_currency;
+    public $default_country;
 
     public function __construct()
     {
