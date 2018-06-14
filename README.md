@@ -1,7 +1,7 @@
 Prestashop module
 =================
 
-Module allows integrate CMS Prestashop with [RetailCRM](http://www.retailcrm.pro)
+Module allows integrate CMS Prestashop with [retailCRM](http://www.retailcrm.pro)
 
 #### Features:
 
@@ -30,7 +30,7 @@ Add to cron:
 */7 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
 ```
 
-#### Single orders archive export to RetailCRM
+#### Single orders archive export to retailCRM
 
 ```
 /usr/bin/php /path/to/your/site/modules/retailcrm/job/export.php
