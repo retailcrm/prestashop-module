@@ -1,6 +1,6 @@
-FILE = $(TRAVIS_BUILD_DIR)/VERSION
+lFILE = $(TRAVIS_BUILD_DIR)/VERSION
 VERSION = `cat $(FILE)`
-ARCHIVE_NAME = '/tmp/prestashop-'$(VERSION)'.zip'
+ARCHIVE_NAME = '/tmp/retailcrm-'$(VERSION)'.zip'
 
 all: build_archive send_to_ftp delete_archive
 
