@@ -1,4 +1,4 @@
-lFILE = $(TRAVIS_BUILD_DIR)/VERSION
+FILE = $(TRAVIS_BUILD_DIR)/VERSION
 VERSION = `cat $(FILE)`
 ARCHIVE_NAME = '/tmp/retailcrm-'$(VERSION)'.zip'
 
