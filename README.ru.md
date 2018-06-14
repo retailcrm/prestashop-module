@@ -1,7 +1,7 @@
 Prestashop module
 =================
 
-Модуль интеграции CMS Prestashop c [RetailCRM](http://www.retailcrm.com)
+Модуль интеграции CMS Prestashop c [retailCRM](http://www.retailcrm.com)
 
 #### Модуль позволяет:
 
@@ -21,7 +21,7 @@ Prestashop module
 * */4 * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/icml.php
 ```
 
-#### Получение изменение из RetailCRM
+#### Получение изменение из retailCRM
 
 Добавьте в крон запись вида
 
@@ -29,7 +29,7 @@ Prestashop module
 */7 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
 ```
 
-#### Единоразовая выгрузка архива клиентов и заказов в RetailCRM
+#### Единоразовая выгрузка архива клиентов и заказов в retailCRM
 
 ```
 /usr/bin/php /path/to/your/site/modules/retailcrm/job/export.php
