@@ -519,23 +519,23 @@ class RetailCRM extends Module
                 $order['delivery']['address']['text'] = $addres_line;
             }
 
-			if (!empty($phone) && !empty($additionalPhone)) {
-				$customer['phones'] = array(
-					array(
-						'number' => $phone
-					),
-					array(
-						'number' => $additionalPhone
-					)
-				);
-				$customer['phones'][] = array('number' => $phone);
-				$customer['phones'][] = array('number' => $additionalPhone);
-				$order['phone'] = $phone;
-				$order['additionalPhone'] = $additionalPhone;
-			} else {
-				$order['phone'] = !empty($phone) ? $phone : $additionalPhone;
-				$customer['phones'][] = array('number' => $order['phone']);
-			}
+            if (!empty($phone) && !empty($additionalPhone)) {
+                $customer['phones'] = array(
+                    array(
+                        'number' => $phone
+                    ),
+                    array(
+                        'number' => $additionalPhone
+                    )
+                );
+                $customer['phones'][] = array('number' => $phone);
+                $customer['phones'][] = array('number' => $additionalPhone);
+                $order['phone'] = $phone;
+                $order['additionalPhone'] = $additionalPhone;
+            } else {
+                $order['phone'] = !empty($phone) ? $phone : $additionalPhone;
+                $customer['phones'][] = array('number' => $order['phone']);
+            }
 
             $comment = $params['order']->getFirstMessage();
 
