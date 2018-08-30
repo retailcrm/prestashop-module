@@ -528,8 +528,7 @@ class RetailCRM extends Module
                         'number' => $additionalPhone
                     )
                 );
-                $customer['phones'][] = array('number' => $phone);
-                $customer['phones'][] = array('number' => $additionalPhone);
+
                 $order['phone'] = $phone;
                 $order['additionalPhone'] = $additionalPhone;
             } else {
