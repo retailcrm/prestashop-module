@@ -497,8 +497,8 @@ class RetailCRM extends Module
             $address = array_shift($addressCollection);
 
             if ($address instanceof Address) {
-            	$additionalPhone = !empty($address->phone) ? $address->phone : '';
-            	$phone = !empty($address->phone_mobile) ? $address->phone_mobile : '';
+                $additionalPhone = !empty($address->phone) ? $address->phone : '';
+                $phone = !empty($address->phone_mobile) ? $address->phone_mobile : '';
                 $postcode = $address->postcode;
                 $city = $address->city;
                 $addres_line = sprintf("%s %s", $address->address1, $address->address2);
@@ -538,9 +538,9 @@ class RetailCRM extends Module
 
             $comment = $params['order']->getFirstMessage();
 
-	        if ($comment !== false) {
-	            $order['customerComment'] = $comment;
-       		}
+            if ($comment !== false) {
+                $order['customerComment'] = $comment;
+            }
 
             foreach ($cart->getProducts() as $item) {
                 if (isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
