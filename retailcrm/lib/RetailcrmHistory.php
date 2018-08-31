@@ -8,8 +8,8 @@ class RetailcrmHistory
 
     /**
      * Get customers history
-     * 
-     * @return string
+     *
+     * @return mixed
      */
     public static function customersHistory()
     {
@@ -122,6 +122,8 @@ class RetailcrmHistory
              * Update last sync id
              */
             Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $sinceid);
+
+            return true;
         } else {
             return 'Nothing to sync';
         }
@@ -129,8 +131,8 @@ class RetailcrmHistory
 
     /**
      * Get orders history
-     * 
-     * @return string
+     *
+     * @return mixed
      */
     public static function ordersHistory()
     {
@@ -193,14 +195,14 @@ class RetailcrmHistory
                             $payment = $paymentCRM['type'];
                         } elseif (isset($order['payments']) && count($order['payments']) > 1) {
                             foreach ($order['payments'] as $paymentCRM) {
-                                if ($payment['status'] != 'paid') {
+                                if ($paymentCRM['status'] != 'paid') {
                                     $payment = $paymentCRM['type'];
                                 }
                             }
                         }
                     }
 
-                    if (array_key_exists($payment, $payments) && $payments[$payment] != '') {
+                    if (array_key_exists($payment, $payments) && !empty($payments[$payment])) {
                         if (Module::getInstanceByName($payments[$payment])) {
                             $paymentType = Module::getModuleName($payments[$payment]);
                         } else {
@@ -236,7 +238,7 @@ class RetailcrmHistory
                         }
                     }
 
-                    if (!$deliveryType) {
+                    if (!isset($deliveryType) || !$deliveryType) {
                         if ($deliveryDefault) {
                             $deliveryType = $deliveryDefault;
                         } else {
@@ -384,19 +386,29 @@ class RetailcrmHistory
                             );
 
                             $combinationPrice = Combination::getPrice($product_attribute_id);
-                            $productPrice = $combinationPrice > 0 ? $product->getPrice()+ $combinationPrice : $product->getPrice();
+                            $productPrice = $combinationPrice > 0 ? $product->getPrice() + $combinationPrice : $product->getPrice();
                         } else {
                             $productName = htmlspecialchars(strip_tags($product->name));
                             $productPrice = $product->getPrice();
                         }
 
                         $product_list[] = array(
-                            'product' => $product,
-                            'product_attribute_id' => $product_attribute_id,
-                            'product_price' => $product->price,
-                            'product_price_inc_tax' => $productPrice,
-                            'product_name' => $productName,
-                            'quantity' => $item['quantity']
+                            'id_product' => $product->id,
+                            'id_product_attribute' => $product_attribute_id,
+                            'price' => $product->price,
+                            'price_wt' => $productPrice,
+                            'name' => $productName,
+                            'cart_quantity' => $item['quantity'],
+                            'weight' => 0,
+                            'weight_attribute' => 0,
+                            'stock_quantity' => $item['quantity'],
+                            'ecotax' => 0,
+                            'id_shop' => Context::getContext()->shop->id,
+                            'additional_shipping_cost' => 0,
+                            'total_wt' => $productPrice * $item['quantity'],
+                            'total' => $productPrice * $item['quantity'],
+                            'wholesale_price' => $product->wholesale_price,
+                            'id_supplier' => $product->id_supplier
                         );
 
                         if (isset($item['discountTotal']) && self::$apiVersion == 5) {
@@ -407,8 +419,11 @@ class RetailcrmHistory
                     $newOrder->add(false, false);
 
                     if (isset($order['payments']) && !empty($order['payments'])) {
-                        foreach ($order['payments'] as $pay) {
-                            if (!isset($pay['externalId']) && $pay['status'] == 'paid') {
+                        foreach ($order['payments'] as $payment) {
+                            if (!isset($payment['externalId'])
+                                && isset($payment['status'])
+                                && $payment['status'] == 'paid'
+                            ) {
                                 $ptype = $payment['type'];
                                 $ptypes = $references->getSystemPaymentModules();
                                 if ($payments[$ptype] != null) {
@@ -417,14 +432,13 @@ class RetailcrmHistory
                                             $payType = $pay['name'];
                                         }
                                     }
-                                    $paymentType = Module::getModuleName($payments[$ptype]);
-                                    Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment` 
-                                        (`payment_method`, `order_reference` , `amount`, `date_add`) 
-                                        VALUES 
-                                        (\'' . $payType . '\', 
-                                        \'' . $newOrder->reference . '\', 
-                                        \'' . $payment['amount'] . '\', 
-                                        \'' . $payment['paidAt'] . '\')');
+
+                                    $orderPayment = new OrderPayment();
+                                    $orderPayment->payment_method = $payType;
+                                    $orderPayment->order_reference = $newOrder->reference;
+                                    $orderPayment->amount = $payment['amount'];
+                                    $orderPayment->date_add = $payment['paidAt'];
+                                    $orderPayment->save();
                                 }
                             }
                         }
@@ -446,38 +460,9 @@ class RetailcrmHistory
                     /*
                      * Create order details
                     */
-                    $query = 'INSERT `'._DB_PREFIX_.'order_detail`
-                        (
-                            `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
-                            `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
-                            `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
-                            `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
-                        )
-
-                        VALUES';
-
-                    $context = new Context();
-                    foreach ($product_list as $product) {
-                        $query .= '('
-                            .(int) $newOrder->id.',
-                                0,
-                                '. Context::getContext()->shop->id.',
-                                '.(int) $product['product']->id.',
-                                '.$product['product_attribute_id'].',
-                                '.implode('', array('\'', $product['product_name'], '\'')).',
-                                '.(int) $product['quantity'].',
-                                '.(int) $product['quantity'].',
-                                '.$product['product_price'].',
-                                '.implode('', array('\'', $product['product']->reference, '\'')).',
-                                '.$product['product_price'].',
-                                '.$product['product_price_inc_tax'].',
-                                '.$product['product_price'].',
-                                '.$product['product_price_inc_tax'].',
-                                '.$product['product_price'].'
-                            ),';
-                    }
-
-                    Db::getInstance()->execute(rtrim($query, ','));
+                    $orderDetail = new OrderDetail();
+                    $orderDetail->createList($newOrder, $cart, $newOrder->current_state, $product_list);
+                    $orderDetail->save();
 
                     if (!empty($customerFix)) {
                         self::$api->customersFixExternalIds($customerFix);
@@ -496,55 +481,39 @@ class RetailcrmHistory
                         $dtype = $order['delivery']['code'];
                         $dcost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
 
-                        if ($deliveries[$dtype] != null) {
+                        if (isset($deliveries[$dtype]) && $deliveries[$dtype] != null) {
                             if ($deliveries[$dtype] != $orderToUpdate->id_carrier or $dcost != null) {
                                 if ($dtype != null) {
-                                    Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
-                                        SET 
-                                        `id_carrier` = \'' . $deliveries[$dtype] . '\' 
-                                        WHERE 
-                                        `id_order` = ' . (int)$order['externalId']);
+                                    $orderCarrier = new OrderCarrier($orderToUpdate->id_order_carrier);
+                                    $orderCarrier->id_carrier = $deliveries[$dtype];
                                 }
 
-                                $updateCarrierFields = array();
                                 if ($dtype != null) {
-                                    $updateCarrierFields[] = '`id_carrier` = \'' . $deliveries[$dtype] . '\' ';
+                                    $orderCarrier->id_carrier = $deliveries[$dtype];
                                 }
                                 if ($dcost != null) {
-                                    $updateCarrierFields[] = '`shipping_cost_tax_incl` = \'' . $dcost . '\' ';
-                                    $updateCarrierFields[] = '`shipping_cost_tax_excl` = \'' . $dcost . '\' ';
+                                    $orderCarrier->shipping_cost_tax_incl = $dcost;
+                                    $orderCarrier->shipping_cost_tax_excl = $dcost;
                                 }
-                                $updateCarrierFields = implode(', ', $updateCarrierFields);
 
-                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'order_carrier` 
-                                    SET 
-                                    '.$updateCarrierFields.' 
-                                    WHERE 
-                                    `id_order` = \'' . $orderToUpdate->id . '\'');
+                                $orderCarrier->update();
                             }
                         }
                     }
 
-                    /*
+                    /**
                      * check payment type
                      */
-
                     if (!empty($order['paymentType']) && self::$apiVersion != 5) {
                         $ptype = $order['paymentType'];
 
                         if ($payments[$ptype] != null) {
                             $paymentType = Module::getModuleName($payments[$ptype]);
                             if ($payments[$ptype] != $orderToUpdate->payment) {
-                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
-                                    SET 
-                                    `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
-                                    WHERE 
-                                    `id_order` = ' . (int)$order['externalId']);
-                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'order_payment` 
-                                    SET 
-                                    `payment_method` = \'' . $payments[$ptype] . '\' 
-                                    WHERE 
-                                    `order_reference` = \'' . $orderToUpdate->reference . '\'');
+                                $orderToUpdate->payment = $paymentType != null ? $paymentType : $payments[$ptype];
+                                $orderPayment = OrderPayment::getByOrderId($orderToUpdate->id);
+                                $orderPayment->payment_method = $payments[$ptype];
+                                $orderPayment->update();
                             }
                         }
                     } elseif (!empty($order['payments']) && self::$apiVersion == 5) {
@@ -562,19 +531,13 @@ class RetailcrmHistory
                                         }
                                     }
                                     $paymentType = Module::getModuleName($payments[$ptype]);
-                                    Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
-                                        SET 
-                                        `payment` = \'' . ($paymentType != null ? $paymentType : $payments[$ptype]). '\' 
-                                        WHERE 
-                                        `id_order` = ' . (int)$order['externalId']);
-
-                                    Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_payment`
-                                        (`payment_method`, `order_reference` , `amount`, `date_add`) 
-                                        VALUES 
-                                        (\'' . $payType . '\', 
-                                        \'' . $orderToUpdate->reference . '\', 
-                                        \'' . $payment['amount'] . '\', 
-                                        \'' . $payment['paidAt'] . '\')');
+                                    $orderToUpdate->payment = $paymentType != null ? $paymentType : $payments[$ptype];
+                                    $orderPayment = new OrderPayment();
+                                    $orderPayment->payment_method = $payType;
+                                    $orderPayment->order_reference = $orderToUpdate->reference;
+                                    $orderPayment->amount = $payment['amount'];
+                                    $orderPayment->date_add = $payment['paidAt'];
+                                    $orderPayment->save();
                                 }
                             }
                         }
@@ -594,11 +557,7 @@ class RetailcrmHistory
                                 $product_attribute_id = 0;
                             }
 
-                            Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'order_detail` 
-                                WHERE 
-                                `id_order` = '. $orderToUpdate->id .' 
-                                AND 
-                                `product_id` = '.$product_id. ' AND `product_attribute_id` = '.$product_attribute_id);
+                            self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id);
 
                             unset($order['items'][$key]);
                             $ItemDiscount = true;
@@ -647,22 +606,16 @@ class RetailcrmHistory
 
                                 $productPrice = round($productPrice, 2);
 
-                                Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'order_detail` 
-                                    SET 
-                                    `unit_price_tax_incl` = '.$productPrice.' 
-                                    WHERE 
-                                    `id_order_detail` = '.$orderItem['id_order_detail']);
+                                $orderDetail = new OrderDetail($orderItem['id_order_detail']);
+                                $orderDetail->unit_price_tax_incl = $productPrice;
 
                                 // quantity
                                 if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
-                                    Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'order_detail` 
-                                        SET 
-                                        `product_quantity` = '.$item['quantity'].', 
-                                        `product_quantity_in_stock` = '.$item['quantity'].' 
-                                        WHERE 
-                                        `id_order_detail` = '.$orderItem['id_order_detail']);
+                                    $orderDetail->product_quantity = $item['quantity'];
+                                    $orderDetail->product_quantity_in_stock = $item['quantity'];
                                 }
 
+                                $orderDetail->update();
                                 $ItemDiscount = true;
                                 unset($order['items'][$key]);
                             }
@@ -673,16 +626,6 @@ class RetailcrmHistory
                      * Check new items
                      */
                     if (!empty($order['items'])) {
-                        $query = 'INSERT `'._DB_PREFIX_.'order_detail`
-                            (
-                                `id_order`, `id_order_invoice`, `id_shop`, `product_id`, `product_attribute_id`,
-                                `product_name`, `product_quantity`, `product_quantity_in_stock`, `product_price`,
-                                `product_reference`, `total_price_tax_excl`, `total_price_tax_incl`,
-                                `unit_price_tax_excl`, `unit_price_tax_incl`, `original_product_price`
-                            )
-
-                            VALUES';
-
                         foreach ($order['items'] as $key => $newItem) {
                             $product_id = $newItem['offer']['externalId'];
                             $product_attribute_id = 0;
@@ -708,46 +651,49 @@ class RetailcrmHistory
                             }
 
                             // discount
-                            if ($newItem['discount'] || $newItem['discountPercent']|| $newItem['discountTotal']) {
+                            if ((isset($newItem['discount']) && $newItem['discount'])
+                                || (isset($newItem['discountPercent']) && $newItem['discountPercent'])
+                                || (isset($newItem['discountTotal']) && $newItem['discountTotal'])
+                            ) {
                                 $productPrice = $productPrice - $newItem['discount'];
                                 $productPrice = $productPrice - $newItem['discountTotal'];
                                 $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
                                 $ItemDiscount = true;
                             }
 
-                            $query .= '('
-                                .(int) $orderToUpdate->id.',
-                                0,
-                                '. Context::getContext()->shop->id.',
-                                '.(int) $product_id.',
-                                '.(int) $product_attribute_id.',
-                                '.implode('', array('\'', $productName, '\'')).',
-                                '.(int) $newItem['quantity'].',
-                                '.(int) $newItem['quantity'].',
-                                '.$productPrice.',
-                                '.implode('', array('\'', $product->reference, '\'')).',
-                                '.$productPrice * $newItem['quantity'].',
-                                '.($productPrice + $productPrice / 100 * $tax->rate) * $newItem['quantity'].',
-                                '.$productPrice.',
-                                '.($productPrice + $productPrice / 100 * $tax->rate).',
-                                '.$productPrice.'
-                            ),';
+                            $orderDetail = new OrderDetail();
+                            $orderDetail->id_order = $orderToUpdate->id;
+                            $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
+                            $orderDetail->id_shop = Context::getContext()->shop->id;
+                            $orderDetail->product_id = (int) $product_id;
+                            $orderDetail->product_attribute_id = (int) $product_attribute_id;
+                            $orderDetail->product_name = implode('', array('\'', $productName, '\''));
+                            $orderDetail->product_quantity = (int) $newItem['quantity'];
+                            $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
+                            $orderDetail->product_price = $productPrice;
+                            $orderDetail->product_reference = implode('', array('\'', $product->reference, '\''));
+                            $orderDetail->total_price_tax_excl = $productPrice * $newItem['quantity'];
+                            $orderDetail->total_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate) * $newItem['quantity'];
+                            $orderDetail->unit_price_tax_excl = $productPrice;
+                            $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
+                            $orderDetail->original_product_price = $productPrice;
+                            $orderDetail->save();
 
+                            unset($orderDetail);
                             unset($order['items'][$key]);
                         }
-
-                        Db::getInstance()->execute(rtrim($query, ','));
                     }
 
                     /*
                      * Fix prices & discounts
                      * Discounts only for whole order
                      */
-                    if (isset($order['discount']) ||
-                        isset($order['discountPercent']) ||
-                        isset($order['delivery']['cost']) ||
-                        isset($order['discountTotal']) ||
-                        $ItemDiscount) {
+                    if (isset($order['discount'])
+                        || isset($order['discountPercent'])
+                        || isset($order['delivery']['cost'])
+                        || isset($order['discountTotal'])
+                        || $ItemDiscount
+                    ) {
                         $infoOrd = self::$api->ordersGet($order['externalId']);
                         $infoOrder = $infoOrd->order;
                         $orderTotalProducts = $infoOrder['summ'];
@@ -760,21 +706,18 @@ class RetailcrmHistory
                             $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
                             $order_cart_rule->delete();
                         }
-                        $orderToUpdate->update();
 
-                        Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'orders` 
-                            SET 
-                            `total_discounts` = '.$totalDiscount.', 
-                            `total_discounts_tax_incl` = '.$totalDiscount.', 
-                            `total_discounts_tax_excl` = '.$totalDiscount.', 
-                            `total_shipping` = '.$deliveryCost.', 
-                            `total_shipping_tax_incl` = '.$deliveryCost.', 
-                            `total_shipping_tax_excl` = '.$deliveryCost.', 
-                            `total_paid` = '.$totalPaid.', 
-                            `total_paid_tax_incl` = '.$totalPaid.', 
-                            `total_paid_tax_excl` = '.$totalPaid.', 
-                            `total_products_wt` = '.$orderTotalProducts.' 
-                            WHERE `id_order` = '.(int) $order['externalId']);
+                        $orderToUpdate->total_discounts = $totalDiscount;
+                        $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
+                        $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
+                        $orderToUpdate->total_shipping = $deliveryCost;
+                        $orderToUpdate->total_shipping_tax_incl = $deliveryCost;
+                        $orderToUpdate->total_shipping_tax_excl = $deliveryCost;
+                        $orderToUpdate->total_paid = $totalPaid;
+                        $orderToUpdate->total_paid_tax_incl = $totalPaid;
+                        $orderToUpdate->total_paid_tax_excl = $totalPaid;
+                        $orderToUpdate->total_products_wt = $orderTotalProducts;
+                        $orderToUpdate->update();
 
                         unset($ItemDiscount);
                     }
@@ -787,29 +730,48 @@ class RetailcrmHistory
 
                         if ($statuses[$stype] != null) {
                             if ($statuses[$stype] != $orderToUpdate->current_state) {
-                                Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'order_history`
-                                    (`id_employee`, `id_order`, `id_order_state`, `date_add`) 
-                                    VALUES 
-                                    (0, ' . $orderToUpdate->id . ', 
-                                    ' . $statuses[$stype] . ', 
-                                    "' . date('Y-m-d H:i:s') . '")');
+                                $orderHistory = new OrderHistory();
+                                $orderHistory->id_employee = 0;
+                                $orderHistory->id_order = $orderToUpdate->id;
+                                $orderHistory->id_order_state = $statuses[$stype];
+                                $orderHistory->date_add = date('Y-m-d H:i:s');
+                                $orderHistory->save();
 
-                                Db::getInstance()->execute('UPDATE `' . _DB_PREFIX_ . 'orders` 
-                                    SET 
-                                    `current_state` = \'' . $statuses[$stype] . '\' 
-                                    WHERE 
-                                    `id_order` = ' . (int)$order['externalId']);
+                                $orderToUpdate->current_state = $statuses[$stype];
+                                $orderToUpdate->update();
                             }
                         }
                     }
                 }
             }
+
             /*
              * Update last sync timestamp
              */
             Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $sinceId);
+
+            return true;
         } else {
             return 'Nothing to sync';
         }
+    }
+
+    /**
+     * Delete order product from order by product
+     *
+     * @param $order_id
+     * @param $product_id
+     * @param $product_attribute_id
+     *
+     * @return void
+     */
+    private static function deleteOrderDetailByProduct($order_id, $product_id, $product_attribute_id)
+    {
+        Db::getInstance()->execute('
+            DELETE FROM ' . _DB_PREFIX_ . 'order_detail
+            WHERE id_order = ' . $order_id . '
+            AND product_id = ' . $product_id . '
+            AND product_attribute_id = ' . $product_attribute_id
+        );
     }
 }
