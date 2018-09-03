@@ -33,10 +33,10 @@ class RetailcrmHistoryHelper {
             } else {
                 $orders[$change['order']['id']] = $change['order'];
             }
-            
+
             if (isset($change['payment'])) {
                 if (isset($orders[$change['order']['id']]['payments'][$change['payment']['id']])) {
-                    $orders[$change['order']['id']]['payments'][$change['payment']['id']] = array_merge($orders[$change['order']['id']]['payments'][$change['payment']['id']], $change['payment']);    
+                    $orders[$change['order']['id']]['payments'][$change['payment']['id']] = array_merge($orders[$change['order']['id']]['payments'][$change['payment']['id']], $change['payment']);
                 } else {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']] = $change['payment'];
                 }
@@ -50,7 +50,7 @@ class RetailcrmHistoryHelper {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = $change['newValue'];
                 }
             }
-            
+
             if (isset($change['item'])) {
                 if (isset($orders[$change['order']['id']]['items'][$change['item']['id']])) {
                     $orders[$change['order']['id']]['items'][$change['item']['id']] = array_merge($orders[$change['order']['id']]['items'][$change['item']['id']], $change['item']);
@@ -64,7 +64,9 @@ class RetailcrmHistoryHelper {
                 if (empty($change['newValue']) && $change['field'] == 'order_product') {
                     $orders[$change['order']['id']]['items'][$change['item']['id']]['delete'] = true;
                 }
-                if (!$orders[$change['order']['id']]['items'][$change['item']['id']]['create'] && $fields['item'][$change['field']]) {
+                if (!isset($orders[$change['order']['id']]['items'][$change['item']['id']]['create'])
+                    && isset($fields['item'][$change['field']]) && $fields['item'][$change['field']]
+                ) {
                     $orders[$change['order']['id']]['items'][$change['item']['id']][$fields['item'][$change['field']]] = $change['newValue'];
                 }
             } else {

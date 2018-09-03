@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.2.0
+ * @version 2.2.2
  * @link https://retailcrm.ru
  *
  */
@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.1';
+        $this->version = '2.2.2';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -117,7 +117,7 @@ class RetailCRM extends Module
             );
 
             $output .= $this->validateForm($settings, $output);
-            
+
             if ($output === '') {
                 Configuration::updateValue('RETAILCRM_ADDRESS', $address);
                 Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
@@ -147,7 +147,7 @@ class RetailCRM extends Module
 
         $output .= $this->displayConfirmation(
             $this->l('Timezone settings must be identical to both of your crm and shop') .
-            " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
+            "<a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
         );
 
         $this->display(__FILE__, 'retailcrm.tpl');
@@ -416,6 +416,7 @@ class RetailCRM extends Module
 
     public function hookActionOrderEdited($params)
     {
+
         $order = array(
             'externalId' => $params['order']->id,
             'firstName' => $params['customer']->firstname,
@@ -437,7 +438,7 @@ class RetailCRM extends Module
         if ($comment !== false) {
             $order['customerComment'] = $comment;
         }
-        
+
         unset($comment);
 
         foreach ($orderdb->getProducts() as $item) {
@@ -496,10 +497,8 @@ class RetailCRM extends Module
             $address = array_shift($addressCollection);
 
             if ($address instanceof Address) {
-                $phone = empty($address->phone)
-                    ? empty($address->phone_mobile) ? '' : $address->phone_mobile
-                    : $address->phone;
-
+                $additionalPhone = !empty($address->phone) ? $address->phone : '';
+                $phone = !empty($address->phone_mobile) ? $address->phone_mobile : '';
                 $postcode = $address->postcode;
                 $city = $address->city;
                 $addres_line = sprintf("%s %s", $address->address1, $address->address2);
@@ -520,9 +519,27 @@ class RetailCRM extends Module
                 $order['delivery']['address']['text'] = $addres_line;
             }
 
-            if (!empty($phone)) {
-                $customer['phones'][] = array('number' => $phone);
+            if (!empty($phone) && !empty($additionalPhone)) {
+                $customer['phones'] = array(
+                    array(
+                        'number' => $phone
+                    ),
+                    array(
+                        'number' => $additionalPhone
+                    )
+                );
+
                 $order['phone'] = $phone;
+                $order['additionalPhone'] = $additionalPhone;
+            } else {
+                $order['phone'] = !empty($phone) ? $phone : $additionalPhone;
+                $customer['phones'][] = array('number' => $order['phone']);
+            }
+
+            $comment = $params['order']->getFirstMessage();
+
+            if ($comment !== false) {
+                $order['customerComment'] = $comment;
             }
 
             foreach ($cart->getProducts() as $item) {
@@ -612,7 +629,7 @@ class RetailCRM extends Module
             }
 
             $order['customer']['externalId'] = $customer['externalId'];
-            
+
             $this->api->ordersCreate($order);
 
             return $order;
