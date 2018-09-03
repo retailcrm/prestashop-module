@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.1';
+        $this->version = '2.2.2';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -117,7 +117,7 @@ class RetailCRM extends Module
             );
 
             $output .= $this->validateForm($settings, $output);
-            
+
             if ($output === '') {
                 Configuration::updateValue('RETAILCRM_ADDRESS', $address);
                 Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
@@ -147,7 +147,7 @@ class RetailCRM extends Module
 
         $output .= $this->displayConfirmation(
             $this->l('Timezone settings must be identical to both of your crm and shop') .
-            " <a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
+            "<a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
         );
 
         $this->display(__FILE__, 'retailcrm.tpl');
@@ -438,7 +438,7 @@ class RetailCRM extends Module
         if ($comment !== false) {
             $order['customerComment'] = $comment;
         }
-        
+
         unset($comment);
 
         foreach ($orderdb->getProducts() as $item) {
@@ -629,7 +629,7 @@ class RetailCRM extends Module
             }
 
             $order['customer']['externalId'] = $customer['externalId'];
-            
+
             $this->api->ordersCreate($order);
 
             return $order;
