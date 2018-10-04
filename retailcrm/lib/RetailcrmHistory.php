@@ -50,7 +50,17 @@ class RetailcrmHistory
                         $customer->email = $customerHistory['email'];
                     }
 
-                    $customer->update();
+                    try {
+                        $customer->update();
+                    } catch (PrestaShopException $e) {
+                        error_log(
+                            '[' . date('Y-m-d H:i:s') . '] customerHistory: ' . $e->getMessage() . ' customer externalId '. $customerHistory['externalId'] . "\n",
+                            3,
+                            _PS_ROOT_DIR_ . '/retailcrm.log'
+                        );
+
+                        continue;
+                    }
                 } else {
                     $customer = new Customer();
 
