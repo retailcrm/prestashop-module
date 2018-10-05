@@ -446,6 +446,7 @@ class RetailcrmHistory
                                     $orderPayment = new OrderPayment();
                                     $orderPayment->payment_method = $payType;
                                     $orderPayment->order_reference = $newOrder->reference;
+                                    $orderPayment->id_currency = $default_currency;
                                     $orderPayment->amount = $payment['amount'];
                                     $orderPayment->date_add = $payment['paidAt'];
                                     $orderPayment->save();
@@ -501,11 +502,13 @@ class RetailcrmHistory
                                 if ($dtype != null) {
                                     $orderCarrier->id_carrier = $deliveries[$dtype];
                                 }
+
                                 if ($dcost != null) {
                                     $orderCarrier->shipping_cost_tax_incl = $dcost;
                                     $orderCarrier->shipping_cost_tax_excl = $dcost;
                                 }
 
+                                $orderCarrier->id_order = $orderToUpdate->id;
                                 $orderCarrier->update();
                             }
                         }
@@ -540,12 +543,20 @@ class RetailcrmHistory
                                             $payType = $pay['name'];
                                         }
                                     }
+
                                     $paymentType = Module::getModuleName($payments[$ptype]);
                                     $orderToUpdate->payment = $paymentType != null ? $paymentType : $payments[$ptype];
                                     $orderPayment = new OrderPayment();
                                     $orderPayment->payment_method = $payType;
                                     $orderPayment->order_reference = $orderToUpdate->reference;
-                                    $orderPayment->amount = $payment['amount'];
+
+                                    if (isset($payment['amount'])){
+                                        $orderPayment->amount = $payment['amount'];
+                                    } else {
+                                        $orderPayment->amount = $orderToUpdate->total_paid;
+                                    }
+
+                                    $orderPayment->id_currency = $default_currency;
                                     $orderPayment->date_add = $payment['paidAt'];
                                     $orderPayment->save();
                                 }
