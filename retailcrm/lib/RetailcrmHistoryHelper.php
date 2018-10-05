@@ -3,8 +3,8 @@
 class RetailcrmHistoryHelper {
     public static function assemblyOrder($orderHistory)
     {
-        if (file_exists(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml')) {
-            $objects = simplexml_load_file(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml');
+        if (file_exists( __DIR__ . '/../objects.xml')) {
+            $objects = simplexml_load_file(__DIR__ . '/../objects.xml');
             foreach($objects->fields->field as $object) {
                 $fields[(string)$object["group"]][(string)$object["id"]] = (string)$object;
             }
@@ -46,7 +46,7 @@ class RetailcrmHistoryHelper {
                 if ($change['newValue'] == null && $change['field'] == 'payments') {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']]['delete'] = true;
                 }
-                if (!$orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] && $fields['payment'][$change['field']]) {
+                if (!$orders[$change['order']['id']]['payments'][$change['payment']['id']] && $fields['payment'][$change['field']]) {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']][$fields['payment'][$change['field']]] = $change['newValue'];
                 }
             }

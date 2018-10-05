@@ -109,9 +109,9 @@ class RetailcrmCatalog
             } else {
                 $size = null;
             }
-            
-            $productForCombination = new Product($product['id_product']);   
-            
+
+            $productForCombination = new Product($product['id_product']);
+
             $offers = Product::getProductAttributesIds($product['id_product']);
 
             if(!empty($offers)) {
@@ -119,7 +119,7 @@ class RetailcrmCatalog
 
                     $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute' ], $id_lang);
                     if (!empty($combinations)) {
-                            
+
                         foreach ($combinations as $combination) {
                                 $arSet = array(
                                     'group_name' => $combination['group_name'],
@@ -168,7 +168,7 @@ class RetailcrmCatalog
                             $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
                         }
                     }
-                    
+
                     $items[] = $item;
                 }
             } else {
@@ -205,10 +205,8 @@ class RetailcrmCatalog
 
                 $items[] = $item;
             }
-
         }
 
         return array($categories, $items);
     }
-
 }

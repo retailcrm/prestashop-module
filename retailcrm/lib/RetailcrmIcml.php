@@ -2,7 +2,6 @@
 
 class RetailcrmIcml
 {
-
     protected $shop;
     protected $file;
     protected $properties;
@@ -145,5 +144,4 @@ class RetailcrmIcml
             }
         }
     }
-
 }
