@@ -423,7 +423,8 @@ class RetailcrmHistory
                             'total_wt' => $productPrice * $item['quantity'],
                             'total' => $productPrice * $item['quantity'],
                             'wholesale_price' => $product->wholesale_price,
-                            'id_supplier' => $product->id_supplier
+                            'id_supplier' => $product->id_supplier,
+                            'id_customization' => 0
                         );
 
                         if (isset($item['discountTotal']) && self::$apiVersion == 5) {
