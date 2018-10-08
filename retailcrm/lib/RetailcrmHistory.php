@@ -154,7 +154,12 @@ class RetailcrmHistory
         $references = new RetailcrmReferences(self::$api);
 
         if ($lastSync === false && $lastDate === false) {
-            $filter = array('startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s')))));
+            $filter = array(
+                'startDate' => date(
+                    'Y-m-d H:i:s',
+                    strtotime('-1 days', strtotime(date('Y-m-d H:i:s')))
+                )
+            );
         } elseif ($lastSync === false && $lastDate !== false) {
             $filter = array('startDate' => $lastDate);
         } elseif ($lastSync !== false) {
@@ -418,7 +423,8 @@ class RetailcrmHistory
                             'total_wt' => $productPrice * $item['quantity'],
                             'total' => $productPrice * $item['quantity'],
                             'wholesale_price' => $product->wholesale_price,
-                            'id_supplier' => $product->id_supplier
+                            'id_supplier' => $product->id_supplier,
+                            'id_customization' => 0
                         );
 
                         if (isset($item['discountTotal']) && self::$apiVersion == 5) {
@@ -446,6 +452,7 @@ class RetailcrmHistory
                                     $orderPayment = new OrderPayment();
                                     $orderPayment->payment_method = $payType;
                                     $orderPayment->order_reference = $newOrder->reference;
+                                    $orderPayment->id_currency = $default_currency;
                                     $orderPayment->amount = $payment['amount'];
                                     $orderPayment->date_add = $payment['paidAt'];
                                     $orderPayment->save();
@@ -501,11 +508,13 @@ class RetailcrmHistory
                                 if ($dtype != null) {
                                     $orderCarrier->id_carrier = $deliveries[$dtype];
                                 }
+
                                 if ($dcost != null) {
                                     $orderCarrier->shipping_cost_tax_incl = $dcost;
                                     $orderCarrier->shipping_cost_tax_excl = $dcost;
                                 }
 
+                                $orderCarrier->id_order = $orderToUpdate->id;
                                 $orderCarrier->update();
                             }
                         }
@@ -534,18 +543,27 @@ class RetailcrmHistory
                             ) {
                                 $ptype = $payment['type'];
                                 $ptypes = $references->getSystemPaymentModules();
+
                                 if ($payments[$ptype] != null) {
                                     foreach ($ptypes as $pay) {
                                         if ($pay['code'] == $payments[$ptype]) {
                                             $payType = $pay['name'];
                                         }
                                     }
+
                                     $paymentType = Module::getModuleName($payments[$ptype]);
                                     $orderToUpdate->payment = $paymentType != null ? $paymentType : $payments[$ptype];
                                     $orderPayment = new OrderPayment();
                                     $orderPayment->payment_method = $payType;
                                     $orderPayment->order_reference = $orderToUpdate->reference;
-                                    $orderPayment->amount = $payment['amount'];
+
+                                    if (isset($payment['amount'])){
+                                        $orderPayment->amount = $payment['amount'];
+                                    } else {
+                                        $orderPayment->amount = $orderToUpdate->total_paid;
+                                    }
+
+                                    $orderPayment->id_currency = $default_currency;
                                     $orderPayment->date_add = $payment['paidAt'];
                                     $orderPayment->save();
                                 }
@@ -553,183 +571,8 @@ class RetailcrmHistory
                         }
                     }
 
-                    /*
-                     * Clean deleted items
-                     */
-                    foreach ($order['items'] as $key => $item) {
-                        if (isset($item['delete']) && $item['delete'] == true) {
-                            if (strpos($item['offer']['externalId'], '#') !== false) {
-                                $itemId = explode('#', $item['offer']['externalId']);
-                                $product_id = $itemId[0];
-                                $product_attribute_id = $itemId[1];
-                            } else {
-                                $product_id = $item['offer']['externalId'];
-                                $product_attribute_id = 0;
-                            }
-
-                            self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id);
-
-                            unset($order['items'][$key]);
-                            $ItemDiscount = true;
-                        }
-                    }
-
-                    /*
-                     * Check items quantity and discount
-                     */
-                    foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
-                        foreach ($order['items'] as $key => $item) {
-                            if (strpos($item['offer']['externalId'], '#') !== false) {
-                                $itemId = explode('#', $item['offer']['externalId']);
-                                $product_id = $itemId[0];
-                                $product_attribute_id = $itemId[1];
-                            } else {
-                                $product_id = $item['offer']['externalId'];
-                                $product_attribute_id = 0;
-                            }
-
-                            if ($product_id == $orderItem['product_id'] &&
-                                $product_attribute_id == $orderItem['product_attribute_id']) {
-
-                                $product = new Product((int) $product_id, false, self::$default_lang);
-                                $tax = new TaxCore($product->id_tax_rules_group);
-
-                                if ($product_attribute_id != 0) {
-                                    $prodPrice = Combination::getPrice($product_attribute_id);
-                                    $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
-                                } else {
-                                    $prodPrice = $product->price;
-                                }
-
-                                $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
-
-                                // discount
-                                if (self::$apiVersion == 5) {
-                                    $productPrice = $prodPrice - $item['discountTotal'];
-                                } else {
-                                    $productPrice = $prodPrice - $item['discount'];
-
-                                    if ($item['discountPercent'] > 0) {
-                                        $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
-                                    }
-                                }
-
-                                $productPrice = round($productPrice, 2);
-
-                                $orderDetail = new OrderDetail($orderItem['id_order_detail']);
-                                $orderDetail->unit_price_tax_incl = $productPrice;
-
-                                // quantity
-                                if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
-                                    $orderDetail->product_quantity = $item['quantity'];
-                                    $orderDetail->product_quantity_in_stock = $item['quantity'];
-                                }
-
-                                $orderDetail->update();
-                                $ItemDiscount = true;
-                                unset($order['items'][$key]);
-                            }
-                        }
-                    }
-
-                    /*
-                     * Check new items
-                     */
-                    if (!empty($order['items'])) {
-                        foreach ($order['items'] as $key => $newItem) {
-                            $product_id = $newItem['offer']['externalId'];
-                            $product_attribute_id = 0;
-                            if (strpos($product_id, '#') !== false) {
-                                $product_id = explode('#', $product_id);
-
-                                $product_attribute_id = $product_id[1];
-                                $product_id = $product_id[0];
-                            }
-
-                            $product = new Product((int) $product_id, false, self::$default_lang);
-                            $tax = new TaxCore($product->id_tax_rules_group);
-
-                            if ($product_attribute_id != 0) {
-                                $productName = htmlspecialchars(
-                                    strip_tags(Product::getProductName($product_id, $product_attribute_id))
-                                );
-                                $productPrice = Combination::getPrice($product_attribute_id);
-                                $productPrice = $productPrice > 0 ? $productPrice : $product->price;
-                            } else {
-                                $productName = htmlspecialchars(strip_tags($product->name));
-                                $productPrice = $product->price;
-                            }
-
-                            // discount
-                            if ((isset($newItem['discount']) && $newItem['discount'])
-                                || (isset($newItem['discountPercent']) && $newItem['discountPercent'])
-                                || (isset($newItem['discountTotal']) && $newItem['discountTotal'])
-                            ) {
-                                $productPrice = $productPrice - $newItem['discount'];
-                                $productPrice = $productPrice - $newItem['discountTotal'];
-                                $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
-                                $ItemDiscount = true;
-                            }
-
-                            $orderDetail = new OrderDetail();
-                            $orderDetail->id_order = $orderToUpdate->id;
-                            $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
-                            $orderDetail->id_shop = Context::getContext()->shop->id;
-                            $orderDetail->product_id = (int) $product_id;
-                            $orderDetail->product_attribute_id = (int) $product_attribute_id;
-                            $orderDetail->product_name = implode('', array('\'', $productName, '\''));
-                            $orderDetail->product_quantity = (int) $newItem['quantity'];
-                            $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
-                            $orderDetail->product_price = $productPrice;
-                            $orderDetail->product_reference = implode('', array('\'', $product->reference, '\''));
-                            $orderDetail->total_price_tax_excl = $productPrice * $newItem['quantity'];
-                            $orderDetail->total_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate) * $newItem['quantity'];
-                            $orderDetail->unit_price_tax_excl = $productPrice;
-                            $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
-                            $orderDetail->original_product_price = $productPrice;
-                            $orderDetail->save();
-
-                            unset($orderDetail);
-                            unset($order['items'][$key]);
-                        }
-                    }
-
-                    /*
-                     * Fix prices & discounts
-                     * Discounts only for whole order
-                     */
-                    if (isset($order['discount'])
-                        || isset($order['discountPercent'])
-                        || isset($order['delivery']['cost'])
-                        || isset($order['discountTotal'])
-                        || $ItemDiscount
-                    ) {
-                        $infoOrd = self::$api->ordersGet($order['externalId']);
-                        $infoOrder = $infoOrd->order;
-                        $orderTotalProducts = $infoOrder['summ'];
-                        $totalPaid = $infoOrder['totalSumm'];
-                        $deliveryCost = $infoOrder['delivery']['cost'];
-                        $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
-
-                        $orderCartRules = $orderToUpdate->getCartRules();
-                        foreach ($orderCartRules as $valCartRules) {
-                            $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
-                            $order_cart_rule->delete();
-                        }
-
-                        $orderToUpdate->total_discounts = $totalDiscount;
-                        $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
-                        $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
-                        $orderToUpdate->total_shipping = $deliveryCost;
-                        $orderToUpdate->total_shipping_tax_incl = $deliveryCost;
-                        $orderToUpdate->total_shipping_tax_excl = $deliveryCost;
-                        $orderToUpdate->total_paid = $totalPaid;
-                        $orderToUpdate->total_paid_tax_incl = $totalPaid;
-                        $orderToUpdate->total_paid_tax_excl = $totalPaid;
-                        $orderToUpdate->total_products_wt = $orderTotalProducts;
-                        $orderToUpdate->update();
-
-                        unset($ItemDiscount);
+                    if (isset($order['items'])) {
+                        self::updateItems($order, $orderToUpdate);
                     }
 
                     /**
@@ -763,6 +606,188 @@ class RetailcrmHistory
             return true;
         } else {
             return 'Nothing to sync';
+        }
+    }
+
+    private static function updateItems($order, $orderToUpdate)
+    {
+        /*
+         * Clean deleted items
+         */
+        foreach ($order['items'] as $key => $item) {
+            if (isset($item['delete']) && $item['delete'] == true) {
+                if (strpos($item['offer']['externalId'], '#') !== false) {
+                    $itemId = explode('#', $item['offer']['externalId']);
+                    $product_id = $itemId[0];
+                    $product_attribute_id = $itemId[1];
+                } else {
+                    $product_id = $item['offer']['externalId'];
+                    $product_attribute_id = 0;
+                }
+
+                self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id);
+
+                unset($order['items'][$key]);
+                $ItemDiscount = true;
+            }
+        }
+
+        /*
+         * Check items quantity and discount
+         */
+        foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
+            foreach ($order['items'] as $key => $item) {
+                if (strpos($item['offer']['externalId'], '#') !== false) {
+                    $itemId = explode('#', $item['offer']['externalId']);
+                    $product_id = $itemId[0];
+                    $product_attribute_id = $itemId[1];
+                } else {
+                    $product_id = $item['offer']['externalId'];
+                    $product_attribute_id = 0;
+                }
+
+                if ($product_id == $orderItem['product_id'] &&
+                    $product_attribute_id == $orderItem['product_attribute_id']) {
+
+                    $product = new Product((int) $product_id, false, self::$default_lang);
+                    $tax = new TaxCore($product->id_tax_rules_group);
+
+                    if ($product_attribute_id != 0) {
+                        $prodPrice = Combination::getPrice($product_attribute_id);
+                        $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
+                    } else {
+                        $prodPrice = $product->price;
+                    }
+
+                    $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
+
+                    // discount
+                    if (self::$apiVersion == 5) {
+                        $productPrice = $prodPrice - $item['discountTotal'];
+                    } else {
+                        $productPrice = $prodPrice - $item['discount'];
+
+                        if ($item['discountPercent'] > 0) {
+                            $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
+                        }
+                    }
+
+                    $productPrice = round($productPrice, 2);
+
+                    $orderDetail = new OrderDetail($orderItem['id_order_detail']);
+                    $orderDetail->unit_price_tax_incl = $productPrice;
+
+                    // quantity
+                    if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
+                        $orderDetail->product_quantity = $item['quantity'];
+                        $orderDetail->product_quantity_in_stock = $item['quantity'];
+                    }
+
+                    $orderDetail->update();
+                    $ItemDiscount = true;
+                    unset($order['items'][$key]);
+                }
+            }
+        }
+
+        /*
+         * Check new items
+         */
+        if (!empty($order['items'])) {
+            foreach ($order['items'] as $key => $newItem) {
+                $product_id = $newItem['offer']['externalId'];
+                $product_attribute_id = 0;
+                if (strpos($product_id, '#') !== false) {
+                    $product_id = explode('#', $product_id);
+
+                    $product_attribute_id = $product_id[1];
+                    $product_id = $product_id[0];
+                }
+
+                $product = new Product((int) $product_id, false, self::$default_lang);
+                $tax = new TaxCore($product->id_tax_rules_group);
+
+                if ($product_attribute_id != 0) {
+                    $productName = htmlspecialchars(
+                        strip_tags(Product::getProductName($product_id, $product_attribute_id))
+                    );
+                    $productPrice = Combination::getPrice($product_attribute_id);
+                    $productPrice = $productPrice > 0 ? $productPrice : $product->price;
+                } else {
+                    $productName = htmlspecialchars(strip_tags($product->name));
+                    $productPrice = $product->price;
+                }
+
+                // discount
+                if ((isset($newItem['discount']) && $newItem['discount'])
+                    || (isset($newItem['discountPercent']) && $newItem['discountPercent'])
+                    || (isset($newItem['discountTotal']) && $newItem['discountTotal'])
+                ) {
+                    $productPrice = $productPrice - $newItem['discount'];
+                    $productPrice = $productPrice - $newItem['discountTotal'];
+                    $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
+                    $ItemDiscount = true;
+                }
+
+                $orderDetail = new OrderDetail();
+                $orderDetail->id_order = $orderToUpdate->id;
+                $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
+                $orderDetail->id_shop = Context::getContext()->shop->id;
+                $orderDetail->product_id = (int) $product_id;
+                $orderDetail->product_attribute_id = (int) $product_attribute_id;
+                $orderDetail->product_name = implode('', array('\'', $productName, '\''));
+                $orderDetail->product_quantity = (int) $newItem['quantity'];
+                $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
+                $orderDetail->product_price = $productPrice;
+                $orderDetail->product_reference = implode('', array('\'', $product->reference, '\''));
+                $orderDetail->total_price_tax_excl = $productPrice * $newItem['quantity'];
+                $orderDetail->total_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate) * $newItem['quantity'];
+                $orderDetail->unit_price_tax_excl = $productPrice;
+                $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
+                $orderDetail->original_product_price = $productPrice;
+                $orderDetail->save();
+
+                unset($orderDetail);
+                unset($order['items'][$key]);
+            }
+        }
+
+        /*
+         * Fix prices & discounts
+         * Discounts only for whole order
+         */
+        if (isset($order['discount'])
+            || isset($order['discountPercent'])
+            || isset($order['delivery']['cost'])
+            || isset($order['discountTotal'])
+            || $ItemDiscount
+        ) {
+            $infoOrd = self::$api->ordersGet($order['externalId']);
+            $infoOrder = $infoOrd->order;
+            $orderTotalProducts = $infoOrder['summ'];
+            $totalPaid = $infoOrder['totalSumm'];
+            $deliveryCost = $infoOrder['delivery']['cost'];
+            $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
+
+            $orderCartRules = $orderToUpdate->getCartRules();
+            foreach ($orderCartRules as $valCartRules) {
+                $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
+                $order_cart_rule->delete();
+            }
+
+            $orderToUpdate->total_discounts = $totalDiscount;
+            $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
+            $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
+            $orderToUpdate->total_shipping = $deliveryCost;
+            $orderToUpdate->total_shipping_tax_incl = $deliveryCost;
+            $orderToUpdate->total_shipping_tax_excl = $deliveryCost;
+            $orderToUpdate->total_paid = $totalPaid;
+            $orderToUpdate->total_paid_tax_incl = $totalPaid;
+            $orderToUpdate->total_paid_tax_excl = $totalPaid;
+            $orderToUpdate->total_products_wt = $orderTotalProducts;
+            $orderToUpdate->update();
+
+            unset($ItemDiscount);
         }
     }
 

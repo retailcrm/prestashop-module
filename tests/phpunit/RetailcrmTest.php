@@ -92,7 +92,7 @@ class RetailCRMTest extends RetailcrmTestCase
         $status = new StdClass();
 
         if ($newOrder === false) {
-            $status->id = 'completed';
+            $status->id = 11;
 
             $params = array(
                 'newOrderStatus' => $status,

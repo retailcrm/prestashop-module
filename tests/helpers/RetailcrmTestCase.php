@@ -16,9 +16,27 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
 
     protected function setConfig()
     {
-        $delivery = json_encode(array('delivery' => 'delivery'));
-        $status = json_encode(array('status' => 'status', 'new' => 'new', 'completed'=> 'completed'));
-        $payment = json_encode(array('ps_checkpayment' => 'ps_checkpayment', 'bankwire' => 'bankwire', 'cheque' => 'cheque'));
+        $delivery = json_encode(
+            array(
+                1 => 'delivery'
+            )
+        );
+
+        $status = json_encode(
+            array(
+                9 => 'status',
+                10 => 'new',
+                11 => 'completed'
+            )
+        );
+
+        $payment = json_encode(
+            array(
+                'ps_checkpayment' => 'ps_checkpayment',
+                'bankwire' => 'bankwire',
+                'cheque' => 'cheque'
+            )
+        );
 
         Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
         Configuration::updateValue('RETAILCRM_API_STATUS', $status);

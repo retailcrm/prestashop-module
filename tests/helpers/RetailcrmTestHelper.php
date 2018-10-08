@@ -23,4 +23,11 @@ class RetailcrmTestHelper
 
         return $orderPayment->delete();
     }
+
+    public static function getMaxOrderId()
+    {
+        return Db::getInstance()->getValue(
+            'SELECT MAX(id_order) FROM `' . _DB_PREFIX_ . 'orders`'
+        );
+    }
 }
