@@ -732,7 +732,7 @@ class RetailCRM extends Module
 
         if ($response !== false) {
             if (!$settings['clientId']) {
-                $clientId = hash('md5', date('Y-m-d H:i:s'));
+                $clientId = uniqid();
                 $result = $this->integrationModule($api, $clientId, $settings['version']);
 
                 if ($result) {
@@ -773,14 +773,14 @@ class RetailCRM extends Module
     {
         $scheme = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
         $logo = 'https://s3.eu-central-1.amazonaws.com/retailcrm-billing/images/5b845ce986911-prestashop2.svg';
-        $code = 'prestashop';
+        $integrationCode = 'prestashop';
         $name = 'PrestaShop';
         $accountUrl = $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
         if ($apiVersion == 'v4') {
             $configuration = array(
                 'name' => $name,
-                'code' => $code,
+                'code' => $integrationCode . '-' . $clientId,
                 'logo' => $logo,
                 'configurationUrl' => $accountUrl,
                 'active' => $active
@@ -790,8 +790,8 @@ class RetailCRM extends Module
         } else {
             $configuration = array(
                 'clientId' => $clientId,
-                'code' => $code,
-                'integrationCode' => $code,
+                'code' => $integrationCode . '-' . $clientId,
+                'integrationCode' => $integrationCode,
                 'active' => $active,
                 'name' => $name,
                 'logo' => $logo,
