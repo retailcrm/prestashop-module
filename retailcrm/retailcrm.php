@@ -3,7 +3,11 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
+<<<<<<< 4dfc7b8d1acbf9bdc33ac6484f0d7f4171e774d6
  * @version 2.2.9
+=======
+ * @version 2.2.5
+>>>>>>> v2.2.5
  * @link https://retailcrm.ru
  *
  */
@@ -76,7 +80,8 @@ class RetailCRM extends Module
             $this->registerHook('actionPaymentConfirmation') &&
             $this->registerHook('actionCustomerAccountAdd') &&
             $this->registerHook('actionOrderEdited') &&
-            ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
+            ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true) &&
+            ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
         );
     }
 
@@ -418,9 +423,24 @@ class RetailCRM extends Module
             $customerSend = array_merge($customerSend, $address['customer']);
         }
 
+        if (isset($params['cart'])){
+            $address = $this->addressParse($params['cart']);
+        }
+
+        $customerSend = array_merge($customerSend, $address['customer']);
+
         $this->api->customersEdit($customerSend);
 
         return $customerSend;
+    }
+
+    // this hook added in 1.7
+    public function hookActionValidateCustomerAddressForm($params)
+    {
+        $customer = new Customer($params['cart']->id_customer);
+        $customerAddress = array('customer' => $customer, 'cart' => $params['cart']);
+
+        return $this->hookActionCustomerAccountUpdate($customerAddress);
     }
 
     public function hookNewOrder($params)
@@ -490,6 +510,68 @@ class RetailCRM extends Module
         return $order;
     }
 
+    private function addressParse($address)
+    {
+        $addressCollection = $address->getAddressCollection();
+        $address = array_shift($addressCollection);
+
+        if ($address instanceof Address) {
+            $postcode = $address->postcode;
+            $city = $address->city;
+            $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+            $countryIso = CountryCore::getIsoById($address->id_country);
+        }
+
+        if (!empty($postcode)) {
+            $customer['address']['index'] = $postcode;
+            $order['delivery']['address']['index'] = $postcode;
+        }
+
+        if (!empty($city)) {
+            $customer['address']['city'] = $city;
+            $order['delivery']['address']['city'] = $city;
+        }
+
+        if (!empty($addres_line)) {
+            $customer['address']['text'] = $addres_line;
+            $order['delivery']['address']['text'] = $addres_line;
+        }
+
+        if (!empty($countryIso)) {
+            $order['countryIso'] = $countryIso;
+            $customer['address']['countryIso'] = $countryIso;
+        }
+
+        $phones = $this->getPhone($address);
+        $order = array_merge($order, $phones['order']);
+        $customer = array_merge($customer, $phones['customer']);
+        $addressArray = array('order' => $order, 'customer' => $customer);
+
+        return $addressArray;
+    }
+
+    private function getPhone($address)
+    {
+        if (!empty($address->phone_mobile)){
+            $order['phone'] = $address->phone_mobile;
+            $customer['phones'][] = array('number'=> $address->phone_mobile);
+        }
+
+        if (!empty($address->phone)){
+            $order['additionalPhone'] = $address->phone;
+            $customer['phones'][] = array('number'=> $address->phone);
+        }
+
+        if (!isset($order['phone']) && !empty($order['additionalPhone'])){
+            $order['phone'] = $order['additionalPhone'];
+            unset($order['additionalPhone']);
+        }
+
+        $phonesArray = array('customer' => $customer, 'order' => $order);
+
+        return $phonesArray;
+    }
+
     public function hookActionOrderStatusPostUpdate($params)
     {
         $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
@@ -521,9 +603,11 @@ class RetailCRM extends Module
             }
 
             $cart = $params['cart'];
+
             $addressCollection = $cart->getAddressCollection();
             $address = array_shift($addressCollection);
             $address = $this->addressParse($address);
+
             $customer = array_merge($customer, $address['customer']);
             $order = array_merge($order, $address['order']);
             $comment = $params['order']->getFirstMessage();
@@ -752,74 +836,6 @@ class RetailCRM extends Module
         }
 
         return $output;
-    }
-
-    private function addressParse($address)
-    {
-
-        if ($address instanceof Address) {
-            $postcode = $address->postcode;
-            $city = $address->city;
-            $addres_line = sprintf("%s %s", $address->address1, $address->address2);
-            $countryIso = CountryCore::getIsoById($address->id_country);
-        }
-
-        if (!empty($postcode)) {
-            $customer['address']['index'] = $postcode;
-            $order['delivery']['address']['index'] = $postcode;
-        }
-
-        if (!empty($city)) {
-            $customer['address']['city'] = $city;
-            $order['delivery']['address']['city'] = $city;
-        }
-
-        if (!empty($addres_line)) {
-            $customer['address']['text'] = $addres_line;
-            $order['delivery']['address']['text'] = $addres_line;
-        }
-
-        if (!empty($countryIso)) {
-            $order['countryIso'] = $countryIso;
-            $customer['address']['countryIso'] = $countryIso;
-        }
-
-        $phones = $this->getPhone($address);
-
-        if ($phones !== false) {
-            $order = array_merge($order, $phones['order']);
-            $customer = array_merge($customer, $phones['customer']);
-        }
-
-        $addressArray = array('order' => $order, 'customer' => $customer);
-
-        return $addressArray;
-    }
-
-    private function getPhone($address)
-    {
-        if (!empty($address->phone_mobile)){
-            $order['phone'] = $address->phone_mobile;
-            $customer['phones'][] = array('number'=> $address->phone_mobile);
-        }
-
-        if (!empty($address->phone)){
-            $order['additionalPhone'] = $address->phone;
-            $customer['phones'][] = array('number'=> $address->phone);
-        }
-
-        if (!isset($order['phone']) && !empty($order['additionalPhone'])){
-            $order['phone'] = $order['additionalPhone'];
-            unset($order['additionalPhone']);
-        }
-        if (!empty($customer) && !empty($order)) {
-            $phonesArray = array('customer' => $customer, 'order' => $order);
-
-            return $phonesArray;
-        } else {
-
-            return false;
-        }
     }
 
     /**

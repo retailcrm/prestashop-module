@@ -48,6 +48,7 @@ class RetailCRMTest extends RetailcrmTestCase
     public function testHookActionCustomerAccountUpdate()
     {
         $customer = new Customer(1);
+
         $params = array('customer' => $customer);
         $customer = $this->retailcrmModule->hookActionCustomerAccountUpdate($params);
 
@@ -125,6 +126,11 @@ class RetailCRMTest extends RetailcrmTestCase
             $this->assertArrayHasKey('lastName', $result);
             $this->assertArrayHasKey('email', $result);
             $this->assertArrayHasKey('delivery', $result);
+            $this->assertArrayHasKey('address', $result['delivery']);
+            $this->assertArrayHasKey('city', $result['delivery']['address']);
+            $this->assertArrayHasKey('text', $result['delivery']['address']);
+            $this->assertArrayHasKey('index', $result['delivery']['address']);
+            $this->assertArrayHasKey('countryIso', $result);
             $this->assertArrayHasKey('items', $result);
             $this->assertArrayHasKey('customer', $result);
             $this->assertArrayHasKey('externalId', $result['customer']);

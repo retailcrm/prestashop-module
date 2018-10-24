@@ -53,6 +53,7 @@ class RetailcrmHistory
                     if (self::loadInCMS($customer, 'update') === false) {
                         continue;
                     }
+
                 } else {
                     $customer = new Customer();
 
