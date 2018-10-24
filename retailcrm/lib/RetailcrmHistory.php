@@ -50,17 +50,10 @@ class RetailcrmHistory
                         $customer->email = $customerHistory['email'];
                     }
 
-                    try {
-                        $customer->update();
-                    } catch (PrestaShopException $e) {
-                        error_log(
-                            '[' . date('Y-m-d H:i:s') . '] customerHistory: ' . $e->getMessage() . ' customer externalId '. $customerHistory['externalId'] . "\n",
-                            3,
-                            _PS_ROOT_DIR_ . '/retailcrm.log'
-                        );
-
+                    if (self::loadInCMS($customer, 'update') === false){
                         continue;
                     }
+
                 } else {
                     $customer = new Customer();
 
@@ -84,7 +77,9 @@ class RetailcrmHistory
 
                     $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
 
-                    $customer->add();
+                    if (self::loadInCMS($customer, 'add') === false) {
+                        continue;
+                    }
 
                     if (isset($customerHistory['address'])) {
                         $customerAddress = new Address();
@@ -114,7 +109,10 @@ class RetailcrmHistory
                             $customerAddress->postcode = $customerHistory['address']['index'];
                         }
 
-                        $customerAddress->add();
+                        if (self::loadInCMS($customerAddress, 'add') === false) {
+                            continue;
+                        }
+
                     }
 
                     $customerFix[] = array(
@@ -281,7 +279,9 @@ class RetailcrmHistory
                         md5($order['customer']['firstName']) . '@retailcrm.ru';
                         $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
 
-                        $customer->add();
+                        if (self::loadInCMS($customer, 'add') === false) {
+                            continue;
+                        }
 
                         array_push(
                             $customerFix,
@@ -809,4 +809,29 @@ class RetailcrmHistory
             AND product_attribute_id = ' . $product_attribute_id
         );
     }
+
+    /**
+     * load and catch exception
+     *
+     * @param $object
+     * @param $action
+     *
+     * @return boolean
+     */
+    private static function loadInCMS($object, $action)
+    {
+        try {
+            $object->$action();
+        } catch (PrestaShopException $e) {
+            error_log(
+                '[' . date('Y-m-d H:i:s') . '] History:loadInCMS ' . $e->getMessage() . "\n",
+                3,
+                _PS_ROOT_DIR_ . '/retailcrm.log'
+            );
+
+            return false;
+        }
+
+        return true;
+   }
 }
