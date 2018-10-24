@@ -425,6 +425,7 @@ class RetailCRM extends Module
 
         if (isset($params['cart'])){
             $address = $this->addressParse($params['cart']);
+            $customerSend = array_merge($customerSend, $address['customer']);
         }
 
         $customerSend = array_merge($customerSend, $address['customer']);
