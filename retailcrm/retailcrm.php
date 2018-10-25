@@ -502,6 +502,7 @@ class RetailCRM extends Module
                 $postcode = $address->postcode;
                 $city = $address->city;
                 $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+                $countryIso = CountryCore::getIsoById($address->id_country);
             }
 
             if (!empty($postcode)) {
@@ -517,6 +518,11 @@ class RetailCRM extends Module
             if (!empty($addres_line)) {
                 $customer['address']['text'] = $addres_line;
                 $order['delivery']['address']['text'] = $addres_line;
+            }
+
+            if (!empty($countryIso)) {
+                $order['countryIso'] = $countryIso;
+                $customer['address']['countryIso'] = $countryIso;
             }
 
             if (!empty($phone) && !empty($additionalPhone)) {
