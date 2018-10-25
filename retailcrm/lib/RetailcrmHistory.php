@@ -515,6 +515,7 @@ class RetailcrmHistory
                                 }
 
                                 $orderCarrier->id_order = $orderToUpdate->id;
+
                                 $orderCarrier->update();
                             }
                         }
@@ -645,44 +646,34 @@ class RetailcrmHistory
                     $product_id = $item['offer']['externalId'];
                     $product_attribute_id = 0;
                 }
-
                 if ($product_id == $orderItem['product_id'] &&
                     $product_attribute_id == $orderItem['product_attribute_id']) {
-
                     $product = new Product((int) $product_id, false, self::$default_lang);
                     $tax = new TaxCore($product->id_tax_rules_group);
-
                     if ($product_attribute_id != 0) {
                         $prodPrice = Combination::getPrice($product_attribute_id);
                         $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
                     } else {
                         $prodPrice = $product->price;
                     }
-
                     $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
-
                     // discount
                     if (self::$apiVersion == 5) {
                         $productPrice = $prodPrice - $item['discountTotal'];
                     } else {
                         $productPrice = $prodPrice - $item['discount'];
-
                         if ($item['discountPercent'] > 0) {
                             $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
                         }
                     }
-
                     $productPrice = round($productPrice, 2);
-
                     $orderDetail = new OrderDetail($orderItem['id_order_detail']);
                     $orderDetail->unit_price_tax_incl = $productPrice;
-
                     // quantity
                     if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                         $orderDetail->product_quantity = $item['quantity'];
                         $orderDetail->product_quantity_in_stock = $item['quantity'];
                     }
-
                     $orderDetail->update();
                     $ItemDiscount = true;
                     unset($order['items'][$key]);
@@ -699,14 +690,11 @@ class RetailcrmHistory
                 $product_attribute_id = 0;
                 if (strpos($product_id, '#') !== false) {
                     $product_id = explode('#', $product_id);
-
                     $product_attribute_id = $product_id[1];
                     $product_id = $product_id[0];
                 }
-
                 $product = new Product((int) $product_id, false, self::$default_lang);
                 $tax = new TaxCore($product->id_tax_rules_group);
-
                 if ($product_attribute_id != 0) {
                     $productName = htmlspecialchars(
                         strip_tags(Product::getProductName($product_id, $product_attribute_id))
@@ -717,7 +705,6 @@ class RetailcrmHistory
                     $productName = htmlspecialchars(strip_tags($product->name));
                     $productPrice = $product->price;
                 }
-
                 // discount
                 if ((isset($newItem['discount']) && $newItem['discount'])
                     || (isset($newItem['discountPercent']) && $newItem['discountPercent'])
@@ -728,7 +715,6 @@ class RetailcrmHistory
                     $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
                     $ItemDiscount = true;
                 }
-
                 $orderDetail = new OrderDetail();
                 $orderDetail->id_order = $orderToUpdate->id;
                 $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
@@ -746,7 +732,6 @@ class RetailcrmHistory
                 $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
                 $orderDetail->original_product_price = $productPrice;
                 $orderDetail->save();
-
                 unset($orderDetail);
                 unset($order['items'][$key]);
             }
@@ -768,13 +753,11 @@ class RetailcrmHistory
             $totalPaid = $infoOrder['totalSumm'];
             $deliveryCost = $infoOrder['delivery']['cost'];
             $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
-
             $orderCartRules = $orderToUpdate->getCartRules();
             foreach ($orderCartRules as $valCartRules) {
                 $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
                 $order_cart_rule->delete();
             }
-
             $orderToUpdate->total_discounts = $totalDiscount;
             $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
             $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
@@ -786,7 +769,6 @@ class RetailcrmHistory
             $orderToUpdate->total_paid_tax_excl = $totalPaid;
             $orderToUpdate->total_products_wt = $orderTotalProducts;
             $orderToUpdate->update();
-
             unset($ItemDiscount);
         }
     }
