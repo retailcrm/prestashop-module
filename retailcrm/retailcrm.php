@@ -800,7 +800,7 @@ class RetailCRM extends Module
         $name = 'PrestaShop';
         $accountUrl = $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
-        if ($apiVersion == 'v4') {
+        if ($apiVersion == '4') {
             $configuration = array(
                 'name' => $name,
                 'code' => $integrationCode . '-' . $clientId,
