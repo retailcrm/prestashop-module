@@ -82,6 +82,16 @@ class RetailCRM extends Module
 
     public function uninstall()
     {
+        $api = new RetailcrmProxy(
+            Configuration::get('RETAILCRM_ADDRESS'),
+            Configuration::get('RETAILCRM_API_TOKEN'),
+            _PS_ROOT_DIR_ . '/retailcrm.log',
+            Configuration::get('RETAILCRM_API_VERSION')
+        );
+
+        $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
+        $this->integrationModule($api, $clientId, Configuration::get('RETAILCRM_API_VERSION'), false);
+
         return parent::uninstall() &&
         Configuration::deleteByName('RETAILCRM_ADDRESS') &&
         Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
@@ -110,10 +120,12 @@ class RetailCRM extends Module
             $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
             $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
             $statusExport = (string)(Tools::getValue('RETAILCRM_STATUS_EXPORT'));
+            $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
             $settings  = array(
                 'address' => $address,
                 'token' => $token,
-                'version' => $version
+                'version' => $version,
+                'clientId' => $clientId
             );
 
             $output .= $this->validateForm($settings, $output);
@@ -738,9 +750,19 @@ class RetailCRM extends Module
             _PS_ROOT_DIR_ . '/retailcrm.log',
             $settings['version']
         );
+
         $response = $api->deliveryTypesList();
 
         if ($response !== false) {
+            if (!$settings['clientId']) {
+                $clientId = uniqid();
+                $result = $this->integrationModule($api, $clientId, $settings['version']);
+
+                if ($result) {
+                    Configuration::updateValue('RETAILCRM_CLIENT_ID', $clientId);
+                }
+            }
+
             return true;
         }
 
@@ -758,5 +780,58 @@ class RetailCRM extends Module
         }
 
         return $output;
+    }
+
+    /**
+     * Activate/deactivate module in marketplace retailCRM
+     *
+     * @param \RetailcrmProxy $apiClient
+     * @param string $clientId
+     * @param string $apiVersion
+     * @param boolean $active
+     *
+     * @return boolean
+     */
+    private function integrationModule($apiClient, $clientId, $apiVersion, $active = true)
+    {
+        $scheme = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+        $logo = 'https://s3.eu-central-1.amazonaws.com/retailcrm-billing/images/5b845ce986911-prestashop2.svg';
+        $integrationCode = 'prestashop';
+        $name = 'PrestaShop';
+        $accountUrl = $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+        if ($apiVersion == 'v4') {
+            $configuration = array(
+                'name' => $name,
+                'code' => $integrationCode . '-' . $clientId,
+                'logo' => $logo,
+                'configurationUrl' => $accountUrl,
+                'active' => $active
+            );
+
+            $response = $apiClient->marketplaceSettingsEdit($configuration);
+        } else {
+            $configuration = array(
+                'clientId' => $clientId,
+                'code' => $integrationCode . '-' . $clientId,
+                'integrationCode' => $integrationCode,
+                'active' => $active,
+                'name' => $name,
+                'logo' => $logo,
+                'accountUrl' => $accountUrl
+            );
+
+            $response = $apiClient->integrationModulesEdit($configuration);
+        }
+
+        if (!$response) {
+            return false;
+        }
+
+        if ($response->isSuccessful()) {
+            return true;
+        }
+
+        return false;
     }
 }

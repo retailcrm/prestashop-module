@@ -1651,6 +1651,34 @@ class RetailcrmApiClientV4
     }
 
     /**
+     * Edit marketplace configuration
+     *
+     * @param array $configuration
+     *
+     * @throws \RetailCrm\Exception\InvalidJsonException
+     * @throws \RetailCrm\Exception\CurlException
+     * @throws \InvalidArgumentException
+     *
+     * @return ApiResponse
+     */
+    public function marketplaceSettingsEdit(array $configuration)
+    {
+        if (!count($configuration) || empty($configuration['code'])) {
+            throw new \InvalidArgumentException(
+                'Parameter `configuration` must contains a data & configuration `code` must be set'
+            );
+        }
+
+        $code = $configuration['code'];
+
+        return $this->client->makeRequest(
+            "/marketplace/external/setting/$code/edit",
+            RetailcrmHttpClient::METHOD_POST,
+            array('configuration' => json_encode($configuration))
+        );
+    }
+
+    /**
      * Return current site
      *
      * @return string
