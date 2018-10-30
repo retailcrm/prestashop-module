@@ -394,6 +394,7 @@ class RetailCRM extends Module
     public function hookActionCustomerAccountUpdate($params)
     {
         $customer = $params['customer'];
+
         $customerSend = array(
             'externalId' => $customer->id,
             'firstName' => $customer->firstname,
@@ -401,6 +402,21 @@ class RetailCRM extends Module
             'email' => $customer->email,
             'birthday' => $customer->birthday
         );
+
+        $addreses = $customer->getAddresses($this->default_lang);
+        $address = array_shift($addreses);
+
+        if (!empty($address)){
+
+            if (is_object($address)) {
+                $address = $this->addressParse($address);
+            } else {
+                $address = new Address($address['id_address']);
+                $address = $this->addressParse($address);
+            }
+
+            $customerSend = array_merge($customerSend, $address['customer']);
+        }
 
         $this->api->customersEdit($customerSend);
 
@@ -507,53 +523,9 @@ class RetailCRM extends Module
             $cart = $params['cart'];
             $addressCollection = $cart->getAddressCollection();
             $address = array_shift($addressCollection);
-
-            if ($address instanceof Address) {
-                $additionalPhone = !empty($address->phone) ? $address->phone : '';
-                $phone = !empty($address->phone_mobile) ? $address->phone_mobile : '';
-                $postcode = $address->postcode;
-                $city = $address->city;
-                $addres_line = sprintf("%s %s", $address->address1, $address->address2);
-                $countryIso = CountryCore::getIsoById($address->id_country);
-            }
-
-            if (!empty($postcode)) {
-                $customer['address']['index'] = $postcode;
-                $order['delivery']['address']['index'] = $postcode;
-            }
-
-            if (!empty($city)) {
-                $customer['address']['city'] = $city;
-                $order['delivery']['address']['city'] = $city;
-            }
-
-            if (!empty($addres_line)) {
-                $customer['address']['text'] = $addres_line;
-                $order['delivery']['address']['text'] = $addres_line;
-            }
-
-            if (!empty($countryIso)) {
-                $order['countryIso'] = $countryIso;
-                $customer['address']['countryIso'] = $countryIso;
-            }
-
-            if (!empty($phone) && !empty($additionalPhone)) {
-                $customer['phones'] = array(
-                    array(
-                        'number' => $phone
-                    ),
-                    array(
-                        'number' => $additionalPhone
-                    )
-                );
-
-                $order['phone'] = $phone;
-                $order['additionalPhone'] = $additionalPhone;
-            } else {
-                $order['phone'] = !empty($phone) ? $phone : $additionalPhone;
-                $customer['phones'][] = array('number' => $order['phone']);
-            }
-
+            $address = $this->addressParse($address);
+            $customer = array_merge($customer, $address['customer']);
+            $order = array_merge($order, $address['order']);
             $comment = $params['order']->getFirstMessage();
 
             if ($comment !== false) {
@@ -780,6 +752,74 @@ class RetailCRM extends Module
         }
 
         return $output;
+    }
+
+    private function addressParse($address)
+    {
+
+        if ($address instanceof Address) {
+            $postcode = $address->postcode;
+            $city = $address->city;
+            $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+            $countryIso = CountryCore::getIsoById($address->id_country);
+        }
+
+        if (!empty($postcode)) {
+            $customer['address']['index'] = $postcode;
+            $order['delivery']['address']['index'] = $postcode;
+        }
+
+        if (!empty($city)) {
+            $customer['address']['city'] = $city;
+            $order['delivery']['address']['city'] = $city;
+        }
+
+        if (!empty($addres_line)) {
+            $customer['address']['text'] = $addres_line;
+            $order['delivery']['address']['text'] = $addres_line;
+        }
+
+        if (!empty($countryIso)) {
+            $order['countryIso'] = $countryIso;
+            $customer['address']['countryIso'] = $countryIso;
+        }
+
+        $phones = $this->getPhone($address);
+
+        if ($phones !== false) {
+            $order = array_merge($order, $phones['order']);
+            $customer = array_merge($customer, $phones['customer']);
+        }
+
+        $addressArray = array('order' => $order, 'customer' => $customer);
+
+        return $addressArray;
+    }
+
+    private function getPhone($address)
+    {
+        if (!empty($address->phone_mobile)){
+            $order['phone'] = $address->phone_mobile;
+            $customer['phones'][] = array('number'=> $address->phone_mobile);
+        }
+
+        if (!empty($address->phone)){
+            $order['additionalPhone'] = $address->phone;
+            $customer['phones'][] = array('number'=> $address->phone);
+        }
+
+        if (!isset($order['phone']) && !empty($order['additionalPhone'])){
+            $order['phone'] = $order['additionalPhone'];
+            unset($order['additionalPhone']);
+        }
+        if (!empty($customer) && !empty($order)) {
+            $phonesArray = array('customer' => $customer, 'order' => $order);
+
+            return $phonesArray;
+        } else {
+
+            return false;
+        }
     }
 
     /**
