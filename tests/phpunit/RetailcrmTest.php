@@ -61,7 +61,7 @@ class RetailCRMTest extends RetailcrmTestCase
         $this->assertArrayHasKey('index', $customer['address']);
         $this->assertArrayHasKey('city', $customer['address']);
         $this->assertArrayHasKey('text', $customer['address']);
-        $this->assertArrayHasKey('countryIso', $customer);
+        $this->assertArrayHasKey('countryIso', $customer['address']);
     }
 
     public function testHookActionOrderEdited()
