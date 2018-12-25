@@ -28,17 +28,19 @@ class RetailcrmCatalog
         }
 
         $currencies = Currency::getCurrencies();
-
+        $link = new Link();
         $types = Category::getCategories($id_lang, true, false);
-        foreach ($types AS $category) {
+
+        foreach ($types as $category) {
+            $picture = $link->getCatImageLink($category['link_rewrite'], $category['id_category'], 'category_default');
+
             $categories[] = array(
                 'id' => $category['id_category'],
                 'parentId' => $category['id_parent'],
-                'name' => $category['name']
+                'name' => $category['name'],
+                'picture' => $picture ? $protocol . $picture : ''
             );
         }
-
-        $link = new Link();
 
         $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
 
@@ -59,6 +61,7 @@ class RetailcrmCatalog
             }
 
             $version = substr(_PS_VERSION_, 0, 3);
+
             if ($version == "1.3") {
                 $available_for_order = $product['active'] && $product['quantity'];
             } else {
@@ -114,25 +117,32 @@ class RetailcrmCatalog
 
             $offers = Product::getProductAttributesIds($product['id_product']);
 
-            if(!empty($offers)) {
+            if (!empty($offers)) {
                 foreach($offers as $offer) {
-
                     $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute' ], $id_lang);
-                    if (!empty($combinations)) {
 
+                    if (!empty($combinations)) {
                         foreach ($combinations as $combination) {
-                                $arSet = array(
-                                    'group_name' => $combination['group_name'],
-                                    'attribute' => $combination['attribute_name'],
-                                );
-                               $arComb[] = $arSet;
+                            $arSet = array(
+                                'group_name' => $combination['group_name'],
+                                'attribute' => $combination['attribute_name'],
+                            );
+
+                            $arComb[] = $arSet;
                         }
                     }
 
                     $pictures = array();
                     $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-                    foreach($covers as $cover) {
+
+                    foreach ($covers as $cover) {
                         $picture = $protocol . $link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                        $pictures[] = $picture;
+                    }
+
+                    if (!$pictures) {
+                        $image = Image::getCover($product['id_product']);
+                        $picture = $protocol . $link->getImageLink($product['link_rewrite'], $image['id_image'], 'large_default');
                         $pictures[] = $picture;
                     }
 

@@ -50,10 +50,9 @@ class RetailcrmHistory
                         $customer->email = $customerHistory['email'];
                     }
 
-                    if (self::loadInCMS($customer, 'update') === false){
+                    if (self::loadInCMS($customer, 'update') === false) {
                         continue;
                     }
-
                 } else {
                     $customer = new Customer();
 
@@ -112,7 +111,6 @@ class RetailcrmHistory
                         if (self::loadInCMS($customerAddress, 'add') === false) {
                             continue;
                         }
-
                     }
 
                     $customerFix[] = array(
@@ -466,7 +464,6 @@ class RetailcrmHistory
                     $carrier->id_carrier = $deliveryType;
                     $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
                     $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
-                    $carrier->date_add = isset($order['delivery']['date']) ? $order['delivery']['date'] : '';
                     $carrier->add(false, false);
 
                     /*
@@ -479,7 +476,6 @@ class RetailcrmHistory
                     */
                     $orderDetail = new OrderDetail();
                     $orderDetail->createList($newOrder, $cart, $newOrder->current_state, $product_list);
-                    $orderDetail->save();
 
                     if (!empty($customerFix)) {
                         self::$api->customersFixExternalIds($customerFix);
@@ -705,6 +701,7 @@ class RetailcrmHistory
                     $productName = htmlspecialchars(strip_tags($product->name));
                     $productPrice = $product->price;
                 }
+
                 // discount
                 if ((isset($newItem['discount']) && $newItem['discount'])
                     || (isset($newItem['discountPercent']) && $newItem['discountPercent'])
@@ -715,6 +712,7 @@ class RetailcrmHistory
                     $productPrice = $productPrice - ($prodPrice / 100 * $newItem['discountPercent']);
                     $ItemDiscount = true;
                 }
+
                 $orderDetail = new OrderDetail();
                 $orderDetail->id_order = $orderToUpdate->id;
                 $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
@@ -737,6 +735,12 @@ class RetailcrmHistory
             }
         }
 
+        $infoOrd = self::$api->ordersGet($order['externalId']);
+        $infoOrder = $infoOrd->order;
+        $totalPaid = $infoOrder['totalSumm'];
+        $orderToUpdate->total_paid = $totalPaid;
+        $orderToUpdate->update();
+
         /*
          * Fix prices & discounts
          * Discounts only for whole order
@@ -747,17 +751,16 @@ class RetailcrmHistory
             || isset($order['discountTotal'])
             || $ItemDiscount
         ) {
-            $infoOrd = self::$api->ordersGet($order['externalId']);
-            $infoOrder = $infoOrd->order;
             $orderTotalProducts = $infoOrder['summ'];
-            $totalPaid = $infoOrder['totalSumm'];
             $deliveryCost = $infoOrder['delivery']['cost'];
             $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
             $orderCartRules = $orderToUpdate->getCartRules();
+
             foreach ($orderCartRules as $valCartRules) {
                 $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
                 $order_cart_rule->delete();
             }
+
             $orderToUpdate->total_discounts = $totalDiscount;
             $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
             $orderToUpdate->total_discounts_tax_excl = $totalDiscount;

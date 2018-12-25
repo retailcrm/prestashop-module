@@ -49,7 +49,7 @@ class RetailcrmIcml
         ';
 
         $xml = new SimpleXMLElement(
-                $string, LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
+            $string, LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
         );
 
         $this->dd = new DOMDocument();
@@ -58,9 +58,9 @@ class RetailcrmIcml
         $this->dd->loadXML($xml->asXML());
 
         $this->eCategories = $this->dd
-                        ->getElementsByTagName('categories')->item(0);
+            ->getElementsByTagName('categories')->item(0);
         $this->eOffers = $this->dd
-                        ->getElementsByTagName('offers')->item(0);
+            ->getElementsByTagName('offers')->item(0);
 
         $this->addCategories($categories);
         $this->addOffers($offers);
@@ -73,12 +73,17 @@ class RetailcrmIcml
     {
         foreach ($categories as $category) {
             $e = $this->eCategories->appendChild(
-                    $this->dd->createElement(
-                            'category', $category['name']
-                    )
+                $this->dd->createElement(
+                    'category'
+                )
             );
 
             $e->setAttribute('id', $category['id']);
+            $e->appendChild($this->dd->createElement('name', $category['name']));
+
+            if ($category['picture']) {
+                $e->appendChild($this->dd->createElement('picture', $category['picture']));
+            }
 
             if ($category['parentId'] > 0) {
                 $e->setAttribute('parentId', $category['parentId']);
@@ -91,7 +96,7 @@ class RetailcrmIcml
         foreach ($offers as $offer) {
 
             $e = $this->eOffers->appendChild(
-                    $this->dd->createElement('offer')
+                $this->dd->createElement('offer')
             );
 
             $e->setAttribute('id', $offer['id']);
@@ -105,14 +110,14 @@ class RetailcrmIcml
 
             foreach ($offer['categoryId'] as $categoryId) {
                 $e->appendChild(
-                        $this->dd->createElement('categoryId', $categoryId)
+                    $this->dd->createElement('categoryId', $categoryId)
                 );
             }
 
             $offerKeys = array_keys($offer);
 
             foreach ($offerKeys as $key) {
-                if($offer[$key] == null) continue;
+                if ($offer[$key] == null) continue;
 
                 if (in_array($key, $this->properties)) {
                     if(is_array($offer[$key])) {
@@ -137,7 +142,7 @@ class RetailcrmIcml
                     $param->setAttribute('code', $key);
                     $param->setAttribute('name', $this->params[$key]);
                     $param->appendChild(
-                            $this->dd->createTextNode($offer[$key])
+                        $this->dd->createTextNode($offer[$key])
                     );
                     $e->appendChild($param);
                 }
