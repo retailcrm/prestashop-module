@@ -99,18 +99,14 @@ class RetailcrmCatalog
                 $weight = null;
             }
 
-            $width = round($product['width'], 2);
-            $height = round($product['height'], 2);
-            $depth = round($product['depth'], 2);
-
+            $width = round($product['width'], 3);
+            $height = round($product['height'], 3);
+            $depth = round($product['depth'], 3);
+            
             if (!empty($width) && !empty($height)) {
-                if (!empty($depth)) {
-                    $size = implode('x', array($width, $height, $depth));
-                } else {
-                    $size = implode('x', array($width, $height));
-                }
+                $dimensions = implode('/', array($width, $height, $depth));
             } else {
-                $size = null;
+                $dimensions = null;
             }
 
             $productForCombination = new Product($product['id_product']);
@@ -170,7 +166,7 @@ class RetailcrmCatalog
                         'vendor' => $vendor,
                         'article' => $article,
                         'weight' => $weight,
-                        'size' => $size
+                        'dimensions' => $dimensions
                     );
 
                     if (!empty($combinations)) {
@@ -210,7 +206,7 @@ class RetailcrmCatalog
                     'vendor' => $vendor,
                     'article' => $article,
                     'weight' => $weight,
-                    'size' => $size
+                    'dimensions' => $dimensions                
                 );
 
                 $items[] = $item;

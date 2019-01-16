@@ -24,14 +24,14 @@ class RetailcrmIcml
             'picture',
             'url',
             'xmlId',
-            'productActivity'
+            'productActivity',
+            'dimensions'
         );
 
         $this->params = array(
             'article' => 'Артикул',
             'color' => 'Цвет',
             'weight' => 'Вес',
-            'size' => 'Размер',
             'tax' => 'Наценка'
         );
     }
@@ -94,7 +94,6 @@ class RetailcrmIcml
     private function addOffers($offers)
     {
         foreach ($offers as $offer) {
-
             $e = $this->eOffers->appendChild(
                 $this->dd->createElement('offer')
             );
