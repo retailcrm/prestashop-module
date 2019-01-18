@@ -3,11 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
-<<<<<<< 4dfc7b8d1acbf9bdc33ac6484f0d7f4171e774d6
  * @version 2.2.9
-=======
- * @version 2.2.5
->>>>>>> v2.2.5
  * @link https://retailcrm.ru
  *
  */
@@ -80,9 +76,24 @@ class RetailCRM extends Module
             $this->registerHook('actionPaymentConfirmation') &&
             $this->registerHook('actionCustomerAccountAdd') &&
             $this->registerHook('actionOrderEdited') &&
+            $this->registerHook('header') &&
             ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true) &&
             ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
         );
+    }
+
+    public function hookHeader()
+    {
+        if (Configuration::get('RETAILCRM_DAEMON_COLLECTOR_ACTIVE')
+            && Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY')
+        ) {
+            $collector = new RetailcrmDaemonCollector(
+                $this->context->customer,
+                Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY')
+            );
+
+            return $collector->buildScript()->getJs();
+        }
     }
 
     public function uninstall()
@@ -125,7 +136,10 @@ class RetailCRM extends Module
             $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
             $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
             $statusExport = (string)(Tools::getValue('RETAILCRM_STATUS_EXPORT'));
+            $collectorActive = (Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'));
+            $collectorKey = (string)(Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_KEY'));
             $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
+
             $settings  = array(
                 'address' => $address,
                 'token' => $token,
@@ -145,6 +159,8 @@ class RetailCRM extends Module
                 Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', $deliveryDefault);
                 Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
                 Configuration::updateValue('RETAILCRM_STATUS_EXPORT', $statusExport);
+                Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE', $collectorActive);
+                Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_KEY', $collectorKey);
 
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
@@ -174,7 +190,6 @@ class RetailCRM extends Module
 
     public function displayForm()
     {
-
         $this->displayConfirmation($this->l('Settings updated'));
 
         $default_lang = $this->default_lang;
@@ -194,7 +209,7 @@ class RetailCRM extends Module
         /*
          * Network connection form
          */
-        $fields_form[0]['form'] = array(
+        $fields_form[]['form'] = array(
             'legend' => array(
                 'title' => $this->l('Network connection'),
             ),
@@ -204,9 +219,9 @@ class RetailCRM extends Module
                     'name' => 'RETAILCRM_API_VERSION',
                     'label' => $this->l('API version'),
                     'options' => array(
-                      'query' => $apiVersions,
-                      'id' => 'option_id',
-                      'name' => 'name'
+                        'query' => $apiVersions,
+                        'id' => 'option_id',
+                        'name' => 'name'
                     )
                 ),
                 array(
@@ -230,12 +245,41 @@ class RetailCRM extends Module
             )
         );
 
+        /*
+         * Daemon Collector
+         */
+        $fields_form[]['form'] = array(
+            'legend' => array('title' => $this->l('Daemon Collector')),
+            'input' => array(
+                array(
+                    'type' => 'checkbox',
+                    'label' => $this->l('Activate'),
+                    'name' => 'RETAILCRM_DAEMON_COLLECTOR_ACTIVE',
+                    'values'  => array(
+                        'query' => array(
+                              array(
+                                'id_option' => 1,
+                              )
+                          ),
+                        'id' => 'id_option',
+                        'name' => 'name'
+                    )
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Site key'),
+                    'name' => 'RETAILCRM_DAEMON_COLLECTOR_KEY',
+                    'size' => 20,
+                    'required' => false
+                )
+            )
+        );
 
         if ($this->api) {
             /*
              * Delivery
              */
-            $fields_form[1]['form'] = array(
+            $fields_form[]['form'] = array(
                 'legend' => array('title' => $this->l('Delivery')),
                 'input' => $this->reference->getDeliveryTypes(),
             );
@@ -243,7 +287,7 @@ class RetailCRM extends Module
             /*
              * Order status
              */
-            $fields_form[2]['form'] = array(
+            $fields_form[]['form'] = array(
                 'legend' => array('title' => $this->l('Order statuses')),
                 'input' => $this->reference->getStatuses(),
             );
@@ -251,7 +295,7 @@ class RetailCRM extends Module
             /*
              * Payment
              */
-            $fields_form[3]['form'] = array(
+            $fields_form[]['form'] = array(
                 'legend' => array('title' => $this->l('Payment types')),
                 'input' => $this->reference->getPaymentTypes(),
             );
@@ -259,7 +303,7 @@ class RetailCRM extends Module
             /*
              * Default
              */
-            $fields_form[4]['form'] = array(
+            $fields_form[]['form'] = array(
                 'legend' => array('title' => $this->l('Default')),
                 'input' => $this->reference->getPaymentAndDeliveryForDefault(
                     array($this->l('Delivery method'), $this->l('Payment type'))
@@ -269,16 +313,16 @@ class RetailCRM extends Module
             /*
              * Status in export
              */
-            $fields_form[5]['form'] = array(
+            $fields_form[]['form'] = array(
                 'legend' => array('title' => $this->l('Default status')),
                 'input' => array(array(
                     'type' => 'select',
                     'name' => 'RETAILCRM_STATUS_EXPORT',
                     'label' => $this->l('Default status in export'),
                     'options' => array(
-                      'query' => $this->reference->getStatuseDefaultExport(),
-                      'id' => 'id_option',
-                      'name' => 'name'
+                        'query' => $this->reference->getStatuseDefaultExport(),
+                        'id' => 'id_option',
+                        'name' => 'name'
                     )
                 )),
             );
@@ -324,6 +368,8 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_API_TOKEN'] = Configuration::get('RETAILCRM_API_TOKEN');
         $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
         $helper->fields_value['RETAILCRM_STATUS_EXPORT'] = Configuration::get('RETAILCRM_STATUS_EXPORT');
+        $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_ACTIVE');
+        $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_KEY'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY');
 
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
         if (isset($deliverySettings) && $deliverySettings != '') {
@@ -465,7 +511,6 @@ class RetailCRM extends Module
 
     public function hookActionOrderEdited($params)
     {
-
         $order = array(
             'externalId' => $params['order']->id,
             'firstName' => $params['customer']->firstname,
@@ -513,9 +558,6 @@ class RetailCRM extends Module
 
     private function addressParse($address)
     {
-        $addressCollection = $address->getAddressCollection();
-        $address = array_shift($addressCollection);
-
         if ($address instanceof Address) {
             $postcode = $address->postcode;
             $city = $address->city;
