@@ -50,7 +50,7 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
         );
     }
     /**
-     * @param $retailcrm
+     * @param $apiVersion
      * @param $response
      *
      * @dataProvider dataProviderLoadStocks
@@ -59,22 +59,22 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
     {
         if ($response['success'] == true) {
             $response['offers'][0]['externalId'] = $this->product['id'];
-            $this->responseMock->expects($this->any())
+            $this->apiMock->expects($this->any())
                 ->method('isSuccessful')
                 ->willReturn(true);
         } elseif ($response['success'] == false) {
-            $this->responseMock->expects($this->any())
+            $this->apiMock->expects($this->any())
                 ->method('isSuccessful')
                 ->willReturn(false);
         }
         
-        $this->responseMock->setResponse($response);
+        $this->apiMock->setResponse($response);
         
-        if ($retailcrm) {
-            $retailcrm->expects($this->any())
+        
+            $this->apiMock->expects($this->any())
                 ->method('storeInventories')
-                ->willReturn($this->responseMock);
-        }
+                ->willReturn($this->apiMock);
+        
         
         RetailcrmInventories::$apiVersion = $apiVersion;
         RetailcrmInventories::$api = $this->apiMock;
