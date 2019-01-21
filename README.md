@@ -34,6 +34,14 @@ Add to cron:
 */7 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
 ```
 
+#### Receiving balances from retailCRM
+
+Add to cron:
+
+```
+*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
+```
+
 #### Single orders archive export to retailCRM
 
 ```

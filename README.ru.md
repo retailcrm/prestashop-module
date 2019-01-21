@@ -29,6 +29,14 @@ Prestashop module
 */7 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
 ```
 
+#### Получение остатков из retailCRM
+
+Добавьте в крон запись вида
+
+```
+*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
+```
+
 #### Единоразовая выгрузка архива клиентов и заказов в retailCRM
 
 ```

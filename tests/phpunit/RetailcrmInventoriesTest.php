@@ -3,8 +3,12 @@
 class RetailcrmInventoriesTest extends RetailcrmTestCase
 {
     private $apiMock;
-    private $product;
+    private $product1;
+    private $product2;
     
+    const PRODUCT1_QUANTITY = 10;
+    const PRODUCT2_QUANTITY = 15;
+
     public function setUp()
     {
         parent::setUp();
@@ -17,83 +21,61 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
                 )
             )
             ->getMock();
+
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
-        $this->product = $data[1][0];
 
-        $this->setConfig();
+        $this->product1 = $data[1][0];
+        $this->product2 = $data[1][1];
     }
 
-    private function getResponseData()
-    {
-        return array(
-            'true' => array(
-                'success' => true,
-                'pagination' => array(
-                    'limit' => 250,
-                    'totalCount' => 1,
-                    'currentPage' => 1,
-                    'totalPageCount' => 1
-                ),
-                'offers' => array(
-                    array(
-                        'id' => 1,
-                        'xmlId' => 'xmlId',
-                        'quantity' => 10
-                    )
-                )
-            ),
-            'false' => array(
-                'success' => false,
-                'errorMsg' => 'Forbidden'
-            )
-        );
-    }
     /**
      * @param $apiVersion
      * @param $response
      *
      * @dataProvider dataProviderLoadStocks
      */
-    public function test_load_stocks($apiVersion, $response)
+    public function testLoadStocks($apiVersion, $response)
     {
         if ($response['success'] == true) {
-            $response['offers'][0]['externalId'] = $this->product['id'];
-            $this->apiMock->expects($this->any())
-                ->method('isSuccessful')
-                ->willReturn(true);
-        } elseif ($response['success'] == false) {
-            $this->apiMock->expects($this->any())
-                ->method('isSuccessful')
-                ->willReturn(false);
-        }
-        
-        $this->apiMock->setResponse($response);
-        
-        
             $this->apiMock->expects($this->any())
                 ->method('storeInventories')
-                ->willReturn($this->apiMock);
-        
-        
-        RetailcrmInventories::$apiVersion = $apiVersion;
+                ->willReturn(
+                    new RetailcrmApiResponse(
+                        '200',
+                        json_encode(
+                            $this->getApiInventories()
+                        )
+                    )
+                );
+        } else {
+           $this->apiMock->expects($this->any())
+            ->method('storeInventories')
+            ->willReturn($response);
+        }
+
         RetailcrmInventories::$api = $this->apiMock;
-        
-        RetailcrmInventories::load_stocks();
-        
+
+        RetailcrmInventories::loadStocks();
+
+        $product1Id = explode('#', $this->product1['id']);
+        $product2Id = explode('#', $this->product2['id']);
+
+        $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], $product1Id[1] );
+        $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], $product2Id[1] );
+
+        $this->assertEquals(self::PRODUCT1_QUANTITY, $prod1Quantity);
+        $this->assertEquals(self::PRODUCT2_QUANTITY, $prod2Quantity);
     }
 
     public function dataProviderLoadStocks()
     {
-        $this->setUp();
-
         $response = $this->getResponseData();
 
         return array(
             array(
-                
+                'api_version' => 4,
                 'response' => $response['true'],
-                'api_version' => 4
             ),
             array(
                 'api_version' => 5,
@@ -106,6 +88,39 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
             array(
                 'api_version' => 5,
                 'response' => $response['false']
+            )
+        );
+    }
+
+    private function getResponseData()
+    {
+        return array(
+            'true' => $this->getApiInventories(),
+            'false' => false
+        );
+    }
+
+    private function getApiInventories()
+    {
+        return array( 
+            "success" => true,
+            "pagination"=> array(
+                "limit"=> 250,
+                "totalCount"=> 1,
+                "currentPage"=> 1,
+                "totalPageCount"=> 1
+            ),
+            "offers" => array(
+                array(
+                    'externalId' => $this->product1['id'],
+                    'xmlId' => 'xmlId',
+                    'quantity' => self::PRODUCT1_QUANTITY,
+                ),
+                array(
+                    'externalId' => $this->product2['id'],
+                    'xmlId' => 'xmlId',
+                    'quantity' => self::PRODUCT2_QUANTITY,
+                )
             )
         );
     }

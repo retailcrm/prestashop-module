@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.2.0
+ * @version 2.2.9
  * @link https://retailcrm.ru
  *
  */
@@ -18,7 +18,6 @@ $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
 $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
 $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
 
-
 if (!empty($apiUrl) && !empty($apiKey)) {
     RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
 } else {
@@ -26,4 +25,4 @@ if (!empty($apiUrl) && !empty($apiKey)) {
     exit();
 }
 
-RetailcrmInventories::load_stocks();
+RetailcrmInventories::loadStocks();
