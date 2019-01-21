@@ -60,9 +60,18 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
 
         $product1Id = explode('#', $this->product1['id']);
         $product2Id = explode('#', $this->product2['id']);
-
-        $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], $product1Id[1] );
-        $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], $product2Id[1] );
+        
+        if (isset($product1Id[1])){
+            $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], $product1Id[1]);
+        } else {
+            $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], 0);
+        }
+        
+        if (isset($product2Id[1])){
+            $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], $product2Id[1]);
+        } else {
+            $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], 0);
+        }
 
         $this->assertEquals(self::PRODUCT1_QUANTITY, $prod1Quantity);
         $this->assertEquals(self::PRODUCT2_QUANTITY, $prod2Quantity);
