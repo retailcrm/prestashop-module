@@ -39,7 +39,7 @@ Add to cron:
 Add to cron:
 
 ```
-*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
+*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/inventories.php
 ```
 
 #### Single orders archive export to retailCRM

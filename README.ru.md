@@ -34,7 +34,7 @@ Prestashop module
 Добавьте в крон запись вида
 
 ```
-*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/sync.php
+*/15 * * * * /usr/bin/php /path/to/your/site/modules/retailcrm/job/inventories.php
 ```
 
 #### Единоразовая выгрузка архива клиентов и заказов в retailCRM
