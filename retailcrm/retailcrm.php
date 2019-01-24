@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.2.9
+ * @version 2.2.10
  * @link https://retailcrm.ru
  *
  */
@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.9';
+        $this->version = '2.2.10';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -654,6 +654,7 @@ class RetailCRM extends Module
             $customer = array_merge($customer, $address['customer']);
             $order = array_merge($order, $address['order']);
             $comment = $params['order']->getFirstMessage();
+            $order['delivery']['cost'] = $params['order']->total_shipping;
 
             if ($comment !== false) {
                 $order['customerComment'] = $comment;
