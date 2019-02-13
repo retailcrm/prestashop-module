@@ -3,7 +3,7 @@
  * @author Retail Driver LCC
  * @copyright RetailCRM
  * @license GPL
- * @version 2.2.10
+ * @version 2.2.11
  * @link https://retailcrm.ru
  *
  */
@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.10';
+        $this->version = '2.2.11';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -835,7 +835,7 @@ class RetailCRM extends Module
 
     private function validateCrmAddress($address)
     {
-        if (preg_match("/https:\/\/(.*).retailcrm.ru/", $address) === 1) {
+        if (preg_match("/https:\/\/(.*).retailcrm.(pro|ru|es)/", $address) === 1) {
             return true;
         }
 
