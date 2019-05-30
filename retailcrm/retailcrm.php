@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.2.11';
+        $this->version = '2.3.0';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -127,49 +127,55 @@ class RetailCRM extends Module
         $version = Configuration::get('RETAILCRM_API_VERSION');
 
         if (Tools::isSubmit('submit' . $this->name)) {
-            $address = (string)(Tools::getValue('RETAILCRM_ADDRESS'));
-            $token = (string)(Tools::getValue('RETAILCRM_API_TOKEN'));
-            $version = (string)(Tools::getValue('RETAILCRM_API_VERSION'));
-            $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
-            $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
-            $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
-            $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
-            $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
-            $statusExport = (string)(Tools::getValue('RETAILCRM_STATUS_EXPORT'));
-            $collectorActive = (Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'));
-            $collectorKey = (string)(Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_KEY'));
-            $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
+            $ordersIds = (string)(Tools::getValue('RETAILCRM_UPLOAD_ORDERS_ID'));
 
-            $settings  = array(
-                'address' => $address,
-                'token' => $token,
-                'version' => $version,
-                'clientId' => $clientId
-            );
+            if (!empty($ordersIds)) {
+                $output .= $this->uploadOrders(static::partitionId($ordersIds));
+            } else {
+                $address = (string)(Tools::getValue('RETAILCRM_ADDRESS'));
+                $token = (string)(Tools::getValue('RETAILCRM_API_TOKEN'));
+                $version = (string)(Tools::getValue('RETAILCRM_API_VERSION'));
+                $delivery = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY'));
+                $status = json_encode(Tools::getValue('RETAILCRM_API_STATUS'));
+                $payment = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT'));
+                $deliveryDefault = json_encode(Tools::getValue('RETAILCRM_API_DELIVERY_DEFAULT'));
+                $paymentDefault = json_encode(Tools::getValue('RETAILCRM_API_PAYMENT_DEFAULT'));
+                $statusExport = (string)(Tools::getValue('RETAILCRM_STATUS_EXPORT'));
+                $collectorActive = (Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'));
+                $collectorKey = (string)(Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_KEY'));
+                $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
 
-            $output .= $this->validateForm($settings, $output);
+                $settings  = array(
+                    'address' => $address,
+                    'token' => $token,
+                    'version' => $version,
+                    'clientId' => $clientId
+                );
 
-            if ($output === '') {
-                Configuration::updateValue('RETAILCRM_ADDRESS', $address);
-                Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
-                Configuration::updateValue('RETAILCRM_API_VERSION', $version);
-                Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
-                Configuration::updateValue('RETAILCRM_API_STATUS', $status);
-                Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
-                Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', $deliveryDefault);
-                Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
-                Configuration::updateValue('RETAILCRM_STATUS_EXPORT', $statusExport);
-                Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE', $collectorActive);
-                Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_KEY', $collectorKey);
+                $output .= $this->validateForm($settings, $output);
 
-                $output .= $this->displayConfirmation($this->l('Settings updated'));
-            }
+                if ($output === '') {
+                    Configuration::updateValue('RETAILCRM_ADDRESS', $address);
+                    Configuration::updateValue('RETAILCRM_API_TOKEN', $token);
+                    Configuration::updateValue('RETAILCRM_API_VERSION', $version);
+                    Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
+                    Configuration::updateValue('RETAILCRM_API_STATUS', $status);
+                    Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
+                    Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', $deliveryDefault);
+                    Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', $paymentDefault);
+                    Configuration::updateValue('RETAILCRM_STATUS_EXPORT', $statusExport);
+                    Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE', $collectorActive);
+                    Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_KEY', $collectorKey);
 
-            if ($version == 5 && $this->isRegisteredInHook('actionPaymentCCAdd') == 0) {
-                $this->registerHook('actionPaymentCCAdd');
-            } elseif ($version == 4 && $this->isRegisteredInHook('actionPaymentCCAdd') == 1) {
-                $hook_id = Hook::getIdByName('actionPaymentCCAdd');
-                $this->unregisterHook($hook_id);
+                    $output .= $this->displayConfirmation($this->l('Settings updated'));
+                }
+
+                if ($version == 5 && $this->isRegisteredInHook('actionPaymentCCAdd') == 0) {
+                    $this->registerHook('actionPaymentCCAdd');
+                } elseif ($version == 4 && $this->isRegisteredInHook('actionPaymentCCAdd') == 1) {
+                    $hook_id = Hook::getIdByName('actionPaymentCCAdd');
+                    $this->unregisterHook($hook_id);
+                }
             }
         }
 
@@ -183,12 +189,309 @@ class RetailCRM extends Module
             "<a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
         );
 
+        $assetsBase =
+            Tools::getShopDomainSsl(true, true) .
+            __PS_BASE_URI__ .
+            'modules/' .
+            $this->name .
+            '/public';
+        $this->context->controller->addCSS($assetsBase . '/css/retailcrm-upload.css');
+        $this->context->controller->addJS($assetsBase . '/js/retailcrm-upload.js');
         $this->display(__FILE__, 'retailcrm.tpl');
 
-        return $output . $this->displayForm();
+        return $output . $this->displaySettingsForm() . $this->displayUploadOrdersForm();
     }
 
-    public function displayForm()
+    public function uploadOrders($orderIds)
+    {
+        if (count($orderIds) > 10) {
+            return $this->displayConfirmation($this->l("Can't upload more than 10 orders per request"));
+        }
+
+        if (count($orderIds) < 1) {
+            return $this->displayConfirmation($this->l("At least one order ID should be specified"));
+        }
+
+        $apiUrl = Configuration::get('RETAILCRM_ADDRESS');
+        $apiKey = Configuration::get('RETAILCRM_API_TOKEN');
+        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
+
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            if (!($this->api instanceof RetailcrmProxy)) {
+                $this->api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
+            }
+        } else {
+            return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
+        }
+
+        $orders = array();
+        $customers = array();
+        $isSuccessful = true;
+
+        foreach ($orderIds as $orderId) {
+            $object = new Order($orderId);
+            $customer = new Customer($object->id_customer);
+
+            array_push($customers, static::buildCrmCustomer($customer));
+            array_push($orders, static::buildCrmOrder($object, $customer, null, true));
+        }
+
+        foreach ($customers as $item) {
+            if ($this->api->customersGet($item['externalId']) === false) {
+                $this->api->customersCreate($item);
+                time_nanosleep(0, 50000000);
+            }
+        }
+
+        foreach ($orders as $item) {
+            if ($this->api->ordersGet($item['externalId']) === false) {
+                $response = $this->api->ordersCreate($item);
+            } else {
+                $response = $this->api->ordersEdit($item);
+            }
+
+            $isSuccessful = is_bool($response) ? $response : $response->isSuccessful();
+
+            time_nanosleep(0, 50000000);
+        }
+
+        if ($isSuccessful) {
+            return $this->displayConfirmation($this->l('All orders were uploaded successfully'));
+        } else {
+            $result = $this->displayWarning($this->l('Not all orders were uploaded successfully'));
+
+            foreach (RetailcrmApiErrors::getErrors() as $error) {
+                $result .= $this->displayError($error);
+            }
+
+            return $result;
+        }
+    }
+
+    /**
+     * Build array with order data for retailCRM from PrestaShop order data
+     *
+     * @param Order    $order                 PrestaShop Order
+     * @param Customer $customer              PrestaShop Customer
+     * @param Cart     $orderCart             Cart for provided order. Optional
+     * @param bool     $isStatusExport        Use status for export
+     * @param bool     $preferCustomerAddress Use customer address even if delivery address is provided
+     *
+     * @return array   retailCRM order data
+     */
+    public static function buildCrmOrder(
+        Order $order,
+        Customer $customer = null,
+        Cart $orderCart = null,
+        $isStatusExport = false,
+        $preferCustomerAddress = false
+    ) {
+        $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
+        $statusExport = Configuration::get('RETAILCRM_STATUS_EXPORT');
+        $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
+        $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
+        $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
+
+        if (Module::getInstanceByName('advancedcheckout') === false) {
+            $paymentType = $order->module;
+        } else {
+            $paymentType = $order->payment;
+        }
+
+        if ($order->current_state == 0) {
+            $order_status = $statusExport;
+
+            if (!$isStatusExport) {
+                $order_status =
+                    array_key_exists($order->current_state, $status)
+                    ? $status[$order->current_state] : 'new';
+            }
+        } else {
+            $order_status = array_key_exists($order->current_state, $status)
+                ? $status[$order->current_state]
+                : $statusExport
+            ;
+        }
+
+        $phone = '';
+        $cart = $orderCart;
+
+        if (is_null($cart)) {
+            $cart = new Cart($order->getCartIdStatic($order->id));
+        }
+
+        if (is_null($customer)) {
+            $customer = new Customer($order->id_customer);
+        }
+
+        $crmOrder = array(
+            'externalId' => $order->id,
+            'createdAt' => $order->date_add,
+            'status' => $order_status,
+            'firstName' => $customer->firstname,
+            'lastName' => $customer->lastname,
+            'email' => $customer->email,
+        );
+
+        $addressCollection = $cart->getAddressCollection();
+        $address = new Address($order->id_address_delivery);
+
+        if (is_null($address->id) || $preferCustomerAddress === true) {
+            $address = array_filter(
+                $addressCollection,
+                function ($v) use ($customer) {
+                    return $v->id_customer == $customer->id;
+                }
+            );
+        }
+
+        $address = static::addressParse($address);
+        $crmOrder = array_merge($crmOrder, $address['order']);
+
+        if ($phone) {
+            $crmOrder['phone'] = $phone;
+        }
+
+        if ($apiVersion != 5) {
+            if (array_key_exists($paymentType, $payment) && !empty($payment[$paymentType])) {
+                $crmOrder['paymentType'] = $payment[$paymentType];
+            }
+
+            $crmOrder['discount'] = round($order->total_discounts, 2);
+        } else {
+            $order_payment = array(
+                'externalId' => $order->id .'#'. $order->reference,
+                'amount' => round($order->total_paid, 2),
+                'type' => $payment[$paymentType] ? $payment[$paymentType] : ''
+            );
+
+            $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
+        }
+
+        if (isset($order_payment)) {
+            $crmOrder['payments'][] = $order_payment;
+        } else {
+            $crmOrder['payments'] = array();
+        }
+
+        if (array_key_exists($order->id_carrier, $delivery) && !empty($delivery[$order->id_carrier])) {
+            $crmOrder['delivery']['code'] = $delivery[$order->id_carrier];
+        }
+
+        if (isset($order->total_shipping) && ((int) $order->total_shipping) > 0) {
+            $crmOrder['delivery']['cost'] = round($order->total_shipping, 2);
+        }
+
+        if (isset($order->total_shipping_tax_excl) && $order->total_shipping_tax_excl > 0) {
+            $crmOrder['delivery']['netCost'] = round($order->total_shipping_tax_excl, 2);
+        }
+
+        $comment = $order->getFirstMessage();
+
+        if ($comment !== false) {
+            $crmOrder['customerComment'] = $comment;
+        }
+
+        foreach ($order->getProducts() as $product) {
+            if (isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
+                $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
+            } else {
+                $productId = $product['product_id'];
+            }
+
+            if (isset($product['attributes']) && $product['attributes']) {
+                $arProp = array();
+                $count = 0;
+                $arAttr = explode(",", $product['attributes']);
+
+                foreach ($arAttr as $valAttr) {
+                    $arItem = explode(":", $valAttr);
+
+                    if ($arItem[0] && $arItem[1]) {
+                        $arProp[$count]['name'] = trim($arItem[0]);
+                        $arProp[$count]['value'] = trim($arItem[1]);
+                    }
+
+                    $count++;
+                }
+            }
+
+            $item = array(
+                'offer' => array('externalId' => $productId),
+                'productName' => $product['product_name'],
+                'quantity' => $product['product_quantity'],
+                'initialPrice' => round($product['product_price'], 2),
+                /*'initialPrice' => !empty($item['rate'])
+                    ? $item['price'] + ($item['price'] * $item['rate'] / 100)
+                    : $item['price'],*/
+                'purchasePrice' => round($product['purchase_supplier_price'], 2)
+            );
+
+            if (isset($arProp)) {
+                $item['properties'] = $arProp;
+            }
+
+            $crmOrder['items'][] = $item;
+        }
+
+        if ($order->id_customer) {
+            $crmOrder['customer']['externalId'] = $order->id_customer;
+        }
+
+        return $crmOrder;
+    }
+
+    /**
+     * Builds retailCRM customer data from PrestaShop customer data
+     *
+     * @param Customer $object
+     * @param array $address
+     *
+     * @return array
+     */
+    public static function buildCrmCustomer(Customer $object, $address = array())
+    {
+        return array_merge(
+            array(
+                'externalId' => $object->id,
+                'firstName' => $object->firstname,
+                'lastName' => $object->lastname,
+                'email' => $object->email,
+                'createdAt' => $object->date_add,
+                'birthday' => $object->birthday
+            ),
+            $address
+        );
+    }
+
+    /**
+     * Split a string to id
+     *
+     * @param string $ids string with id
+     *
+     * @return array|string
+     */
+    public static function partitionId($ids)
+    {
+        $ids = explode(',', $ids);
+
+        $ranges = [];
+
+        foreach ($ids as $idx => $uid) {
+            if (strpos($uid, '-')) {
+                $range = explode('-', $uid);
+                $ranges = array_merge($ranges, range($range[0], $range[1]));
+                unset($ids[$idx]);
+            }
+        }
+
+        $ids = implode(',', array_merge($ids, $ranges));
+        $ids = explode(',', $ids);
+
+        return $ids;
+    }
+
+    public function displaySettingsForm()
     {
         $this->displayConfirmation($this->l('Settings updated'));
 
@@ -329,7 +632,7 @@ class RetailCRM extends Module
         }
 
         /*
-         * Diplay forms
+         * Display forms
          */
 
         $helper = new HelperForm();
@@ -425,16 +728,71 @@ class RetailCRM extends Module
         return $helper->generateForm($fields_form);
     }
 
+    public function displayUploadOrdersForm()
+    {
+        $default_lang = $this->default_lang;
+        $fields_form = array();
+
+        if ($this->api) {
+            $fields_form[]['form'] = array(
+                'legend' => array('title' => $this->l('Manual Order Upload')),
+                'input' => array(
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Orders IDs'),
+                        'name' => 'RETAILCRM_UPLOAD_ORDERS_ID',
+                        'required' => false
+                    )
+                ),
+                'submit' => array(
+                    'title' => $this->l('Upload'),
+                    'class' => 'button'
+                )
+            );
+        }
+
+        $helper = new HelperForm();
+
+        $helper->module = $this;
+        $helper->name_controller = $this->name;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->id = "retailcrm_upload_form";
+
+        $helper->default_form_language = $default_lang;
+        $helper->allow_employee_form_lang = $default_lang;
+
+        $helper->title = $this->displayName;
+        $helper->show_toolbar = true;
+        $helper->toolbar_scroll = true;
+        $helper->submit_action = 'submit' . $this->name;
+        $helper->toolbar_btn = array(
+            'save' =>
+                array(
+                    'desc' => $this->l('Save'),
+                    'href' => sprintf(
+                        "%s&configure=%s&save%s&token=%s",
+                        AdminController::$currentIndex,
+                        $this->name,
+                        $this->name,
+                        Tools::getAdminTokenLite('AdminModules')
+                    )
+                ),
+            'back' => array(
+                'href' => AdminController::$currentIndex . '&token=' . Tools::getAdminTokenLite('AdminModules'),
+                'desc' => $this->l('Back to list')
+            )
+        );
+
+        $helper->fields_value['RETAILCRM_UPLOAD_ORDERS_ID'] = '';
+
+        return $helper->generateForm($fields_form);
+    }
+
     public function hookActionCustomerAccountAdd($params)
     {
         $customer = $params['newCustomer'];
-        $customerSend = array(
-            'externalId' => $customer->id,
-            'firstName' => $customer->firstname,
-            'lastName' => $customer->lastname,
-            'email' => $customer->email,
-            'createdAt' => $customer->date_add
-        );
+        $customerSend = static::buildCrmCustomer($customer);
 
         $this->api->customersCreate($customerSend);
 
@@ -446,13 +804,7 @@ class RetailCRM extends Module
     {
         $customer = $params['customer'];
 
-        $customerSend = array(
-            'externalId' => $customer->id,
-            'firstName' => $customer->firstname,
-            'lastName' => $customer->lastname,
-            'email' => $customer->email,
-            'birthday' => $customer->birthday
-        );
+        $customerSend = static::buildCrmCustomer($customer);
 
         $addreses = $customer->getAddresses($this->default_lang);
         $address = array_shift($addreses);
@@ -460,17 +812,17 @@ class RetailCRM extends Module
         if (!empty($address)){
 
             if (is_object($address)) {
-                $address = $this->addressParse($address);
+                $address = static::addressParse($address);
             } else {
                 $address = new Address($address['id_address']);
-                $address = $this->addressParse($address);
+                $address = static::addressParse($address);
             }
 
             $customerSend = array_merge($customerSend, $address['customer']);
         }
 
         if (isset($params['cart'])){
-            $address = $this->addressParse($params['cart']);
+            $address = static::addressParse($params['cart']);
             $customerSend = array_merge($customerSend, $address['customer']);
         }
 
@@ -556,7 +908,7 @@ class RetailCRM extends Module
         return $order;
     }
 
-    private function addressParse($address)
+    private static function addressParse($address)
     {
         if ($address instanceof Address) {
             $postcode = $address->postcode;
@@ -585,7 +937,7 @@ class RetailCRM extends Module
             $customer['address']['countryIso'] = $countryIso;
         }
 
-        $phones = $this->getPhone($address);
+        $phones = static::getPhone($address);
         $order = array_merge($order, $phones['order']);
         $customer = array_merge($customer, $phones['customer']);
         $addressArray = array('order' => $order, 'customer' => $customer);
@@ -593,7 +945,7 @@ class RetailCRM extends Module
         return $addressArray;
     }
 
-    private function getPhone($address)
+    private static function getPhone($address)
     {
         if (!empty($address->phone_mobile)){
             $order['phone'] = $address->phone_mobile;
@@ -622,131 +974,14 @@ class RetailCRM extends Module
         $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
 
         if (isset($params['orderStatus'])) {
-            $customer = array(
-                'externalId' => $params['customer']->id,
-                'lastName' => $params['customer']->lastname,
-                'firstName' => $params['customer']->firstname,
-                'email' => $params['customer']->email,
-                'createdAt' => $params['customer']->date_add
-            );
-
-            $order = array(
-                'externalId' => $params['order']->id,
-                'firstName' => $params['customer']->firstname,
-                'lastName' => $params['customer']->lastname,
-                'email' => $params['customer']->email,
-                'createdAt' => $params['order']->date_add,
-                'delivery' => array('cost' => $params['order']->total_shipping)
-            );
-
-            if ($this->apiVersion != 5) {
-                $order['discount'] = $params['order']->total_discounts;
-            } else {
-                $order['discountManualAmount'] = $params['order']->total_discounts;
-            }
-
             $cart = $params['cart'];
 
             $addressCollection = $cart->getAddressCollection();
             $address = array_shift($addressCollection);
-            $address = $this->addressParse($address);
+            $address = static::addressParse($address);
 
-            $customer = array_merge($customer, $address['customer']);
-            $order = array_merge($order, $address['order']);
-            $comment = $params['order']->getFirstMessage();
-            $order['delivery']['cost'] = $params['order']->total_shipping;
-
-            if ($comment !== false) {
-                $order['customerComment'] = $comment;
-            }
-
-            foreach ($cart->getProducts() as $item) {
-                if (isset($item['id_product_attribute']) && $item['id_product_attribute'] > 0) {
-                    $productId = $item['id_product'] . '#' . $item['id_product_attribute'];
-                } else {
-                    $productId = $item['id_product'];
-                }
-
-                if ($item['attributes']) {
-                    $arProp = array();
-                    $count = 0;
-                    $arAttr = explode(",", $item['attributes']);
-
-                    foreach ($arAttr as $valAttr) {
-                        $arItem = explode(":", $valAttr);
-
-                        if ($arItem[0] && $arItem[1]) {
-                            $arProp[$count]['name'] = trim($arItem[0]);
-                            $arProp[$count]['value'] = trim($arItem[1]);
-                        }
-
-                        $count++;
-                    }
-                }
-
-                $orderItem = array(
-                    'initialPrice' => !empty($item['rate'])
-                        ? $item['price'] + ($item['price'] * $item['rate'] / 100)
-                        : $item['price'],
-                    'quantity' => $item['quantity'],
-                    'offer' => array('externalId' => $productId),
-                    'productName' => $item['name']
-                );
-
-                if (isset($arProp)) {
-                    $orderItem['properties'] = $arProp;
-                }
-
-                $order['items'][] = $orderItem;
-
-                unset($arAttr);
-                unset($count);
-                unset($arProp);
-            }
-
-            $deliveryCode = $params['order']->id_carrier;
-
-            if (array_key_exists($deliveryCode, $delivery) && !empty($delivery[$deliveryCode])) {
-                $order['delivery']['code'] = $delivery[$deliveryCode];
-            }
-
-            if (Module::getInstanceByName('advancedcheckout') === false) {
-                $paymentCode = $params['order']->module;
-            } else {
-                $paymentCode = $params['order']->payment;
-            }
-
-            if ($this->apiVersion != 5) {
-                if (array_key_exists($paymentCode, $payment) && !empty($payment[$paymentCode])) {
-                    $order['paymentType'] = $payment[$paymentCode];
-                }
-            } else {
-                $paymentSend = array(
-                    'externalId' => $params['order']->id .'#'. $params['order']->reference,
-                    'amount' => $params['order']->total_paid,
-                    'type' => $payment[$paymentCode] ? $payment[$paymentCode] : ''
-                );
-            }
-
-            if (isset($paymentSend)) {
-                $order['payments'][] = $paymentSend;
-            }
-
-            $statusCode = $params['orderStatus']->id;
-
-            if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
-                $order['status'] = $status[$statusCode];
-            } else {
-                $order['status'] = 'new';
-            }
-
-            $customerCheck = $this->api->customersGet($customer['externalId']);
-
-            if ($customerCheck === false) {
-                $this->api->customersCreate($customer);
-            }
-
-            $order['customer']['externalId'] = $customer['externalId'];
+            $customer = static::buildCrmCustomer($params['customer'], $address);
+            $order = static::buildCrmOrder($params['order'], $params['customer'], $params['cart'], false);
 
             $this->api->ordersCreate($order);
 

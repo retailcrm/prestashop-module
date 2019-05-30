@@ -29,130 +29,34 @@ if (!empty($apiUrl) && !empty($apiKey)) {
 $orders = array();
 $customers = array();
 
-$customerInstance = new Customer();
-$orderInstance = new Order();
-
-$customerRecords = $customerInstance->getCustomers();
-$orderRecords = $orderInstance->getOrdersWithInformations();
+$customerRecords = Customer::getCustomers();
+$orderRecords = Order::getOrdersWithInformations();
 
 $delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
 $payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
 $status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
 
 foreach ($customerRecords as $record) {
-    $customers[$record['id_customer']] = array(
-        'externalId' => $record['id_customer'],
-        'firstName' => $record['firstname'],
-        'lastname' => $record['lastname'],
-        'email' => $record['email']
-    );
+    $customers[$record['id_customer']] = RetailCRM::buildCrmCustomer(new Customer($record['id_customer']));
 }
 
 unset($customerRecords);
 
 foreach ($orderRecords as $record) {
-    $object = new Order($record['id_order']);
+    $order = new Order();
 
-    if (Module::getInstanceByName('advancedcheckout') === false) {
-        $paymentType = $record['module'];
-    } else {
-        $paymentType = $record['payment'];
+    foreach ($record as $property => $value) {
+        $order->$property = $value;
     }
 
-    if ($record['current_state'] == 0) {
-        $order_status = $statusExport;
-    } else {
-        $order_status = array_key_exists($record['current_state'], $status)
-            ? $status[$record['current_state']]
-            : $statusExport
-        ;
-    }
+    $order->id = $record['id_order'];
 
-    $cart = new Cart($object->getCartIdStatic($record['id_order']));
-    $addressCollection = $cart->getAddressCollection();
-    $address = array_shift($addressCollection);
-
-    if ($address instanceof Address) {
-        $phone = is_null($address->phone)
-            ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
-            : $address->phone
-        ;
-
-        $postcode = $address->postcode;
-        $city = $address->city;
-        $addres_line = sprintf("%s %s", $address->address1, $address->address2);
-    }
-
-    $order = array(
-        'externalId' => $record['id_order'],
-        'createdAt' => $record['date_add'],
-        'status' => $order_status,
-        'firstName' => $record['firstname'],
-        'lastName' => $record['lastname'],
-        'email' => $record['email'],
+    $orders[$record['id_order']] = RetailCRM::buildCrmOrder(
+        $order,
+        null,
+        null,
+        true
     );
-
-    if (isset($postcode)) {
-        $order['delivery']['address']['index'] = $postcode;
-    }
-
-    if (isset($city)) {
-        $order['delivery']['address']['city'] = $city;
-    }
-
-    if (isset($addres_line)) {
-        $order['delivery']['address']['text'] = $addres_line;
-    }
-
-    if ($phone) {
-        $order['phone'] = $phone;
-    }
-
-    if ($apiVersion != 5) {
-        if (array_key_exists($paymentType, $payment)) {
-            $order['paymentType'] = $payment[$paymentType];
-        }
-    } else {
-        $order_payment = array(
-            'externalId' => $record['id_order'] .'#'. $record['reference'],
-            'amount' => $record['total_paid'],
-            'type' => $payment[$paymentType] ? $payment[$paymentType] : ''
-        );
-        $order['payments'][] = $order_payment;
-    }
-
-    if (array_key_exists($record['id_carrier'], $delivery)) {
-        $order['delivery']['code'] = $delivery[$record['id_carrier']];
-    }
-
-    if (isset($record['total_shipping_tax_incl']) && (int) $record['total_shipping_tax_incl'] > 0) {
-        $order['delivery']['cost'] = round($record['total_shipping_tax_incl'], 2);
-    }
-
-    $products = $object->getProducts();
-
-    foreach ($products as $product) {
-        if (isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
-            $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
-        } else {
-            $productId = $product['product_id'];
-        }
-        $item = array(
-            'offer' => array('externalId' => $productId),
-            'productName' => $product['product_name'],
-            'quantity' => $product['product_quantity'],
-            'initialPrice' => round($product['product_price'], 2),
-            'purchasePrice' => round($product['purchase_supplier_price'], 2)
-        );
-
-        $order['items'][] = $item;
-    }
-
-    if ($record['id_customer']) {
-        $order['customer']['externalId'] = $record['id_customer'];
-    }
-
-    $orders[$record['id_order']] = $order;
 }
 
 unset($orderRecords);

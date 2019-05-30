@@ -35,6 +35,7 @@ class RetailcrmProxy
             if (!$response->isSuccessful()) {
                 error_log("[$date] @ [$method] " . $response->getErrorMsg() . "\n", 3, $this->log);
                 if (isset($response['errors'])) {
+                    RetailcrmApiErrors::set($response['errors'], $response->getStatusCode());
                     $error = implode("\n", $response['errors']);
                     error_log($error . "\n", 3, $this->log);
                 }
