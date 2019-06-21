@@ -23,7 +23,7 @@ class RetailcrmHistory
 
         $history = self::$api->customersHistory($filter);
 
-        if ($history->isSuccessful() && count($history->history)) {
+        if ($history && count($history->history)) {
             $historyChanges = $history->history;
             $end = end($historyChanges);
             $sinceid = $end['id'];
@@ -167,7 +167,7 @@ class RetailcrmHistory
         $orderFix = array();
         $history = self::$api->ordersHistory($filter);
 
-        if ($history->isSuccessful() && count($history->history) > 0) {
+        if ($history && count($history->history) > 0) {
             $historyChanges = $history->history;
             $end = end($historyChanges);
             $sinceId = $end['id'];
@@ -187,7 +187,7 @@ class RetailcrmHistory
                 if (!array_key_exists('externalId', $order_history)) {
                     $responce = self::$api->ordersGet($order_history['id'], 'id');
 
-                    if ($responce->isSuccessful()) {
+                    if ($responce) {
                         $order = $responce['order'];
                     } else {
                         continue;
