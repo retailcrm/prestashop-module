@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.3.0';
+        $this->version = '2.3.1';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -109,14 +109,14 @@ class RetailCRM extends Module
         $this->integrationModule($api, $clientId, Configuration::get('RETAILCRM_API_VERSION'), false);
 
         return parent::uninstall() &&
-        Configuration::deleteByName('RETAILCRM_ADDRESS') &&
-        Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
-        Configuration::deleteByName('RETAILCRM_API_STATUS') &&
-        Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
-        Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
-        Configuration::deleteByName('RETAILCRM_API_VERSION') &&
-        Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
-        Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC');
+            Configuration::deleteByName('RETAILCRM_ADDRESS') &&
+            Configuration::deleteByName('RETAILCRM_API_TOKEN') &&
+            Configuration::deleteByName('RETAILCRM_API_STATUS') &&
+            Configuration::deleteByName('RETAILCRM_API_DELIVERY') &&
+            Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_API_VERSION') &&
+            Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC');
     }
 
     public function getContent()
@@ -269,6 +269,19 @@ class RetailCRM extends Module
     }
 
     /**
+     * Returns 'true' if provided date string is valid
+     *
+     * @param $date
+     * @param string $format
+     *
+     * @return bool
+     */
+    public static function verifyDate($date, $format = "Y-m-d")
+    {
+        return (bool)date_create_from_format($format, $date);
+    }
+
+    /**
      * Build array with order data for retailCRM from PrestaShop order data
      *
      * @param Order    $order                 PrestaShop Order
@@ -304,7 +317,7 @@ class RetailCRM extends Module
             if (!$isStatusExport) {
                 $order_status =
                     array_key_exists($order->current_state, $status)
-                    ? $status[$order->current_state] : 'new';
+                        ? $status[$order->current_state] : 'new';
             }
         } else {
             $order_status = array_key_exists($order->current_state, $status)
@@ -324,14 +337,15 @@ class RetailCRM extends Module
             $customer = new Customer($order->id_customer);
         }
 
-        $crmOrder = array(
+        $crmOrder = array_filter(array(
             'externalId' => $order->id,
-            'createdAt' => $order->date_add,
+            'createdAt' => static::verifyDate($order->date_add, 'Y-m-d H:i:s')
+                ? $order->date_add : date('Y-m-d H:i:s'),
             'status' => $order_status,
             'firstName' => $customer->firstname,
             'lastName' => $customer->lastname,
             'email' => $customer->email,
-        );
+        ));
 
         $addressCollection = $cart->getAddressCollection();
         $address = new Address($order->id_address_delivery);
@@ -457,8 +471,10 @@ class RetailCRM extends Module
                 'firstName' => $object->firstname,
                 'lastName' => $object->lastname,
                 'email' => $object->email,
-                'createdAt' => $object->date_add,
-                'birthday' => $object->birthday
+                'createdAt' => self::verifyDate($object->date_add, 'Y-m-d H:i:s')
+                    ? $object->date_add : date('Y-m-d H:i:s'),
+                'birthday' => self::verifyDate($object->birthday, 'Y-m-d')
+                    ? $object->birthday : date('Y-m-d', 0)
             ),
             $address
         );
@@ -560,10 +576,10 @@ class RetailCRM extends Module
                     'name' => 'RETAILCRM_DAEMON_COLLECTOR_ACTIVE',
                     'values'  => array(
                         'query' => array(
-                              array(
+                            array(
                                 'id_option' => 1,
-                              )
-                          ),
+                            )
+                        ),
                         'id' => 'id_option',
                         'name' => 'name'
                     )
@@ -711,8 +727,8 @@ class RetailCRM extends Module
         if (isset($paymentSettingsDefault) && $paymentSettingsDefault != '') {
             $paymentTypesDefault = json_decode($paymentSettingsDefault);
             if ($paymentTypesDefault) {
-                    $name = 'RETAILCRM_API_PAYMENT_DEFAULT';
-                    $helper->fields_value[$name] = $paymentTypesDefault;
+                $name = 'RETAILCRM_API_PAYMENT_DEFAULT';
+                $helper->fields_value[$name] = $paymentTypesDefault;
             }
         }
 
@@ -791,46 +807,54 @@ class RetailCRM extends Module
 
     public function hookActionCustomerAccountAdd($params)
     {
-        $customer = $params['newCustomer'];
-        $customerSend = static::buildCrmCustomer($customer);
+        if ($this->api) {
+            $customer = $params['newCustomer'];
+            $customerSend = static::buildCrmCustomer($customer);
 
-        $this->api->customersCreate($customerSend);
+            $this->api->customersCreate($customerSend);
 
-        return $customerSend;
+            return true;
+        }
+
+        return false;
     }
 
     // this hook added in 1.7
     public function hookActionCustomerAccountUpdate($params)
     {
-        $customer = $params['customer'];
+        if ($this->api) {
+            $customer = $params['customer'];
 
-        $customerSend = static::buildCrmCustomer($customer);
+            $customerSend = static::buildCrmCustomer($customer);
 
-        $addreses = $customer->getAddresses($this->default_lang);
-        $address = array_shift($addreses);
+            $addreses = $customer->getAddresses($this->default_lang);
+            $address = array_shift($addreses);
 
-        if (!empty($address)){
+            if (!empty($address)){
 
-            if (is_object($address)) {
-                $address = static::addressParse($address);
-            } else {
-                $address = new Address($address['id_address']);
-                $address = static::addressParse($address);
+                if (is_object($address)) {
+                    $address = static::addressParse($address);
+                } else {
+                    $address = new Address($address['id_address']);
+                    $address = static::addressParse($address);
+                }
+
+                $customerSend = array_merge($customerSend, $address['customer']);
             }
 
-            $customerSend = array_merge($customerSend, $address['customer']);
+            if (isset($params['cart'])){
+                $address = static::addressParse($params['cart']);
+                $customerSend = array_merge($customerSend, $address['customer']);
+            }
+
+            $customerSend = array_merge($customerSend, isset($address['customer']) ? $address['customer'] : []);
+
+            $this->api->customersEdit($customerSend);
+
+            return true;
         }
 
-        if (isset($params['cart'])){
-            $address = static::addressParse($params['cart']);
-            $customerSend = array_merge($customerSend, $address['customer']);
-        }
-
-        $customerSend = array_merge($customerSend, $address['customer']);
-
-        $this->api->customersEdit($customerSend);
-
-        return $customerSend;
+        return false;
     }
 
     // this hook added in 1.7
@@ -863,53 +887,66 @@ class RetailCRM extends Module
 
     public function hookActionOrderEdited($params)
     {
-        $order = array(
-            'externalId' => $params['order']->id,
-            'firstName' => $params['customer']->firstname,
-            'lastName' => $params['customer']->lastname,
-            'email' => $params['customer']->email,
-            'createdAt' => $params['order']->date_add,
-            'delivery' => array('cost' => $params['order']->total_shipping)
-        );
+        if ($this->api) {
+            $order = array(
+                'externalId' => $params['order']->id,
+                'firstName' => $params['customer']->firstname,
+                'lastName' => $params['customer']->lastname,
+                'email' => $params['customer']->email,
+                'createdAt' => self::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
+                    ? $params['order']->date_add : date('Y-m-d H:i:s'),
+                'delivery' => array('cost' => $params['order']->total_shipping)
+            );
 
-        if ($this->apiVersion != 5) {
-            $order['discount'] = $params['order']->total_discounts;
-        } else {
-            $order['discountManualAmount'] = $params['order']->total_discounts;
-        }
-
-        $orderdb = new Order($params['order']->id);
-
-        $comment = $orderdb->getFirstMessage();
-        if ($comment !== false) {
-            $order['customerComment'] = $comment;
-        }
-
-        unset($comment);
-
-        foreach ($orderdb->getProducts() as $item) {
-            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
-                $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
+            if ($this->apiVersion != 5) {
+                $order['discount'] = $params['order']->total_discounts;
             } else {
-                $productId = $item['product_id'];
+                $order['discountManualAmount'] = $params['order']->total_discounts;
             }
 
-            $order['items'][] = array(
-                'initialPrice' => $item['unit_price_tax_incl'],
-                'quantity' => $item['product_quantity'],
-                'offer' => array('externalId' => $productId),
-                'productName' => $item['product_name'],
-            );
+            $orderdb = new Order($params['order']->id);
+
+            $comment = $orderdb->getFirstMessage();
+            if ($comment !== false) {
+                $order['customerComment'] = $comment;
+            }
+
+            unset($comment);
+
+            foreach ($orderdb->getProducts() as $item) {
+                if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+                    $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
+                } else {
+                    $productId = $item['product_id'];
+                }
+
+                $order['items'][] = array(
+                    'initialPrice' => $item['unit_price_tax_incl'],
+                    'quantity' => $item['product_quantity'],
+                    'offer' => array('externalId' => $productId),
+                    'productName' => $item['product_name'],
+                );
+            }
+
+            $order['customer']['externalId'] = $params['order']->id_customer;
+            $this->api->ordersEdit($order);
+
+            return true;
         }
 
-        $order['customer']['externalId'] = $params['order']->id_customer;
-        $this->api->ordersEdit($order);
-
-        return $order;
+        return false;
     }
 
     private static function addressParse($address)
     {
+        if (!isset($customer)) {
+            $customer = [];
+        }
+
+        if (!isset($order)) {
+            $order = [];
+        }
+
         if ($address instanceof Address) {
             $postcode = $address->postcode;
             $city = $address->city;
@@ -947,6 +984,14 @@ class RetailCRM extends Module
 
     private static function getPhone($address)
     {
+        if (!isset($customer)) {
+            $customer = [];
+        }
+
+        if (!isset($order)) {
+            $order = [];
+        }
+
         if (!empty($address->phone_mobile)){
             $order['phone'] = $address->phone_mobile;
             $customer['phones'][] = array('number'=> $address->phone_mobile);
@@ -975,17 +1020,11 @@ class RetailCRM extends Module
 
         if (isset($params['orderStatus'])) {
             $cart = $params['cart'];
-
-            $addressCollection = $cart->getAddressCollection();
-            $address = array_shift($addressCollection);
-            $address = static::addressParse($address);
-
-            $customer = static::buildCrmCustomer($params['customer'], $address);
             $order = static::buildCrmOrder($params['order'], $params['customer'], $params['cart'], false);
 
             $this->api->ordersCreate($order);
 
-            return $order;
+            return true;
 
         } elseif (isset($params['newOrderStatus'])) {
             $statusCode = $params['newOrderStatus']->id;
@@ -1002,7 +1041,7 @@ class RetailCRM extends Module
                     )
                 );
 
-                return $orderStatus;
+                return true;
             }
         }
 
@@ -1047,7 +1086,7 @@ class RetailCRM extends Module
         if (isset($updatePayment)) {
             $this->api->ordersPaymentEdit($updatePayment);
 
-            return $updatePayment;
+            return true;
         } else {
             $createPayment = array(
                 'externalId' => $params['paymentCC']->id,
@@ -1062,7 +1101,7 @@ class RetailCRM extends Module
 
             $this->api->ordersPaymentCreate($createPayment);
 
-            return $createPayment;
+            return true;
         }
 
         return false;

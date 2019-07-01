@@ -35,34 +35,16 @@ class RetailCRMTest extends RetailcrmTestCase
     {
         $newCustomer = new Customer(1);
         $params = array('newCustomer' => $newCustomer);
-        $customer = $this->retailcrmModule->hookActionCustomerAccountAdd($params);
 
-        $this->assertNotEmpty($customer);
-        $this->assertArrayHasKey('externalId', $customer);
-        $this->assertArrayHasKey('firstName', $customer);
-        $this->assertArrayHasKey('lastName', $customer);
-        $this->assertArrayHasKey('email', $customer);
-        $this->assertArrayHasKey('createdAt', $customer);
+        $this->assertTrue($this->retailcrmModule->hookActionCustomerAccountAdd($params));
     }
 
     public function testHookActionCustomerAccountUpdate()
     {
         $customer = new Customer(1);
-
         $params = array('customer' => $customer);
-        $customer = $this->retailcrmModule->hookActionCustomerAccountUpdate($params);
 
-        $this->assertNotEmpty($customer);
-        $this->assertArrayHasKey('externalId', $customer);
-        $this->assertArrayHasKey('firstName', $customer);
-        $this->assertArrayHasKey('lastName', $customer);
-        $this->assertArrayHasKey('email', $customer);
-        $this->assertArrayHasKey('birthday', $customer);
-        $this->assertArrayHasKey('address', $customer);
-        $this->assertArrayHasKey('index', $customer['address']);
-        $this->assertArrayHasKey('city', $customer['address']);
-        $this->assertArrayHasKey('text', $customer['address']);
-        $this->assertArrayHasKey('countryIso', $customer['address']);
+        $this->assertTrue($this->retailcrmModule->hookActionCustomerAccountUpdate($params));
     }
 
     public function testHookActionOrderEdited()
@@ -71,15 +53,7 @@ class RetailCRMTest extends RetailcrmTestCase
         $customer = new Customer($order->id_customer);
         $params = array('order' => $order, 'customer' => $customer);
 
-        $orderSend = $this->retailcrmModule->hookActionOrderEdited($params);
-
-        $this->assertNotNull($orderSend);
-        $this->assertArrayHasKey('externalId', $orderSend);
-        $this->assertArrayHasKey('firstName', $orderSend);
-        $this->assertArrayHasKey('lastName', $orderSend);
-        $this->assertArrayHasKey('email', $orderSend);
-        $this->assertArrayHasKey('delivery', $orderSend);
-        $this->assertArrayHasKey('items', $orderSend);
+        $this->assertTrue($this->retailcrmModule->hookActionOrderEdited($params));
     }
 
     /**
@@ -115,33 +89,7 @@ class RetailCRMTest extends RetailcrmTestCase
             );
         }
 
-        $result = $this->retailcrmModule->hookActionOrderStatusPostUpdate($params);
-
-        if ($newOrder === false) {
-            $this->assertEquals('completed', $result);
-        } else {
-            $this->assertArrayHasKey('status', $result);
-            $this->assertArrayHasKey('externalId', $result);
-            $this->assertArrayHasKey('firstName', $result);
-            $this->assertArrayHasKey('lastName', $result);
-            $this->assertArrayHasKey('email', $result);
-            $this->assertArrayHasKey('delivery', $result);
-            $this->assertArrayHasKey('address', $result['delivery']);
-            $this->assertArrayHasKey('city', $result['delivery']['address']);
-            $this->assertArrayHasKey('text', $result['delivery']['address']);
-            $this->assertArrayHasKey('index', $result['delivery']['address']);
-            $this->assertArrayHasKey('countryIso', $result);
-            $this->assertArrayHasKey('items', $result);
-            $this->assertArrayHasKey('customer', $result);
-            $this->assertArrayHasKey('externalId', $result['customer']);
-
-            if ($apiVersion == 5) {
-                $this->assertArrayHasKey('payments', $result);
-                $this->assertInternalType('array', $result['payments']);
-            } else {
-                $this->assertArrayHasKey('paymentType', $result);
-            }
-        }
+        $this->assertTrue($this->retailcrmModule->hookActionOrderStatusPostUpdate($params));
     }
 
     /**
@@ -167,9 +115,8 @@ class RetailCRMTest extends RetailcrmTestCase
 
         $result = $this->retailcrmModule->hookActionPaymentCCAdd($params);
 
-        $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('type', $result);
-        $this->assertArrayHasKey('amount', $result);
+        $this->assertInternalType('bool', $result);
+        $this->assertTrue($result);
 
         RetailcrmTestHelper::deleteOrderPayment($orderPayment->id);
     }
