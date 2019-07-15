@@ -441,6 +441,10 @@ class RetailCRM extends Module
                 'purchasePrice' => round($product['purchase_supplier_price'], 2)
             );
 
+            if (true == Configuration::get('PS_TAX')) {
+                $item['initialPrice'] = round($product['product_price_wt'], 2);
+            }
+
             if (isset($arProp)) {
                 $item['properties'] = $arProp;
             }
