@@ -15,6 +15,7 @@ if [ -z $BRANCH ]; then
         cp tests-legacy/parameters.yml.travis app/config/parameters.yml
     fi
 
+    (php -S localhost:80 &) 2> /dev/null > /dev/null
     bash travis-scripts/install-prestashop
 else
     bash travis-scripts/install-prestashop.sh
