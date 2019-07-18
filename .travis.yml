@@ -19,6 +19,7 @@ matrix:
 
 before_script:
   - bash tests/bin/clone_prestashop.sh
+  - bash tests/bin/setup-apache.sh
   - bash tests/bin/before_script.sh
 
 script:
