@@ -1,6 +1,13 @@
 language: php
 
-sudo: false
+addons:
+  apt:
+    packages:
+      - apache2
+      - libapache2-mod-fastcgi
+
+sudo: required
+dist: trusty
 
 php:
   - 5.6
