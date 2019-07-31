@@ -730,6 +730,7 @@ class RetailcrmHistory
                 $orderDetail->unit_price_tax_excl = $productPrice;
                 $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
                 $orderDetail->original_product_price = $productPrice;
+                $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse) ? $orderToUpdate->id_warehouse : 0;
                 $orderDetail->save();
                 unset($orderDetail);
                 unset($order['items'][$key]);
