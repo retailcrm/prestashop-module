@@ -148,8 +148,22 @@ class RetailcrmCatalog
                         $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
                     }
 
-                    $offerPrice = Combination::getPrice($offer['id_product_attribute']);
+                    $offerCombination = new Combination($offer['id_product_attribute']);
+
+                    $offerPrice = $offerCombination->price + $price;
                     $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+
+                    if ($offerCombination->wholesale_price > 0) {
+                        $offerPurchasePrice = round($offerCombination->wholesale_price, 2);
+                    } else {
+                        $offerPurchasePrice = $purchasePrice; 
+                    }
+
+                    if (!empty($offerCombination->reference)) {
+                        $offerArticle = htmlspecialchars($offerCombination->reference);
+                    } else {
+                        $offerArticle = $article;
+                    }
 
                     $item = array(
                         'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
@@ -161,10 +175,10 @@ class RetailcrmCatalog
                         'picture' => $pictures,
                         'url' => $url,
                         'quantity' => $quantity > 0 ? $quantity : 0,
-                        'purchasePrice' => $purchasePrice,
+                        'purchasePrice' => $offerPurchasePrice,
                         'price' => round($offerPrice, 2),
                         'vendor' => $vendor,
-                        'article' => $article,
+                        'article' => $offerArticle,
                         'weight' => $weight,
                         'dimensions' => $dimensions
                     );
