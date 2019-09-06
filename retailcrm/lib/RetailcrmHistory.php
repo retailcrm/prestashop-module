@@ -623,7 +623,9 @@ class RetailcrmHistory
                     $product_attribute_id = 0;
                 }
 
-                self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id);
+                $id_order_detail = explode('_', $item['externalId']);
+
+                self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail[1]);
 
                 unset($order['items'][$key]);
                 $ItemDiscount = true;
@@ -635,6 +637,7 @@ class RetailcrmHistory
          */
         foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
             foreach ($order['items'] as $key => $item) {
+
                 if (strpos($item['offer']['externalId'], '#') !== false) {
                     $itemId = explode('#', $item['offer']['externalId']);
                     $product_id = $itemId[0];
@@ -664,13 +667,64 @@ class RetailcrmHistory
                         }
                     }
                     $productPrice = round($productPrice, 2);
-                    $orderDetail = new OrderDetail($orderItem['id_order_detail']);
+                    $id_order_detail = explode('_', $item['externalId']);
+                    $orderDetail = new OrderDetail($id_order_detail[1]);
                     $orderDetail->unit_price_tax_incl = $productPrice;
                     // quantity
                     if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                         $orderDetail->product_quantity = $item['quantity'];
                         $orderDetail->product_quantity_in_stock = $item['quantity'];
+                        $orderDetail->id_order_detail = $id_order_detail[1];
+                        $orderDetail->id_warehouse = 0;
                     }
+
+                    if (isset($item['create']) && $item['create'] == true) {
+                        $orderDetail->id_order = $orderToUpdate->id;
+                        $orderDetail->id_shop = Context::getContext()->shop->id;
+                        $product = new Product((int) $product_id, false, self::$default_lang);
+                        $productName = htmlspecialchars(strip_tags($item['offer']['displayName']));
+                        $orderDetail->product_name = implode('', array('\'', $productName, '\''));
+                        $orderDetail->product_price = $item['initialPrice'];
+
+                        if (strpos($item['offer']['externalId'], '#') !== false) {
+                            $product_id = explode('#', $item['offer']['externalId']);
+                            $product_attribute_id = $product_id[1];
+                            $product_id = $product_id[0];
+                        }
+
+                        $orderDetail->product_id = (int) $product_id;
+                        $orderDetail->product_attribute_id = (int) $product_attribute_id;
+                        $orderDetail->product_quantity = (int) $item['quantity'];
+
+                        if ($orderDetail->save()) {
+                            $upOrderItems = array(
+                                'externalId' => $orderDetail->id_order,
+                            );
+
+                            $orderdb = new Order($orderDetail->id_order);
+
+                            foreach ($orderdb->getProducts() as $item) {
+                                if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+                                    $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
+                                } else {
+                                    $productId = $item['product_id'];
+                                }
+
+                                $upOrderItems['items'][] = array(
+                                    "externalId" => $productId."_".$item['id_order_detail'],
+                                    'initialPrice' => $item['unit_price_tax_incl'],
+                                    'quantity' => $item['product_quantity'],
+                                    'offer' => array('externalId' => $productId),
+                                    'productName' => $item['product_name'],
+                                );
+                            }
+
+                            unset($orderdb);
+                            self::$api->ordersEdit($upOrderItems);
+                        }
+
+                    }
+
                     $orderDetail->update();
                     $ItemDiscount = true;
                     unset($order['items'][$key]);
@@ -714,7 +768,9 @@ class RetailcrmHistory
                     $ItemDiscount = true;
                 }
 
-                $orderDetail = new OrderDetail();
+                $id_order_detail = explode('_', $newItem['externalId']);
+
+                $orderDetail = new OrderDetail($id_order_detail[1]);
                 $orderDetail->id_order = $orderToUpdate->id;
                 $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
                 $orderDetail->id_shop = Context::getContext()->shop->id;
@@ -731,7 +787,36 @@ class RetailcrmHistory
                 $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
                 $orderDetail->original_product_price = $productPrice;
                 $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse) ? $orderToUpdate->id_warehouse : 0;
-                $orderDetail->save();
+
+                $id_order_detail = explode('_', $newItem['externalId']);
+                $orderDetail->id_order_detail = $id_order_detail[1];
+
+                if ($orderDetail->save()) {
+                    $upOrderItems = array(
+                        'externalId' => $orderDetail->id_order,
+                    );
+
+                    $orderdb = new Order($orderDetail->id_order);
+                    foreach ($orderdb->getProducts() as $item) {
+                        if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
+                            $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
+                        } else {
+                            $productId = $item['product_id'];
+                        }
+
+                        $upOrderItems['items'][] = array(
+                            "externalId" => $productId."_".$item['id_order_detail'],
+                            'initialPrice' => $item['unit_price_tax_incl'],
+                            'quantity' => $item['product_quantity'],
+                            'offer' => array('externalId' => $productId),
+                            'productName' => $item['product_name'],
+                        );
+                    }
+
+                    unset($orderdb);
+                    self::$api->ordersEdit($upOrderItems);
+                }
+
                 unset($orderDetail);
                 unset($order['items'][$key]);
             }
@@ -787,13 +872,21 @@ class RetailcrmHistory
      *
      * @return void
      */
-    private static function deleteOrderDetailByProduct($order_id, $product_id, $product_attribute_id)
+    private static function deleteOrderDetailByProduct($order_id, $product_id, $product_attribute_id, $id_order_detail)
     {
         Db::getInstance()->execute('
             DELETE FROM ' . _DB_PREFIX_ . 'order_detail
             WHERE id_order = ' . $order_id . '
             AND product_id = ' . $product_id . '
-            AND product_attribute_id = ' . $product_attribute_id
+            AND product_attribute_id = ' . $product_attribute_id . '
+            AND id_order_detail = ' . $id_order_detail
+        );
+    }
+
+    private static function getNewOrderDetailId()
+    {
+        return Db::getInstance()->getRow('
+            SELECT MAX(id_order_detail) FROM  ' . _DB_PREFIX_ . 'order_detail'
         );
     }
 

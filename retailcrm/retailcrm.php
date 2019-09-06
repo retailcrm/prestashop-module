@@ -38,7 +38,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.3.1';
+        $this->version = '2.3.4';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -431,6 +431,7 @@ class RetailCRM extends Module
             }
 
             $item = array(
+                "externalId" => $productId."_".$product['id_order_detail'],
                 'offer' => array('externalId' => $productId),
                 'productName' => $product['product_name'],
                 'quantity' => $product['product_quantity'],
@@ -925,6 +926,7 @@ class RetailCRM extends Module
                 }
 
                 $order['items'][] = array(
+                    "externalId" => $productId."_".$item['id_order_detail'],
                     'initialPrice' => $item['unit_price_tax_incl'],
                     'quantity' => $item['product_quantity'],
                     'offer' => array('externalId' => $productId),
