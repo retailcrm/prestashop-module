@@ -274,8 +274,8 @@ class RetailcrmHistory
                         $customer->firstname = $order['customer']['firstName'];
                         $customer->lastname = !empty($order['customer']['lastName']) ? $order['customer']['lastName'] : '--';
                         $customer->email = Validate::isEmail($order['customer']['email']) ?
-                        $order['customer']['email'] :
-                        md5($order['customer']['firstName']) . '@retailcrm.ru';
+                            $order['customer']['email'] :
+                            md5($order['customer']['firstName']) . '@retailcrm.ru';
                         $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
 
                         if (self::loadInCMS($customer, 'add') === false) {
@@ -612,6 +612,7 @@ class RetailcrmHistory
         /*
          * Clean deleted items
          */
+        $id_order_detail = null;
         foreach ($order['items'] as $key => $item) {
             if (isset($item['delete']) && $item['delete'] == true) {
                 if (strpos($item['offer']['externalId'], '#') !== false) {
@@ -623,9 +624,21 @@ class RetailcrmHistory
                     $product_attribute_id = 0;
                 }
 
-                $id_order_detail = explode('_', $item['externalId']);
+                if (isset($item['externalIds'])) {
+                    foreach ($item['externalIds'] as $externalId) {
+                        if ($externalId['code'] == 'prestashop') {
+                            $id_order_detail = explode('_', $externalId['value']);
+                        }
+                    }
+                }else {
+                    $id_order_detail = explode('#', $item['offer']['externalId']);
+                }
 
-                self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail[1]);
+                if (isset($id_order_detail[1])){
+                    $id_order_detail = $id_order_detail[1];
+                }
+
+                self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail);
 
                 unset($order['items'][$key]);
                 $ItemDiscount = true;
@@ -637,7 +650,6 @@ class RetailcrmHistory
          */
         foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
             foreach ($order['items'] as $key => $item) {
-
                 if (strpos($item['offer']['externalId'], '#') !== false) {
                     $itemId = explode('#', $item['offer']['externalId']);
                     $product_id = $itemId[0];
@@ -659,7 +671,7 @@ class RetailcrmHistory
                     $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
                     // discount
                     if (self::$apiVersion == 5) {
-                        $productPrice = $prodPrice - $item['discountTotal'];
+                        $productPrice = $prodPrice - (isset($item['discountTotal']) ? $item['discountTotal'] : 0);
                     } else {
                         $productPrice = $prodPrice - $item['discount'];
                         if ($item['discountPercent'] > 0) {
@@ -667,9 +679,21 @@ class RetailcrmHistory
                         }
                     }
                     $productPrice = round($productPrice, 2);
-                    $id_order_detail = explode('_', $item['externalId']);
+
+                    if (isset($item['externalIds'])) {
+                        foreach ($item['externalIds'] as $externalId) {
+                            if ($externalId['code'] == 'prestashop') {
+                                $id_order_detail = explode('_', $externalId['value']);
+                            }
+                        }
+                    } else {
+                        $id_order_detail = explode('#', $item['offer']['externalId']);
+                    }
+
                     $orderDetail = new OrderDetail($id_order_detail[1]);
                     $orderDetail->unit_price_tax_incl = $productPrice;
+                    $orderDetail->id_warehouse = 0;
+
                     // quantity
                     if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                         $orderDetail->product_quantity = $item['quantity'];
@@ -678,13 +702,15 @@ class RetailcrmHistory
                         $orderDetail->id_warehouse = 0;
                     }
 
-                    if (isset($item['create']) && $item['create'] == true) {
+                    if (!isset($orderDetail->id_order) && !isset($orderDetail->id_shop)) {
                         $orderDetail->id_order = $orderToUpdate->id;
                         $orderDetail->id_shop = Context::getContext()->shop->id;
                         $product = new Product((int) $product_id, false, self::$default_lang);
+
                         $productName = htmlspecialchars(strip_tags($item['offer']['displayName']));
+
                         $orderDetail->product_name = implode('', array('\'', $productName, '\''));
-                        $orderDetail->product_price = $item['initialPrice'];
+                        $orderDetail->product_price = $item['initialPrice'] ? $item['initialPrice'] : $product->price;
 
                         if (strpos($item['offer']['externalId'], '#') !== false) {
                             $product_id = explode('#', $item['offer']['externalId']);
@@ -711,7 +737,12 @@ class RetailcrmHistory
                                 }
 
                                 $upOrderItems['items'][] = array(
-                                    "externalId" => $productId."_".$item['id_order_detail'],
+                                    "externalIds" => array(
+                                        array(
+                                            'code' =>'prestashop',
+                                            'value' => $productId."_".$item['id_order_detail'],
+                                        )
+                                    ),
                                     'initialPrice' => $item['unit_price_tax_incl'],
                                     'quantity' => $item['product_quantity'],
                                     'offer' => array('externalId' => $productId),
@@ -722,7 +753,6 @@ class RetailcrmHistory
                             unset($orderdb);
                             self::$api->ordersEdit($upOrderItems);
                         }
-
                     }
 
                     $orderDetail->update();
@@ -768,7 +798,15 @@ class RetailcrmHistory
                     $ItemDiscount = true;
                 }
 
-                $id_order_detail = explode('_', $newItem['externalId']);
+                if(isset($newItem['externalIds'])) {
+                    foreach ($newItem['externalIds'] as $externalId) {
+                        if ($externalId['code'] == 'prestashop') {
+                            $id_order_detail = explode('_', $externalId['value']);
+                        }
+                    }
+                } else {
+                    $id_order_detail = explode('#', $item['offer']['externalId']);
+                }
 
                 $orderDetail = new OrderDetail($id_order_detail[1]);
                 $orderDetail->id_order = $orderToUpdate->id;
@@ -787,8 +825,6 @@ class RetailcrmHistory
                 $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
                 $orderDetail->original_product_price = $productPrice;
                 $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse) ? $orderToUpdate->id_warehouse : 0;
-
-                $id_order_detail = explode('_', $newItem['externalId']);
                 $orderDetail->id_order_detail = $id_order_detail[1];
 
                 if ($orderDetail->save()) {
@@ -805,7 +841,12 @@ class RetailcrmHistory
                         }
 
                         $upOrderItems['items'][] = array(
-                            "externalId" => $productId."_".$item['id_order_detail'],
+                            "externalIds" => array(
+                                array(
+                                    'code' =>'prestashop',
+                                    'value' => $productId."_".$item['id_order_detail'],
+                                )
+                            ),
                             'initialPrice' => $item['unit_price_tax_incl'],
                             'quantity' => $item['product_quantity'],
                             'offer' => array('externalId' => $productId),
@@ -913,5 +954,5 @@ class RetailcrmHistory
         }
 
         return true;
-   }
+    }
 }

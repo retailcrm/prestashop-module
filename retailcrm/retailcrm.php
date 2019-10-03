@@ -431,7 +431,12 @@ class RetailCRM extends Module
             }
 
             $item = array(
-                "externalId" => $productId."_".$product['id_order_detail'],
+                "externalIds" => array(
+                    array(
+                        'code' =>'prestashop',
+                        'value' => $productId."_".$product['id_order_detail'],
+                    ),
+                ),
                 'offer' => array('externalId' => $productId),
                 'productName' => $product['product_name'],
                 'quantity' => $product['product_quantity'],
@@ -926,7 +931,12 @@ class RetailCRM extends Module
                 }
 
                 $order['items'][] = array(
-                    "externalId" => $productId."_".$item['id_order_detail'],
+                    "externalIds" => array(
+                        array(
+                            'code' =>'prestashop',
+                            'value' => $productId."_".$item['id_order_detail'],
+                        )
+                    ),
                     'initialPrice' => $item['unit_price_tax_incl'],
                     'quantity' => $item['product_quantity'],
                     'offer' => array('externalId' => $productId),
