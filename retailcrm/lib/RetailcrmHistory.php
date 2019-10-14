@@ -737,6 +737,7 @@ class RetailcrmHistory
                                 }
 
                                 $upOrderItems['items'][] = array(
+                                    "id" => $key,
                                     "externalIds" => array(
                                         array(
                                             'code' =>'prestashop',
