@@ -15,9 +15,6 @@ class RetailcrmHistoryHelper {
             if (isset($change['order']['items']) && $change['order']['items']) {
                 $items = array();
                 foreach($change['order']['items'] as $item) {
-                    if (isset($change['created'])) {
-                        $item['create'] = 1;
-                    }
                     $items[$item['id']] = $item;
                 }
                 $change['order']['items'] = $items;
