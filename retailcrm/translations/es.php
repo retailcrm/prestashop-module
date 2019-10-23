@@ -62,3 +62,7 @@ $_MODULE['<{retailcrm}prestashop>retailcrm_91412465ea9169dfd901dd5e7c96dd99'] = 
 $_MODULE['<{retailcrm}prestashop>retailcrm_6bd461d1fc51b3294c6513cecc24758d'] = 'Los pedidos han sido cargados con éxito';
 $_MODULE['<{retailcrm}prestashop>retailcrm_3518f7b8d79f91da4c91772b4c46db94'] = 'No se han podido cargar algunos pedidos';
 $_MODULE['<{retailcrm}prestashop>retailcrm_9a7fc06b4b2359f1f26f75fbbe27a3e8'] = 'No todos los pedidos se han cargado con existo';
+$_MODULE['<{retailcrm}prestashop>retailcrm_917afe348e09163269225a89a825e634'] = 'Sincronización de carritos de compradores';
+$_MODULE['<{retailcrm}prestashop>retailcrm_d8e002d770b6f98af7b7ae9a0e5acfe9'] = 'Crear pedidos para carritos abandonados de compradores';
+$_MODULE['<{retailcrm}prestashop>retailcrm_35b5a9139a54caeb925556ceb2c38086'] = 'Estado del pedido para carritos abandonados de compradores';
+$_MODULE['<{retailcrm}prestashop>retailcrm_b9c4e8fe56eabcc4c7913ebb2f8eb388'] = 'Estado del pedido para carritos abandonados no debe ser utilizado en otros ajustes';

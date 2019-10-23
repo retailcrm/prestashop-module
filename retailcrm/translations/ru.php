@@ -62,3 +62,7 @@ $_MODULE['<{retailcrm}prestashop>retailcrm_91412465ea9169dfd901dd5e7c96dd99'] = 
 $_MODULE['<{retailcrm}prestashop>retailcrm_6bd461d1fc51b3294c6513cecc24758d'] = 'Все заказы успешно загружены';
 $_MODULE['<{retailcrm}prestashop>retailcrm_3518f7b8d79f91da4c91772b4c46db94'] = 'Некоторые заказы не удалось загрузить';
 $_MODULE['<{retailcrm}prestashop>retailcrm_9a7fc06b4b2359f1f26f75fbbe27a3e8'] = 'Не все заказы загружены успешно';
+$_MODULE['<{retailcrm}prestashop>retailcrm_917afe348e09163269225a89a825e634'] = 'Синхронизация корзин покупателей';
+$_MODULE['<{retailcrm}prestashop>retailcrm_d8e002d770b6f98af7b7ae9a0e5acfe9'] = 'Создавать заказы для брошенных корзин покупателей';
+$_MODULE['<{retailcrm}prestashop>retailcrm_35b5a9139a54caeb925556ceb2c38086'] = 'Статус заказа для брошенных корзин покупателей';
+$_MODULE['<{retailcrm}prestashop>retailcrm_b9c4e8fe56eabcc4c7913ebb2f8eb388'] = 'Статус заказа для брошенных корзин не должен использоваться в других настройках';
