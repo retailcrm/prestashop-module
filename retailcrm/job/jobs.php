@@ -12,7 +12,7 @@ require_once(dirname(__FILE__) . '/../bootstrap.php');
 
 JobManager::startJobs(
     array(
-        'abandonedCarts' => DateInterval::createFromDateString('10 seconds')
+        'abandonedCarts' => DateInterval::createFromDateString('1 hour')
     ),
     true
 );
