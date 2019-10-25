@@ -29,7 +29,6 @@ if (!defined('_PS_VERSION_')) {
  */
 class JobManager
 {
-    const DATE_FORMAT = 'Y.m.d H:i:s';
     const LAST_RUN_NAME = 'RETAILCRM_LAST_RUN';
     const IN_PROGRESS_NAME = 'RETAILCRM_JOBS_IN_PROGRESS';
 
@@ -59,7 +58,7 @@ class JobManager
     public static function execJobs($jobs = array(), $runOnceInContext = false)
     {
         $current = date_create('now');
-        $lastRun = date_create_from_format(self::DATE_FORMAT, (string) Configuration::get(self::LAST_RUN_NAME));
+        $lastRun = date_create_from_format(DATE_RFC3339, (string) Configuration::get(self::LAST_RUN_NAME));
 
         if ($lastRun === false) {
             $lastRun = $current;
@@ -69,12 +68,14 @@ class JobManager
             return;
         }
 
-        Configuration::updateValue(self::LAST_RUN_NAME, date_format($current, self::DATE_FORMAT));
-
         foreach ($jobs as $job => $diff) {
             try {
-                if (static::compareIntervals(date_diff($lastRun, $current), $diff, $current) == 1) {
+                $shouldRunAt = clone $lastRun;
+                $shouldRunAt->add($diff);
+
+                if ($shouldRunAt <= $current) {
                     JobManager::runJob($job, $runOnceInContext);
+                    Configuration::updateValue(self::LAST_RUN_NAME, date_format($current, DATE_RFC3339));
                 }
             } catch (\Exception $exception) {
                 static::handleError($exception->getFile(), $exception->getMessage());
@@ -86,33 +87,6 @@ class JobManager
         }
 
         static::unlock();
-    }
-
-    /**
-     * Compare two date intervals
-     *
-     * @param      $first
-     * @param      $second
-     * @param null $now
-     *
-     * @return int
-     * @throws \Exception
-     */
-    private static function compareIntervals($first, $second, $now = null)
-    {
-        $dateFirst = is_null($now) ? new DateTime() : $now;
-        $dateSecond = clone $dateFirst;
-
-        $dateFirst->add($first);
-        $dateSecond->add($second);
-
-        if($dateFirst < $dateSecond) {
-            return -1;
-        } elseif($dateFirst == $dateSecond) {
-            return 0;
-        }
-
-        return 1;
     }
 
     /**
@@ -339,7 +313,7 @@ class JobManager
     private static function isLocked()
     {
         $inProcess = (bool) Configuration::get(self::IN_PROGRESS_NAME);
-        $lastRan = date_create_from_format(self::DATE_FORMAT, (string) Configuration::get(self::LAST_RUN_NAME));
+        $lastRan = date_create_from_format(DATE_RFC3339, (string) Configuration::get(self::LAST_RUN_NAME));
         $lastRanSeconds = $lastRan instanceof DateTime ? $lastRan->format('U') : time();
 
         if (($lastRanSeconds + self::getTimeLimit()) < time()) {
