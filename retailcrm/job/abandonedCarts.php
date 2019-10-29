@@ -29,14 +29,21 @@ if (!empty($apiUrl) && !empty($apiKey)) {
     return;
 }
 
-$rows = Db::getInstance()->executeS(
-    'SELECT c.id_cart, c.date_upd 
+$time = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
+
+if (is_numeric($time) && $time > 0) {
+    $time = intval($time);
+} else {
+    $time = 0;
+}
+
+$now = new DateTime();
+$sql = 'SELECT c.id_cart, c.date_upd 
                 FROM '._DB_PREFIX_.'cart AS c
                 WHERE id_customer != 0 
-                  AND TIME_TO_SEC(TIMEDIFF(now(), date_upd)) >= 86400 
-                  AND c.id_cart NOT IN(SELECT id_cart from '._DB_PREFIX_.'orders);'
-);
-
+                  AND TIME_TO_SEC(TIMEDIFF(\''.pSQL($now->format('Y-m-d H:i:s')).'\', date_upd)) >= '.$time.'
+                  AND c.id_cart NOT IN(SELECT id_cart from '._DB_PREFIX_.'orders);';
+$rows = Db::getInstance()->executeS($sql);
 $status = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
 $paymentTypes = array_keys(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true));
 

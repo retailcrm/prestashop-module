@@ -127,6 +127,7 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZE_CARTS') &&
             Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZED_CART_STATUS') &&
+            Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZED_CART_DELAY') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC');
     }
 
@@ -157,6 +158,7 @@ class RetailCRM extends Module
                 $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
                 $synchronizeCartsActive = (Tools::getValue('RETAILCRM_API_SYNCHRONIZE_CARTS_1'));
                 $synchronizedCartStatus = (string)(Tools::getValue('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
+                $synchronizedCartDelay = (string)(Tools::getValue('RETAILCRM_API_SYNCHRONIZED_CART_DELAY'));
 
                 $settings  = array(
                     'address' => $address,
@@ -184,6 +186,7 @@ class RetailCRM extends Module
                     Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_KEY', $collectorKey);
                     Configuration::updateValue('RETAILCRM_API_SYNCHRONIZE_CARTS', $synchronizeCartsActive);
                     Configuration::updateValue('RETAILCRM_API_SYNCHRONIZED_CART_STATUS', $synchronizedCartStatus);
+                    Configuration::updateValue('RETAILCRM_API_SYNCHRONIZED_CART_DELAY', $synchronizedCartDelay);
 
                     $output .= $this->displayConfirmation($this->l('Settings updated'));
                 }
@@ -706,39 +709,80 @@ class RetailCRM extends Module
             /*
              * Synchronize carts form
              */
-            if ($this->use_new_hooks) {
-                $fields_form[]['form'] = array(
-                    'legend' => array(
-                        'title' => $this->l('Synchronization of buyer carts'),
+            $fields_form[]['form'] = array(
+                'legend' => array(
+                    'title' => $this->l('Synchronization of buyer carts'),
+                ),
+                'input' => array(
+                    array(
+                        'type' => 'checkbox',
+                        'label' => $this->l('Create orders for abandoned carts of buyers'),
+                        'name' => 'RETAILCRM_API_SYNCHRONIZE_CARTS',
+                        'values'  => array(
+                            'query' => array(
+                                array(
+                                    'id_option' => 1,
+                                )
+                            ),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
                     ),
-                    'input' => array(
-                        array(
-                            'type' => 'checkbox',
-                            'label' => $this->l('Create orders for abandoned carts of buyers'),
-                            'name' => 'RETAILCRM_API_SYNCHRONIZE_CARTS',
-                            'values'  => array(
-                                'query' => array(
-                                    array(
-                                        'id_option' => 1,
-                                    )
+                    array(
+                        'type' => 'select',
+                        'name' => 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS',
+                        'label' => $this->l('Order status for abandoned carts of buyers'),
+                        'options' => array(
+                            'query' => $this->reference->getStatuseDefaultExport(),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
+                    ),
+                    array(
+                        'type' => 'select',
+                        'name' => 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY',
+                        'label' => $this->l('Upload abandoned carts'),
+                        'options' => array(
+                            'query' => array(
+                                array(
+                                    'id_option' => '0',
+                                    'name' => $this->l('Immediately')
                                 ),
-                                'id' => 'id_option',
-                                'name' => 'name'
-                            )
-                        ),
-                        array(
-                            'type' => 'select',
-                            'name' => 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS',
-                            'label' => $this->l('Order status for abandoned carts of buyers'),
-                            'options' => array(
-                                'query' => $this->reference->getStatuseDefaultExport(),
-                                'id' => 'id_option',
-                                'name' => 'name'
-                            )
+                                array(
+                                    'id_option' => '60',
+                                    'name' => $this->l('After 1 minute')
+                                ),
+                                array(
+                                    'id_option' => '300',
+                                    'name' => $this->l('After 5 minutes')
+                                ),
+                                array(
+                                    'id_option' => '600',
+                                    'name' => $this->l('After 10 minutes')
+                                ),
+                                array(
+                                    'id_option' => '900',
+                                    'name' => $this->l('After 15 minutes')
+                                ),
+                                array(
+                                    'id_option' => '1800',
+                                    'name' => $this->l('After 30 minutes')
+                                ),
+                                array(
+                                    'id_option' => '2700',
+                                    'name' => $this->l('After 45 minute')
+                                ),
+                                array(
+                                    'id_option' => '3600',
+                                    'name' => $this->l('After 1 hour')
+                                ),
+                            ),
+                            'id' => 'id_option',
+                            'name' => 'name'
                         )
                     )
-                );
-            }
+                )
+            );
 
             /*
              * Delivery
@@ -835,6 +879,7 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_ACTIVE');
         $helper->fields_value['RETAILCRM_API_SYNCHRONIZE_CARTS_1'] = Configuration::get('RETAILCRM_API_SYNCHRONIZE_CARTS');
         $helper->fields_value['RETAILCRM_API_SYNCHRONIZED_CART_STATUS'] = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
+        $helper->fields_value['RETAILCRM_API_SYNCHRONIZED_CART_DELAY'] = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
         $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_KEY'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY');
 
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
@@ -888,14 +933,21 @@ class RetailCRM extends Module
             }
         }
 
-        if ($this->use_new_hooks) {
-            $synchronizedCartsStatusDefault = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
-            if (isset($synchronizedCartsStatusDefault) && $synchronizedCartsStatusDefault != '') {
-                $synchronizedCartsStatus = json_decode($synchronizedCartsStatusDefault);
-                if ($synchronizedCartsStatus) {
-                    $name = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
-                    $helper->fields_value[$name] = $synchronizedCartsStatus;
-                }
+        $synchronizedCartsStatusDefault = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
+        if (isset($synchronizedCartsStatusDefault) && $synchronizedCartsStatusDefault != '') {
+            $synchronizedCartsStatus = json_decode($synchronizedCartsStatusDefault);
+            if ($synchronizedCartsStatus) {
+                $name = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
+                $helper->fields_value[$name] = $synchronizedCartsStatus;
+            }
+        }
+
+        $synchronizedCartsDelayDefault = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
+        if (isset($synchronizedCartsDelayDefault) && $synchronizedCartsDelayDefault != '') {
+            $synchronizedCartsDelay = json_decode($synchronizedCartsDelayDefault);
+            if ($synchronizedCartsDelay) {
+                $name = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
+                $helper->fields_value[$name] = $synchronizedCartsDelay;
             }
         }
 
@@ -1315,7 +1367,7 @@ class RetailCRM extends Module
 
     private function validateStatuses($statuses, $statusExport, $cartStatus)
     {
-        if ($cartStatus == $statusExport || (stripos($statuses, $cartStatus) !== false)) {
+        if ($cartStatus != '' && ($cartStatus == $statusExport || (stripos($statuses, $cartStatus) !== false))) {
             return false;
         }
 

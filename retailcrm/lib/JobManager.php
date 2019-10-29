@@ -37,6 +37,26 @@ class JobManager
      */
     static $lock;
 
+    /**
+     * Entry point for all jobs.
+     * Jobs must be passed in this format:
+     *  JobManager::startJobs(
+     *      array(
+     *          'jobName' => DateInterval::createFromDateString('1 hour')
+     *      ),
+     *      true
+     *  );
+     *
+     * File `jobName.php` must exist in retailcrm/job and must contain everything to run job.
+     * Throwed errors will be logged in <prestashop directory>/retailcrm.log
+     * DateInterval must be positive. Pass `null` instead of DateInterval to remove
+     * any delay - in other words, jobs without interval will be executed every time.
+     *
+     * @param array $jobs
+     * @param bool  $runOnceInContext
+     *
+     * @throws \Exception
+     */
     public static function startJobs($jobs = array(), $runOnceInContext = false)
     {
         $inBackground = static::canExecInBackground();
@@ -54,15 +74,13 @@ class JobManager
      *
      * @param array $jobs
      * @param bool  $runOnceInContext
+     *
+     * @throws \Exception
      */
     public static function execJobs($jobs = array(), $runOnceInContext = false)
     {
         $current = date_create('now');
-        $lastRun = date_create_from_format(DATE_RFC3339, (string) Configuration::get(self::LAST_RUN_NAME));
-
-        if ($lastRun === false) {
-            $lastRun = $current;
-        }
+        $lastRuns = static::getLastRuns();
 
         if (!static::lock()) {
             return;
@@ -70,23 +88,82 @@ class JobManager
 
         foreach ($jobs as $job => $diff) {
             try {
-                $shouldRunAt = clone $lastRun;
-                $shouldRunAt->add($diff);
+                if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTime) {
+                    $shouldRunAt = clone $lastRuns[$job];
+                } else {
+                    $shouldRunAt = new DateTime();
+                }
 
-                if ($shouldRunAt <= $current) {
+                if ($diff instanceof DateInterval) {
+                    $shouldRunAt->add($diff);
+                }
+
+                if (!isset($shouldRunAt) || $shouldRunAt <= $current) {
                     JobManager::runJob($job, $runOnceInContext);
-                    Configuration::updateValue(self::LAST_RUN_NAME, date_format($current, DATE_RFC3339));
+                    $lastRuns[$job] = new DateTime();
                 }
             } catch (\Exception $exception) {
                 static::handleError($exception->getFile(), $exception->getMessage());
             } catch (\Throwable $throwable) {
                 static::handleError($throwable->getFile(), $throwable->getMessage());
-            } catch (\Error $error) {
-                static::handleError($error->getFile(), $error->getMessage());
             }
         }
 
+        static::setLastRuns($lastRuns);
         static::unlock();
+    }
+
+    /**
+     * Extracts jobs last runs from db
+     *
+     * @return array
+     * @throws \Exception
+     */
+    private static function getLastRuns()
+    {
+        $lastRuns = json_decode((string) Configuration::get(self::LAST_RUN_NAME), true);
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            $lastRuns = [];
+        } else {
+            foreach ($lastRuns as $job => $ran) {
+                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $ran);
+
+                if ($lastRan instanceof DateTime) {
+                    $lastRuns[$job] = $lastRan;
+                } else {
+                    $lastRuns[$job] = new DateTime();
+                }
+            }
+        }
+
+        return (array) $lastRuns;
+    }
+
+    /**
+     * Updates jobs last runs in db
+     *
+     * @param array $lastRuns
+     *
+     * @throws \Exception
+     */
+    private static function setLastRuns($lastRuns = [])
+    {
+        $now = new DateTime();
+
+        if (!is_array($lastRuns)) {
+            $lastRuns = [];
+        }
+
+        foreach ($lastRuns as $job => $ran) {
+            if ($ran instanceof DateTime) {
+                $lastRuns[$job] = $ran->format(DATE_RFC3339);
+            } else {
+                $lastRuns[$job] = $now->format(DATE_RFC3339);
+            }
+        }
+
+        Configuration::updateValue(self::LAST_RUN_NAME, (string) json_encode($lastRuns));
     }
 
     /**
