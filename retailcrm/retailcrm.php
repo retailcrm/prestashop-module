@@ -31,6 +31,7 @@ class RetailCRM extends Module
     public $log;
     public $confirmUninstall;
     public $reference;
+    public $assetsBase;
 
     private $use_new_hooks = true;
 
@@ -38,7 +39,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '2.3.4';
+        $this->version = '2.4.0';
         $this->author = 'Retail Driver LCC';
         $this->displayName = $this->l('RetailCRM');
         $this->description = $this->l('Integration module for RetailCRM');
@@ -53,6 +54,12 @@ class RetailCRM extends Module
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = _PS_ROOT_DIR_ . '/retailcrm.log';
         $this->module_key = '149c765c6cddcf35e1f13ea6c71e9fa5';
+        $this->assetsBase =
+            Tools::getShopDomainSsl(true, true) .
+            __PS_BASE_URI__ .
+            'modules/' .
+            $this->name .
+            '/public';
 
         if ($this->psVersion == '1.6') {
             $this->bootstrap = true;
@@ -84,6 +91,8 @@ class RetailCRM extends Module
 
     public function hookHeader()
     {
+        $this->context->controller->addJS($this->assetsBase . '/js/exec-jobs.js');
+
         if (Configuration::get('RETAILCRM_DAEMON_COLLECTOR_ACTIVE')
             && Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY')
         ) {
@@ -116,6 +125,9 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_API_VERSION') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZE_CARTS') &&
+            Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZED_CART_STATUS') &&
+            Configuration::deleteByName('RETAILCRM_API_SYNCHRONIZED_CART_DELAY') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC');
     }
 
@@ -144,12 +156,18 @@ class RetailCRM extends Module
                 $collectorActive = (Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'));
                 $collectorKey = (string)(Tools::getValue('RETAILCRM_DAEMON_COLLECTOR_KEY'));
                 $clientId = Configuration::get('RETAILCRM_CLIENT_ID');
+                $synchronizeCartsActive = (Tools::getValue('RETAILCRM_API_SYNCHRONIZE_CARTS_1'));
+                $synchronizedCartStatus = (string)(Tools::getValue('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
+                $synchronizedCartDelay = (string)(Tools::getValue('RETAILCRM_API_SYNCHRONIZED_CART_DELAY'));
 
                 $settings  = array(
                     'address' => $address,
                     'token' => $token,
                     'version' => $version,
-                    'clientId' => $clientId
+                    'clientId' => $clientId,
+                    'status' => $status,
+                    'statusExport' => $statusExport,
+                    'synchronizeCartStatus' => $synchronizedCartStatus
                 );
 
                 $output .= $this->validateForm($settings, $output);
@@ -166,6 +184,9 @@ class RetailCRM extends Module
                     Configuration::updateValue('RETAILCRM_STATUS_EXPORT', $statusExport);
                     Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_ACTIVE', $collectorActive);
                     Configuration::updateValue('RETAILCRM_DAEMON_COLLECTOR_KEY', $collectorKey);
+                    Configuration::updateValue('RETAILCRM_API_SYNCHRONIZE_CARTS', $synchronizeCartsActive);
+                    Configuration::updateValue('RETAILCRM_API_SYNCHRONIZED_CART_STATUS', $synchronizedCartStatus);
+                    Configuration::updateValue('RETAILCRM_API_SYNCHRONIZED_CART_DELAY', $synchronizedCartDelay);
 
                     $output .= $this->displayConfirmation($this->l('Settings updated'));
                 }
@@ -189,14 +210,9 @@ class RetailCRM extends Module
             "<a target=\"_blank\" href=\"$address/admin/settings#t-main\">$address/admin/settings#t-main</a>"
         );
 
-        $assetsBase =
-            Tools::getShopDomainSsl(true, true) .
-            __PS_BASE_URI__ .
-            'modules/' .
-            $this->name .
-            '/public';
-        $this->context->controller->addCSS($assetsBase . '/css/retailcrm-upload.css');
-        $this->context->controller->addJS($assetsBase . '/js/retailcrm-upload.js');
+        $this->context->controller->addCSS($this->assetsBase . '/css/retailcrm-upload.css');
+        $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-upload.js');
+        $this->context->controller->addJS($this->assetsBase . '/js/exec-jobs.js');
         $this->display(__FILE__, 'retailcrm.tpl');
 
         return $output . $this->displaySettingsForm() . $this->displayUploadOrdersForm();
@@ -278,7 +294,45 @@ class RetailCRM extends Module
      */
     public static function verifyDate($date, $format = "Y-m-d")
     {
-        return (bool)date_create_from_format($format, $date);
+        return $date !== "0000-00-00" && (bool)date_create_from_format($format, $date);
+    }
+
+    /**
+     * Build array with order data for retailCRM from PrestaShop cart data
+     *
+     * @param Cart   $cart        Cart with data
+     * @param string $externalId  External ID for order
+     * @param string $paymentType Payment type (buildCrmOrder requires it)
+     * @param string $status      Status for order
+     *
+     * @return array
+     */
+    public static function buildCrmOrderFromCart(Cart $cart = null, $externalId = '', $paymentType = '', $status = '')
+    {
+        if (empty($cart) || empty($paymentType) || empty($status)) {
+            return array();
+        }
+
+        $order = new Order();
+        $order->id_cart = $cart->id;
+        $order->id_customer = $cart->id_customer;
+        $order->total_discounts = 0;
+        $order->module = $paymentType;
+        $order->payment = $paymentType;
+        $orderData = static::buildCrmOrder(
+            $order,
+            new Customer($cart->id_customer),
+            $cart,
+            false,
+            true,
+            true
+        );
+        $orderData['externalId'] = $externalId;
+        $orderData['status'] = $status;
+
+        unset($orderData['payments']);
+
+        return $orderData;
     }
 
     /**
@@ -289,6 +343,7 @@ class RetailCRM extends Module
      * @param Cart     $orderCart             Cart for provided order. Optional
      * @param bool     $isStatusExport        Use status for export
      * @param bool     $preferCustomerAddress Use customer address even if delivery address is provided
+     * @param bool     $dataFromCart          Prefer data from cart
      *
      * @return array   retailCRM order data
      */
@@ -297,7 +352,8 @@ class RetailCRM extends Module
         Customer $customer = null,
         Cart $orderCart = null,
         $isStatusExport = false,
-        $preferCustomerAddress = false
+        $preferCustomerAddress = false,
+        $dataFromCart = false
     ) {
         $apiVersion = Configuration::get('RETAILCRM_API_VERSION');
         $statusExport = Configuration::get('RETAILCRM_STATUS_EXPORT');
@@ -357,6 +413,10 @@ class RetailCRM extends Module
                     return $v->id_customer == $customer->id;
                 }
             );
+
+            if (is_array($address) && count($address) == 1) {
+                $address = reset($address);
+            }
         }
 
         $address = static::addressParse($address);
@@ -388,16 +448,34 @@ class RetailCRM extends Module
             $crmOrder['payments'] = array();
         }
 
-        if (array_key_exists($order->id_carrier, $delivery) && !empty($delivery[$order->id_carrier])) {
-            $crmOrder['delivery']['code'] = $delivery[$order->id_carrier];
+        $idCarrier = $dataFromCart ? $cart->id_carrier : $order->id_carrier;
+
+        if (empty($idCarrier)) {
+            $idCarrier = $order->id_carrier;
+            $totalShipping = $order->total_shipping;
+            $totalShippingWithoutTax = $order->total_shipping_tax_excl;
+        } else {
+            $totalShipping = $dataFromCart ? $cart->getCarrierCost($idCarrier) : $order->total_shipping;
+
+            if (!empty($totalShipping) && $totalShipping != 0) {
+                $totalShippingWithoutTax = $dataFromCart
+                    ? $totalShipping - $cart->getCarrierCost($idCarrier, false)
+                    : $order->total_shipping_tax_excl;
+            } else {
+                $totalShippingWithoutTax = $order->total_shipping_tax_excl;
+            }
         }
 
-        if (isset($order->total_shipping) && ((int) $order->total_shipping) > 0) {
-            $crmOrder['delivery']['cost'] = round($order->total_shipping, 2);
+        if (array_key_exists($idCarrier, $delivery) && !empty($delivery[$idCarrier])) {
+            $crmOrder['delivery']['code'] = $delivery[$idCarrier];
         }
 
-        if (isset($order->total_shipping_tax_excl) && $order->total_shipping_tax_excl > 0) {
-            $crmOrder['delivery']['netCost'] = round($order->total_shipping_tax_excl, 2);
+        if (isset($totalShipping) && ((int) $totalShipping) > 0) {
+            $crmOrder['delivery']['cost'] = round($totalShipping, 2);
+        }
+
+        if (isset($totalShippingWithoutTax) && $totalShippingWithoutTax > 0) {
+            $crmOrder['delivery']['netCost'] = round($totalShippingWithoutTax, 2);
         }
 
         $comment = $order->getFirstMessage();
@@ -406,7 +484,30 @@ class RetailCRM extends Module
             $crmOrder['customerComment'] = $comment;
         }
 
-        foreach ($order->getProducts() as $product) {
+        if ($dataFromCart) {
+            $productStore = $cart;
+            $converter = function ($product) {
+                $product['product_attribute_id'] = $product['id_product_attribute'];
+                $product['product_quantity'] = $product['cart_quantity'];
+                $product['product_id'] = $product['id_product'];
+                $product['id_order_detail'] = $product['id_product'];
+                $product['product_name'] = $product['name'];
+                $product['product_price'] = $product['price'];
+                $product['purchase_supplier_price'] = $product['price'];
+                $product['product_price_wt'] = $product['price_wt'];
+
+                return $product;
+            };
+        } else {
+            $productStore = $order;
+            $converter = function ($product) {
+                return $product;
+            };
+        }
+
+        foreach ($productStore->getProducts() as $productData) {
+            $product = $converter($productData);
+
             if (isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
                 $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
             } else {
@@ -606,6 +707,84 @@ class RetailCRM extends Module
 
         if ($this->api) {
             /*
+             * Synchronize carts form
+             */
+            $fields_form[]['form'] = array(
+                'legend' => array(
+                    'title' => $this->l('Synchronization of buyer carts'),
+                ),
+                'input' => array(
+                    array(
+                        'type' => 'checkbox',
+                        'label' => $this->l('Create orders for abandoned carts of buyers'),
+                        'name' => 'RETAILCRM_API_SYNCHRONIZE_CARTS',
+                        'values'  => array(
+                            'query' => array(
+                                array(
+                                    'id_option' => 1,
+                                )
+                            ),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
+                    ),
+                    array(
+                        'type' => 'select',
+                        'name' => 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS',
+                        'label' => $this->l('Order status for abandoned carts of buyers'),
+                        'options' => array(
+                            'query' => $this->reference->getStatuseDefaultExport(),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
+                    ),
+                    array(
+                        'type' => 'select',
+                        'name' => 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY',
+                        'label' => $this->l('Upload abandoned carts'),
+                        'options' => array(
+                            'query' => array(
+                                array(
+                                    'id_option' => '0',
+                                    'name' => $this->l('Immediately')
+                                ),
+                                array(
+                                    'id_option' => '60',
+                                    'name' => $this->l('After 1 minute')
+                                ),
+                                array(
+                                    'id_option' => '300',
+                                    'name' => $this->l('After 5 minutes')
+                                ),
+                                array(
+                                    'id_option' => '600',
+                                    'name' => $this->l('After 10 minutes')
+                                ),
+                                array(
+                                    'id_option' => '900',
+                                    'name' => $this->l('After 15 minutes')
+                                ),
+                                array(
+                                    'id_option' => '1800',
+                                    'name' => $this->l('After 30 minutes')
+                                ),
+                                array(
+                                    'id_option' => '2700',
+                                    'name' => $this->l('After 45 minute')
+                                ),
+                                array(
+                                    'id_option' => '3600',
+                                    'name' => $this->l('After 1 hour')
+                                ),
+                            ),
+                            'id' => 'id_option',
+                            'name' => 'name'
+                        )
+                    )
+                )
+            );
+
+            /*
              * Delivery
              */
             $fields_form[]['form'] = array(
@@ -698,6 +877,9 @@ class RetailCRM extends Module
         $helper->fields_value['RETAILCRM_API_VERSION'] = Configuration::get('RETAILCRM_API_VERSION');
         $helper->fields_value['RETAILCRM_STATUS_EXPORT'] = Configuration::get('RETAILCRM_STATUS_EXPORT');
         $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_ACTIVE_1'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_ACTIVE');
+        $helper->fields_value['RETAILCRM_API_SYNCHRONIZE_CARTS_1'] = Configuration::get('RETAILCRM_API_SYNCHRONIZE_CARTS');
+        $helper->fields_value['RETAILCRM_API_SYNCHRONIZED_CART_STATUS'] = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
+        $helper->fields_value['RETAILCRM_API_SYNCHRONIZED_CART_DELAY'] = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
         $helper->fields_value['RETAILCRM_DAEMON_COLLECTOR_KEY'] = Configuration::get('RETAILCRM_DAEMON_COLLECTOR_KEY');
 
         $deliverySettings = Configuration::get('RETAILCRM_API_DELIVERY');
@@ -748,6 +930,24 @@ class RetailCRM extends Module
             if ($deliveryTypesDefault) {
                 $name = 'RETAILCRM_API_DELIVERY_DEFAULT';
                 $helper->fields_value[$name] = $deliveryTypesDefault;
+            }
+        }
+
+        $synchronizedCartsStatusDefault = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
+        if (isset($synchronizedCartsStatusDefault) && $synchronizedCartsStatusDefault != '') {
+            $synchronizedCartsStatus = json_decode($synchronizedCartsStatusDefault);
+            if ($synchronizedCartsStatus) {
+                $name = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
+                $helper->fields_value[$name] = $synchronizedCartsStatus;
+            }
+        }
+
+        $synchronizedCartsDelayDefault = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
+        if (isset($synchronizedCartsDelayDefault) && $synchronizedCartsDelayDefault != '') {
+            $synchronizedCartsDelay = json_decode($synchronizedCartsDelayDefault);
+            if ($synchronizedCartsDelay) {
+                $name = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
+                $helper->fields_value[$name] = $synchronizedCartsDelay;
             }
         }
 
@@ -1036,9 +1236,15 @@ class RetailCRM extends Module
 
         if (isset($params['orderStatus'])) {
             $cart = $params['cart'];
-            $order = static::buildCrmOrder($params['order'], $params['customer'], $params['cart'], false);
+            $response = $this->api->ordersGet(self::getCartOrderExternalId($cart));
+            $order = static::buildCrmOrder($params['order'], $params['customer'], $cart, false);
 
-            $this->api->ordersCreate($order);
+            if (!empty($response) && isset($response['order'])) {
+                $order['id'] = $response['order']['id'];
+                $this->api->ordersEdit($order, 'id');
+            } else {
+                $this->api->ordersCreate($order);
+            }
 
             return true;
 
@@ -1159,6 +1365,15 @@ class RetailCRM extends Module
         return false;
     }
 
+    private function validateStatuses($statuses, $statusExport, $cartStatus)
+    {
+        if ($cartStatus != '' && ($cartStatus == $statusExport || (stripos($statuses, $cartStatus) !== false))) {
+            return false;
+        }
+
+        return true;
+    }
+
     private function validateForm($settings, $output)
     {
         if (!$this->validateCrmAddress($settings['address']) || !Validate::isGenericName($settings['address'])) {
@@ -1167,9 +1382,27 @@ class RetailCRM extends Module
             $output .= $this->displayError($this->l('Invalid or empty crm api token'));
         } elseif (!$this->validateApiVersion($settings)) {
             $output .= $this->displayError($this->l('The selected version of the API is unavailable'));
+        } elseif (!$this->validateStatuses(
+            $settings['status'],
+            $settings['statusExport'],
+            $settings['synchronizeCartStatus'])
+        ) {
+            $output .= $this->displayError($this->l('Order status for abandoned carts should not be used in other settings'));
         }
 
         return $output;
+    }
+
+    /**
+     * Returns externalId for order
+     *
+     * @param Cart $cart
+     *
+     * @return string
+     */
+    public static function getCartOrderExternalId(Cart $cart)
+    {
+        return sprintf('pscart_%d', $cart->id);
     }
 
     /**

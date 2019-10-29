@@ -173,6 +173,7 @@ class RetailcrmHistory
             $sinceId = $end['id'];
 
             $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
+            $cartStatus = (string)(Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
             $deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
             $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
             $deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
@@ -189,6 +190,10 @@ class RetailcrmHistory
 
                     if ($responce) {
                         $order = $responce['order'];
+
+                        if ($order['status'] == $cartStatus) {
+                            continue;
+                        }
                     } else {
                         continue;
                     }
