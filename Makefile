@@ -26,7 +26,7 @@ else
 endif
 
 clone_prestashop:
-	@cd $(ROOT_DIR)/.. && git clone https://github.com/PrestaShop/PrestaShop
+	@cd $(ROOT_DIR)/../ && git clone https://github.com/PrestaShop/PrestaShop
 
 setup_apache: composer
 	@bash $(PRESTASHOP_DIR)/travis-scripts/setup-php-fpm.sh
