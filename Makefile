@@ -46,9 +46,9 @@ ifeq ($(COMPOSER_IN_TESTS),1)
     else
 		@cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
     endif
-	@bash $(PRESTASHOP_DIR)/travis-scripts/install-prestashop
-else
 	@bash $(PRESTASHOP_DIR)/travis-scripts/install-prestashop.sh
+else
+	@bash $(PRESTASHOP_DIR)/travis-scripts/install-prestashop
 endif
 
 test:
