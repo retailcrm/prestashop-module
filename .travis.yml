@@ -22,13 +22,9 @@ matrix:
   - php: 7.1
     env: BRANCH=1.6.1.x
 
-before_script:
-  - bash tests/bin/clone_prestashop.sh
-  - bash tests/bin/setup-apache.sh
-  - bash tests/bin/before_script.sh
+before_script: make before_script
 
-script:
-  - bash tests/bin/script.sh
+script: make test
 
 #deploy:
 #  skip_cleanup: true
