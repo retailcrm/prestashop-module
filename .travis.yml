@@ -69,7 +69,7 @@ jobs:
 
 before_script: make before_script
 
-script: make test
+script: phpunit
 
 #deploy:
 #  skip_cleanup: true
