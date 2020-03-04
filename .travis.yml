@@ -13,11 +13,54 @@ dist: trusty
 jobs:
   include:
     - php: 5.6
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
       env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
     - php: 7.0
       env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
     - php: 7.1
       env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+
     - php: 7.1
       env: BRANCH=1.7.5.x
     - php: 7.2

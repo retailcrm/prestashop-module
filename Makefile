@@ -27,35 +27,35 @@ else
 endif
 
 clone_prestashop:
-	@cd $(ROOT_DIR)/../ && git clone https://github.com/PrestaShop/PrestaShop
+	cd $(ROOT_DIR)/../ && git clone https://github.com/PrestaShop/PrestaShop
 
 setup_apache: composer
-	@bash $(PRESTASHOP_DIR)/travis-scripts/setup-php-fpm.sh
-	@echo "* Preparing Apache ..."
-	@sudo a2enmod rewrite actions fastcgi alias
+	bash $(PRESTASHOP_DIR)/travis-scripts/setup-php-fpm.sh
+	echo "* Preparing Apache ..."
+	sudo a2enmod rewrite actions fastcgi alias
     # Use default config
-	@sudo cp -f $(PRESTASHOP_DIR)/tests/travis-ci-apache-vhost /etc/apache2/sites-available/000-default.conf
-	@sudo sed -e "s?%PRESTASHOP_DIR%?$(pwd)?g" --in-place /etc/apache2/sites-available/000-default.conf
-	@sudo chmod 777 -R $(HOME)
+	sudo cp -f $(PRESTASHOP_DIR)/tests/travis-ci-apache-vhost /etc/apache2/sites-available/000-default.conf
+	sudo sed -e "s?%PRESTASHOP_DIR%?$(pwd)?g" --in-place /etc/apache2/sites-available/000-default.conf
+	sudo chmod 777 -R $(HOME)
     # Starting Apache
-	@sudo service apache2 restart
+	sudo service apache2 restart
 
 before_script: setup_apache
 ifneq ($(COMPOSER_IN_TESTS),1)
     ifeq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
-		@cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
+		cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
     else
-		@cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
+		cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
     endif
-	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop
+	cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop
 else
-	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
+	cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
 endif
 
 test:
 ifeq ($(COMPOSER_IN_TESTS),1)
-	@phpunit
+	phpunit
 else
-	@cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
-	@cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
+	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
+	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
 endif
