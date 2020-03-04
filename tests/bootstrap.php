@@ -1,0 +1,18 @@
+<?php
+
+if (is_dir(__DIR__ . '/../../PrestaShop/tests-legacy')) {
+    require_once __DIR__ . '/../../PrestaShop/tests-legacy/bootstrap.php';
+} else {
+    require_once __DIR__ . '/../../PrestaShop/tests/bootstrap.php';
+}
+
+require_once dirname(__DIR__) . '../../PrestaShop/config/config.inc.php';
+require_once dirname(__DIR__) . '../../PrestaShop/config/defines_uri.inc.php';
+require_once dirname(__DIR__) . '../retailcrm/bootstrap.php';
+require_once __DIR__ . '/../retailcrm/retailcrm.php';
+require_once dirname(__DIR__) . '../../PrestaShop/init.php';
+require_once __DIR__ . '/helpers/RetailcrmTestCase.php';
+require_once __DIR__ . '/helpers/RetailcrmTestHelper.php';
+
+$module = new RetailCRM();
+$module->install();
