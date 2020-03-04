@@ -29,7 +29,7 @@ endif
 clone_prestashop:
 	cd $(ROOT_DIR)/../ && git clone https://github.com/PrestaShop/PrestaShop
 
-setup_apache: composer
+setup_apache:
 	bash $(PRESTASHOP_DIR)/travis-scripts/setup-php-fpm.sh
 	echo "* Preparing Apache ..."
 	sudo a2enmod rewrite actions fastcgi alias
@@ -40,7 +40,7 @@ setup_apache: composer
     # Starting Apache
 	sudo service apache2 restart
 
-before_script: setup_apache
+before_script: composer
 ifneq ($(COMPOSER_IN_TESTS),1)
     ifeq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
 		cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
