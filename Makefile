@@ -54,7 +54,7 @@ endif
 
 test:
 ifeq ($(COMPOSER_IN_TESTS),1)
-	phpunit
+	phpunit -c phpunit.xml.dist
 else
 	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
 	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
