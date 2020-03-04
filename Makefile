@@ -20,9 +20,10 @@ delete_archive:
 
 composer: clone_prestashop
 ifeq ($(COMPOSER_IN_TESTS),1)
-	@cd $(ROOT_DIR)/../PrestaShop/tests && composer install
+	@cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
+	@cd $(PRESTASHOP_DIR)/tests && composer install
 else
-	@cd $(ROOT_DIR)/../PrestaShop && composer install --prefer-dist --no-interaction --no-progress
+	@cd $(PRESTASHOP_DIR) && composer install --prefer-dist --no-interaction --no-progress
 endif
 
 clone_prestashop:
