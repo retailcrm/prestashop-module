@@ -65,6 +65,7 @@ jobs:
       env: BRANCH=1.7.5.x
     - php: 7.2
       env: BRANCH=1.7.5.x
+      after_success: bash <(curl -s https://codecov.io/bash)
 
 before_script: make before_script
 

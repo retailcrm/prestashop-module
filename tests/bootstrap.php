@@ -1,6 +1,6 @@
 <?php
 
-if (is_dir(__DIR__ . '/../../PrestaShop/tests-legacy')) {
+if (file_exists(__DIR__ . '/../../PrestaShop/tests-legacy')) {
     require_once __DIR__ . '/../../PrestaShop/tests-legacy/bootstrap.php';
 } else {
     require_once __DIR__ . '/../../PrestaShop/tests/bootstrap.php';
