@@ -18,7 +18,7 @@ delete_archive:
 	rm -f $(ARCHIVE_NAME)
 	rm -f /tmp/retailcrm.zip
 
-composer:
+composer: clone_prestashop
 	@cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
 ifeq ($(COMPOSER_IN_TESTS),1)
 	@cd $(PRESTASHOP_DIR)/tests && composer install
@@ -56,6 +56,6 @@ test:
 ifeq ($(COMPOSER_IN_TESTS),1)
 	phpunit
 else
-#	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
+	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
 	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
 endif
