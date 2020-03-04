@@ -1,3 +1,5 @@
+os: linux
+
 language: php
 
 addons:
@@ -6,21 +8,20 @@ addons:
       - apache2
       - libapache2-mod-fastcgi
 
-sudo: required
 dist: trusty
 
-php:
-  - 7.1
-  - 7.2
-
-matrix:
+jobs:
   include:
-  - php: 5.6
-    env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
-  - php: 7.0
-    env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
-  - php: 7.1
-    env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 5.6
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.7.5.x
+    - php: 7.2
+      env: BRANCH=1.7.5.x
 
 before_script: make before_script
 
