@@ -19,8 +19,8 @@ delete_archive:
 	rm -f /tmp/retailcrm.zip
 
 composer: clone_prestashop
-ifeq ($(COMPOSER_IN_TESTS),1)
 	@cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
+ifeq ($(COMPOSER_IN_TESTS),1)
 	@cd $(PRESTASHOP_DIR)/tests && composer install
 else
 	@cd $(PRESTASHOP_DIR) && composer install --prefer-dist --no-interaction --no-progress
