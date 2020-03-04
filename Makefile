@@ -41,15 +41,15 @@ setup_apache: composer
 	@sudo service apache2 restart
 
 before_script: setup_apache
-ifeq ($(COMPOSER_IN_TESTS),1)
+ifneq ($(COMPOSER_IN_TESTS),1)
     ifneq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
 		@cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
     else
 		@cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
     endif
-	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
-else
 	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop
+else
+	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
 endif
 
 test:
