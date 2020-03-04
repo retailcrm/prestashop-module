@@ -46,9 +46,9 @@ ifeq ($(COMPOSER_IN_TESTS),1)
     else
 		@cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
     endif
-	@bash $(PRESTASHOP_DIR)/travis-scripts/install-prestashop.sh
+	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
 else
-	@bash $(PRESTASHOP_DIR)/travis-scripts/install-prestashop
+	@cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop
 endif
 
 test:
@@ -56,5 +56,5 @@ ifeq ($(COMPOSER_IN_TESTS),1)
 	@phpunit
 else
 	@cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
-	@php $(PRESTASHOP_DIR)/vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
+	@cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
 endif
