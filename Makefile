@@ -42,7 +42,7 @@ setup_apache: composer
 
 before_script: setup_apache
 ifneq ($(COMPOSER_IN_TESTS),1)
-    ifneq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
+    ifeq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
 		@cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
     else
 		@cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
