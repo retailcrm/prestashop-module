@@ -68,6 +68,31 @@ jobs:
       env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
 
     - php: 7.1
+      env: BRANCH=1.7.0.0
+    - php: 7.2
+      env: BRANCH=1.7.0.0
+
+    - php: 7.1
+      env: BRANCH=1.7.1.0
+    - php: 7.2
+      env: BRANCH=1.7.1.0
+
+    - php: 7.1
+      env: BRANCH=1.7.2.0
+    - php: 7.2
+      env: BRANCH=1.7.2.0
+
+    - php: 7.1
+      env: BRANCH=1.7.3.0
+    - php: 7.2
+      env: BRANCH=1.7.3.0
+
+    - php: 7.1
+      env: BRANCH=1.7.4.0
+    - php: 7.2
+      env: BRANCH=1.7.4.0
+
+    - php: 7.1
       env: BRANCH=1.7.5.x
     - php: 7.2
       env: BRANCH=1.7.5.x
