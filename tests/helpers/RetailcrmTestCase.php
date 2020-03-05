@@ -1,5 +1,9 @@
 <?php
 
+if (class_exists('LegacyTests\Unit\ContextMocker')) {
+    class_alias('LegacyTests\Unit\ContextMocker', 'Tests\Unit\ContextMocker');
+}
+
 abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
 {
     protected $contextMock;
@@ -9,7 +13,7 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
         parent::setUp();
 
         if (version_compare(_PS_VERSION_, '1.7', '>')) {
-            $contextMocker = new \LegacyTests\Unit\ContextMocker();
+            $contextMocker = new \Tests\Unit\ContextMocker();
             $this->contextMock = $contextMocker->mockContext();
         }
     }

@@ -1,4 +1,9 @@
+os: linux
+dist: trusty
+
 language: php
+
+if: tag IS blank
 
 addons:
   apt:
@@ -6,35 +11,96 @@ addons:
       - apache2
       - libapache2-mod-fastcgi
 
-sudo: required
-dist: trusty
+before_install:
+  - export LAST_TAG=`git describe --abbrev=0 --tags`
+  - export CURRENT_VERSION=v`cat VERSION`
 
-php:
-  - 7.1
-  - 7.2
+before_script: make before_script
 
-matrix:
+script: make test
+
+stages:
+  - test
+  - deploy
+
+jobs:
   include:
-  - php: 5.6
-    env: BRANCH=1.6.1.x
-  - php: 7.0
-    env: BRANCH=1.6.1.x
-  - php: 7.1
-    env: BRANCH=1.6.1.x
+    - php: 5.6
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.18 COMPOSER_IN_TESTS=1
 
-before_script:
-  - bash tests/bin/clone_prestashop.sh
-  - bash tests/bin/setup-apache.sh
-  - bash tests/bin/before_script.sh
+    - php: 5.6
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.19 COMPOSER_IN_TESTS=1
 
-script:
-  - bash tests/bin/script.sh
+    - php: 5.6
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.20 COMPOSER_IN_TESTS=1
 
-#deploy:
-#  skip_cleanup: true
-#  provider: script
-#  script: make
-#  on:
-#    php: 7.2
-#    branch: master
-#    condition: "$DEPLOY = true"
+    - php: 5.6
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.21 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.22 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.23 COMPOSER_IN_TESTS=1
+
+    - php: 5.6
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 7.0
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+    - php: 7.1
+      env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
+
+    - php: 7.1
+      env: BRANCH=1.7.4.0
+    - php: 7.2
+      env: BRANCH=1.7.4.0
+
+    - php: 7.1
+      env: BRANCH=1.7.5.x
+    - php: 7.2
+      env: BRANCH=1.7.5.x
+      after_success: bash <(curl -s https://codecov.io/bash)
+
+    - stage: deploy
+      before_script: skip
+      script: make build_archive
+      before_deploy:
+        - export VERSION=`cat VERSION`
+        - export ARCHIVE_NAME=/tmp/retailcrm-$VERSION.zip
+        - git config --local user.name "retailCRM"
+        - git config --local user.email "support@retailcrm.ru"
+        - export TRAVIS_TAG=v$VERSION
+        - git tag $TRAVIS_TAG
+      deploy:
+        provider: releases
+        token: $GITHUB_OAUTH_TOKEN
+        cleanup: false
+        file: $ARCHIVE_NAME
+        on:
+          condition: "$LAST_TAG != $CURRENT_VERSION"
+      if: branch = master AND type = push AND fork = false
+      after_deploy: make delete_archive

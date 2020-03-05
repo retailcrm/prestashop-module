@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
-        bootstrap="tests/phpunit/bootstrap.php"
+        bootstrap="tests/bootstrap.php"
         backupGlobals="false"
         colors="true"
         convertErrorsToExceptions="true"
@@ -12,16 +12,16 @@
         syntaxCheck="true"
 >
     <testsuites>
-        <testsuite name="Retailcrm PrestaShop Test Suite">
-            <directory>tests/phpunit</directory>
+        <testsuite name="PrestaShop retailCRM Test Suite">
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/helpers</exclude>
         </testsuite>
     </testsuites>
     <filter>
-        <whitelist addUncoveredFilesFromWhitelist="true">
+        <whitelist>
             <directory suffix=".php">retailcrm</directory>
             <exclude>
                 <directory suffix=".php">retailcrm/translations</directory>
-                <directory suffix=".php">retailcrm/job</directory>
                 <file>bootstrap.php</file>
                 <file>index.php</file>
                 <file>logo.gif</file>
@@ -30,4 +30,7 @@
             </exclude>
         </whitelist>
     </filter>
+    <logging>
+        <log type="coverage-clover" target="coverage.xml"/>
+    </logging>
 </phpunit>
