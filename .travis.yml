@@ -3,11 +3,17 @@ dist: trusty
 
 language: php
 
+if: tag IS blank
+
 addons:
   apt:
     packages:
       - apache2
       - libapache2-mod-fastcgi
+
+before_install:
+  - export LAST_TAG=`git describe --abbrev=0 --tags`
+  - export CURRENT_VERSION=v`cat VERSION`
 
 before_script: make before_script
 
@@ -15,6 +21,7 @@ script: make test
 
 stages:
   - test
+  - deploy
 
 jobs:
   include:
@@ -68,11 +75,6 @@ jobs:
       env: BRANCH=1.6.1.24 COMPOSER_IN_TESTS=1
 
     - php: 7.1
-      env: BRANCH=1.7.3.0
-    - php: 7.2
-      env: BRANCH=1.7.3.0
-
-    - php: 7.1
       env: BRANCH=1.7.4.0
     - php: 7.2
       env: BRANCH=1.7.4.0
@@ -83,11 +85,22 @@ jobs:
       env: BRANCH=1.7.5.x
       after_success: bash <(curl -s https://codecov.io/bash)
 
-#deploy:
-#  skip_cleanup: true
-#  provider: script
-#  script: make
-#  on:
-#    php: 7.2
-#    branch: master
-#    condition: "$DEPLOY = true"
+    - stage: deploy
+      before_script: skip
+      script: make build_archive
+      before_deploy:
+        - export VERSION=`cat VERSION`
+        - export ARCHIVE_NAME=/tmp/retailcrm-$VERSION.zip
+        - git config --local user.name "retailCRM"
+        - git config --local user.email "support@retailcrm.ru"
+        - export TRAVIS_TAG=v$VERSION
+        - git tag $TRAVIS_TAG
+      deploy:
+        provider: releases
+        token: $GITHUB_OAUTH_TOKEN
+        cleanup: false
+        file: $ARCHIVE_NAME
+        on:
+          condition: "$LAST_TAG != $CURRENT_VERSION"
+      if: branch = master AND type = push AND fork = false
+      after_deploy: make delete_archive
