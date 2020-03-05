@@ -1,5 +1,40 @@
 <?php
-
+/**
+ * MIT License
+ *
+ * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
 class RetailcrmReferences
 {
     public $default_lang;
@@ -33,6 +68,7 @@ class RetailcrmReferences
                     'type' => 'select',
                     'label' => $carrier['name'],
                     'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
+                    'subname' => $carrier['id_carrier'],
                     'required' => false,
                     'options' => array(
                         'query' => $apiDeliveryTypes,
@@ -60,6 +96,7 @@ class RetailcrmReferences
                         'type' => 'select',
                         'label' => $state['name'],
                         'name' => "RETAILCRM_API_STATUS[$key]",
+                        'subname' => $key,
                         'required' => false,
                         'options' => array(
                             'query' => $apiStatuses,
@@ -86,6 +123,7 @@ class RetailcrmReferences
                     'type' => 'select',
                     'label' => $payment['name'],
                     'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
+                    'subname' => $payment['code'],
                     'required' => false,
                     'options' => array(
                         'query' => $apiPaymentTypes,
@@ -165,27 +203,31 @@ class RetailcrmReferences
 
     public function getSystemPaymentModules($active = true)
     {
-        $shop_id = Context::getContext()->shop->id;
+        $shop_id = (int) Context::getContext()->shop->id;
 
-        /* Get all modules then select only payment ones */
-        $modules = Module::getModulesOnDisk(true);
+        /**
+         * Get all modules then select only payment ones
+         */
+        $modules = RetailCRM::getCachedCmsModulesList();
 
         foreach ($modules as $module) {
-            if ($module->tab == 'payments_gateways') {
+            if (!empty($module->parent_class) && $module->parent_class == 'PaymentModule') {
                 if ($module->id) {
+                    $module_id = (int) $module->id;
+
                     if (!get_class($module) == 'SimpleXMLElement')
                         $module->country = array();
-                    $countries = DB::getInstance()->executeS('SELECT id_country FROM ' . _DB_PREFIX_ . 'module_country WHERE id_module = ' . (int) $module->id . ' AND `id_shop`=' . (int) $shop_id);
+                    $countries = DB::getInstance()->executeS('SELECT id_country FROM ' . _DB_PREFIX_ . 'module_country WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
                     foreach ($countries as $country)
                         $module->country[] = $country['id_country'];
                     if (!get_class($module) == 'SimpleXMLElement')
                         $module->currency = array();
-                    $currencies = DB::getInstance()->executeS('SELECT id_currency FROM ' . _DB_PREFIX_ . 'module_currency WHERE id_module = ' . (int) $module->id . ' AND `id_shop`=' . (int) $shop_id);
+                    $currencies = DB::getInstance()->executeS('SELECT id_currency FROM ' . _DB_PREFIX_ . 'module_currency WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
                     foreach ($currencies as $currency)
                         $module->currency[] = $currency['id_currency'];
                     if (!get_class($module) == 'SimpleXMLElement')
                         $module->group = array();
-                    $groups = DB::getInstance()->executeS('SELECT id_group FROM ' . _DB_PREFIX_ . 'module_group WHERE id_module = ' . (int) $module->id . ' AND `id_shop`=' . (int) $shop_id);
+                    $groups = DB::getInstance()->executeS('SELECT id_group FROM ' . _DB_PREFIX_ . 'module_group WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
                     foreach ($groups as $group)
                         $module->group[] = $group['id_group'];
                 } else {

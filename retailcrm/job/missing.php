@@ -1,11 +1,39 @@
 <?php
 /**
- * @author Retail Driver LCC
- * @copyright RetailCRM
- * @license GPL
- * @version 2.2.0
- * @link https://retailcrm.ru
+ * MIT License
  *
+ * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
  */
 
 $_SERVER['HTTPS'] = 1;
@@ -22,20 +50,19 @@ require(dirname(__FILE__) . '/../../../config/config.inc.php');
 require(dirname(__FILE__) . '/../../../init.php');
 require(dirname(__FILE__) . '/../bootstrap.php');
 
-$apiUrl = Configuration::get('RETAILCRM_ADDRESS');
-$apiKey = Configuration::get('RETAILCRM_API_TOKEN');
-$apiVersion = Configuration::get('RETAILCRM_API_VERSION');
+$apiUrl = Configuration::get(RetailCRM::API_URL);
+$apiKey = Configuration::get(RetailCRM::API_KEY);
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
 } else {
     echo('Set api key & url first');
     exit();
 }
 
-$delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
-$payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
-$status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
+$delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
+$payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
+$status = json_decode(Configuration::get(RetailCRM::STATUS), true);
 
 $orderInstance = new Order($options['o']);
 

@@ -1,92 +1,66 @@
 <?php
 /**
- * @author Retail Driver LCC
- * @copyright RetailCRM
- * @license GPL
- * @version 2.2.9
- * @link https://retailcrm.ru
+ * MIT License
  *
+ * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
  */
+
 $_SERVER['HTTPS'] = 1;
 
 require_once(dirname(__FILE__) . '/../../../config/config.inc.php');
 require_once(dirname(__FILE__) . '/../../../init.php');
 require_once(dirname(__FILE__) . '/../bootstrap.php');
 
-if (empty(Configuration::get('RETAILCRM_API_SYNCHRONIZE_CARTS'))) {
+$syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
+if (empty($syncCartsActive)) {
     return;
 }
 
-$apiUrl = Configuration::get('RETAILCRM_ADDRESS');
-$apiKey = Configuration::get('RETAILCRM_API_TOKEN');
-$apiVersion = Configuration::get('RETAILCRM_API_VERSION');
+$apiUrl = Configuration::get(RetailCRM::API_URL);
+$apiKey = Configuration::get(RetailCRM::API_KEY);
 $api = null;
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
 } else {
-    error_log('abandonedCarts: set api key & url first', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+    RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
     return;
 }
 
-$time = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_DELAY');
-
-if (is_numeric($time) && $time > 0) {
-    $time = intval($time);
-} else {
-    $time = 0;
-}
-
-$now = new DateTime();
-$sql = 'SELECT c.id_cart, c.date_upd 
-                FROM '._DB_PREFIX_.'cart AS c
-                WHERE id_customer != 0 
-                  AND TIME_TO_SEC(TIMEDIFF(\''.pSQL($now->format('Y-m-d H:i:s')).'\', date_upd)) >= '.$time.'
-                  AND c.id_cart NOT IN(SELECT id_cart from '._DB_PREFIX_.'orders);';
-$rows = Db::getInstance()->executeS($sql);
-$status = Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS');
-$paymentTypes = array_keys(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true));
-
-if (empty($rows)
-    || empty($status)
-    || !$api
-    || (count($paymentTypes) < 1)
-) {
-    return;
-}
-
-foreach ($rows as $cartId) {
-    $cart = new Cart($cartId['id_cart']);
-    $cartExternalId = RetailCRM::getCartOrderExternalId($cart);
-
-    $response = $api->ordersGet($cartExternalId);
-
-    if ($response === false) {
-        $api->customersCreate(RetailCRM::buildCrmCustomer(new Customer($cart->id_customer)));
-        $order = RetailCRM::buildCrmOrderFromCart($cart, $cartExternalId, $paymentTypes[0], $status);
-
-        if (empty($order)) {
-            continue;
-        }
-
-        if ($api->ordersCreate($order) !== false) {
-            $cart->date_upd = date('Y-m-d H:i:s');
-            $cart->save();
-        }
-
-        continue;
-    }
-
-    if (isset($response['order']) && !empty($response['order'])) {
-        $order = RetailCRM::buildCrmOrderFromCart($cart, $response['order']['externalId'], $paymentTypes[0], $status);
-
-        if (empty($order)) {
-            continue;
-        }
-
-        if ($api->ordersEdit($order) !== false) {
-            $cart->date_upd = date('Y-m-d H:i:s');
-            $cart->save();
-        }
-    }
-}
+RetailcrmCartUploader::init();
+RetailcrmCartUploader::$api = $api;
+RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
+RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
+RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
+RetailcrmCartUploader::run();

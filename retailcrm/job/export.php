@@ -1,11 +1,39 @@
 <?php
 /**
- * @author Retail Driver LCC
- * @copyright RetailCRM
- * @license GPL
- * @version 2.2.0
- * @link https://retailcrm.ru
+ * MIT License
  *
+ * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
  */
 
 $_SERVER['HTTPS'] = 1;
@@ -14,63 +42,62 @@ require(dirname(__FILE__) . '/../../../config/config.inc.php');
 require(dirname(__FILE__) . '/../../../init.php');
 require(dirname(__FILE__) . '/../bootstrap.php');
 
-$apiUrl = Configuration::get('RETAILCRM_ADDRESS');
-$apiKey = Configuration::get('RETAILCRM_API_TOKEN');
-$apiVersion = Configuration::get('RETAILCRM_API_VERSION');
-$statusExport = Configuration::get('RETAILCRM_STATUS_EXPORT');
+$apiUrl = Configuration::get(RetailCRM::API_URL);
+$apiKey = Configuration::get(RetailCRM::API_KEY);
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log', $apiVersion);
+    /** @var \RetailcrmApiClientV5 $api */
+    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
 } else {
-    error_log('orderHistory: set api key & url first', 3, _PS_ROOT_DIR_ . '/retailcrm.log');
+    RetailcrmLogger::writeCaller('orderHistory', 'set api key & url first');
     exit();
 }
 
 $orders = array();
-$customers = array();
-
-$customerRecords = Customer::getCustomers();
 $orderRecords = Order::getOrdersWithInformations();
-
-$delivery = json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true);
-$payment = json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true);
-$status = json_decode(Configuration::get('RETAILCRM_API_STATUS'), true);
-
-foreach ($customerRecords as $record) {
-    $customers[$record['id_customer']] = RetailCRM::buildCrmCustomer(new Customer($record['id_customer']));
-}
-
-unset($customerRecords);
+$orderBuilder = new RetailcrmOrderBuilder();
+$orderBuilder->defaultLangFromConfiguration()->setApi($api);
 
 foreach ($orderRecords as $record) {
-    $order = new Order();
+    $order = new Order($record['id_order']);
 
-    foreach ($record as $property => $value) {
-        $order->$property = $value;
+    $orderCart = new Cart($order->id_cart);
+    $orderCustomer = new Customer($order->id_customer);
+
+    if (!empty($orderCustomer->id)) {
+        $orderBuilder->setCmsCustomer($orderCustomer);
+    } else {
+        //TODO
+        // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
+        // Current version *shouldn't* do this, but I suggest more tests for guest customers.
+        $orderBuilder->setCmsCustomer(null);
     }
 
-    $order->id = $record['id_order'];
+    if (!empty($orderCart->id)) {
+        $orderBuilder->setCmsCart($orderCart);
+    } else {
+        $orderBuilder->setCmsCart(null);
+    }
 
-    $orders[$record['id_order']] = RetailCRM::buildCrmOrder(
-        $order,
-        null,
-        null,
-        true
-    );
+    $orderBuilder->setCmsOrder($order);
+
+    try {
+        $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
+    } catch (\InvalidArgumentException $exception) {
+        RetailcrmLogger::writeCaller('export', $exception->getMessage());
+
+        if (PHP_SAPI == 'cli') {
+            echo $exception->getMessage() . PHP_EOL;
+        }
+    }
+
+    time_nanosleep(0, 500000000);
 }
 
 unset($orderRecords);
-
-$customers = array_chunk($customers, 50);
-
-foreach ($customers as $chunk) {
-    $api->customersUpload($chunk);
-    time_nanosleep(0, 200000000);
-}
 
 $orders = array_chunk($orders, 50);
 
 foreach ($orders as $chunk) {
     $api->ordersUpload($chunk);
-    time_nanosleep(0, 200000000);
 }

@@ -1,5 +1,40 @@
 <?php
-
+/**
+ * MIT License
+ *
+ * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
 class RetailcrmHistoryHelper {
     public static function assemblyOrder($orderHistory)
     {
@@ -12,11 +47,14 @@ class RetailcrmHistoryHelper {
         $orders = array();
         foreach ($orderHistory as $change) {
             $change['order'] = self::removeEmpty($change['order']);
+
             if (isset($change['order']['items']) && $change['order']['items']) {
                 $items = array();
+
                 foreach($change['order']['items'] as $item) {
                     $items[$item['id']] = $item;
                 }
+
                 $change['order']['items'] = $items;
             }
 
@@ -114,6 +152,8 @@ class RetailcrmHistoryHelper {
 
     public static function assemblyCustomer($customerHistory)
     {
+        $fields = array();
+
         if (file_exists(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml')) {
             $objects = simplexml_load_file(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml');
 
@@ -125,8 +165,21 @@ class RetailcrmHistoryHelper {
         }
 
         $customers = array();
+
         foreach ($customerHistory as $change) {
             $change['customer'] = self::removeEmpty($change['customer']);
+
+            if (isset($change['deleted'])
+                && $change['deleted']
+                && isset($customers[$change['customer']['id']])
+            ) {
+                $customers[$change['customer']['id']]['deleted'] = true;
+                continue;
+            }
+
+            if ($change['field'] == 'id') {
+                $customers[$change['customer']['id']] = $change['customer'];
+            }
 
             if (isset($customers[$change['customer']['id']])) {
                 $customers[$change['customer']['id']] = array_merge($customers[$change['customer']['id']], $change['customer']);
@@ -139,14 +192,95 @@ class RetailcrmHistoryHelper {
             ) {
                 $customers[$change['customer']['id']][$fields['customer'][$change['field']]] = self::newValue($change['newValue']);
             }
+
+            // email_marketing_unsubscribed_at old value will be null and new value will be datetime in
+            // `Y-m-d H:i:s` format if customer was marked as unsubscribed in retailCRM
+            if (isset($change['customer']['id']) &&
+                $change['field'] == 'email_marketing_unsubscribed_at'
+            ) {
+                if ($change['oldValue'] == null && is_string(self::newValue($change['newValue']))) {
+                    $customers[$change['customer']['id']]['subscribed'] = false;
+                } elseif (is_string($change['oldValue']) && self::newValue($change['newValue']) == null) {
+                    $customers[$change['customer']['id']]['subscribed'] = true;
+                }
+            }
         }
 
         return $customers;
     }
 
+    public static function assemblyCorporateCustomer($customerHistory)
+    {
+        $fields = array();
+
+        if (file_exists(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml')) {
+            $objects = simplexml_load_file(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml');
+
+            foreach($objects->fields->field as $object) {
+                if (in_array($object["group"], array('customerCorporate', 'customerAddress'))) {
+                    $fields[(string)$object["group"]][(string)$object["id"]] = (string)$object;
+                }
+            }
+        }
+
+        $customersCorporate = array();
+        foreach ($customerHistory as $change) {
+            $change['customer'] = self::removeEmpty($change['customer']);
+
+            if (isset($change['deleted'])
+                && $change['deleted']
+                && isset($customersCorporate[$change['customer']['id']])
+            ) {
+                $customersCorporate[$change['customer']['id']]['deleted'] = true;
+                continue;
+            }
+
+            if (isset($customersCorporate[$change['customer']['id']])) {
+                if (isset($customersCorporate[$change['customer']['id']]['deleted'])
+                    && $customersCorporate[$change['customer']['id']]['deleted']
+                ) {
+                    continue;
+                }
+
+                $customersCorporate[$change['customer']['id']] = array_merge($customersCorporate[$change['customer']['id']], $change['customer']);
+            } else {
+                $customersCorporate[$change['customer']['id']] = $change['customer'];
+            }
+
+            if (isset($fields['customerCorporate'][$change['field']])
+                && $fields['customerCorporate'][$change['field']]
+            ) {
+                $customersCorporate[$change['customer']['id']][$fields['customerCorporate'][$change['field']]] = self::newValue($change['newValue']);
+            }
+
+            if (isset($fields['customerAddress'][$change['field']])
+                && $fields['customerAddress'][$change['field']]
+            ) {
+                if (empty($customersCorporate[$change['customer']['id']]['address'])) {
+                    $customersCorporate[$change['customer']['id']]['address'] = array();
+                }
+
+                $customersCorporate[$change['customer']['id']]['address'][$fields['customerAddress'][$change['field']]] = self::newValue($change['newValue']);
+            }
+
+            if ($change['field'] == 'address') {
+                $customersCorporate[$change['customer']['id']]['address'] = array_merge($change['address'], self::newValue($change['newValue']));
+            }
+        }
+
+        foreach ($customersCorporate as $id => &$customer) {
+            if (empty($customer['id']) && !empty($id)) {
+                $customer['id'] = $id;
+                $customer['deleted'] = true;
+            }
+        }
+
+        return $customersCorporate;
+    }
+
     public static function newValue($value)
     {
-        if(isset($value['code'])) {
+        if (isset($value['code'])) {
             return $value['code'];
         } else {
             return $value;

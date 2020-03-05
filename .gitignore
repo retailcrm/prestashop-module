@@ -1,1 +1,7 @@
 .idea/
+retailcrm/views/css/less/*.css
+retailcrm/views/css/less/*.map
+retailcrm/views/css/*.css
+retailcrm/views/css/*.map
+!retailcrm/views/css/*.min.css
+retailcrm/config_*.xml
