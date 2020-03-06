@@ -48,7 +48,7 @@
 
         getRcct = () => {
             return new Promise((resolve, reject) => {
-                fetch(this.controllerUrl('RetailcrmRcctController', 'getRcct'))
+                fetch('/index.php?fc=module&module=retailcrm&controller=Consultant')
                     .then((data) => data.json())
                     .then((data) => {
                         if (this.has(data, 'rcct') && data.rcct.length > 0) {
@@ -76,10 +76,6 @@
         executeCollector = (siteKey, settings) => {
             _rc('create', siteKey, settings);
             _rc('send', 'pageView');
-        };
-
-        controllerUrl = (controller, method) => {
-            return `/modules/retailcrm/front/getData.php?controller=${controller}&method=${method}`;
         };
 
         isNil = (value) => {

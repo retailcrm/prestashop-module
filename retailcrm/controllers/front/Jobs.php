@@ -35,12 +35,25 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-class RetailcrmJobsController extends RetailcrmAbstractFrontDataController
+
+class RetailcrmJobsModuleFrontController extends ModuleFrontController
 {
+    /**
+     * {@inheritDoc}
+     */
+    public function initContent()
+    {
+        parent::initContent();
+
+        $this->ajax = true;
+        header('Content-Type: application/json');
+        $this->ajaxRender(json_encode($this->getData()));
+    }
+
     /**
      * Runs jobs
      */
-    protected function runJobs()
+    protected function getData()
     {
         RetailcrmJobManager::startJobs(
             array(
@@ -50,5 +63,7 @@ class RetailcrmJobsController extends RetailcrmAbstractFrontDataController
                 'inventories' => new \DateInterval('PT15M')
             )
         );
+
+        return array('success' => true);
     }
 }

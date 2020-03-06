@@ -45,15 +45,11 @@
             let req = new XMLHttpRequest();
             req.open(
                 "GET",
-                this.controllerUrl('RetailcrmJobsController', 'runJobs'),
+                '/index.php?fc=module&module=retailcrm&controller=Jobs',
                 true
             );
             req.timeout = 0;
             req.send(null);
-        };
-
-        controllerUrl = (controller, method) => {
-            return `/modules/retailcrm/front/getData.php?controller=${controller}&method=${method}`;
         };
     }
 

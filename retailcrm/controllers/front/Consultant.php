@@ -35,23 +35,44 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-class RetailcrmDaemonCollectorController extends RetailcrmAbstractFrontDataController
+
+class RetailcrmConsultantModuleFrontController extends ModuleFrontController
 {
     /**
-     * Responds with site key
+     * {@inheritDoc}
      */
-    protected function getSiteKey()
+    public function initContent()
     {
-        $isActive = Configuration::get(RetailCRM::COLLECTOR_ACTIVE);
-        $siteKey = Configuration::get(RetailCRM::COLLECTOR_KEY);
-        $collectorConfigured = $isActive && $siteKey;
+        parent::initContent();
 
-        $params = array('siteKey' => !$collectorConfigured ? '' : $siteKey);
+        $this->ajax = true;
+        header('Content-Type: application/json');
+        $this->ajaxRender(json_encode($this->getData()));
+    }
 
-        if ($collectorConfigured && !empty($this->context->customer) && $this->context->customer->id) {
-            $params['customerId'] = $this->context->customer->id;
+    /**
+     * Responds RCCT with site
+     */
+    protected function getData()
+    {
+        $rcctExtractor = new RetailcrmCachedSettingExtractor();
+        $rcct = $rcctExtractor
+            ->setCachedAndConfigKey(RetailCRM::CONSULTANT_RCCT)
+            ->getData();
+
+        if (empty($rcct)) {
+            $script = trim(Configuration::get(RetailCRM::CONSULTANT_SCRIPT));
+
+            if (!empty($script)) {
+                $rcctBuilder = new RetailcrmConsultantRcctExtractor();
+                $rcct = $rcctBuilder->setConsultantScript($script)->build()->getDataString();
+
+                if (!empty($rcct)) {
+                    Cache::getInstance()->set(RetailCRM::CONSULTANT_RCCT, $rcct);
+                }
+            }
         }
 
-        $this->json($params);
+        return array('rcct' => empty($rcct) ? '' : $rcct);
     }
 }

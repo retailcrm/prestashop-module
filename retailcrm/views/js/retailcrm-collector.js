@@ -53,7 +53,7 @@
 
         getCollectorConfig = () => {
             return new Promise((resolve, reject) => {
-                fetch(this.controllerUrl('RetailcrmDaemonCollectorController', 'getSiteKey'))
+                fetch('/index.php?fc=module&module=retailcrm&controller=DaemonCollector')
                     .then((data) => data.json())
                     .then((data) => {
                         if (this.has(data, 'siteKey') && data.siteKey.length > 0) {
@@ -86,10 +86,6 @@
         executeCollector = (siteKey, settings) => {
             _rc('create', siteKey, settings);
             _rc('send', 'pageView');
-        };
-
-        controllerUrl = (controller, method) => {
-            return `/modules/retailcrm/front/getData.php?controller=${controller}&method=${method}`;
         };
 
         isNil = (value) => {
