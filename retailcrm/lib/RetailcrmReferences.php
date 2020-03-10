@@ -171,7 +171,7 @@ class RetailcrmReferences
         $modules = Module::getModulesOnDisk(true);
 
         foreach ($modules as $module) {
-            if ($module->tab == 'payments_gateways') {
+            if ($module->tab == 'payments_gateways' OR $module->name == 'ps_cashondelivery') {
                 if ($module->id) {
                     if (!get_class($module) == 'SimpleXMLElement')
                         $module->country = array();
