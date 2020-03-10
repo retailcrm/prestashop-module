@@ -870,7 +870,7 @@ class RetailcrmHistory
         }
 
         $infoOrd = self::$api->ordersGet($order['externalId']);
-        $infoOrder = $infoOrd->order;
+        $infoOrder = $infoOrd['order'];
         $totalPaid = $infoOrder['totalSumm'];
         $orderToUpdate->total_paid = $totalPaid;
         $orderToUpdate->update();
