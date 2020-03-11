@@ -46,9 +46,9 @@ if (!isset($options['o'])) {
     exit();
 }
 
-require(dirname(__FILE__) . '/../../../config/config.inc.php');
-require(dirname(__FILE__) . '/../../../init.php');
-require(dirname(__FILE__) . '/../bootstrap.php');
+require_once(dirname(__FILE__) . '/../../../../config/config.inc.php');
+require_once(dirname(__FILE__) . '/../../../../init.php');
+require_once(dirname(__FILE__) . '/../../bootstrap.php');
 
 $apiUrl = Configuration::get(RetailCRM::API_URL);
 $apiKey = Configuration::get(RetailCRM::API_KEY);

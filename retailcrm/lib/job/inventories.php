@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -38,29 +38,18 @@
 
 $_SERVER['HTTPS'] = 1;
 
-require_once(dirname(__FILE__) . '/../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../init.php');
-require_once(dirname(__FILE__) . '/../bootstrap.php');
-
-$syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
-if (empty($syncCartsActive)) {
-    return;
-}
+require_once(dirname(__FILE__) . '/../../../../config/config.inc.php');
+require_once(dirname(__FILE__) . '/../../../../init.php');
+require_once(dirname(__FILE__) . '/../../bootstrap.php');
 
 $apiUrl = Configuration::get(RetailCRM::API_URL);
 $apiKey = Configuration::get(RetailCRM::API_KEY);
-$api = null;
 
 if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+    RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
 } else {
-    RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
-    return;
+    RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
+    exit();
 }
 
-RetailcrmCartUploader::init();
-RetailcrmCartUploader::$api = $api;
-RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
-RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
-RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
-RetailcrmCartUploader::run();
+RetailcrmInventories::loadStocks();

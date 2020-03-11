@@ -238,7 +238,10 @@ class RetailcrmJobManager
      */
     public static function runJob($job, $once = false)
     {
-        $jobFile = implode(DIRECTORY_SEPARATOR, array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'job', $job . '.php'));
+        $jobFile = implode(
+            DIRECTORY_SEPARATOR,
+            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'job', $job . '.php')
+        );
 
         if (!file_exists($jobFile)) {
             throw new \RetailcrmJobManagerException('Cannot find job', $job);
