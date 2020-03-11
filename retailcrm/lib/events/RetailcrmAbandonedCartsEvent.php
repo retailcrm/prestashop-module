@@ -36,31 +36,39 @@
  * to avoid any conflicts with others containers.
  */
 
-$_SERVER['HTTPS'] = 1;
+require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-require_once(dirname(__FILE__) . '/../../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../../init.php');
-require_once(dirname(__FILE__) . '/../../bootstrap.php');
+class RetailcrmAbandonedCartsEvent implements RetailcrmEventInterface
+{
+    /**
+     * @inheritDoc
+     */
+    public function execute()
+    {
+        $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
+        if (empty($syncCartsActive)) {
+            return;
+        }
 
-$syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
-if (empty($syncCartsActive)) {
-    return;
+        $apiUrl = Configuration::get(RetailCRM::API_URL);
+        $apiKey = Configuration::get(RetailCRM::API_KEY);
+        $api = null;
+
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+        } else {
+            RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
+            return;
+        }
+
+        RetailcrmCartUploader::init();
+        RetailcrmCartUploader::$api = $api;
+        RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
+        RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
+        RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
+        RetailcrmCartUploader::run();
+    }
 }
 
-$apiUrl = Configuration::get(RetailCRM::API_URL);
-$apiKey = Configuration::get(RetailCRM::API_KEY);
-$api = null;
-
-if (!empty($apiUrl) && !empty($apiKey)) {
-    $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
-} else {
-    RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
-    return;
-}
-
-RetailcrmCartUploader::init();
-RetailcrmCartUploader::$api = $api;
-RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
-RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
-RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
-RetailcrmCartUploader::run();
+$event = new RetailcrmAbandonedCartsEvent();
+$event->execute();

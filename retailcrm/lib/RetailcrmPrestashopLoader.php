@@ -35,21 +35,8 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 $_SERVER['HTTPS'] = 1;
 
-require_once(dirname(__FILE__) . '/../../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../../init.php');
-require_once(dirname(__FILE__) . '/../../bootstrap.php');
-
-$apiUrl = Configuration::get(RetailCRM::API_URL);
-$apiKey = Configuration::get(RetailCRM::API_KEY);
-
-if (!empty($apiUrl) && !empty($apiKey)) {
-    RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
-} else {
-    RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
-    exit();
-}
-
-RetailcrmInventories::loadStocks();
+require_once(dirname(__FILE__) . '/../../../config/config.inc.php');
+require_once(dirname(__FILE__) . '/../../../init.php');
+require_once(dirname(__FILE__) . '/../bootstrap.php');

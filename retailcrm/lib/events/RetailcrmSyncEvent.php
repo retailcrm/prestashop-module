@@ -36,14 +36,30 @@
  * to avoid any conflicts with others containers.
  */
 
-$_SERVER['HTTPS'] = 1;
+require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-require_once(dirname(__FILE__) . '/../../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../../init.php');
-require_once(dirname(__FILE__) . '/../../bootstrap.php');
+class RetailcrmSyncEvent implements RetailcrmEventInterface
+{
+    /**
+     * @inheritDoc
+     */
+    public function execute()
+    {
+        $apiUrl = Configuration::get(RetailCRM::API_URL);
+        $apiKey = Configuration::get(RetailCRM::API_KEY);
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
 
-$job = new RetailcrmCatalog();
-$data = $job->getData();
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+        } else {
+            RetailcrmLogger::writeCaller('orderHistory', 'set api key & url first');
+            exit();
+        }
 
-$icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
-$icml->generate($data[0], $data[1]);
+        RetailcrmHistory::customersHistory();
+        RetailcrmHistory::ordersHistory();
+    }
+}
+
+$event = new RetailcrmSyncEvent();
+$event->execute();

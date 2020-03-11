@@ -36,34 +36,28 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmJobsModuleFrontController extends ModuleFrontController
+require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+
+class RetailcrmInventoriesEvent implements RetailcrmEventInterface
 {
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function initContent()
+    public function execute()
     {
-        parent::initContent();
+        $apiUrl = Configuration::get(RetailCRM::API_URL);
+        $apiKey = Configuration::get(RetailCRM::API_KEY);
 
-        $this->ajax = true;
-        header('Content-Type: application/json');
-        $this->ajaxRender(json_encode($this->getData()));
-    }
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+        } else {
+            RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
+            exit();
+        }
 
-    /**
-     * Runs jobs
-     */
-    protected function getData()
-    {
-        RetailcrmJobManager::startJobs(
-            array(
-                'RetailcrmAbandonedCartsEvent' => null,
-                'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
-                'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-                'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
-            )
-        );
-
-        return array('success' => true);
+        RetailcrmInventories::loadStocks();
     }
 }
+
+$event = new RetailcrmInventoriesEvent();
+$event->execute();

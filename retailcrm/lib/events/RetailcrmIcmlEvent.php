@@ -36,34 +36,22 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmJobsModuleFrontController extends ModuleFrontController
+require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+
+class RetailcrmIcmlEvent implements RetailcrmEventInterface
 {
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function initContent()
+    public function execute()
     {
-        parent::initContent();
+        $job = new RetailcrmCatalog();
+        $data = $job->getData();
 
-        $this->ajax = true;
-        header('Content-Type: application/json');
-        $this->ajaxRender(json_encode($this->getData()));
-    }
-
-    /**
-     * Runs jobs
-     */
-    protected function getData()
-    {
-        RetailcrmJobManager::startJobs(
-            array(
-                'RetailcrmAbandonedCartsEvent' => null,
-                'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
-                'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-                'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
-            )
-        );
-
-        return array('success' => true);
+        $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
+        $icml->generate($data[0], $data[1]);
     }
 }
+
+$event = new RetailcrmIcmlEvent();
+$event->execute();

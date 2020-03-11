@@ -240,7 +240,7 @@ class RetailcrmJobManager
     {
         $jobFile = implode(
             DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'job', $job . '.php')
+            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $job . '.php')
         );
 
         if (!file_exists($jobFile)) {
