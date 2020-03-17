@@ -60,6 +60,10 @@ function upgrade_module_3_0_0($module)
         $result = Configuration::deleteByName('RETAILCRM_API_VERSION');
     }
 
+    if (Configuration::hasKey('RETAILCRM_LAST_RUN')) {
+        $result = $result && Configuration::deleteByName('RETAILCRM_LAST_RUN');
+    }
+
     return $result && Db::getInstance()->execute(
         'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'retailcrm_abandonedcarts` (
                     `id_cart` INT UNSIGNED UNIQUE NOT NULL,

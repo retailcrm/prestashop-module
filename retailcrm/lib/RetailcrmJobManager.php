@@ -130,13 +130,12 @@ class RetailcrmJobManager
             try {
                 if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTime) {
                     $shouldRunAt = clone $lastRuns[$job];
-                } else {
-                    $shouldRunAt = new DateTime();
-                    $shouldRunAt->sub(new \DateInterval('PT1S'));
-                }
 
-                if ($diff instanceof DateInterval) {
-                    $shouldRunAt->add($diff);
+                    if ($diff instanceof DateInterval) {
+                        $shouldRunAt->add($diff);
+                    }
+                } else {
+                    $shouldRunAt = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
                 }
 
                 RetailcrmLogger::writeDebug(__METHOD__, sprintf(

@@ -39,15 +39,40 @@
 class RetailcrmDaemonCollectorModuleFrontController extends ModuleFrontController
 {
     /**
+     * Universal render function for 1.6 and 1.7
+     *
+     * @param string $response
+     */
+    private function render($response)
+    {
+        if (property_exists($this, 'ajax')) {
+            $this->ajax = true;
+        }
+
+        header('Content-Type: application/json');
+
+        if (Tools::substr(_PS_VERSION_, 0, 3) == '1.6') {
+            echo $response;
+        } else {
+            parent::initContent();
+            $this->ajaxRender($response);
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function initContent()
     {
-        parent::initContent();
+        $this->render(json_encode($this->getData()));
+    }
 
-        $this->ajax = true;
-        header('Content-Type: application/json');
-        $this->ajaxRender(json_encode($this->getData()));
+    /**
+     * PrestaShop 1.6 compatibility
+     */
+    public function run()
+    {
+        $this->initContent();
     }
 
     /**
