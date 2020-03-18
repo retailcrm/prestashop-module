@@ -59,5 +59,12 @@ class RetailcrmInventoriesEvent implements RetailcrmEventInterface
     }
 }
 
-$event = new RetailcrmInventoriesEvent();
-$event->execute();
+if (Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
+    $event = new RetailcrmInventoriesEvent();
+    $event->execute();
+} else {
+    RetailcrmLogger::writeDebug(
+        'RetailcrmInventoriesEvent',
+        'Balances receiving is not enabled, skipping...'
+    );
+}

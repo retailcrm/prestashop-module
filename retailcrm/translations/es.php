@@ -163,3 +163,5 @@ $_MODULE['<{retailcrm}prestashop>settings_4f18e3f1c9941a6ec5a38bc716c521b4'] = '
 $_MODULE['<{retailcrm}prestashop>index_84cff42a89e3866f0ed4f2979d340895'] = 'Solución para convertir más oportunidades de venta a través del chat web y Facebook Messenger, disponible 24/7, incluso cuando no estás en línea.';
 $_MODULE['<{retailcrm}prestashop>index_50f158e2507321f1a5b6f8fb9e350818'] = 'Escríbenos en caso de preguntas o dudas';
 $_MODULE['<{retailcrm}prestashop>retailcrm_39e90036af004a005ccbccbe9a9c19c2'] = 'Los estados de orden no deben repetirse en la matriz de estados';
+$_MODULE['<{retailcrm}prestashop>settings_8ffa3281a35a0d80fef2cac0fa680523'] = 'Habilitar la carga del historial';
+$_MODULE['<{retailcrm}prestashop>settings_80e47b10a89a3f22e0def96577ee8b25'] = 'Recibir las existencias del retailCRM';

@@ -61,5 +61,13 @@ class RetailcrmSyncEvent implements RetailcrmEventInterface
     }
 }
 
-$event = new RetailcrmSyncEvent();
-$event->execute();
+if (Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
+    $event = new RetailcrmSyncEvent();
+    $event->execute();
+} else {
+    RetailcrmLogger::writeDebug(
+        'RetailcrmSyncEvent',
+        'History uploads is not enabled, skipping...'
+    );
+}
+

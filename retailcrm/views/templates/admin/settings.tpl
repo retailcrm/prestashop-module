@@ -78,6 +78,18 @@
                                 <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>
                             </div>
                         </div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableHistoryUploadsName|escape:'htmlall':'UTF-8'}" value="{$enableHistoryUploads|escape:'htmlall':'UTF-8'}" {if $enableHistoryUploads}checked="checked"{/if} id="historyuploads-active">
+                                <label for="historyuploads-active">{l s='Enable history uploads' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
+                                <label for="receivebalances-active">{l s='Receive stocks from retailCRM' mod='retailcrm'}</label>
+                            </div>
+                        </div>
                     </div>
                     <div id="rcrm_tab_carts_sync">
                         <div class="retail-form__title">{l s='Synchronization of buyer carts' mod='retailcrm'}</div>

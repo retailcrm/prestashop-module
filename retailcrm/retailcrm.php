@@ -65,6 +65,8 @@ class RetailCRM extends Module
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
+    const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
+    const ENABLE_BALANCES_RECEIVING = 'RETAILCRM_ENABLE_BALANCES_RECEIVING';
 
     const LATEST_API_VERSION = '5';
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
@@ -208,6 +210,8 @@ class RetailCRM extends Module
             Configuration::deleteByName(static::UPLOAD_ORDERS) &&
             Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM) &&
             Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS) &&
+            Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS) &&
+            Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING) &&
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
@@ -658,6 +662,8 @@ class RetailCRM extends Module
                 'paymentDefault' => json_encode(Tools::getValue(static::PAYMENT_DEFAULT)),
                 'statusExport' => (string)(Tools::getValue(static::STATUS_EXPORT)),
                 'enableCorporate' => (Tools::getValue(static::ENABLE_CORPORATE_CLIENTS) !== false),
+                'enableHistoryUploads' => (Tools::getValue(static::ENABLE_HISTORY_UPLOADS) !== false),
+                'enableBalancesReceiving' => (Tools::getValue(static::ENABLE_BALANCES_RECEIVING) !== false),
                 'collectorActive' => (Tools::getValue(static::COLLECTOR_ACTIVE) !== false),
                 'collectorKey' => (string)(Tools::getValue(static::COLLECTOR_KEY)),
                 'clientId' => Configuration::get(static::CLIENT_ID),
@@ -678,6 +684,8 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::PAYMENT_DEFAULT, $settings['paymentDefault']);
                 Configuration::updateValue(static::STATUS_EXPORT, $settings['statusExport']);
                 Configuration::updateValue(static::ENABLE_CORPORATE_CLIENTS, $settings['enableCorporate']);
+                Configuration::updateValue(static::ENABLE_HISTORY_UPLOADS, $settings['enableHistoryUploads']);
+                Configuration::updateValue(static::ENABLE_BALANCES_RECEIVING, $settings['enableBalancesReceiving']);
                 Configuration::updateValue(static::COLLECTOR_ACTIVE, $settings['collectorActive']);
                 Configuration::updateValue(static::COLLECTOR_KEY, $settings['collectorKey']);
                 Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);
@@ -952,7 +960,9 @@ class RetailCRM extends Module
             'synchronizedCartStatus' => (string)(Configuration::get(static::SYNC_CARTS_STATUS)),
             'synchronizedCartDelay' => (string)(Configuration::get(static::SYNC_CARTS_DELAY)),
             'consultantScript' => (string)(Configuration::get(static::CONSULTANT_SCRIPT)),
-            'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS))
+            'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
+            'enableHistoryUploads' => (bool)(Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
+            'enableBalancesReceiving' => (bool)(Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
         );
     }
 
@@ -980,7 +990,9 @@ class RetailCRM extends Module
             'synchronizedCartDelayName' => static::SYNC_CARTS_DELAY,
             'uploadOrders' => static::UPLOAD_ORDERS,
             'consultantScriptName' => static::CONSULTANT_SCRIPT,
-            'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS
+            'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
+            'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
+            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING
         );
     }
 

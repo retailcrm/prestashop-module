@@ -43,7 +43,7 @@ class RetailcrmJobsModuleFrontController extends ModuleFrontController
      *
      * @param string $response
      */
-    private function render($response)
+    private function renderData($response)
     {
         if (property_exists($this, 'ajax')) {
             $this->ajax = true;
@@ -64,7 +64,7 @@ class RetailcrmJobsModuleFrontController extends ModuleFrontController
      */
     public function initContent()
     {
-        $this->render(json_encode($this->getData()));
+        $this->renderData(json_encode($this->getData()));
     }
 
     /**
