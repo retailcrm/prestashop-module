@@ -95,8 +95,7 @@ class RetailcrmLogger
     {
         if (RetailcrmTools::isDebug()) {
             static::writeNoCaller(sprintf(
-                '[%s] (DEBUG) <%s> %s',
-                date(DATE_RFC3339),
+                '(DEBUG) <%s> %s',
                 $caller,
                 print_r($message, true)
             ));
