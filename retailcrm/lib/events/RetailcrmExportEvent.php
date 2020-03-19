@@ -88,6 +88,7 @@ class RetailcrmExportEvent implements RetailcrmEventInterface
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
             } catch (\InvalidArgumentException $exception) {
                 RetailcrmLogger::writeCaller('export', $exception->getMessage());
+                RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
                 if (PHP_SAPI == 'cli') {
                     echo $exception->getMessage() . PHP_EOL;

@@ -640,6 +640,7 @@ class RetailcrmHistory
                             __METHOD__,
                             sprintf('Error adding order id=%d: %s', $order['id'], $e->getMessage())
                         );
+                        RetailcrmLogger::writeNoCaller($e->getTraceAsString());
                     }
 
                     if (isset($order['payments']) && !empty($order['payments'])) {
@@ -1137,6 +1138,7 @@ class RetailcrmHistory
                     $e->getMessage()
                 )
             );
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
             return false;
         }

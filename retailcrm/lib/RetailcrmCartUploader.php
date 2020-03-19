@@ -208,7 +208,8 @@ class RetailcrmCartUploader
                 }
             }
         } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(__CLASS__.'::'.__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }
 
         return false;
@@ -232,7 +233,8 @@ class RetailcrmCartUploader
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(__CLASS__.'::'.__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }
 
         // Don't upload empty cartsIds.
@@ -268,6 +270,7 @@ class RetailcrmCartUploader
                 'abandonedCarts',
                 $exception->getMessage() . PHP_EOL . $exception->getTraceAsString()
             );
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }
 
         return $order;

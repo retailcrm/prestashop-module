@@ -100,9 +100,11 @@ class RetailcrmProxy
             return $response;
         } catch (CurlException $e) {
             RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
             return false;
         } catch (InvalidJsonException $e) {
             RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
             return false;
         }
     }

@@ -471,8 +471,10 @@ class RetailCRM extends Module
                 $orderdb = new Order($params['order']->id);
             } catch (PrestaShopDatabaseException $exception) {
                 RetailcrmLogger::writeCaller('hookActionOrderEdited', $exception->getMessage());
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
             } catch (PrestaShopException $exception) {
                 RetailcrmLogger::writeCaller('hookActionOrderEdited', $exception->getMessage());
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
             }
 
             $comment = $orderdb->getFirstMessage();
@@ -537,6 +539,7 @@ class RetailCRM extends Module
                     'hookActionOrderStatusPostUpdate',
                     $exception->getMessage()
                 );
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
                 return false;
             }
@@ -1053,11 +1056,13 @@ class RetailCRM extends Module
                 return static::$moduleListCache;
             } catch (Exception $exception) {
                 RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
                 Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'exception');
 
                 return static::getCachedCmsModulesList();
             } catch (Throwable $throwable) {
                 RetailcrmLogger::writeCaller(__METHOD__, $throwable->getMessage());
+                RetailcrmLogger::writeNoCaller($throwable->getTraceAsString());
                 Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'throwable');
 
                 return static::getCachedCmsModulesList();

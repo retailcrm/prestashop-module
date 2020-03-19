@@ -104,7 +104,14 @@ class RetailcrmJobManager
         try {
             $lastRuns = static::getLastRuns();
         } catch (Exception $exception) {
-            static::handleError($exception->getFile(), $exception->getMessage(), '', $jobs);
+            static::handleError(
+                $exception->getFile(),
+                $exception->getMessage(),
+                $exception->getTraceAsString(),
+                '',
+                $jobs
+            );
+
             return;
         }
 
@@ -154,16 +161,32 @@ class RetailcrmJobManager
                     $lastRuns[$job] = new \DateTime('now');
                 }
             } catch (\Exception $exception) {
-                static::handleError($exception->getFile(), $exception->getMessage(), $job);
+                static::handleError(
+                    $exception->getFile(),
+                    $exception->getMessage(),
+                    $exception->getTraceAsString(),
+                    $job
+                );
             } catch (\Throwable $throwable) {
-                static::handleError($throwable->getFile(), $throwable->getMessage(), $job);
+                static::handleError(
+                    $throwable->getFile(),
+                    $throwable->getMessage(),
+                    $throwable->getTraceAsString(),
+                    $job
+                );
             }
         }
 
         try {
             static::setLastRuns($lastRuns);
         } catch (Exception $exception) {
-            static::handleError($exception->getFile(), $exception->getMessage(), '', $jobs);
+            static::handleError(
+                $exception->getFile(),
+                $exception->getMessage(),
+                $exception->getTraceAsString(),
+                '',
+                $jobs
+            );
         }
 
         static::unlock();
@@ -291,10 +314,11 @@ class RetailcrmJobManager
      *
      * @param string $file
      * @param string $msg
+     * @param string $trace
      * @param string $currentJob
      * @param array  $jobs
      */
-    private static function handleError($file, $msg, $currentJob = '', $jobs = array())
+    private static function handleError($file, $msg, $trace, $currentJob = '', $jobs = array())
     {
         $data = array();
 
@@ -307,6 +331,7 @@ class RetailcrmJobManager
         }
 
         RetailcrmLogger::writeNoCaller(sprintf('%s: %s (%s)', $file, $msg, implode(', ', $data)));
+        RetailcrmLogger::writeNoCaller($trace);
         RetailcrmTools::http_response_code(500);
     }
 
