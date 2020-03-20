@@ -947,6 +947,13 @@ class RetailCRM extends Module
      */
     public static function getSettings()
     {
+        $syncCartsDelay = (string) (Configuration::get(static::SYNC_CARTS_DELAY));
+
+        // Use 15 minutes as default interval but don't change immediate interval to it if user already made decision
+        if (empty($syncCartsDelay) && $syncCartsDelay !== "0") {
+            $syncCartsDelay = "900";
+        }
+
         return array(
             'url' => (string)(Configuration::get(static::API_URL)),
             'apiKey' => (string)(Configuration::get(static::API_KEY)),
@@ -961,7 +968,7 @@ class RetailCRM extends Module
             'clientId' => Configuration::get(static::CLIENT_ID),
             'synchronizeCartsActive' => (Configuration::get(static::SYNC_CARTS_ACTIVE)),
             'synchronizedCartStatus' => (string)(Configuration::get(static::SYNC_CARTS_STATUS)),
-            'synchronizedCartDelay' => (string)(Configuration::get(static::SYNC_CARTS_DELAY)),
+            'synchronizedCartDelay' => $syncCartsDelay,
             'consultantScript' => (string)(Configuration::get(static::CONSULTANT_SCRIPT)),
             'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
             'enableHistoryUploads' => (bool)(Configuration::get(static::ENABLE_HISTORY_UPLOADS)),

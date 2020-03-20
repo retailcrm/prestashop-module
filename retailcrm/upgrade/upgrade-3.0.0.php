@@ -49,19 +49,30 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_3_0_0($module)
 {
+    $result = true;
+
+    $apiVersion = 'RETAILCRM_API_VERSION';
+    $lastRun = 'RETAILCRM_LAST_RUN';
+    $syncCarts = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
+
     // Suppress warning. DB creation below shouldn't be changed in next versions.
     if ('retailcrm' != $module->name) {
         return false;
     }
 
-    $result = true;
-
-    if (Configuration::hasKey('RETAILCRM_API_VERSION')) {
-        $result = Configuration::deleteByName('RETAILCRM_API_VERSION');
+    // API v4 is deprecated, so API version flag is removed for now.
+    if (Configuration::hasKey($apiVersion)) {
+        $result = Configuration::deleteByName($apiVersion);
     }
 
-    if (Configuration::hasKey('RETAILCRM_LAST_RUN')) {
-        $result = $result && Configuration::deleteByName('RETAILCRM_LAST_RUN');
+    // Fixes consequences of old fixed bug in JobManager
+    if (Configuration::hasKey($lastRun)) {
+        $result = $result && Configuration::deleteByName($lastRun);
+    }
+
+    // Immediate cart synchronization is not safe anymore (causes data inconsistency)
+    if (Configuration::hasKey($syncCarts) && Configuration::get($syncCarts) == "0") {
+        $result = $result && Configuration::set($syncCarts, "900");
     }
 
     return $result && Db::getInstance()->execute(
