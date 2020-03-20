@@ -79,6 +79,11 @@ class RetailcrmOrderBuilder
     protected $createdCustomer;
 
     /**
+     * @var array|null $corporateCompanyExtractCache
+     */
+    protected $corporateCompanyExtractCache;
+
+    /**
      * @var string $apiSite
      */
     protected $apiSite;
@@ -357,13 +362,13 @@ class RetailcrmOrderBuilder
             return false;
         }
 
-        $crmCorporate = $this->findCorporateCustomerByContactAndMainCompany(
+        $crmCorporate = $this->findCorporateCustomerByContactAndCompany(
             $customer['id'],
             $this->invoiceAddress->company
         );
 
         if (empty($crmCorporate)) {
-            $crmCorporate = $this->findCorporateCustomerByMainCompany($this->invoiceAddress->company);
+            $crmCorporate = $this->findCorporateCustomerByCompany($this->invoiceAddress->company);
         }
 
         if (empty($crmCorporate)) {
@@ -396,9 +401,14 @@ class RetailcrmOrderBuilder
                     )
                 );
 
-                if (isset($crmCorporate['mainCompany']) && isset($crmCorporate['mainCompany']['id'])) {
+                $crmCorporateCompany = $this->extractCorporateCompanyCached(
+                    $crmCorporate['id'],
+                    $this->invoiceAddress->company
+                );
+
+                if (!empty($crmCorporateCompany) && isset($crmCorporateCompany['id'])) {
                     $contactData['companies'] = array(array(
-                        'company' => array('id' => $crmCorporate['mainCompany']['id'])
+                        'company' => array('id' => $crmCorporateCompany['id'])
                     ));
                 }
 
@@ -556,10 +566,11 @@ class RetailcrmOrderBuilder
      *
      * @return array
      */
-    private function findCorporateCustomerByContactAndMainCompany($contactId, $companyName)
+    private function findCorporateCustomerByContactAndCompany($contactId, $companyName)
     {
         $crmCorporate = $this->api->customersCorporateList(array(
-            'contactIds' => array($contactId)
+            'contactIds' => array($contactId),
+            'companyName' => $companyName
         ));
 
         if ($crmCorporate instanceof RetailcrmApiResponse
@@ -567,10 +578,77 @@ class RetailcrmOrderBuilder
             && $crmCorporate->offsetExists('customersCorporate')
             && count($crmCorporate['customersCorporate']) > 0
         ) {
-            foreach ($crmCorporate['customersCorporate'] as $corp) {
-                if (!empty($corp['mainCompany']) && $corp['mainCompany']['name'] == $companyName) {
-                    return $corp;
+            $crmCorporate = $crmCorporate['customersCorporate'];
+
+            return reset($crmCorporate);
+        }
+
+        return array();
+    }
+
+    /**
+     * Find corporate customer by company name
+     *
+     * @param $companyName
+     *
+     * @return array
+     */
+    private function findCorporateCustomerByCompany($companyName)
+    {
+        $crmCorporate = $this->api->customersCorporateList(array(
+            'companyName' => $companyName
+        ));
+
+        if ($crmCorporate instanceof RetailcrmApiResponse
+            && $crmCorporate->isSuccessful()
+            && $crmCorporate->offsetExists('customersCorporate')
+            && count($crmCorporate['customersCorporate']) > 0
+        ) {
+            $crmCorporate = $crmCorporate['customersCorporate'];
+
+            return reset($crmCorporate);
+        }
+
+        return array();
+    }
+
+    /**
+     * Get corporate companies, extract company data by provided identifiers
+     *
+     * @param int|string $corporateCrmId
+     * @param string     $companyName
+     * @param string     $by
+     *
+     * @return array
+     */
+    private function extractCorporateCompany($corporateCrmId, $companyName, $by = 'id')
+    {
+        $companiesResponse = $this->api->customersCorporateCompanies(
+            $corporateCrmId,
+            array(),
+            null,
+            null,
+            $by
+        );
+
+        if ($companiesResponse instanceof RetailcrmApiResponse
+            && $companiesResponse->isSuccessful()
+            && $companiesResponse->offsetExists('companies')
+            && count($companiesResponse['companies']) > 0
+        ) {
+            $company = array_reduce(
+                $companiesResponse['companies'],
+                function ($carry, $item) use ($companyName) {
+                    if (is_array($item) && isset($item['name']) && $item['name'] == $companyName) {
+                        $carry = $item;
+                    }
+
+                    return $carry;
                 }
+            );
+
+            if (is_array($company)) {
+               return $company;
             }
         }
 
@@ -578,45 +656,31 @@ class RetailcrmOrderBuilder
     }
 
     /**
-     * Find corporate customer by main company name
+     * extractCorporateCompany with cache
      *
-     * @param $companyName
+     * @param int|string $corporateCrmId
+     * @param string     $companyName
+     * @param string     $by
      *
      * @return array
-     *TODO
-     * Replace with filter[nickName][] (search by nickname, company name and VAT).
-     * Logic below is slow and only can search by main company.
      */
-    private function findCorporateCustomerByMainCompany($companyName)
+    private function extractCorporateCompanyCached($corporateCrmId, $companyName, $by = 'id')
     {
-        $response = true;
-        $page = null;
+        $cachedItemId = sprintf('%s:%s', (string) $corporateCrmId, $companyName);
 
-        do {
-            $response = $this->api->customersCorporateList(array(), $page, 100);
+        if (!is_array($this->corporateCompanyExtractCache)) {
+            $this->corporateCompanyExtractCache = array();
+        }
 
-            if ($response instanceof RetailcrmApiResponse) {
-                if (is_null($page) && isset($response['pagination']['totalPageCount'])) {
-                    $page = $response['pagination']['totalPageCount'];
-                }
+        if (!isset($this->corporateCompanyExtractCache[$cachedItemId])) {
+            $this->corporateCompanyExtractCache[$cachedItemId] = $this->extractCorporateCompany(
+                $corporateCrmId,
+                $companyName,
+                $by
+            );
+        }
 
-                if ($response->offsetExists('customersCorporate')) {
-                    foreach ($response['customersCorporate'] as $crmCorporate) {
-                        if (isset($crmCorporate['mainCompany'])
-                            && $crmCorporate['mainCompany']['name'] == $companyName
-                        ) {
-                            return $crmCorporate;
-                        }
-                    }
-                }
-
-                $page--;
-            }
-
-            time_nanosleep(0, 300000000);
-        } while ($response instanceof RetailcrmApiResponse && (isset($response['pagination']) && $page > 0));
-
-        return array();
+        return $this->corporateCompanyExtractCache[$cachedItemId];
     }
 
     /**
