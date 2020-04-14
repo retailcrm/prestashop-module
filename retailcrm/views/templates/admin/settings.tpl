@@ -1,7 +1,7 @@
 {**
  * MIT License
  *
- * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
@@ -72,12 +72,12 @@
                             <input required type="text" name="{$apiKeyName|escape:'htmlall':'UTF-8'}" value="{$apiKey|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='API key' mod='retailcrm'}">
                         </div>
                         {* TODO Comment out corporate customers support toggle. It's not ready for production. *}
-                        <div class="retail-form__row">
+                        {* <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">
                                 <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>
                             </div>
-                        </div>
+                        </div> *}
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableHistoryUploadsName|escape:'htmlall':'UTF-8'}" value="{$enableHistoryUploads|escape:'htmlall':'UTF-8'}" {if $enableHistoryUploads}checked="checked"{/if} id="historyuploads-active">

@@ -1,7 +1,7 @@
 {**
  * MIT License
  *
- * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
@@ -57,7 +57,7 @@
         <div class="retail-btns">
             <a href="#toggle-form" class="btn btn_max toggle-btn">{l s='I have an account in retailCRM' mod='retailcrm'}</a>
             <div class="retail-btns__separate">{l s='or' mod='retailcrm'}</div>
-            <a href="https://retailcrm.com/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul" target="_black" class="btn btn_max btn_invert">{l s='Get retailCRM for free' mod='retailcrm'}</a>
+            <a href="https://retailcrm.es/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul" target="_black" class="btn btn_max btn_invert">{l s='Get retailCRM for free' mod='retailcrm'}</a>
         </div>
         <div class="retail-form toggle-box" id="toggle-form">
             <form action="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">

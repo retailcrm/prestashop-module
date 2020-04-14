@@ -2,7 +2,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2019 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2007-2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
  *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
@@ -126,7 +126,7 @@ class RetailCRM extends Module
         $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
         $this->apiUrl = Configuration::get(static::API_URL);
         $this->apiKey = Configuration::get(static::API_KEY);
-        $this->ps_versions_compliancy = array('min' => '1.6.0.4', 'max' => _PS_VERSION_);
+        $this->ps_versions_compliancy = array('min' => '1.6.1.0', 'max' => _PS_VERSION_);
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = static::getErrorLog();
         $this->module_key = 'dff3095326546f5fe8995d9e86288491';
