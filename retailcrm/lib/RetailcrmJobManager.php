@@ -262,7 +262,7 @@ class RetailcrmJobManager
     {
         $jobFile = implode(
             DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $job . '.php')
+            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', self::escapeJobName($job) . '.php')
         );
 
         if (!file_exists($jobFile)) {
@@ -372,6 +372,18 @@ class RetailcrmJobManager
     private static function getTimeLimit()
     {
         return 14400;
+    }
+
+    /**
+     * Removes disallowed symbols from job name. Only latin characters, numbers and underscore allowed.
+     *
+     * @param string $job
+     *
+     * @return string
+     */
+    private static function escapeJobName($job)
+    {
+        return (string) preg_replace('/[^[a-zA-Z0-9_]]*/m', '', $job);
     }
 
     /**

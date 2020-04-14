@@ -54,8 +54,14 @@ class RetailcrmJobsModuleFrontController extends ModuleFrontController
         if (Tools::substr(_PS_VERSION_, 0, 3) == '1.6') {
             echo $response;
         } else {
-            parent::initContent();
-            $this->ajaxRender($response);
+            try {
+                parent::initContent();
+                $this->ajaxRender($response);
+            } catch (\Exception $exception) {
+                // Sometimes ps_shoppingcart throws exception which breaks our controller.
+                // We don't care about ps_shoppingcart here, so, we will fallback to old way.
+                echo $response;
+            }
         }
     }
 

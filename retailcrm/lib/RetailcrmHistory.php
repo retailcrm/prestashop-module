@@ -1104,9 +1104,9 @@ class RetailcrmHistory
         Db::getInstance()->execute('
             DELETE FROM ' . _DB_PREFIX_ . 'order_detail
             WHERE id_order = ' . pSQL((int) $order_id) . '
-            AND product_id = ' . pSQL($product_id) . '
-            AND product_attribute_id = ' . pSQL($product_attribute_id) . '
-            AND id_order_detail = ' . pSQL($id_order_detail)
+            AND product_id = ' . pSQL((int) $product_id) . '
+            AND product_attribute_id = ' . pSQL((int) $product_attribute_id) . '
+            AND id_order_detail = ' . pSQL((int) $id_order_detail)
         );
     }
 
