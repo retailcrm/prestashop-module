@@ -42,12 +42,15 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
         switch ($this->getCurrentLanguageISO()) {
             case 'ru':
                 $promoVideoUrl = 'VEatkEGJfGw';
+                $registerUrl = 'https://retailcrm.ru/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
                 break;
             case 'es':
                 $promoVideoUrl = 'LdJFoqOkLj8';
+                $registerUrl = 'https://retailcrm.es/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
                 break;
             default:
                 $promoVideoUrl = 'wLjtULfZvOw';
+                $registerUrl = 'https://retailcrm.pro/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
                 break;
         }
 
@@ -55,7 +58,8 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
             'assets' => $this->assets,
             'apiUrl' => RetailCRM::API_URL,
             'apiKey' => RetailCRM::API_KEY,
-            'promoVideoUrl' => $promoVideoUrl
+            'promoVideoUrl' => $promoVideoUrl,
+            'registerUrl' => $registerUrl
         );
     }
 
