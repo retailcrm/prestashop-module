@@ -887,7 +887,7 @@ class RetailcrmHistory
         ) {
             $orderTotalProducts = $infoOrder['summ'];
             $deliveryCost = $infoOrder['delivery']['cost'];
-            $totalDiscount = $deliveryCost + $orderTotalProducts - $totalPaid;
+            $totalDiscount = round($deliveryCost + $orderTotalProducts - $totalPaid, 2);
             $orderCartRules = $orderToUpdate->getCartRules();
 
             foreach ($orderCartRules as $valCartRules) {
