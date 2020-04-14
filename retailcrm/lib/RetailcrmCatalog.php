@@ -93,44 +93,31 @@ class RetailcrmCatalog
         $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
 
         foreach ($products AS $product) {
+            $homeCategory = Configuration::get('PS_HOME_CATEGORY');
             $category = $product['id_category_default'];
 
             if (!in_array($category, $categoriesIds)) {
                 continue;
             }
 
-            if ($category == Configuration::get('PS_HOME_CATEGORY')) {
-                $homeCategory = Configuration::get('PS_HOME_CATEGORY');
-                $temp_categories = Product::getProductCategories($product['id_product']);
-                $categoriesLeft = array_filter(
-                    $temp_categories,
-                    function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
-                        if ($val == $homeCategory) {
-                            return false;
-                        }
-
-                        if (in_array($val, $inactiveCategories)) {
-                            return false;
-                        }
-
-                        return in_array($val, $categoriesIds);
+            $currentProductCategories = Product::getProductCategories($product['id_product']);
+            $categoriesLeft = array_filter(
+                $currentProductCategories,
+                function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
+                    if ($val == $homeCategory) {
+                        return false;
                     }
-                );
 
-                if (empty($categoriesLeft)) {
-                    continue;
-                }
-
-                foreach ($temp_categories AS $innerCategory) {
-                    if ($innerCategory != $homeCategory)
-                        break;
-                }
-
-                if (count($versionSplit) == 2 && $versionSplit[0] == 1 && $versionSplit[1] <= 6) {
-                    if ($category == $homeCategory) {
-                        continue;
+                    if (in_array($val, $inactiveCategories)) {
+                        return false;
                     }
+
+                    return in_array($val, $categoriesIds);
                 }
+            );
+
+            if (empty($categoriesLeft)) {
+                continue;
             }
 
             if ($version == "1.3") {
@@ -308,6 +295,10 @@ class RetailcrmCatalog
      */
     private static function isCategoryActive($category)
     {
+        if ($category->id == Configuration::get('PS_HOME_CATEGORY')) {
+            return true;
+        }
+
         if (!$category->active) {
             return false;
         }
