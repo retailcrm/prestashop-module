@@ -59,6 +59,7 @@ class RetailcrmCatalog
 
         $items = array();
         $categories = array();
+        $inactiveCategories = array();
         $categoriesIds = array();
 
         if ($currency->iso_code == 'RUB') {
@@ -70,12 +71,12 @@ class RetailcrmCatalog
         $types = Category::getCategories($id_lang, true, false);
 
         foreach ($types as $category) {
-            if (!empty($category['id_parent'])) {
-                $parentCategory = new Category($category['id_parent']);
-
-                if ($parentCategory->id && !$parentCategory->active) {
-                    continue;
+            if (!self::isCategoryActive(new Category($category['id_category']))) {
+                if (!in_array($category['id_category'], $inactiveCategories)) {
+                    $inactiveCategories[] = $category['id_category'];
                 }
+
+                continue;
             }
 
             $picture = $link->getCatImageLink($category['link_rewrite'], $category['id_category'], 'category_default');
@@ -99,19 +100,34 @@ class RetailcrmCatalog
             }
 
             if ($category == Configuration::get('PS_HOME_CATEGORY')) {
+                $homeCategory = Configuration::get('PS_HOME_CATEGORY');
                 $temp_categories = Product::getProductCategories($product['id_product']);
+                $categoriesLeft = array_filter(
+                    $temp_categories,
+                    function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
+                        if ($val == $homeCategory) {
+                            return false;
+                        }
 
-                if (count(array_intersect($temp_categories, $categoriesIds)) != count($temp_categories)) {
+                        if (in_array($val, $inactiveCategories)) {
+                            return false;
+                        }
+
+                        return in_array($val, $categoriesIds);
+                    }
+                );
+
+                if (empty($categoriesLeft)) {
                     continue;
                 }
 
                 foreach ($temp_categories AS $innerCategory) {
-                    if ($innerCategory != Configuration::get('PS_HOME_CATEGORY'))
+                    if ($innerCategory != $homeCategory)
                         break;
                 }
 
                 if (count($versionSplit) == 2 && $versionSplit[0] == 1 && $versionSplit[1] <= 6) {
-                    if ($category == Configuration::get('PS_HOME_CATEGORY')) {
+                    if ($category == $homeCategory) {
                         continue;
                     }
                 }
@@ -283,5 +299,29 @@ class RetailcrmCatalog
         }
 
         return array($categories, $items);
+    }
+
+    /**
+     * @param \Category|\CategoryCore $category
+     *
+     * @return bool
+     */
+    private static function isCategoryActive($category)
+    {
+        if (!$category->active) {
+            return false;
+        }
+
+        if (!empty($category->id_parent)) {
+            $parent = new Category($category->id_parent);
+
+            if (!$parent->active) {
+                return false;
+            }
+
+            return self::isCategoryActive($parent);
+        }
+
+        return $category->active;
     }
 }
