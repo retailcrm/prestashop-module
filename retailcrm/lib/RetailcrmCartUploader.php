@@ -216,7 +216,8 @@ class RetailcrmCartUploader
     }
 
     /**
-     * Returns true if cart is empty
+     * Returns true if cart is empty or if cart emptiness cannot be checked because something gone wrong.
+     * Errors with checking cart emptiness will be correctly written to log.
      *
      * @param Cart|CartCore $cart
      *
@@ -233,12 +234,31 @@ class RetailcrmCartUploader
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
+            RetailcrmLogger::writeCaller(
+                __METHOD__,
+                sprintf("Failure while trying to get cart total (cart id=%d)", $cart->id)
+            );
+            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+
+            return true;
         }
 
-        // Don't upload empty cartsIds.
-        if (count($cart->getProducts()) == 0 || !$shouldBeUploaded) {
+        try {
+            // Don't upload empty cartsIds.
+            if (count($cart->getProducts()) == 0 || !$shouldBeUploaded) {
+                return true;
+            }
+        } catch (\Exception $exception) {
+            RetailcrmLogger::writeCaller(
+                __METHOD__,
+                sprintf("Failure while trying to get cart total (cart id=%d)", $cart->id)
+            );
+            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
+            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+
             return true;
         }
 
