@@ -192,7 +192,7 @@
                         <div class="retail-tile__col retail-tile__col_contacts">
                             <div class="retail-tile__item">
                                 <div class="retail-tile__row">
-                                    <a href="mailto:support@retailcrm.es" class="retail-tile__link">support@retailcrm.es</a>
+                                    <a href="mailto:{$supportEmail|escape:'htmlall':'UTF-8'}" class="retail-tile__link">{$supportEmail|escape:'htmlall':'UTF-8'}</a>
                                 </div>
                             </div>
                         </div>

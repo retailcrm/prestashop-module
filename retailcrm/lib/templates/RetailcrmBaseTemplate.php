@@ -43,14 +43,17 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
             case 'ru':
                 $promoVideoUrl = 'VEatkEGJfGw';
                 $registerUrl = 'https://retailcrm.ru/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
+                $supportEmail = 'support@retailcrm.ru';
                 break;
             case 'es':
                 $promoVideoUrl = 'LdJFoqOkLj8';
                 $registerUrl = 'https://retailcrm.es/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
+                $supportEmail = 'support@retailcrm.es';
                 break;
             default:
                 $promoVideoUrl = 'wLjtULfZvOw';
                 $registerUrl = 'https://retailcrm.pro/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
+                $supportEmail = 'support@retailcrm.pro';
                 break;
         }
 
@@ -59,7 +62,8 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
             'apiUrl' => RetailCRM::API_URL,
             'apiKey' => RetailCRM::API_KEY,
             'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl
+            'registerUrl' => $registerUrl,
+            'supportEmail' => $supportEmail
         );
     }
 
