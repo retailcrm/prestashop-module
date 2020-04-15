@@ -45,13 +45,9 @@ class RetailcrmExportEvent implements RetailcrmEventInterface
      */
     public function execute()
     {
-        $apiUrl = Configuration::get(RetailCRM::API_URL);
-        $apiKey = Configuration::get(RetailCRM::API_KEY);
+        $api = RetailcrmTools::getApiClient();
 
-        if (!empty($apiUrl) && !empty($apiKey)) {
-            /** @var \RetailcrmApiClientV5 $api */
-            $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
-        } else {
+        if (empty($api)) {
             RetailcrmLogger::writeCaller('orderHistory', 'set api key & url first');
             exit();
         }

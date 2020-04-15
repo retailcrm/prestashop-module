@@ -348,6 +348,24 @@ class RetailcrmTools
     }
 
     /**
+     * Returns API client proxy if connection is configured.
+     * Returns null if connection is not configured.
+     *
+     * @return \RetailcrmProxy|\RetailcrmApiClientV5|null
+     */
+    public static function getApiClient()
+    {
+        $apiUrl = Configuration::get(RetailCRM::API_URL);
+        $apiKey = Configuration::get(RetailCRM::API_KEY);
+
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            return new RetailcrmProxy($apiUrl, $apiKey, RetailCRM::getErrorLog());
+        }
+
+        return null;
+    }
+
+    /**
      * Merge new address to customer, preserves old phone numbers.
      *
      * @param array $customer

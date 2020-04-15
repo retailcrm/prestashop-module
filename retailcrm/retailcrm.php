@@ -159,6 +159,7 @@ class RetailCRM extends Module
             $this->registerHook('actionPaymentConfirmation') &&
             $this->registerHook('actionCustomerAccountAdd') &&
             $this->registerHook('actionOrderEdited') &&
+            $this->registerHook('actionCarrierUpdate') &&
             $this->registerHook('header') &&
             ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true) &&
             ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true) &&
@@ -451,6 +452,41 @@ class RetailCRM extends Module
     public function hookActionPaymentConfirmation($params)
     {
         return $this->hookActionOrderStatusPostUpdate($params);
+    }
+
+    /**
+     * This will ensure that our delivery mapping will not lose associations with edited deliveries.
+     * PrestaShop doesn't actually edit delivery - it will hide it via `delete` flag in DB and create new one.
+     * That's why we need to intercept this here and update delivery ID in mapping if necessary.
+     *
+     * @param array $params
+     */
+    public function hookActionCarrierUpdate($params)
+    {
+        if (!array_key_exists('id_carrier', $params) || !array_key_exists('carrier', $params)) {
+            return;
+        }
+
+        /** @var Carrier|\CarrierCore $newCarrier */
+        $newCarrier = $params['carrier'];
+        $oldCarrierId = $params['id_carrier'];
+
+        if (!($newCarrier instanceof Carrier) && !($newCarrier instanceof CarrierCore)) {
+            return;
+        }
+
+        $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
+        $deliveryDefault = json_decode(Configuration::get(static::DELIVERY_DEFAULT), true);
+
+        if ($oldCarrierId == $deliveryDefault) {
+            Configuration::updateValue(static::DELIVERY_DEFAULT, json_encode($newCarrier->id));
+        }
+
+        if (is_array($delivery) && array_key_exists($oldCarrierId, $delivery)) {
+            $delivery[$newCarrier->id] = $delivery[$oldCarrierId];
+            unset($delivery[$oldCarrierId]);
+            Configuration::updateValue(static::DELIVERY, json_encode($delivery));
+        }
     }
 
     public function hookActionOrderEdited($params)

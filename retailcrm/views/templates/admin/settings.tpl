@@ -72,12 +72,12 @@
                             <input required type="text" name="{$apiKeyName|escape:'htmlall':'UTF-8'}" value="{$apiKey|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='API key' mod='retailcrm'}">
                         </div>
                         {* TODO Comment out corporate customers support toggle. It's not ready for production. *}
-                        {* <div class="retail-form__row">
-                            <div class="retail-form__checkbox">
-                                <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">
-                                <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>
-                            </div>
-                        </div> *}
+{*                        <div class="retail-form__row">*}
+{*                            <div class="retail-form__checkbox">*}
+{*                                <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">*}
+{*                                <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>*}
+{*                            </div>*}
+{*                        </div>*}
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableHistoryUploadsName|escape:'htmlall':'UTF-8'}" value="{$enableHistoryUploads|escape:'htmlall':'UTF-8'}" {if $enableHistoryUploads}checked="checked"{/if} id="historyuploads-active">

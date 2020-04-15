@@ -28,43 +28,30 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
 
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
-
-class RetailcrmAbandonedCartsEvent implements RetailcrmEventInterface
-{
-    /**
-     * @inheritDoc
-     */
-    public function execute()
-    {
-        $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
-        if (empty($syncCartsActive)) {
-            return;
-        }
-
-        $api = RetailcrmTools::getApiClient();
-
-        if (empty($api)) {
-            RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
-            return;
-        }
-
-        RetailcrmCartUploader::init();
-        RetailcrmCartUploader::$api = $api;
-        RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
-        RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
-        RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
-        RetailcrmCartUploader::run();
-    }
+if (!defined('_PS_VERSION_')) {
+    exit;
 }
 
-$event = new RetailcrmAbandonedCartsEvent();
-$event->execute();
+/**
+ * Upgrade module to version 3.0.2
+ *
+ * @param \RetailCRM $module
+ *
+ * @return bool
+ */
+function upgrade_module_3_0_2($module)
+{
+    if ('retailcrm' != $module->name) {
+        return false;
+    }
+
+    return $module->registerHook('actionCarrierUpdate');
+}
