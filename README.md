@@ -20,4 +20,6 @@ Module allows integrate CMS Prestashop with [retailCRM](https://www.retailcrm.pr
 * Specify directories matching
 
 #### Notice
-This release contains an experimental feature "corporate customers". Use at your own risk.
+
+* This release contains an experimental feature "corporate customers". Use at your own risk.
+* This release only supports retailCRM API v5.
