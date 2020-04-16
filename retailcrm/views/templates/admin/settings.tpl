@@ -83,7 +83,6 @@
                                 <label for="receivebalances-active">{l s='Receive stocks from retailCRM' mod='retailcrm'}</label>
                             </div>
                         </div>
-                        {* TODO Comment out corporate customers support toggle. It's not ready for production. *}
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">
