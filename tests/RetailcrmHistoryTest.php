@@ -147,6 +147,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'customer' => array(
                 'segments' => array(),
                 'id' => 1,
+                'type' => 'customer',
                 'firstName' => 'Test',
                 'lastName' => 'Test',
                 'email' => 'email@test.ru',
@@ -240,6 +241,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         return array(
             'success' => true,
+            "pagination" => array(
+                "limit" => 20,
+                "totalCount" => 1,
+                "currentPage" => 1,
+                "totalPageCount" => 1
+            ),
             'history' => array(
                 array(
                     'id' => 654,
