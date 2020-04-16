@@ -30,12 +30,11 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
     }
 
     /**
-     * @param $apiVersion
      * @param $response
      *
      * @dataProvider dataProviderLoadStocks
      */
-    public function testLoadStocks($apiVersion, $response)
+    public function testLoadStocks($response)
     {
         if ($response['success'] == true) {
             $this->apiMock->expects($this->any())
@@ -83,19 +82,9 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
 
         return array(
             array(
-                'api_version' => 4,
-                'response' => $response['true'],
-            ),
-            array(
-                'api_version' => 5,
                 'response' => $response['true']
             ),
             array(
-                'api_version' => 4,
-                'response' => $response['false']
-            ),
-            array(
-                'api_version' => 5,
                 'response' => $response['false']
             )
         );

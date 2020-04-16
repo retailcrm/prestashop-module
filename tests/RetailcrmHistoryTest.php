@@ -32,12 +32,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->setConfig();
     }
 
-    /**
-     * @param $api_version
-     *
-     * @dataProvider dataProvider
-     */
-    public function testOrderCreate($api_version)
+    public function testOrderCreate()
     {
         $this->apiMock->expects($this->any())
             ->method('ordersHistory')
@@ -45,7 +40,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        $this->getHistoryDataNewOrder($api_version)
+                        $this->getHistoryDataNewOrder()
                     )
                 )
             );
@@ -56,14 +51,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     '200',
                     json_encode(
                         array(
-                            'order' => $this->getApiOrder($api_version)
+                            'order' => $this->getApiOrder()
                         )
                     )
                 )
             );
 
         RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-        RetailcrmHistory::$apiVersion = $api_version;
         RetailcrmHistory::$api = $this->apiMock;
 
         $oldLastId = RetailcrmTestHelper::getMaxOrderId();
@@ -94,25 +88,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             );
 
         RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-        RetailcrmHistory::$apiVersion = 5;
         RetailcrmHistory::$api = $this->apiMock;
 
         RetailcrmHistory::ordersHistory();
     }
 
-    public function dataProvider()
-    {
-        return array(
-            array(
-                'api_version' => '4'
-            ),
-            array(
-                'api_version' => '5'
-            )
-        );
-    }
-
-    private function getHistoryDataNewOrder($api_version)
+    private function getHistoryDataNewOrder()
     {
         return array(
             'success' => true,
@@ -130,13 +111,19 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'newValue' => array(
                         'code' => 'new'
                     ),
-                    'order' => $this->getApiOrder($api_version)
+                    'order' => $this->getApiOrder()
                 )
+            ),
+            "pagination" => array(
+                "limit" => 20,
+                "totalCount" => 1,
+                "currentPage" => 1,
+                "totalPageCount" => 1
             )
         );
     }
 
-    private function getApiOrder($api_version)
+    private function getApiOrder()
     {
         $order = array(
             'slug' => 1,
@@ -160,6 +147,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'customer' => array(
                 'segments' => array(),
                 'id' => 1,
+                'type' => 'customer',
                 'firstName' => 'Test',
                 'lastName' => 'Test',
                 'email' => 'email@test.ru',
@@ -240,15 +228,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'uploadedToExternalStoreSystem' => false
         );
 
-        if ($api_version == 5) {
-            $order['payments'][] = array(
-                'id' => 97,
-                'type' => 'cheque',
-                'amount' => 200
-            );
-        } else {
-            $order['paymentType'] = 'cheque';
-        }
+        $order['payments'][] = array(
+            'id' => 97,
+            'type' => 'cheque',
+            'amount' => 200
+        );
 
         return $order;
     }
@@ -257,6 +241,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         return array(
             'success' => true,
+            "pagination" => array(
+                "limit" => 20,
+                "totalCount" => 1,
+                "currentPage" => 1,
+                "totalPageCount" => 1
+            ),
             'history' => array(
                 array(
                     'id' => 654,

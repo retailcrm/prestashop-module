@@ -1,10 +1,45 @@
 <?php
-
+/**
+ * MIT License
+ *
+ * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
 class RetailcrmHistory
 {
+    /** @var \RetailcrmApiClientV5 */
     public static $api;
     public static $default_lang;
-    public static $apiVersion;
 
     /**
      * Get customers history
@@ -21,16 +56,34 @@ class RetailcrmHistory
             ? array('startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s')))))
             : array('sinceId' => $lastSync);
 
-        $history = self::$api->customersHistory($filter);
+        $request = new RetailcrmApiPaginatedRequest();
+        $historyChanges = array();
+        $history = $request
+            ->setApi(self::$api)
+            ->setMethod('customersHistory')
+            ->setParams(array($filter, '{{page}}'))
+            ->setDataKey('history')
+            ->setLimit(100)
+            ->execute()
+            ->getData();
 
-        if ($history && count($history->history)) {
-            $historyChanges = $history->history;
+        if (count($history) > 0) {
+            $historyChanges = static::filterHistory($history, 'customer');
+        }
+
+        if (count($historyChanges)) {
             $end = end($historyChanges);
-            $sinceid = $end['id'];
+            Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $end['id']);
 
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
 
             foreach ($customersHistory as $customerHistory) {
+                $syncAddressFIO = false;
+
+                if (isset($customerHistory['deleted']) && $customerHistory['deleted']) {
+                    continue;
+                }
+
                 if (isset($customerHistory['externalId'])) {
                     $customer = new Customer($customerHistory['externalId']);
 
@@ -50,16 +103,46 @@ class RetailcrmHistory
                         $customer->email = $customerHistory['email'];
                     }
 
+                    if (empty($customer->passwd)) {
+                        $customer->passwd = md5(time());
+                    }
+
+                    // Only sync subscription status if customer was marked as unsubscribed in retailCRM.
+                    if (isset($customerHistory['subscribed']) && $customerHistory['subscribed'] == false) {
+                        $customer->newsletter = false;
+                    }
+
                     if (self::loadInCMS($customer, 'update') === false) {
                         continue;
                     }
 
+                    if ($syncAddressFIO) {
+                        $customerAddresses = $customer->getAddresses(static::$default_lang);
+
+                        foreach ($customerAddresses as $addressArray) {
+                            if (isset($addressArray['alias']) && $addressArray['alias'] == 'default') {
+                                $cmsAddress = new Address($addressArray['id_address']);
+                                $cmsAddress->firstname = $customer->firstname;
+                                $cmsAddress->lastname = $customer->lastname;
+
+                                self::loadInCMS($cmsAddress, 'update');
+
+                                break;
+                            }
+                        }
+                    }
+
                 } else {
+                    if (!isset($customerHistory['firstName'])) {
+                        continue;
+                    }
+
                     $customer = new Customer();
 
                     $customer->firstname = $customerHistory['firstName'];
                     $customer->lastname = isset($customerHistory['lastName']) ? $customerHistory['lastName'] : '--';
                     $customer->id_lang = self::$default_lang;
+                    $customer->newsletter = false;
 
                     if (isset($customerHistory['birthday'])) {
                         $customer->birthday = $customerHistory['birthday'];
@@ -72,7 +155,7 @@ class RetailcrmHistory
                     if (isset($customerHistory['email']) && Validate::isEmail($customerHistory['email'])) {
                         $customer->email = $customerHistory['email'];
                     } else {
-                        $customer->email = md5($customerHistory['firstName']) . '@retailcrm.ru';
+                        $customer->email = RetailcrmTools::createPlaceholderEmail($customerHistory['firstName']);
                     }
 
                     $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
@@ -101,7 +184,13 @@ class RetailcrmHistory
                         $customerAddress->address1 = isset($customerHistory['address']['text']) ? $customerHistory['address']['text'] : '--';
 
                         if (isset($customerHistory['phones'])) {
-                            $phone = reset($customerHistory['phones']);
+                            // Can be returned as string, beware!
+                            if (is_array($customerHistory['phones'])) {
+                                $phone = reset($customerHistory['phones']);
+                            } else {
+                                $phone = $customerHistory['phones'];
+                            }
+
                             $customerAddress->phone = $phone['number'];
                         }
 
@@ -125,11 +214,6 @@ class RetailcrmHistory
                 self::$api->customersFixExternalIds($customerFix);
             }
 
-            /*
-             * Update last sync id
-             */
-            Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $sinceid);
-
             return true;
         } else {
             return 'Nothing to sync';
@@ -140,6 +224,8 @@ class RetailcrmHistory
      * Get orders history
      *
      * @return mixed
+     * @throws \PrestaShopException
+     * @throws \PrestaShopDatabaseException
      */
     public static function ordersHistory()
     {
@@ -161,16 +247,30 @@ class RetailcrmHistory
             $filter = array('startDate' => $lastDate);
         } elseif ($lastSync !== false) {
             $filter = array('sinceId' => $lastSync);
+        } else {
+            $filter = array();
         }
 
         $customerFix = array();
         $orderFix = array();
-        $history = self::$api->ordersHistory($filter);
+        $historyChanges = array();
+        $request = new RetailcrmApiPaginatedRequest();
+        $history = $request
+            ->setApi(self::$api)
+            ->setMethod('ordersHistory')
+            ->setParams(array($filter, '{{page}}'))
+            ->setDataKey('history')
+            ->setLimit(100)
+            ->execute()
+            ->getData();
 
-        if ($history && count($history->history) > 0) {
-            $historyChanges = $history->history;
+        if (count($history) > 0) {
+            $historyChanges = static::filterHistory($history, 'order');
+        }
+
+        if (count($historyChanges)) {
             $end = end($historyChanges);
-            $sinceId = $end['id'];
+            Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $end['id']);
 
             $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
             $cartStatus = (string)(Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
@@ -186,10 +286,10 @@ class RetailcrmHistory
                 }
 
                 if (!array_key_exists('externalId', $order_history)) {
-                    $responce = self::$api->ordersGet($order_history['id'], 'id');
+                    $response = self::$api->ordersGet($order_history['id'], 'id');
 
-                    if ($responce) {
-                        $order = $responce['order'];
+                    if ($response) {
+                        $order = $response['order'];
 
                         if ($order['status'] == $cartStatus) {
                             continue;
@@ -198,34 +298,35 @@ class RetailcrmHistory
                         continue;
                     }
 
-                    $delivery = $order['delivery']['code'];
+                    $delivery = isset($order['delivery']['code']) ? $order['delivery']['code'] : false;
 
-                    if (array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
+                    if ($delivery && array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
                         $deliveryType = $deliveries[$delivery];
                     }
 
-                    if (self::$apiVersion != 5) {
-                        $payment = $order['paymentType'];
-                    } else {
-                        if (isset($order['payments']) && count($order['payments']) == 1) {
-                            $paymentCRM = end($order['payments']);
-                            $payment = $paymentCRM['type'];
-                        } elseif (isset($order['payments']) && count($order['payments']) > 1) {
-                            foreach ($order['payments'] as $paymentCRM) {
-                                if ($paymentCRM['status'] != 'paid') {
-                                    $payment = $paymentCRM['type'];
-                                }
+                    if (isset($order['payments']) && count($order['payments']) == 1) {
+                        $paymentCRM = end($order['payments']);
+                        $payment = $paymentCRM['type'];
+                    } elseif (isset($order['payments']) && count($order['payments']) > 1) {
+                        foreach ($order['payments'] as $paymentCRM) {
+                            if (isset($paymentCRM['status']) && $paymentCRM['status'] != 'paid') {
+                                $payment = $paymentCRM['type'];
                             }
                         }
                     }
 
-                    if (array_key_exists($payment, $payments) && !empty($payments[$payment])) {
-                        if (Module::getInstanceByName($payments[$payment])) {
-                            $paymentType = Module::getModuleName($payments[$payment]);
+                    $crmPaymentType = isset($payment)
+                        ? ((is_array($payment) && isset($payment['type'])) ? $payment['type'] : $payment)
+                        : null;
+
+                    if (!is_null($crmPaymentType) && array_key_exists($crmPaymentType, $payments) && !empty($payments[$crmPaymentType])) {
+                        if (Module::getInstanceByName($payments[$crmPaymentType])) {
+                            $paymentType = Module::getModuleName($payments[$crmPaymentType]);
                         } else {
-                            $paymentType = $payments[$payment];
+                            $paymentType = $payments[$crmPaymentType];
                         }
-                        $paymentId = $payments[$payment];
+
+                        $paymentId = $payments[$crmPaymentType];
                     }
 
                     $state = $order['status'];
@@ -237,7 +338,7 @@ class RetailcrmHistory
                         $paymentId = $paymentDefault;
                     }
 
-                    if (!$paymentType) {
+                    if (!isset($paymentType) || !$paymentType) {
                         if ($paymentDefault) {
                             if (Module::getInstanceByName($paymentDefault)) {
                                 $paymentType = Module::getModuleName($paymentDefault);
@@ -245,10 +346,12 @@ class RetailcrmHistory
                                 $paymentType = $paymentDefault;
                             }
                         } else {
-                            error_log(
-                                'orderHistory: set default payment(error in order where id = '.$order['id'].')',
-                                3,
-                                _PS_ROOT_DIR_ . '/retailcrm.log'
+                            RetailcrmLogger::writeCaller(
+                                'orderHistory',
+                                sprintf(
+                                    'set default payment(error in order where id = %d)',
+                                    $order['id']
+                                )
                             );
 
                             continue;
@@ -259,29 +362,88 @@ class RetailcrmHistory
                         if ($deliveryDefault) {
                             $deliveryType = $deliveryDefault;
                         } else {
-                            error_log(
-                                'orderHistory: set default delivery(error in order where id = '.$order['id'].')',
-                                3,
-                                _PS_ROOT_DIR_ . '/retailcrm.log'
+                            RetailcrmLogger::writeCaller(
+                                'orderHistory',
+                                sprintf(
+                                    'set default delivery(error in order where id = %d)',
+                                    $order['id']
+                                )
                             );
+
                             continue;
                         }
                     }
 
-                    if (array_key_exists('externalId', $order['customer'])) {
+                    $customerId = null;
+                    $builtFromContact = false;
+
+                    if ($order['customer']['type'] == 'customer_corporate'
+                        && RetailcrmTools::isCorporateEnabled()
+                        && !empty($order['contact'])
+                        && array_key_exists('externalId', $order['contact'])
+                    ) {
+                        if (isset($order['contact']['externalId'])) {
+                            $customerId = Customer::customerIdExistsStatic($order['contact']['externalId']);
+                        }
+
+                        if (empty($customerId) && !empty($order['contact']['email'])) {
+                            $customerData = Customer::getCustomersByEmail($order['contact']['email']);
+                            $customerData = is_array($customerData) ? reset($customerData) : array();
+
+                            if (array_key_exists('id_customer', $customerData)) {
+                                $customerId = $customerData['id_customer'];
+                            }
+                        }
+                    } elseif (array_key_exists('externalId', $order['customer'])) {
                         $customerId = Customer::customerIdExistsStatic($order['customer']['externalId']);
                     }
 
-                    if (!array_key_exists('externalId', $order['customer'])
-                        || (isset($customerId) && $customerId == 0)
-                    ) {
+                    if (empty($customerId)) {
+                        $firstName = '';
+                        $lastName = '';
+                        $email = '';
+
+                        if ($order['customer']['type'] == 'customer_corporate') {
+                            if (!empty($order['contact'])) {
+                                $contact = $order['contact'];
+                                $firstName = $contact['firstName'];
+                                $lastName = !empty($contact['lastName']) ? $contact['lastName'] : '--';
+                                $email =
+                                    Validate::isEmail(isset($contact['email']) ? $contact['email'] : '')
+                                    ? $contact['email']
+                                    : RetailcrmTools::createPlaceholderEmail($contact['firstName']);
+                                $builtFromContact = true;
+                            } elseif (!empty($order['customer']['nickName'])) {
+                                $firstName = $order['customer']['nickName'];
+                                $lastName = '--';
+                                $email = Validate::isEmail(
+                                    isset($order['customer']['email']) ? $order['customer']['email'] : ''
+                                )
+                                    ? $order['customer']['email']
+                                    : RetailcrmTools::createPlaceholderEmail($order['customer']['nickName']);
+                            }
+                        } else {
+                            $firstName = $order['customer']['firstName'];
+                            $lastName = !empty($order['customer']['lastName'])
+                                ? $order['customer']['lastName']
+                                : '--';
+                            $email = Validate::isEmail(
+                                isset($order['customer']['email']) ? $order['customer']['email'] : ''
+                            )
+                                ? $order['customer']['email']
+                                : RetailcrmTools::createPlaceholderEmail($order['customer']['firstName']);
+                        }
+
+                        /** @var Customer|\CustomerCore $customer */
                         $customer = new Customer();
-                        $customer->firstname = $order['customer']['firstName'];
-                        $customer->lastname = !empty($order['customer']['lastName']) ? $order['customer']['lastName'] : '--';
-                        $customer->email = Validate::isEmail($order['customer']['email']) ?
-                            $order['customer']['email'] :
-                            md5($order['customer']['firstName']) . '@retailcrm.ru';
-                        $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
+                        $customer->firstname = $firstName;
+                        $customer->lastname = $lastName;
+                        $customer->email = $email;
+                        $customer->passwd = Tools::substr(
+                            str_shuffle(Tools::strtolower(sha1(rand() . time()))),
+                            0,
+                            5
+                        );
 
                         if (self::loadInCMS($customer, 'add') === false) {
                             continue;
@@ -290,14 +452,16 @@ class RetailcrmHistory
                         array_push(
                             $customerFix,
                             array(
-                                'id' => $order['customer']['id'],
+                                'id' => $builtFromContact ? $order['contact']['id'] : $order['customer']['id'],
                                 'externalId' => $customer->id
                             )
                         );
                     } else {
+                        /** @var Customer|\CustomerCore $customer */
                         $customer = new Customer($customerId);
                     }
 
+                    /** @var Address|\AddressCore $address */
                     $address = new Address();
                     $address->id_customer = $customer->id;
                     $address->id_country = $default_country;
@@ -310,7 +474,25 @@ class RetailcrmHistory
                     $address->address1 = !empty($order['delivery']['address']['text']) ?
                         $order['delivery']['address']['text'] : '--';
                     $address->phone = isset($order['phone']) ? $order['phone'] : '';
-                    $address->add();
+
+                    if (!empty($order['company'])
+                        && !empty($order['company']['contragent'])
+                        && !empty($order['company']['contragent']['legalName'])
+                    ) {
+                        $address->company = $order['company']['contragent']['legalName'];
+
+                        if (!empty($order['company']['contragent']['INN'])) {
+                            $address->vat_number = $order['company']['contragent']['INN'];
+                        }
+                    }
+
+                    static::assignAddressIdByFields($customer, $address);
+
+                    if (empty($address->id)) {
+                        $address->add();
+                    } else {
+                        $address->save();
+                    }
 
                     $cart = new Cart();
                     $cart->id_currency = $default_currency;
@@ -373,6 +555,11 @@ class RetailcrmHistory
                     $newOrder->conversion_rate = 1.000000;
                     if (isset($orderStatus)) {
                         $newOrder->current_state = (int) $orderStatus;
+                        $newOrderHistoryRecord = new OrderHistory(
+                            null,
+                            static::$default_lang,
+                            Context::getContext()->shop->id
+                        );
                     }
                     if (!empty($order['delivery']['date'])) {
                         $newOrder->delivery_date = $order['delivery']['date'];
@@ -393,6 +580,7 @@ class RetailcrmHistory
                         $product = new Product((int) $item['offer']['externalId'], false, self::$default_lang);
                         $product_id = $item['offer']['externalId'];
                         $product_attribute_id = 0;
+
                         if (strpos($item['offer']['externalId'], '#') !== false) {
                             $product_id = explode('#', $item['offer']['externalId']);
                             $product_attribute_id = $product_id[1];
@@ -431,12 +619,29 @@ class RetailcrmHistory
                             'id_customization' => 0
                         );
 
-                        if (isset($item['discountTotal']) && self::$apiVersion == 5) {
+                        if (isset($item['discountTotal'])) {
                             $newOrder->total_discounts += $item['discountTotal'] * $item['quantity'];
                         }
                     }
 
-                    $newOrder->add(false, false);
+                    try {
+                        $newOrder->add(false, false);
+
+                        if (isset($newOrderHistoryRecord)) {
+                            $newOrderHistoryRecord->id_order = $newOrder->id;
+                            $newOrderHistoryRecord->id_order_state = $newOrder->current_state;
+                            $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
+                            $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
+                            $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
+                            $newOrderHistoryRecord->add();
+                        }
+                    } catch (\Exception $e) {
+                        RetailcrmLogger::writeCaller(
+                            __METHOD__,
+                            sprintf('Error adding order id=%d: %s', $order['id'], $e->getMessage())
+                        );
+                        RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+                    }
 
                     if (isset($order['payments']) && !empty($order['payments'])) {
                         foreach ($order['payments'] as $payment) {
@@ -465,7 +670,7 @@ class RetailcrmHistory
                         }
                     }
 
-                    $carrier = new OrderCarrierCore();
+                    $carrier = new OrderCarrier();
                     $carrier->id_order = $newOrder->id;
                     $carrier->id_carrier = $deliveryType;
                     $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
@@ -489,8 +694,17 @@ class RetailcrmHistory
                     if (!empty($orderFix)) {
                         self::$api->ordersFixExternalIds($orderFix);
                     }
+                    //TODO
+                    // Also update orders numbers after creating them in PrestaShop.
+                    // Current logic will result in autogenerated order numbers in retailCRM if
+                    // order was placed via retailCRM interface.
                 } else {
                     $order = $order_history;
+
+                    if (stripos($order['externalId'], 'pscart_') !== false) {
+                        continue;
+                    }
+
                     $orderToUpdate = new Order((int) $order['externalId']);
 
                     /*
@@ -503,7 +717,13 @@ class RetailcrmHistory
                         if (isset($deliveries[$dtype]) && $deliveries[$dtype] != null) {
                             if ($deliveries[$dtype] != $orderToUpdate->id_carrier or $dcost != null) {
                                 if ($dtype != null) {
-                                    $orderCarrier = new OrderCarrier($orderToUpdate->id_order_carrier);
+                                    if (property_exists($orderToUpdate, 'id_order_carrier')) {
+                                        $idOrderCarrier = $orderToUpdate->id_order_carrier;
+                                    } elseif (method_exists($orderToUpdate, 'getIdOrderCarrier')) {
+                                        $idOrderCarrier = $orderToUpdate->getIdOrderCarrier();
+                                    }
+
+                                    $orderCarrier = new OrderCarrier($idOrderCarrier);
                                     $orderCarrier->id_carrier = $deliveries[$dtype];
                                 }
 
@@ -526,19 +746,7 @@ class RetailcrmHistory
                     /**
                      * check payment type
                      */
-                    if (!empty($order['paymentType']) && self::$apiVersion != 5) {
-                        $ptype = $order['paymentType'];
-
-                        if ($payments[$ptype] != null) {
-                            $paymentType = Module::getModuleName($payments[$ptype]);
-                            if ($payments[$ptype] != $orderToUpdate->payment) {
-                                $orderToUpdate->payment = $paymentType != null ? $paymentType : $payments[$ptype];
-                                $orderPayment = OrderPayment::getByOrderId($orderToUpdate->id);
-                                $orderPayment->payment_method = $payments[$ptype];
-                                $orderPayment->update();
-                            }
-                        }
-                    } elseif (!empty($order['payments']) && self::$apiVersion == 5) {
+                    if (!empty($order['payments'])) {
                         foreach ($order['payments'] as $payment) {
                             if (!isset($payment['externalId'])
                                 && isset($payment['status'])
@@ -567,7 +775,8 @@ class RetailcrmHistory
                                     }
 
                                     $orderPayment->id_currency = $default_currency;
-                                    $orderPayment->date_add = $payment['paidAt'];
+                                    $orderPayment->date_add =
+                                        isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
                                     $orderPayment->save();
                                 }
                             }
@@ -584,7 +793,7 @@ class RetailcrmHistory
                     if (!empty($order['status'])) {
                         $stype = $order['status'];
 
-                        if ($statuses[$stype] != null) {
+                        if (isset($statuses[$stype]) && !empty($statuses[$stype])) {
                             if ($statuses[$stype] != $orderToUpdate->current_state) {
                                 $orderHistory = new OrderHistory();
                                 $orderHistory->id_employee = 0;
@@ -601,47 +810,35 @@ class RetailcrmHistory
                 }
             }
 
-            /*
-             * Update last sync timestamp
-             */
-            Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $sinceId);
-
             return true;
         } else {
             return 'Nothing to sync';
         }
     }
 
+    /**
+     * Updates items in order via history
+     *
+     * @param array            $order
+     * @param Order|\OrderCore $orderToUpdate
+     *
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     private static function updateItems($order, $orderToUpdate)
     {
         /*
          * Clean deleted items
          */
         $id_order_detail = null;
+
         foreach ($order['items'] as $key => $item) {
             if (isset($item['delete']) && $item['delete'] == true) {
-                if (strpos($item['offer']['externalId'], '#') !== false) {
-                    $itemId = explode('#', $item['offer']['externalId']);
-                    $product_id = $itemId[0];
-                    $product_attribute_id = $itemId[1];
-                } else {
-                    $product_id = $item['offer']['externalId'];
-                    $product_attribute_id = 0;
-                }
-
-                if (isset($item['externalIds'])) {
-                    foreach ($item['externalIds'] as $externalId) {
-                        if ($externalId['code'] == 'prestashop') {
-                            $id_order_detail = explode('_', $externalId['value']);
-                        }
-                    }
-                }else {
-                    $id_order_detail = explode('#', $item['offer']['externalId']);
-                }
-
-                if (isset($id_order_detail[1])){
-                    $id_order_detail = $id_order_detail[1];
-                }
+                $parsedExtId = static::parseItemExternalId($item);
+                $product_id = $parsedExtId['product_id'];
+                $product_attribute_id = $parsedExtId['product_attribute_id'];
+                $id_order_detail = !empty($parsedExtId['id_order_detail'])
+                    ? $parsedExtId['id_order_detail'] : 0;
 
                 self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail);
 
@@ -655,47 +852,33 @@ class RetailcrmHistory
          */
         foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
             foreach ($order['items'] as $key => $item) {
-                if (strpos($item['offer']['externalId'], '#') !== false) {
-                    $itemId = explode('#', $item['offer']['externalId']);
-                    $product_id = $itemId[0];
-                    $product_attribute_id = $itemId[1];
-                } else {
-                    $product_id = $item['offer']['externalId'];
-                    $product_attribute_id = 0;
-                }
-                if ($product_id == $orderItem['product_id'] &&
-                    $product_attribute_id == $orderItem['product_attribute_id']) {
+                $parsedExtId = static::parseItemExternalId($item);
+                $product_id = $parsedExtId['product_id'];
+                $product_attribute_id = $parsedExtId['product_attribute_id'];
+                $isExistingItem = isset($item['create']) ? false : true;
+
+                if ($isExistingItem &&
+                    $product_id == $orderItem['product_id'] &&
+                    $product_attribute_id == $orderItem['product_attribute_id']
+                ) {
                     $product = new Product((int) $product_id, false, self::$default_lang);
                     $tax = new TaxCore($product->id_tax_rules_group);
+
                     if ($product_attribute_id != 0) {
                         $prodPrice = Combination::getPrice($product_attribute_id);
                         $prodPrice = $prodPrice > 0 ? $prodPrice : $product->price;
                     } else {
                         $prodPrice = $product->price;
                     }
+
                     $prodPrice = $prodPrice + $prodPrice / 100 * $tax->rate;
+
                     // discount
-                    if (self::$apiVersion == 5) {
-                        $productPrice = $prodPrice - (isset($item['discountTotal']) ? $item['discountTotal'] : 0);
-                    } else {
-                        $productPrice = $prodPrice - $item['discount'];
-                        if ($item['discountPercent'] > 0) {
-                            $productPrice = $productPrice - ($prodPrice / 100 * $item['discountPercent']);
-                        }
-                    }
+                    $productPrice = $prodPrice - (isset($item['discountTotal']) ? $item['discountTotal'] : 0);
                     $productPrice = round($productPrice, 2);
-
-                    if (isset($item['externalIds'])) {
-                        foreach ($item['externalIds'] as $externalId) {
-                            if ($externalId['code'] == 'prestashop') {
-                                $id_order_detail = explode('_', $externalId['value']);
-                            }
-                        }
-                    } else {
-                        $id_order_detail = explode('#', $item['offer']['externalId']);
-                    }
-
-                    $orderDetail = new OrderDetail($id_order_detail[1]);
+                    $orderDetailId = !empty($parsedExtId['id_order_detail'])
+                        ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
+                    $orderDetail = new OrderDetail($orderDetailId);
                     $orderDetail->unit_price_tax_incl = $productPrice;
                     $orderDetail->id_warehouse = 0;
 
@@ -703,7 +886,7 @@ class RetailcrmHistory
                     if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
                         $orderDetail->product_quantity = $item['quantity'];
                         $orderDetail->product_quantity_in_stock = $item['quantity'];
-                        $orderDetail->id_order_detail = $id_order_detail[1];
+                        $orderDetail->id_order_detail = $orderDetailId;
                         $orderDetail->id_warehouse = 0;
                     }
 
@@ -712,16 +895,15 @@ class RetailcrmHistory
                         $orderDetail->id_shop = Context::getContext()->shop->id;
                         $product = new Product((int) $product_id, false, self::$default_lang);
 
-                        $productName = htmlspecialchars(strip_tags($item['offer']['displayName']));
+                        $productName = static::removeEdgeQuotes(htmlspecialchars(strip_tags(
+                            !empty($item['offer']['displayName'])
+                                ? $item['offer']['displayName']
+                                : Product::getProductName($product_id, $product_attribute_id)
+                        )));
 
-                        $orderDetail->product_name = implode('', array('\'', $productName, '\''));
-                        $orderDetail->product_price = $item['initialPrice'] ? $item['initialPrice'] : $product->price;
-
-                        if (strpos($item['offer']['externalId'], '#') !== false) {
-                            $product_id = explode('#', $item['offer']['externalId']);
-                            $product_attribute_id = $product_id[1];
-                            $product_id = $product_id[0];
-                        }
+                        static::setOrderDetailProductName($orderDetail, $productName);
+                        $orderDetail->product_price = isset($item['initialPrice'])
+                            ? $item['initialPrice'] : $product->price;
 
                         $orderDetail->product_id = (int) $product_id;
                         $orderDetail->product_attribute_id = (int) $product_attribute_id;
@@ -773,15 +955,19 @@ class RetailcrmHistory
          */
         if (!empty($order['items'])) {
             foreach ($order['items'] as $key => $newItem) {
-                $product_id = $newItem['offer']['externalId'];
-                $product_attribute_id = 0;
-                if (strpos($product_id, '#') !== false) {
-                    $product_id = explode('#', $product_id);
-                    $product_attribute_id = $product_id[1];
-                    $product_id = $product_id[0];
+                $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
+
+                if (!$isNewItem) {
+                    continue;
                 }
+
+                $parsedExtId = static::parseItemExternalId($newItem);
+                $product_id = $parsedExtId['product_id'];
+                $product_attribute_id = $parsedExtId['product_attribute_id'];
+
                 $product = new Product((int) $product_id, false, self::$default_lang);
                 $tax = new TaxCore($product->id_tax_rules_group);
+
                 if ($product_attribute_id != 0) {
                     $productName = htmlspecialchars(
                         strip_tags(Product::getProductName($product_id, $product_attribute_id))
@@ -804,23 +990,16 @@ class RetailcrmHistory
                     $ItemDiscount = true;
                 }
 
-                if(isset($newItem['externalIds'])) {
-                    foreach ($newItem['externalIds'] as $externalId) {
-                        if ($externalId['code'] == 'prestashop') {
-                            $id_order_detail = explode('_', $externalId['value']);
-                        }
-                    }
-                } else {
-                    $id_order_detail = explode('#', $item['offer']['externalId']);
-                }
+                $orderDetail = new OrderDetail(
+                    !empty($parsedExtId['id_order_detail']) ? $parsedExtId['id_order_detail'] : null
+                );
 
-                $orderDetail = new OrderDetail($id_order_detail[1]);
+                static::setOrderDetailProductName($orderDetail, $productName);
                 $orderDetail->id_order = $orderToUpdate->id;
                 $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
                 $orderDetail->id_shop = Context::getContext()->shop->id;
                 $orderDetail->product_id = (int) $product_id;
                 $orderDetail->product_attribute_id = (int) $product_attribute_id;
-                $orderDetail->product_name = implode('', array('\'', $productName, '\''));
                 $orderDetail->product_quantity = (int) $newItem['quantity'];
                 $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
                 $orderDetail->product_price = $productPrice;
@@ -831,7 +1010,8 @@ class RetailcrmHistory
                 $orderDetail->unit_price_tax_incl = ($productPrice + $productPrice / 100 * $tax->rate);
                 $orderDetail->original_product_price = $productPrice;
                 $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse) ? $orderToUpdate->id_warehouse : 0;
-                $orderDetail->id_order_detail = $id_order_detail[1];
+                $orderDetail->id_order_detail =
+                    !empty($parsedExtId['id_order_detail']) ? $parsedExtId['id_order_detail'] : null;
 
                 if ($orderDetail->save()) {
                     $upOrderItems = array(
@@ -883,7 +1063,7 @@ class RetailcrmHistory
             || isset($order['discountPercent'])
             || isset($order['delivery']['cost'])
             || isset($order['discountTotal'])
-            || $ItemDiscount
+            || isset($ItemDiscount) && $ItemDiscount
         ) {
             $orderTotalProducts = $infoOrder['summ'];
             $deliveryCost = $infoOrder['delivery']['cost'];
@@ -923,10 +1103,10 @@ class RetailcrmHistory
     {
         Db::getInstance()->execute('
             DELETE FROM ' . _DB_PREFIX_ . 'order_detail
-            WHERE id_order = ' . $order_id . '
-            AND product_id = ' . $product_id . '
-            AND product_attribute_id = ' . $product_attribute_id . '
-            AND id_order_detail = ' . $id_order_detail
+            WHERE id_order = ' . pSQL((int) $order_id) . '
+            AND product_id = ' . pSQL((int) $product_id) . '
+            AND product_attribute_id = ' . pSQL((int) $product_attribute_id) . '
+            AND id_order_detail = ' . pSQL((int) $id_order_detail)
         );
     }
 
@@ -940,8 +1120,8 @@ class RetailcrmHistory
     /**
      * load and catch exception
      *
-     * @param $object
-     * @param $action
+     * @param \ObjectModel|\ObjectModelCore $object
+     * @param string $action
      *
      * @return boolean
      */
@@ -950,15 +1130,239 @@ class RetailcrmHistory
         try {
             $object->$action();
         } catch (PrestaShopException $e) {
-            error_log(
-                '[' . date('Y-m-d H:i:s') . '] History:loadInCMS ' . $e->getMessage() . "\n",
-                3,
-                _PS_ROOT_DIR_ . '/retailcrm.log'
+            RetailcrmLogger::writeCaller(
+                'loadInCMS',
+                sprintf(
+                    ' > %s %s',
+                    (string)$action,
+                    $e->getMessage()
+                )
             );
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Filters out history by these terms:
+     *  - Changes from current API key will be added only if CMS changes are more actual than history.
+     *  - All other changes will be merged as usual.
+     * It fixes these problems:
+     *  - Changes from current API key are merged when it's not needed.
+     *  - Changes from CRM can overwrite more actual changes from CMS due to ignoring current API key changes.
+     *
+     * @param array  $historyEntries Raw history from CRM
+     * @param string $recordType     Entity field name, e.g. `customer` or `order`.
+     *
+     * @return array
+     */
+    private static function filterHistory($historyEntries, $recordType)
+    {
+        $history = array();
+        $organizedHistory = array();
+        $notOurChanges = array();
+
+        foreach ($historyEntries as $entry) {
+            if (!isset($entry[$recordType]['externalId'])) {
+                if ($entry['source'] == 'api'
+                    && isset($change['apiKey']['current'])
+                    && $entry['apiKey']['current'] == true
+                    && $entry['field'] != 'externalId'
+                ) {
+                    continue;
+                } else {
+                    $history[] = $entry;
+                }
+
+                continue;
+            }
+
+            $externalId = $entry[$recordType]['externalId'];
+            $field = $entry['field'];
+
+            if (!isset($organizedHistory[$externalId])) {
+                $organizedHistory[$externalId] = array();
+            }
+
+            if (!isset($notOurChanges[$externalId])) {
+                $notOurChanges[$externalId] = array();
+            }
+
+            if ($entry['source'] == 'api'
+                && isset($entry['apiKey']['current'])
+                && $entry['apiKey']['current'] == true
+            ) {
+                if (isset($notOurChanges[$externalId][$field]) || $entry['field'] == 'externalId') {
+                    $organizedHistory[$externalId][] = $entry;
+                } else {
+                    continue;
+                }
+            } else {
+                $organizedHistory[$externalId][] = $entry;
+                $notOurChanges[$externalId][$field] = true;
+            }
+        }
+
+        unset($notOurChanges);
+
+        foreach ($organizedHistory as $historyChunk) {
+            $history = array_merge($history, $historyChunk);
+        }
+
+        return $history;
+    }
+
+    /**
+     * Assign address ID from customer addresses
+     *
+     * @param Customer|CustomerCore $customer
+     * @param Address|\AddressCore $address
+     */
+    private static function assignAddressIdByFields($customer, &$address)
+    {
+        $checkMapping = array(
+            'id_customer',
+            'id_country',
+            'lastname',
+            'firstname',
+            'alias',
+            'postcode',
+            'city',
+            'address1',
+            'phone',
+            'company',
+            'vat_number'
+        );
+
+        // Assigns id to $address if same address was found in customer
+        foreach ($customer->getAddresses(static::$default_lang) as $customerInnerAddress) {
+            /** @var Address|\AddressCore $customerAddress */
+            $customerAddress = new Address($customerInnerAddress['id_address']);
+
+            foreach ($checkMapping as $field) {
+                if ($customerAddress->$field != $address->$field) {
+                    continue 2;
+                }
+            }
+
+            $address->id = $customerInnerAddress['id_address'];
+
+            break;
+        }
+    }
+
+    /**
+     * Returns array with product id and product attribute id.
+     * Returns 0 as attribute id if attribute is not present.
+     * Returns array(0, 0) in case of failure.
+     *
+     * @param $item
+     *
+     * @return array
+     */
+    private static function parseItemExternalId($item)
+    {
+        if (isset($item['externalIds'])) {
+            foreach ($item['externalIds'] as $externalId) {
+                if ($externalId['code'] == 'prestashop') {
+                    return static::parseItemExternalIdString($externalId['value']);
+                }
+            }
+        } else {
+            return static::parseItemExternalIdString($item['offer']['externalId']);
+        }
+
+        return static::parseItemExternalIdString('0#0_0');
+    }
+
+    /**
+     * Parse item externalId
+     *
+     * @param $externalIdString
+     *
+     * @return array
+     */
+    private static function parseItemExternalIdString($externalIdString)
+    {
+        $parsed = explode('_', $externalIdString);
+        $data = array(
+            'product_id' => 0,
+            'product_attribute_id' => 0,
+            'id_order_detail' => 0
+        );
+
+        if (count($parsed) > 0) {
+            $productIdParsed = explode('#', $parsed[0]);
+
+            if (count($productIdParsed) == 2) {
+                $data['product_id'] = $productIdParsed[0];
+                $data['product_attribute_id'] = $productIdParsed[1];
+            } elseif (count($productIdParsed) == 1) {
+                $data['product_id'] = $parsed[0];
+            }
+
+            if (count($parsed) == 2) {
+                $data['id_order_detail'] = $parsed[1];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Returns oldest active employee id. For order history record.
+     *
+     * @return false|string|null
+     */
+    private static function getFirstEmployeeId()
+    {
+        return Db::getInstance()->getValue('
+            SELECT `id_employee`
+            FROM `' . _DB_PREFIX_ . 'employee`
+            WHERE `active` = 1
+            ORDER BY `id_employee` ASC
+		');
+    }
+
+    /**
+     * Removes quotes on string start and end
+     *
+     * @param $str
+     *
+     * @return false|string
+     */
+    private static function removeEdgeQuotes($str)
+    {
+        if (strlen($str) >= 2) {
+            $newStr = $str;
+
+            if ($newStr[0] == '\'' && $newStr[strlen($newStr) - 1] == '\'') {
+                $newStr = substr($newStr, 1, strlen($newStr) - 2);
+            }
+
+            return $newStr;
+        }
+
+        return $str;
+    }
+
+    /**
+     * Sets product_name in OrderDetail through validation
+     *
+     * @param OrderDetail|\OrderDetailCore $object
+     * @param string                       $name
+     *
+     * @throws \PrestaShopException
+     */
+    private static function setOrderDetailProductName(&$object, $name)
+    {
+        $object->product_name = static::removeEdgeQuotes($name);
+
+        if ($object->validateField('product_name', $object->product_name) !== true) {
+            $object->product_name = implode('', array('\'', $name, '\''));
+        }
     }
 }

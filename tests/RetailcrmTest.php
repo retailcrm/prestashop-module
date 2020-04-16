@@ -58,12 +58,10 @@ class RetailCRMTest extends RetailcrmTestCase
 
     /**
      * @param $newOrder
-     * @param $apiVersion
      * @dataProvider dataProvider
      */
-    public function testHookActionOrderStatusPostUpdate($newOrder, $apiVersion)
+    public function testHookActionOrderStatusPostUpdate($newOrder)
     {
-        $this->retailcrmModule->apiVersion = $apiVersion;
         $order = new Order(1);
         $customer = new Customer($order->id_customer);
         $cart = $this->createMock('Cart');
@@ -128,20 +126,10 @@ class RetailCRMTest extends RetailcrmTestCase
     {
         return array(
             array(
-                'newOrder' => true,
-                'apiVersion' => 4
+                'newOrder' => true
             ),
             array(
-                'newOrder' => false,
-                'apiVersion' => 4
-            ),
-            array(
-                'newOrder' => true,
-                'apiVersion' => 5
-            ),
-            array(
-                'newOrder' => false,
-                'apiVersion' => 5
+                'newOrder' => false
             )
         );
     }

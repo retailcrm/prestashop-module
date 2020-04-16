@@ -1,0 +1,1213 @@
+<?php
+
+/**
+ * MIT License
+ *
+ * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
+class RetailcrmOrderBuilder
+{
+    /**
+     * @var \RetailcrmApiClientV5 $api
+     */
+    protected $api;
+
+    /**
+     * @var int $default_lang
+     */
+    protected $default_lang;
+
+    /**
+     * @var Order|OrderCore|null $cmsOrder
+     */
+    protected $cmsOrder;
+
+    /**
+     * @var Cart|CartCore|null $cmsCart
+     */
+    protected $cmsCart;
+
+    /**
+     * @var Customer|CustomerCore|null $cmsCustomer
+     */
+    protected $cmsCustomer;
+
+    /**
+     * @var Address|\AddressCore
+     */
+    protected $invoiceAddress;
+
+    /**
+     * @var Address|\AddressCore
+     */
+    protected $deliveryAddress;
+
+    /**
+     * @var array|null $createdCustomer
+     */
+    protected $createdCustomer;
+
+    /**
+     * @var array|null $corporateCompanyExtractCache
+     */
+    protected $corporateCompanyExtractCache;
+
+    /**
+     * @var string $apiSite
+     */
+    protected $apiSite;
+
+    /**
+     * @return RetailcrmOrderBuilder
+     */
+    public function defaultLangFromConfiguration()
+    {
+        $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        return $this;
+    }
+
+    /**
+     * @param mixed $default_lang
+     *
+     * @return RetailcrmOrderBuilder
+     */
+    public function setDefaultLang($default_lang)
+    {
+        $this->default_lang = $default_lang;
+        return $this;
+    }
+
+    /**
+     * @param mixed $api
+     *
+     * @return RetailcrmOrderBuilder
+     */
+    public function setApi($api)
+    {
+        $this->api = $api;
+        return $this;
+    }
+
+    /**
+     * @param Order|OrderCore $cmsOrder
+     *
+     * @return RetailcrmOrderBuilder
+     */
+    public function setCmsOrder($cmsOrder)
+    {
+        $this->cmsOrder = $cmsOrder;
+
+        if ($cmsOrder instanceof Order) {
+            if (is_null($this->cmsCustomer)) {
+                $this->cmsCustomer = $cmsOrder->getCustomer();
+            }
+
+            if (is_null($this->invoiceAddress)) {
+                $this->invoiceAddress = new Address($cmsOrder->id_address_invoice);
+            }
+
+            if (is_null($this->deliveryAddress)) {
+                $this->deliveryAddress = new Address($cmsOrder->id_address_delivery);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param Cart|CartCore $cmsCart
+     *
+     * @return RetailcrmOrderBuilder
+     */
+    public function setCmsCart($cmsCart)
+    {
+        $this->cmsCart = $cmsCart;
+
+        if ($cmsCart instanceof Cart) {
+            if (is_null($this->cmsCustomer) && !empty($cmsCart->id_customer)) {
+                $this->cmsCustomer = new Customer($cmsCart->id_customer);
+            }
+
+            if (is_null($this->invoiceAddress) && !empty($cmsCart->id_address_invoice)) {
+                $this->invoiceAddress = new Address($cmsCart->id_address_invoice);
+            }
+
+            if (is_null($this->deliveryAddress) && !empty($cmsCart->id_address_delivery)) {
+                $this->deliveryAddress = new Address($cmsCart->id_address_delivery);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param mixed $cmsCustomer
+     *
+     * @return RetailcrmOrderBuilder
+     */
+    public function setCmsCustomer($cmsCustomer)
+    {
+        $this->cmsCustomer = $cmsCustomer;
+        return $this;
+    }
+
+    /**
+     * getApiSite
+     *
+     * @return string|null
+     */
+    protected function getApiSite()
+    {
+        if (empty($this->apiSite)) {
+            $this->apiSite = $this->api->getSingleSiteForKey();
+        }
+
+        return (empty($this->apiSite) || is_bool($this->apiSite)) ? null : $this->apiSite;
+    }
+
+    /**
+     * Returns order with prepared customer data. Customer is created if it's not exist, shouldn't be called to just
+     * build order.
+     *
+     * @param bool $dataFromCart
+     *
+     * @return array
+     */
+    public function buildOrderWithPreparedCustomer($dataFromCart = false)
+    {
+        if (RetailcrmTools::isCorporateEnabled() && RetailcrmTools::isOrderCorporate($this->cmsOrder)) {
+            return $this->buildCorporateOrder($dataFromCart);
+        }
+
+        return $this->buildRegularOrder($dataFromCart);
+    }
+
+    /**
+     * Creates customer if it's not present
+     *
+     * @return array|bool
+     */
+    private function createCustomerIfNotExist()
+    {
+        $this->validateCmsCustomer();
+
+        $customer = $this->findRegularCustomer();
+
+        if (empty($customer)) {
+            $crmCustomer = static::buildCrmCustomer($this->cmsCustomer, $this->buildRegularAddress());
+            $createResponse = $this->api->customersCreate($crmCustomer);
+
+            if (!$createResponse || !$createResponse->isSuccessful()) {
+                $this->createdCustomer = array();
+
+                return false;
+            }
+
+            $this->createdCustomer = $this->findRegularCustomer();
+            $customer = $this->createdCustomer;
+        } else {
+            $crmCustomer = RetailcrmTools::mergeCustomerAddress($customer, $this->buildRegularAddress());
+            $response = $this->api->customersEdit($crmCustomer);
+
+            if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
+                $customer = $crmCustomer;
+            }
+        }
+
+        return isset($customer['id']) ? $customer : false;
+    }
+
+    private function buildRegularOrder($dataFromCart = false)
+    {
+        $this->createCustomerIfNotExist();
+        $order = static::buildCrmOrder(
+            $this->cmsOrder,
+            $this->cmsCustomer,
+            $this->cmsCart,
+            false,
+            false,
+            $dataFromCart
+        );
+
+        return RetailcrmTools::clearArray($order);
+    }
+
+    /**
+     * Build regular customer address
+     *
+     * @return array
+     */
+    private function buildRegularAddress()
+    {
+        $addressBuilder = new RetailcrmAddressBuilder();
+
+        return $addressBuilder
+            ->setAddress($this->invoiceAddress)
+            ->build()
+            ->getDataArray();
+    }
+
+    /**
+     * Builds address array for corporate customer, returns empty array in case of failure.
+     *
+     * @param bool $isMain
+     *
+     * @return array
+     */
+    private function buildCorporateAddress($isMain = true)
+    {
+        if (empty($this->invoiceAddress) || empty($this->invoiceAddress->id)) {
+            return array();
+        }
+
+        $addressBuilder = new RetailcrmAddressBuilder();
+
+        return $addressBuilder
+            ->setMode(RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER)
+            ->setAddress($this->invoiceAddress)
+            ->setIsMain($isMain)
+            ->setWithExternalId(true)
+            ->build()
+            ->getDataArray();
+    }
+
+    /**
+     * Builds company for corporate customer
+     *
+     * @param int $addressId
+     *
+     * @return array
+     */
+    private function buildCorporateCompany($addressId = 0)
+    {
+        $companyName = '';
+        $vat = '';
+
+        if (!empty($this->invoiceAddress)) {
+            if (empty($this->invoiceAddress->company)) {
+                $companyName = 'Main Company';
+            } else {
+                $companyName = $this->invoiceAddress->company;
+            }
+
+            if (!empty($this->invoiceAddress->vat_number)) {
+                $vat = $this->invoiceAddress->vat_number;
+            }
+        }
+
+        $company = array(
+            'isMain' => true,
+            'name' => $companyName
+        );
+
+        if (!empty($addressId)) {
+            $company['address'] = array(
+                'id' => $addressId
+            );
+        }
+
+        if (!empty($vat)) {
+            $company['contragent']['INN'] = $vat;
+        }
+
+        return RetailcrmTools::clearArray($company);
+    }
+
+    /**
+     * Creates new corporate customer from data, returns false in case of error
+     *
+     * @return array|bool
+     */
+    private function createCorporateIfNotExist()
+    {
+        $corporateWasFound = true;
+        $this->validateCmsCustomerInDb();
+
+        $customer = $this->createCustomerIfNotExist();
+
+        if (!$customer) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Cannot proceed because customer is empty!');
+
+            return false;
+        }
+
+        $crmCorporate = $this->findCorporateCustomerByContactAndCompany(
+            $customer['id'],
+            $this->invoiceAddress->company
+        );
+
+        if (empty($crmCorporate)) {
+            $crmCorporate = $this->findCorporateCustomerByCompany($this->invoiceAddress->company);
+        }
+
+        if (empty($crmCorporate)) {
+            $crmCorporate = $this->createCorporateCustomer($customer['externalId']);
+            $corporateWasFound = false;
+        } elseif (isset($crmCorporate['id'])) {
+            $this->appendAdditionalAddressToCorporate($crmCorporate['id']);
+        }
+
+        if ($corporateWasFound) {
+            $contactList = $this->api->customersCorporateContacts(
+                $crmCorporate['id'],
+                array('contactIds' => array($customer['id'])),
+                null,
+                null,
+                'id',
+                $this->getApiSite()
+            );
+
+            if (!$contactList->offsetExists('contacts')) {
+                return $crmCorporate;
+            }
+
+            if (count($contactList['contacts']) == 0) {
+                $contactData = array(
+                    'isMain' => false,
+                    'customer' => array(
+                        'id' => $customer['id'],
+                        'site' => $this->getApiSite()
+                    )
+                );
+
+                $crmCorporateCompany = $this->extractCorporateCompanyCached(
+                    $crmCorporate['id'],
+                    $this->invoiceAddress->company
+                );
+
+                if (!empty($crmCorporateCompany) && isset($crmCorporateCompany['id'])) {
+                    $contactData['companies'] = array(array(
+                        'company' => array('id' => $crmCorporateCompany['id'])
+                    ));
+                }
+
+                $this->api->customersCorporateContactsCreate(
+                    $crmCorporate['id'],
+                    $contactData,
+                    'id',
+                    $this->getApiSite()
+                );
+            }
+        }
+
+        return $crmCorporate;
+    }
+
+    /**
+     * createCorporateCustomer
+     *
+     * @param string $contactPersonExternalId
+     *
+     * @return bool|array|\RetailcrmApiResponse
+     */
+    private function createCorporateCustomer($contactPersonExternalId)
+    {
+        $customerCorporate = static::buildCrmCustomerCorporate(
+            $this->cmsCustomer,
+            $this->invoiceAddress->company,
+            $contactPersonExternalId,
+            false,
+            false,
+            $this->getApiSite()
+        );
+        $crmCorporate = $this->api->customersCorporateCreate($customerCorporate, $this->getApiSite());
+
+        if (!$crmCorporate || !$crmCorporate->isSuccessful()) {
+            return false;
+        }
+
+        $address = $this->buildCorporateAddress();
+        $createResponse = $this->api->customersCorporateAddressesCreate(
+            $crmCorporate['id'],
+            $address,
+            'id',
+            $this->getApiSite()
+        );
+
+        if ($createResponse && $createResponse->isSuccessful()) {
+            $company = $this->buildCorporateCompany($createResponse['id']);
+            $this->api->customersCorporateCompaniesCreate(
+                $crmCorporate['id'],
+                $company,
+                'id',
+                $this->getApiSite()
+            );
+        }
+
+        $crmCorporate = $this->api->customersCorporateGet($crmCorporate['id'], 'id', $this->getApiSite());
+
+        if ($crmCorporate
+            && $crmCorporate->isSuccessful()
+            && $crmCorporate->offsetExists('customerCorporate')
+        ) {
+            return $crmCorporate['customerCorporate'];
+        }
+
+        return $crmCorporate;
+    }
+
+    /**
+     * Append new address to corporate customer if new address is not present in corporate customer.
+     *
+     * @param string|int $corporateId
+     */
+    private function appendAdditionalAddressToCorporate($corporateId)
+    {
+        $request = new RetailcrmApiPaginatedRequest();
+        $address = $this->buildCorporateAddress(false);
+        $addresses = $request
+            ->setApi($this->api)
+            ->setMethod('customersCorporateAddresses')
+            ->setParams(array(
+                $corporateId,
+                array(),
+                '{{page}}',
+                '{{limit}}',
+                'id',
+                $this->getApiSite()
+            ))
+            ->setDataKey('addresses')
+            ->execute()
+            ->getData();
+
+        foreach ($addresses as $addressInCrm) {
+            if (!empty($addressInCrm['externalId']) && $addressInCrm['externalId'] == $this->invoiceAddress->id) {
+                $this->api->customersCorporateAddressesEdit(
+                    $corporateId,
+                    $addressInCrm['externalId'],
+                    $address,
+                    'id',
+                    'externalId',
+                    $this->getApiSite()
+                );
+
+                return;
+            }
+        }
+
+        $this->api->customersCorporateAddressesCreate(
+            $corporateId,
+            $address,
+            'id',
+            $this->getApiSite()
+        );
+    }
+
+    /**
+     * Find self::cmsCustomer in retailCRM by id or by email
+     *
+     * @return array|mixed
+     */
+    private function findRegularCustomer()
+    {
+        $this->validateCmsCustomer();
+
+        if (empty($this->cmsCustomer->id) || $this->cmsCustomer->is_guest) {
+            if (!empty($this->cmsCustomer->email)) {
+                $customers = $this->api->customersList(array('email' => $this->cmsCustomer->email));
+
+                if ($customers
+                    && $customers->isSuccessful()
+                    && $customers->offsetExists('customers')
+                    && !empty($customers['customers'])
+                ) {
+                    $customers = $customers['customers'];
+
+                    return reset($customers);
+                }
+            }
+        } else {
+            $customer = $this->api->customersGet($this->cmsCustomer->id);
+
+            if ($customer && $customer->isSuccessful() && $customer->offsetExists('customer')) {
+                return $customer['customer'];
+            }
+        }
+
+        return array();
+    }
+
+    /**
+     * Finds all corporate customers with specified contact id and filters them by provided main company name
+     *
+     * @param $contactId
+     * @param $companyName
+     *
+     * @return array
+     */
+    private function findCorporateCustomerByContactAndCompany($contactId, $companyName)
+    {
+        $crmCorporate = $this->api->customersCorporateList(array(
+            'contactIds' => array($contactId),
+            'companyName' => $companyName
+        ));
+
+        if ($crmCorporate instanceof RetailcrmApiResponse
+            && $crmCorporate->isSuccessful()
+            && $crmCorporate->offsetExists('customersCorporate')
+            && count($crmCorporate['customersCorporate']) > 0
+        ) {
+            $crmCorporate = $crmCorporate['customersCorporate'];
+
+            return reset($crmCorporate);
+        }
+
+        return array();
+    }
+
+    /**
+     * Find corporate customer by company name
+     *
+     * @param $companyName
+     *
+     * @return array
+     */
+    private function findCorporateCustomerByCompany($companyName)
+    {
+        $crmCorporate = $this->api->customersCorporateList(array(
+            'companyName' => $companyName
+        ));
+
+        if ($crmCorporate instanceof RetailcrmApiResponse
+            && $crmCorporate->isSuccessful()
+            && $crmCorporate->offsetExists('customersCorporate')
+            && count($crmCorporate['customersCorporate']) > 0
+        ) {
+            $crmCorporate = $crmCorporate['customersCorporate'];
+
+            return reset($crmCorporate);
+        }
+
+        return array();
+    }
+
+    /**
+     * Get corporate companies, extract company data by provided identifiers
+     *
+     * @param int|string $corporateCrmId
+     * @param string     $companyName
+     * @param string     $by
+     *
+     * @return array
+     */
+    private function extractCorporateCompany($corporateCrmId, $companyName, $by = 'id')
+    {
+        $companiesResponse = $this->api->customersCorporateCompanies(
+            $corporateCrmId,
+            array(),
+            null,
+            null,
+            $by
+        );
+
+        if ($companiesResponse instanceof RetailcrmApiResponse
+            && $companiesResponse->isSuccessful()
+            && $companiesResponse->offsetExists('companies')
+            && count($companiesResponse['companies']) > 0
+        ) {
+            $company = array_reduce(
+                $companiesResponse['companies'],
+                function ($carry, $item) use ($companyName) {
+                    if (is_array($item) && isset($item['name']) && $item['name'] == $companyName) {
+                        $carry = $item;
+                    }
+
+                    return $carry;
+                }
+            );
+
+            if (is_array($company)) {
+               return $company;
+            }
+        }
+
+        return array();
+    }
+
+    /**
+     * extractCorporateCompany with cache
+     *
+     * @param int|string $corporateCrmId
+     * @param string     $companyName
+     * @param string     $by
+     *
+     * @return array
+     */
+    private function extractCorporateCompanyCached($corporateCrmId, $companyName, $by = 'id')
+    {
+        $cachedItemId = sprintf('%s:%s', (string) $corporateCrmId, $companyName);
+
+        if (!is_array($this->corporateCompanyExtractCache)) {
+            $this->corporateCompanyExtractCache = array();
+        }
+
+        if (!isset($this->corporateCompanyExtractCache[$cachedItemId])) {
+            $this->corporateCompanyExtractCache[$cachedItemId] = $this->extractCorporateCompany(
+                $corporateCrmId,
+                $companyName,
+                $by
+            );
+        }
+
+        return $this->corporateCompanyExtractCache[$cachedItemId];
+    }
+
+    /**
+     * Throws exception if cmsCustomer is not set
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validateCmsCustomer()
+    {
+        if (is_null($this->cmsCustomer)) {
+            throw new \InvalidArgumentException("RetailcrmOrderBuilder::cmsCustomer must be set");
+        }
+    }
+
+    /**
+     * Throws exception if cmsCustomer is not set or it's not present in DB yet
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validateCmsCustomerInDb()
+    {
+        $this->validateCmsCustomer();
+
+        if (empty($this->cmsCustomer->id)) {
+            throw new \InvalidArgumentException("RetailcrmOrderBuilder::cmsCustomer must be stored in DB");
+        }
+    }
+
+    private function buildCorporateOrder($dataFromCart = false)
+    {
+        $customer = $this->createCorporateIfNotExist();
+        $contactPersonId = '';
+        $contactPersonExternalId = '';
+
+        if (empty($customer)) {
+            return array();
+        }
+
+        if (empty($this->cmsCustomer->id)) {
+            $contacts = $this->api->customersList(array('email' => $this->cmsCustomer->email));
+
+            if ($contacts
+                && $contacts->isSuccessful()
+                && $contacts->offsetExists('customers')
+                && !empty($contacts['customers'])
+            ) {
+                $contacts = $contacts['customers'];
+                $contactPerson = reset($contacts);
+
+                if (isset($contactPerson['id'])) {
+                    $contactPersonId = $contactPerson['id'];
+                }
+            }
+        } else {
+            $contacts = $this->api->customersCorporateContacts(
+                $customer['id'],
+                array('contactExternalIds' => array($this->cmsCustomer->id)),
+                null,
+                null,
+                'id',
+                $this->getApiSite()
+            );
+
+            if ($contacts
+                && $contacts->isSuccessful()
+                && $contacts->offsetExists('contacts')
+                && count($contacts['contacts']) == 1
+            ) {
+                $contactPersonExternalId = $this->cmsCustomer->id;
+            }
+        }
+
+        return static::buildCrmOrder(
+            $this->cmsOrder,
+            $this->cmsCustomer,
+            $this->cmsCart,
+            false,
+            false,
+            $dataFromCart,
+            $contactPersonId,
+            $contactPersonExternalId,
+            $customer['id'],
+            $this->getApiSite()
+        );
+    }
+
+    /**
+     * Build array with order data for retailCRM from PrestaShop order data
+     *
+     * @param Order|\OrderCore            $order                 PrestaShop Order
+     * @param Customer|\CustomerCore|null $customer              PrestaShop Customer
+     * @param Cart|\CartCore|null         $orderCart             Cart for provided order. Optional
+     * @param bool                        $isStatusExport        Use status for export
+     * @param bool                        $preferCustomerAddress Use customer address even if delivery address is
+     *                                                           provided
+     * @param bool                        $dataFromCart          Prefer data from cart
+     * @param string                      $contactPersonId       Contact person id to append
+     * @param string                      $contactPersonExternalId Contact person externalId to append.
+     * @param string                      $corporateCustomerId   Corporate customer id (will be used instead of regular
+     *                                                           customer)
+     * @param string                      $site                  Site code (for customer only)
+     *
+     * @return array   retailCRM order data
+     * @todo Refactor into OrderBuilder (current order builder should be divided into several independent builders).
+     */
+    public static function buildCrmOrder(
+        $order,
+        $customer = null,
+        $orderCart = null,
+        $isStatusExport = false,
+        $preferCustomerAddress = false,
+        $dataFromCart = false,
+        $contactPersonId = '',
+        $contactPersonExternalId = '',
+        $corporateCustomerId = '',
+        $site = ''
+    ) {
+        $statusExport = Configuration::get(RetailCRM::STATUS_EXPORT);
+        $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
+        $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
+        $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
+
+        if (Module::getInstanceByName('advancedcheckout') === false) {
+            $paymentType = $order->module;
+        } else {
+            $paymentType = $order->payment;
+        }
+
+        if ($order->current_state == 0) {
+            $order_status = $statusExport;
+
+            if (!$isStatusExport) {
+                $order_status =
+                    array_key_exists($order->current_state, $status)
+                        ? $status[$order->current_state] : 'new';
+            }
+        } else {
+            $order_status = array_key_exists($order->current_state, $status)
+                ? $status[$order->current_state]
+                : $statusExport;
+        }
+
+        $cart = $orderCart;
+
+        if (is_null($cart)) {
+            $cart = new Cart($order->getCartIdStatic($order->id));
+        }
+
+        if (is_null($customer)) {
+            $customer = new Customer($order->id_customer);
+        }
+
+        $crmOrder = array_filter(array(
+            'externalId' => $order->id,
+            'number' => $order->id,
+            'createdAt' => RetailcrmTools::verifyDate($order->date_add, 'Y-m-d H:i:s')
+                ? $order->date_add : date('Y-m-d H:i:s'),
+            'status' => $order_status,
+            'firstName' => $customer->firstname,
+            'lastName' => $customer->lastname,
+            'email' => $customer->email,
+        ));
+
+        $addressCollection = $cart->getAddressCollection();
+        $addressDelivery = new Address($order->id_address_delivery);
+        $addressInvoice = new Address($order->id_address_invoice);
+
+        if (is_null($addressDelivery->id) || $preferCustomerAddress === true) {
+            $addressDelivery = array_filter(
+                $addressCollection,
+                function ($v) use ($customer) {
+                    return $v->id_customer == $customer->id;
+                }
+            );
+
+            if (is_array($addressDelivery) && count($addressDelivery) == 1) {
+                $addressDelivery = reset($addressDelivery);
+            }
+        }
+
+        $addressBuilder = new RetailcrmAddressBuilder();
+        $addressBuilder
+            ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
+            ->setAddress($addressDelivery)
+            ->build();
+        $crmOrder = array_merge($crmOrder, $addressBuilder->getDataArray());
+
+        if ($addressInvoice instanceof Address && !empty($addressInvoice->company)) {
+            $crmOrder['contragent']['legalName'] = $addressInvoice->company;
+
+            if (!empty($addressInvoice->vat_number)) {
+                $crmOrder['contragent']['INN'] = $addressInvoice->vat_number;
+            }
+        }
+
+        if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
+            $order_payment = array(
+                'externalId' => $order->id . '#' . $order->reference,
+                'amount' => round($order->total_paid, 2),
+                'type' => $payment[$paymentType]
+            );
+
+            $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
+        }
+
+        if (isset($order_payment)) {
+            $crmOrder['payments'][] = $order_payment;
+        } else {
+            $crmOrder['payments'] = array();
+        }
+
+        $idCarrier = $dataFromCart ? $cart->id_carrier : $order->id_carrier;
+
+        if (empty($idCarrier)) {
+            $idCarrier = $order->id_carrier;
+            $totalShipping = $order->total_shipping;
+            $totalShippingWithoutTax = $order->total_shipping_tax_excl;
+        } else {
+            $totalShipping = $dataFromCart ? $cart->getCarrierCost($idCarrier) : $order->total_shipping;
+
+            if (!empty($totalShipping) && $totalShipping != 0) {
+                $totalShippingWithoutTax = $dataFromCart
+                    ? $totalShipping - $cart->getCarrierCost($idCarrier, false)
+                    : $order->total_shipping_tax_excl;
+            } else {
+                $totalShippingWithoutTax = $order->total_shipping_tax_excl;
+            }
+        }
+
+        // TODO Shouldn't cause any errors while creating order even if correspondent carrier is not set.
+        if (array_key_exists($idCarrier, $delivery) && !empty($delivery[$idCarrier])) {
+            $crmOrder['delivery']['code'] = $delivery[$idCarrier];
+        }
+
+        if (isset($totalShipping) && ((int)$totalShipping) > 0) {
+            $crmOrder['delivery']['cost'] = round($totalShipping, 2);
+        }
+
+        if (isset($totalShippingWithoutTax) && $totalShippingWithoutTax > 0) {
+            $crmOrder['delivery']['netCost'] = round($totalShippingWithoutTax, 2);
+        }
+
+        $comment = $order->getFirstMessage();
+
+        if ($comment !== false) {
+            $crmOrder['customerComment'] = $comment;
+        }
+
+        if ($dataFromCart) {
+            $productStore = $cart;
+            $converter = function ($product) {
+                $map = array(
+                    'product_attribute_id' => 'id_product_attribute',
+                    'product_quantity' => 'cart_quantity',
+                    'product_id' => 'id_product',
+                    'id_order_detail' => 'id_product',
+                    'product_name' => 'name',
+                    'product_price' => 'price',
+                    'purchase_supplier_price' => 'price',
+                    'product_price_wt' => 'price_wt'
+                );
+
+                foreach ($map as $target => $value) {
+                    if (isset($product[$value])) {
+                        $product[$target] = $product[$value];
+                    }
+                }
+
+                return $product;
+            };
+        } else {
+            $productStore = $order;
+            $converter = function ($product) {
+                return $product;
+            };
+        }
+
+        foreach ($productStore->getProducts() as $productData) {
+            $product = $converter($productData);
+
+            if (isset($product['product_attribute_id']) && $product['product_attribute_id'] > 0) {
+                $productId = $product['product_id'] . '#' . $product['product_attribute_id'];
+            } else {
+                $productId = $product['product_id'];
+            }
+
+            if (isset($product['attributes']) && $product['attributes']) {
+                $arProp = array();
+                $count = 0;
+                $arAttr = explode(",", $product['attributes']);
+
+                foreach ($arAttr as $valAttr) {
+                    $arItem = explode(":", $valAttr);
+
+                    if ($arItem[0] && $arItem[1]) {
+                        $arProp[$count]['name'] = trim($arItem[0]);
+                        $arProp[$count]['value'] = trim($arItem[1]);
+                    }
+
+                    $count++;
+                }
+            }
+
+            $item = array(
+                "externalIds" => array(
+                    array(
+                        'code' => 'prestashop',
+                        'value' => $productId . "_" . $product['id_order_detail'],
+                    ),
+                ),
+                'offer' => array('externalId' => $productId),
+                'productName' => $product['product_name'],
+                'quantity' => $product['product_quantity'],
+                'initialPrice' => round($product['product_price'], 2),
+                /*'initialPrice' => !empty($item['rate'])
+                    ? $item['price'] + ($item['price'] * $item['rate'] / 100)
+                    : $item['price'],*/
+                'purchasePrice' => round($product['purchase_supplier_price'], 2)
+            );
+
+            if (true == Configuration::get('PS_TAX') && isset($product['product_price_wt'])) {
+                $item['initialPrice'] = round($product['product_price_wt'], 2);
+            }
+
+            if (isset($arProp)) {
+                $item['properties'] = $arProp;
+            }
+
+            $crmOrder['items'][] = $item;
+        }
+
+        if ($order->id_customer) {
+            if (empty($corporateCustomerId)) {
+                $crmOrder['customer']['externalId'] = $order->id_customer;
+            } else {
+                $crmOrder['customer']['id'] = $corporateCustomerId;
+            }
+
+            if (!empty($contactPersonExternalId)) {
+                $crmOrder['contact']['externalId'] = $contactPersonExternalId;
+                $crmOrder['contact']['site'] = $site;
+            } elseif (!empty($contactPersonId)) {
+                $crmOrder['contact']['id'] = $contactPersonId;
+                $crmOrder['contact']['site'] = $site;
+            }
+
+            if (!empty($site)) {
+                $crmOrder['customer']['site'] = $site;
+            }
+
+            if (RetailcrmTools::isCorporateEnabled() && RetailcrmTools::isOrderCorporate($order)) {
+                $crmOrder['contragent']['contragentType'] = 'legal-entity';
+            } else {
+                $crmOrder['contragent']['contragentType'] = 'individual';
+            }
+        }
+
+        return RetailcrmTools::clearArray($crmOrder);
+    }
+
+    /**
+     * Build array with order data for retailCRM from PrestaShop cart data
+     *
+     * @param \RetailcrmProxy|\RetailcrmApiClientV5 $api
+     * @param Cart                                  $cart        Cart with data
+     * @param string                                $externalId  External ID for order
+     * @param string                                $paymentType Payment type (buildCrmOrder requires it)
+     * @param string                                $status      Status for order
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public static function buildCrmOrderFromCart($api, $cart = null, $externalId = '', $paymentType = '', $status = '')
+    {
+        if (empty($cart) || empty($paymentType) || empty($status)) {
+            return array();
+        }
+
+        try {
+            $order = new Order();
+            $order->id_cart = $cart->id;
+            $order->id_customer = $cart->id_customer;
+            $order->id_address_delivery = $cart->id_address_delivery;
+            $order->id_address_invoice = $cart->id_address_invoice;
+            $order->id_currency = $cart->id_currency;
+            $order->id_carrier = $cart->id_carrier;
+            $order->total_discounts = $cart->getOrderTotal(true, Cart::ONLY_DISCOUNTS);;
+            $order->module = $paymentType;
+            $order->payment = $paymentType;
+
+            if (!empty($cart->id_carrier)) {
+                $order->total_shipping = $cart->getPackageShippingCost();
+                $order->total_shipping_tax_excl = $cart->getPackageShippingCost(null, false);
+            }
+
+            $orderBuilder = new RetailcrmOrderBuilder();
+            $orderData = $orderBuilder
+                ->defaultLangFromConfiguration()
+                ->setApi($api)
+                ->setCmsOrder($order)
+                ->setCmsCart($cart)
+                ->setCmsCustomer(new Customer($cart->id_customer))
+                ->buildOrderWithPreparedCustomer(true);
+            $orderData['externalId'] = $externalId;
+            $orderData['status'] = $status;
+
+            unset($orderData['payments']);
+
+            return RetailcrmTools::clearArray($orderData);
+        } catch (\InvalidArgumentException $exception) {
+            RetailcrmLogger::writeCaller(
+                'buildCrmOrderFromCart',
+                $exception->getMessage()
+            );
+
+            return array();
+        }
+    }
+
+    /**
+     * Builds retailCRM customer data from PrestaShop customer data
+     *
+     * @param Customer $object
+     * @param array $address
+     *
+     * @return array
+     */
+    public static function buildCrmCustomer(Customer $object, $address = array())
+    {
+        return array_filter(array_merge(
+            array(
+                'externalId' => !empty($object->id) ? $object->id : null,
+                'firstName' => $object->firstname,
+                'lastName' => $object->lastname,
+                'email' => $object->email,
+                'subscribed' => $object->newsletter,
+                'createdAt' => RetailcrmTools::verifyDate($object->date_add, 'Y-m-d H:i:s')
+                    ? $object->date_add : date('Y-m-d H:i:s'),
+                'birthday' => RetailcrmTools::verifyDate($object->birthday, 'Y-m-d')
+                    ? $object->birthday : '',
+                'sex' => $object->id_gender == "0" ? "" : ($object->id_gender == "1" ? "male" : "female")
+            ),
+            $address
+        ), function ($value) {
+            return !($value === '' || $value === null || (is_array($value) ? count($value) == 0 : false));
+        });
+    }
+
+    public static function buildCrmCustomerCorporate(
+        Customer $object,
+        $nickName = '',
+        $contactExternalId = '',
+        $appendAddress = false,
+        $appendCompany = false,
+        $site = ''
+    ) {
+        $customerAddresses = array();
+        $addresses = $object->getAddresses((int)Configuration::get('PS_LANG_DEFAULT'));
+        $customer = array(
+            'addresses' => array(),
+            'companies' => array()
+        );
+        $company = array(
+            'isMain' => true,
+            'externalId' => null,
+            'active' => true,
+            'name' => ''
+        );
+
+        // TODO: $company['contragent']['INN'] may not work, should check that later...
+        foreach ($addresses as $address) {
+            $addressBuilder = new RetailcrmAddressBuilder();
+
+            if ($address instanceof Address && !empty($address->company)) {
+                $customerAddresses[] = $addressBuilder
+                    ->setMode(RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER)
+                    ->setAddress($address)
+                    ->setWithExternalId(true)
+                    ->build()
+                    ->getDataArray();
+                $customer['nickName'] = empty($nickName) ? $address->company : $nickName;
+                $company['name'] = $address->company;
+                $company['contragent']['INN'] = $address->vat_number;
+                $company['externalId'] = 'company_'.$address->id;
+            }
+
+            if (is_array($address) && !empty($address['company'])) {
+                $customerAddresses[] = $addressBuilder
+                    ->setMode(RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER)
+                    ->setAddressId($address['id_address'])
+                    ->setWithExternalId(true)
+                    ->build()
+                    ->getDataArray();
+                $customer['nickName'] = empty($nickName) ? $address->company : $nickName;
+                $company['name'] = $address['company'];
+                $company['contragent']['INN'] = $address['vat_number'];
+                $company['externalId'] = 'company_'.$address['id_address'];
+            }
+        }
+
+        if ($appendCompany && !is_null($company['externalId'])) {
+            $customer['companies'][] = $company;
+        }
+
+        if (!empty($contactExternalId) && !empty($site)) {
+            $customer['customerContacts'] = array(array(
+                'isMain' => true,
+                'customer' => array(
+                    'externalId' => $contactExternalId,
+                    'site' => $site
+                )
+            ));
+
+            if (!empty($customer['companies'])
+                && isset($customer['companies'][0])
+                && isset($customer['companies'][0]['externalId'])
+            ) {
+                $customer['customerContacts'][0]['companies'] = array(array(
+                    'company' => array('externalId' => $customer['companies'][0]['externalId'])
+                ));
+            }
+        }
+
+        if ($appendAddress) {
+            $customer['addresses'] = $customerAddresses;
+        }
+
+        return RetailcrmTools::clearArray($customer);
+    }
+}
