@@ -65,9 +65,9 @@ function upgrade_module_3_0_1($module)
         Configuration::deleteByName($apiVersion);
     }
 
-    // Fixes consequences of old fixed bug in JobManager
+    // Fixes consequences of old fixed bug in JobManager. Also, this field format was changed in new version.
     if (Configuration::hasKey($lastRun)) {
-        Configuration::deleteByName($lastRun);
+        $result = $result && Configuration::deleteByName($lastRun);
     }
 
     // Immediate cart synchronization is not safe anymore (causes data inconsistency)
