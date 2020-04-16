@@ -113,6 +113,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     ),
                     'order' => $this->getApiOrder()
                 )
+            ),
+            "pagination" => array(
+                "limit" => 20,
+                "totalCount" => 1,
+                "currentPage" => 1,
+                "totalPageCount" => 1
             )
         );
     }
