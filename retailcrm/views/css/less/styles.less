@@ -9,6 +9,8 @@
 @grayBtnHover: rgba(122, 122, 122, 0.15);
 @grayBtnActive: fadein(@grayBtnHover, 10%);
 @darkGray: #363A41;
+@lightYellow: #fcf3b5;
+@shadowGray: #fdd0d0;
 @bord: #DFDFDF;
 @green: #33D16B;
 @greenHover: #22CA5D;
@@ -155,6 +157,14 @@ body, html {
       &_submit {
         margin-top: 23px;
       }
+    }
+    &__message-warning {
+      padding: 13px 18px;
+      margin: 1px 13px;
+      border-radius: 8px;
+      border: 1px solid @lightYellow;
+      font-size: 1rem;
+      box-shadow: 0px 0px 6px 0px @shadowGray;
     }
     &__checkbox {
       display: flex;

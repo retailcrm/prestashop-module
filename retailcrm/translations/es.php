@@ -165,3 +165,4 @@ $_MODULE['<{retailcrm}prestashop>index_50f158e2507321f1a5b6f8fb9e350818'] = 'Esc
 $_MODULE['<{retailcrm}prestashop>retailcrm_39e90036af004a005ccbccbe9a9c19c2'] = 'Los estados de orden no deben repetirse en la matriz de estados';
 $_MODULE['<{retailcrm}prestashop>settings_8ffa3281a35a0d80fef2cac0fa680523'] = 'Habilitar la carga del historial';
 $_MODULE['<{retailcrm}prestashop>settings_80e47b10a89a3f22e0def96577ee8b25'] = 'Recibir las existencias del retailCRM';
+$_MODULE['<{retailcrm}prestashop>settings_7d320ac32b103449d18b51f47e7b1329'] = 'Activar solo si está habilitada la opción \"Clientes corporativos\"  en retailCRM';

@@ -71,13 +71,6 @@
                         <div class="retail-form__row">
                             <input required type="text" name="{$apiKeyName|escape:'htmlall':'UTF-8'}" value="{$apiKey|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='API key' mod='retailcrm'}">
                         </div>
-                        {* TODO Comment out corporate customers support toggle. It's not ready for production. *}
-{*                        <div class="retail-form__row">*}
-{*                            <div class="retail-form__checkbox">*}
-{*                                <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">*}
-{*                                <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>*}
-{*                            </div>*}
-{*                        </div>*}
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableHistoryUploadsName|escape:'htmlall':'UTF-8'}" value="{$enableHistoryUploads|escape:'htmlall':'UTF-8'}" {if $enableHistoryUploads}checked="checked"{/if} id="historyuploads-active">
@@ -88,6 +81,17 @@
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
                                 <label for="receivebalances-active">{l s='Receive stocks from retailCRM' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        {* TODO Comment out corporate customers support toggle. It's not ready for production. *}
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">
+                                <label for="corpclients-active">{l s='Enable corporate clients support' mod='retailcrm'}</label>
+                            </div>
+                        </div><div class="retail-form__row">
+                            <div class="retail-form__message-warning">
+                                <span>{l s='Activate only in case if you have enabled the option “Corporate customers” in retailCRM' mod='retailcrm'}</span>
                             </div>
                         </div>
                     </div>

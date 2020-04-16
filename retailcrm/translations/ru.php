@@ -122,3 +122,4 @@ $_MODULE['<{retailcrm}prestashop>retailcrm_1bd340aeb42a5ee0318784c2cffed8a9'] = 
 $_MODULE['<{retailcrm}prestashop>retailcrm_39e90036af004a005ccbccbe9a9c19c2'] = 'Статусы заказов не должны повторяться в матрице соответствий статусов';
 $_MODULE['<{retailcrm}prestashop>settings_8ffa3281a35a0d80fef2cac0fa680523'] = 'Включить выгрузку истории';
 $_MODULE['<{retailcrm}prestashop>settings_80e47b10a89a3f22e0def96577ee8b25'] = 'Получать остатки из retailCRM';
+$_MODULE['<{retailcrm}prestashop>settings_7d320ac32b103449d18b51f47e7b1329'] = 'Активировать только при включенной опции \"Корпоративные клиенты\" в retailCRM';
