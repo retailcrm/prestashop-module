@@ -62,17 +62,17 @@ function upgrade_module_3_0_1($module)
 
     // API v4 is deprecated, so API version flag is removed for now.
     if (Configuration::hasKey($apiVersion)) {
-        $result = Configuration::deleteByName($apiVersion);
+        Configuration::deleteByName($apiVersion);
     }
 
     // Fixes consequences of old fixed bug in JobManager
     if (Configuration::hasKey($lastRun)) {
-        $result = $result && Configuration::deleteByName($lastRun);
+        Configuration::deleteByName($lastRun);
     }
 
     // Immediate cart synchronization is not safe anymore (causes data inconsistency)
     if (Configuration::hasKey($syncCarts) && Configuration::get($syncCarts) == "0") {
-        $result = $result && Configuration::set($syncCarts, "900");
+        Configuration::set($syncCarts, "900");
     }
 
     return $result && Db::getInstance()->execute(
