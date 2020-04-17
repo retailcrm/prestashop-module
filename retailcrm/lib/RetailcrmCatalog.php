@@ -56,6 +56,7 @@ class RetailcrmCatalog
         $currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
         $shop_url = (Configuration::get('PS_SSL_ENABLED') ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
         $protocol = (Configuration::get('PS_SSL_ENABLED')) ? "https://" : "http://";
+        $homeCategory = Configuration::get('PS_HOME_CATEGORY');
 
         $items = array();
         $categories = array();
@@ -71,29 +72,41 @@ class RetailcrmCatalog
         $types = Category::getCategories($id_lang, true, false);
 
         foreach ($types as $category) {
-            if (!self::isCategoryActive(new Category($category['id_category']))) {
-                if (!in_array($category['id_category'], $inactiveCategories)) {
-                    $inactiveCategories[] = $category['id_category'];
+            $categoryId = (empty($category['id_category']) && isset($category['id']))
+                ? $category['id'] : $category['id_category'];
+
+            if (!self::isCategoryActive(new Category($categoryId))) {
+                if (!in_array($categoryId, $inactiveCategories)) {
+                    $inactiveCategories[] = $categoryId;
                 }
 
                 continue;
             }
 
-            $picture = $link->getCatImageLink($category['link_rewrite'], $category['id_category'], 'category_default');
+            $picture = $link->getCatImageLink($category['link_rewrite'], $categoryId, 'category_default');
 
-            $categoriesIds[] = $category['id_category'];
+            $categoriesIds[] = $categoryId;
             $categories[] = array(
-                'id' => $category['id_category'],
-                'parentId' => $category['id_parent'],
+                'id' => $categoryId,
+                'parentId' => self::getParentCategoryId($category['id_parent']),
                 'name' => $category['name'],
                 'picture' => $picture ? $protocol . $picture : ''
             );
         }
 
+        foreach ($categories as $key => $innerCategory) {
+            if (isset($innerCategory['parentId'])
+                && !empty($innerCategory['parentId'])
+                && !in_array($innerCategory['parentId'], $categoriesIds)
+            ) {
+                $innerCategory['parentId'] = $homeCategory;
+                $categories[$key] = $innerCategory;
+            }
+        }
+
         $products = Product::getProducts($id_lang, 0, 0, 'name', 'asc');
 
         foreach ($products AS $product) {
-            $homeCategory = Configuration::get('PS_HOME_CATEGORY');
             $category = $product['id_category_default'];
 
             if (!in_array($category, $categoriesIds)) {
@@ -314,5 +327,34 @@ class RetailcrmCatalog
         }
 
         return $category->active;
+    }
+
+    /**
+     * Returns active parent category
+     *
+     * @param int $parentId
+     *
+     * @return null
+     */
+    private static function getParentCategoryId($parentId)
+    {
+        $home = Configuration::get('PS_HOME_CATEGORY');
+
+        if (empty($parentId)) {
+            return $home;
+        }
+
+        if ($parentId == $home) {
+            return $home;
+        }
+
+        /** @var \Category|\CategoryCore $category */
+        $category = new Category($parentId);
+
+        if (empty($category->id) || !$category->active) {
+            return $home;
+        }
+
+        return $parentId;
     }
 }

@@ -167,13 +167,6 @@ class RetailcrmJobManager
                     $exception->getTraceAsString(),
                     $job
                 );
-            } catch (\Throwable $throwable) {
-                static::handleError(
-                    $throwable->getFile(),
-                    $throwable->getMessage(),
-                    $throwable->getTraceAsString(),
-                    $job
-                );
             }
         }
 
@@ -287,8 +280,6 @@ class RetailcrmJobManager
         try {
             static::execHere($fileCommandLine, $once);
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $fileCommandLine);
-        } catch (\Throwable $exception) {
             throw new RetailcrmJobManagerException($exception->getMessage(), $fileCommandLine);
         }
     }
