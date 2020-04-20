@@ -116,7 +116,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.0.3';
+        $this->version = '3.0.4';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('retailCRM');
         $this->description = $this->l('Integration module for retailCRM');
@@ -1101,12 +1101,6 @@ class RetailCRM extends Module
                 RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
                 RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
                 Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'exception');
-
-                return static::getCachedCmsModulesList();
-            } catch (Throwable $throwable) {
-                RetailcrmLogger::writeCaller(__METHOD__, $throwable->getMessage());
-                RetailcrmLogger::writeNoCaller($throwable->getTraceAsString());
-                Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'throwable');
 
                 return static::getCachedCmsModulesList();
             }
