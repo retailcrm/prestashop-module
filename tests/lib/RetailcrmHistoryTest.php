@@ -32,6 +32,26 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->setConfig();
     }
 
+    public function testCustomersHistory()
+    {
+        $this->apiMock->expects($this->any())
+            ->method('customersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryDataNewCustomer()
+                    )
+                )
+            );
+
+        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$api = $this->apiMock;
+
+        $this->assertEquals(true, RetailcrmHistory::customersHistory());
+    }
+
+
     public function testOrderCreate()
     {
         $this->apiMock->expects($this->any())
@@ -114,11 +134,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'order' => $this->getApiOrder()
                 )
             ),
-            "pagination" => array(
-                "limit" => 20,
-                "totalCount" => 1,
-                "currentPage" => 1,
-                "totalPageCount" => 1
+            'pagination' => array(
+                'limit' => 20,
+                'totalCount' => 1,
+                'currentPage' => 1,
+                'totalPageCount' => 1
             )
         );
     }
@@ -160,6 +180,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     )
                 ),
                 'address' => array(
+                    'id' => 7777,
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Test region',
@@ -242,11 +263,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         return array(
             'success' => true,
-            "pagination" => array(
-                "limit" => 20,
-                "totalCount" => 1,
-                "currentPage" => 1,
-                "totalPageCount" => 1
+            'pagination' => array(
+                'limit' => 20,
+                'totalCount' => 1,
+                'currentPage' => 1,
+                'totalPageCount' => 1
             ),
             'history' => array(
                 array(
@@ -314,6 +335,72 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         'externalId' => 1
                     )
                 )
+            )
+        );
+    }
+
+    private function getHistoryDataNewCustomer()
+    {
+        return array(
+            'success' => true,
+            'history' => array(
+                array(
+                    'id' => 1,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'created' => true,
+                    'source' => 'api',
+                    'field' => 'id',
+                    'oldValue' => null,
+                    'newValue' => 4949,
+                    'customer' => $this->getApiCustomer()
+                )
+            ),
+            'pagination' => array(
+                'limit' => 20,
+                'totalCount' => 1,
+                'currentPage' => 1,
+                'totalPageCount' => 1
+            )
+        );
+    }
+
+    private function getApiCustomer()
+    {
+        return array(
+            'type' => 'customer',
+            'id' => 7777,
+            'externalId' => '5678',
+            'isContact' => false,
+            'createdAt' => '2020-05-08 03:00:38',
+            'vip' => false,
+            'bad' => false,
+            'site' => 'example.com',
+            'contragent'=> array(
+                'contragentType'=> 'individual'
+            ),
+            'tags' => array(),
+            'marginSumm' => 0,
+            'totalSumm' => 0,
+            'averageSumm' => 0,
+            'ordersCount' => 0,
+            'costSumm' => 0,
+            'customFields' => [],
+            'personalDiscount' => 0,
+            'address' => array(
+                'id' => 4053,
+                'countryIso' => 'RU',
+                'index' => '2170',
+                'city' => 'Moscow',
+                'street' => 'Good',
+                'building' => '17',
+                'text' => 'Good, д. 17'
+            ),
+            'segments' => array(),
+            'email' => 'example.com',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+            'phones' => array(
+                'number' => '+79999999999'
             )
         );
     }

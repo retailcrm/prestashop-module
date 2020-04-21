@@ -78,142 +78,42 @@ class RetailcrmHistory
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
 
             foreach ($customersHistory as $customerHistory) {
-                $syncAddressFIO = false;
-
                 if (isset($customerHistory['deleted']) && $customerHistory['deleted']) {
                     continue;
                 }
 
+                $customer = new RetailcrmCustomerBuilder();
+                $customer
+                    ->setDataCrm($customerHistory)
+                    ->build();
+
                 if (isset($customerHistory['externalId'])) {
-                    $customer = new Customer($customerHistory['externalId']);
-
-                    if (isset($customerHistory['firstName'])) {
-                        $customer->firstname = $customerHistory['firstName'];
-                    }
-
-                    if (isset($customerHistory['lastName'])) {
-                        $customer->lastname = $customerHistory['lastName'];
-                    }
-
-                    if (isset($customerHistory['birthday'])) {
-                        $customer->birthday = $customerHistory['birthday'];
-                    }
-
-                    if (isset($customerHistory['email']) && Validate::isEmail($customerHistory['email'])) {
-                        $customer->email = $customerHistory['email'];
-                    }
-
-                    if (empty($customer->passwd)) {
-                        $customer->passwd = md5(time());
-                    }
-
-                    // Only sync subscription status if customer was marked as unsubscribed in retailCRM.
-                    if (isset($customerHistory['subscribed']) && $customerHistory['subscribed'] == false) {
-                        $customer->newsletter = false;
-                    }
-
-                    if (self::loadInCMS($customer, 'update') === false) {
+                    if (self::loadInCMS($customer->getData()->getCustomer(), 'update') === false) {
                         continue;
                     }
 
-                    if ($syncAddressFIO) {
-                        $customerAddresses = $customer->getAddresses(static::$default_lang);
-
-                        foreach ($customerAddresses as $addressArray) {
-                            if (isset($addressArray['alias']) && $addressArray['alias'] == 'default') {
-                                $cmsAddress = new Address($addressArray['id_address']);
-                                $cmsAddress->firstname = $customer->firstname;
-                                $cmsAddress->lastname = $customer->lastname;
-
-                                self::loadInCMS($cmsAddress, 'update');
-
-                                break;
-                            }
-                        }
+                    if (self::loadInCMS($customer->getData()->getCustomerAddress(), 'update') === false) {
+                        continue;
                     }
-
                 } else {
-                    if (!isset($customerHistory['firstName'])) {
+                    if (self::loadInCMS($customer->getData()->getCustomer(), 'add') === false) {
                         continue;
                     }
 
-                    $customer = new Customer();
-
-                    $customer->firstname = $customerHistory['firstName'];
-                    $customer->lastname = isset($customerHistory['lastName']) ? $customerHistory['lastName'] : '--';
-                    $customer->id_lang = self::$default_lang;
-                    $customer->newsletter = false;
-
-                    if (isset($customerHistory['birthday'])) {
-                        $customer->birthday = $customerHistory['birthday'];
-                    }
-
-                    if (isset($customerHistory['sex'])) {
-                        $customer->id_gender = $customerHistory['sex'] == 'male' ? 1 : 2;
-                    }
-
-                    if (isset($customerHistory['email']) && Validate::isEmail($customerHistory['email'])) {
-                        $customer->email = $customerHistory['email'];
-                    } else {
-                        $customer->email = RetailcrmTools::createPlaceholderEmail($customerHistory['firstName']);
-                    }
-
-                    $customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
-
-                    if (self::loadInCMS($customer, 'add') === false) {
+                    if (self::loadInCMS($customer->getData()->getCustomerAddress(), 'add') === false) {
                         continue;
                     }
-
-                    if (isset($customerHistory['address'])) {
-                        $customerAddress = new Address();
-                        $customerAddress->id_customer = $customer->id;
-                        $customerAddress->alias = 'default';
-                        $customerAddress->lastname = $customer->lastname;
-                        $customerAddress->firstname = $customer->firstname;
-
-                        if (isset($customerHistory['address']['countryIso'])) {
-                            $customerAddress->id_country = Country::getByIso($customerHistory['address']['countryIso']);
-                        }
-
-                        if (isset($customerHistory['address']['region'])) {
-                            $customerAddress->id_state = State::getIdByName($customerHistory['address']['region']);
-                        }
-
-                        $customerAddress->city = isset($customerHistory['address']['city']) ? $customerHistory['address']['city'] : '--';
-
-                        $customerAddress->address1 = isset($customerHistory['address']['text']) ? $customerHistory['address']['text'] : '--';
-
-                        if (isset($customerHistory['phones'])) {
-                            // Can be returned as string, beware!
-                            if (is_array($customerHistory['phones'])) {
-                                $phone = reset($customerHistory['phones']);
-                            } else {
-                                $phone = $customerHistory['phones'];
-                            }
-
-                            $customerAddress->phone = $phone['number'];
-                        }
-
-                        if (isset($customerHistory['address']['index'])) {
-                            $customerAddress->postcode = $customerHistory['address']['index'];
-                        }
-
-                        if (self::loadInCMS($customerAddress, 'add') === false) {
-                            continue;
-                        }
-                    }
-
-                    $customerFix[] = array(
-                        'id' => $customerHistory['id'],
-                        'externalId' => $customer->id
-                    );
                 }
+
+                $customerFix[] = array(
+                    'id' => $customerHistory['id'],
+                    'externalId' => $customer->getData()->getCustomer()->id
+                );
             }
 
             if (!empty($customerFix)) {
                 self::$api->customersFixExternalIds($customerFix);
             }
-
             return true;
         } else {
             return 'Nothing to sync';
@@ -221,16 +121,15 @@ class RetailcrmHistory
     }
 
     /**
-     * Get orders history
-     *
-     * @return mixed
-     * @throws \PrestaShopException
-     * @throws \PrestaShopDatabaseException
-     */
+    * Get orders history
+    *
+    * @return mixed
+    * @throws \PrestaShopException
+    * @throws \PrestaShopDatabaseException
+    */
     public static function ordersHistory()
     {
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
-        $default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
 
         $lastSync = Configuration::get('RETAILCRM_LAST_ORDERS_SYNC');
         $lastDate = Configuration::get('RETAILCRM_LAST_SYNC');
@@ -375,7 +274,6 @@ class RetailcrmHistory
                     }
 
                     $customerId = null;
-                    $builtFromContact = false;
 
                     if ($order['customer']['type'] == 'customer_corporate'
                         && RetailcrmTools::isCorporateEnabled()
@@ -399,61 +297,20 @@ class RetailcrmHistory
                     }
 
                     if (empty($customerId)) {
-                        $firstName = '';
-                        $lastName = '';
-                        $email = '';
+                        $customer = new RetailcrmCustomerBuilder();
+                        $customer
+                            ->setDataCrm($order['customer'])
+                            ->build();
 
-                        if ($order['customer']['type'] == 'customer_corporate') {
-                            if (!empty($order['contact'])) {
-                                $contact = $order['contact'];
-                                $firstName = $contact['firstName'];
-                                $lastName = !empty($contact['lastName']) ? $contact['lastName'] : '--';
-                                $email =
-                                    Validate::isEmail(isset($contact['email']) ? $contact['email'] : '')
-                                    ? $contact['email']
-                                    : RetailcrmTools::createPlaceholderEmail($contact['firstName']);
-                                $builtFromContact = true;
-                            } elseif (!empty($order['customer']['nickName'])) {
-                                $firstName = $order['customer']['nickName'];
-                                $lastName = '--';
-                                $email = Validate::isEmail(
-                                    isset($order['customer']['email']) ? $order['customer']['email'] : ''
-                                )
-                                    ? $order['customer']['email']
-                                    : RetailcrmTools::createPlaceholderEmail($order['customer']['nickName']);
-                            }
-                        } else {
-                            $firstName = $order['customer']['firstName'];
-                            $lastName = !empty($order['customer']['lastName'])
-                                ? $order['customer']['lastName']
-                                : '--';
-                            $email = Validate::isEmail(
-                                isset($order['customer']['email']) ? $order['customer']['email'] : ''
-                            )
-                                ? $order['customer']['email']
-                                : RetailcrmTools::createPlaceholderEmail($order['customer']['firstName']);
-                        }
-
-                        /** @var Customer|\CustomerCore $customer */
-                        $customer = new Customer();
-                        $customer->firstname = $firstName;
-                        $customer->lastname = $lastName;
-                        $customer->email = $email;
-                        $customer->passwd = Tools::substr(
-                            str_shuffle(Tools::strtolower(sha1(rand() . time()))),
-                            0,
-                            5
-                        );
-
-                        if (self::loadInCMS($customer, 'add') === false) {
+                        if (self::loadInCMS($customer->getData()->getCustomer(), 'add') === false) {
                             continue;
                         }
 
                         array_push(
                             $customerFix,
                             array(
-                                'id' => $builtFromContact ? $order['contact']['id'] : $order['customer']['id'],
-                                'externalId' => $customer->id
+                                'id' => $order['customer']['id'],
+                                'externalId' => $customer->getData()->getCustomer()->id
                             )
                         );
                     } else {
@@ -461,19 +318,14 @@ class RetailcrmHistory
                         $customer = new Customer($customerId);
                     }
 
-                    /** @var Address|\AddressCore $address */
-                    $address = new Address();
-                    $address->id_customer = $customer->id;
-                    $address->id_country = $default_country;
-                    $address->lastname = $customer->lastname;
-                    $address->firstname = $customer->firstname;
-                    $address->alias = 'default';
-                    $address->postcode = isset($order['delivery']['address']['index']) ? $order['delivery']['address']['index'] : '--';
-                    $address->city = !empty($order['delivery']['address']['city']) ?
-                        $order['delivery']['address']['city'] : '--';
-                    $address->address1 = !empty($order['delivery']['address']['text']) ?
-                        $order['delivery']['address']['text'] : '--';
-                    $address->phone = isset($order['phone']) ? $order['phone'] : '';
+                    $address = new RetailcrmCustomerAddressBuilder();
+                    $address
+                        ->setDataCrm($order['delivery']['address'])
+                        ->setFirstName($customer->getData()->getCustomer()->firstname)
+                        ->setLastName($customer->getData()->getCustomer()->lastname)
+                        ->setAlias('default')
+                        ->setPhone($order['phone'])
+                        ->build();
 
                     if (!empty($order['company'])
                         && !empty($order['company']['contragent'])
@@ -543,7 +395,7 @@ class RetailcrmHistory
                             $product['id_product'] = (int) $productId[0];
                             $product['id_product_attribute'] = !empty($productId[1]) ? $productId[1] : 0;
                             $product['quantity'] = $item['quantity'];
-                            $product['id_address_delivery'] = (int) $address->id;
+                            $product['id_address_delivery'] = (int) $address->getData()->id;
                             $products[] = $product;
                         }
                     }
@@ -570,12 +422,12 @@ class RetailcrmHistory
                     $newOrder->id_shop = Context::getContext()->shop->id;
                     $newOrder->id_shop_group = (int)$shops[Context::getContext()->shop->id]['id_shop_group'];
                     $newOrder->reference = $newOrder->generateReference();
-                    $newOrder->id_address_delivery = (int) $address->id;
-                    $newOrder->id_address_invoice = (int) $address->id;
+                    $newOrder->id_address_delivery = (int) $address->getData()->id;
+                    $newOrder->id_address_invoice = (int) $address->getData()->id;
                     $newOrder->id_cart = (int) $cart->id;
                     $newOrder->id_currency = $default_currency;
                     $newOrder->id_lang = self::$default_lang;
-                    $newOrder->id_customer = (int) $customer->id;
+                    $newOrder->id_customer = (int) $customer->getData()->getCustomer()->id;
                     if (isset($deliveryType)) {
                         $newOrder->id_carrier = (int) $deliveryType;
                     }
