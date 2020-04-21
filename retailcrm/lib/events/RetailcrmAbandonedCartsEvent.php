@@ -38,23 +38,33 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmAbandonedCartsEvent implements RetailcrmEventInterface
+class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
         $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
+
         if (empty($syncCartsActive)) {
-            return;
+            RetailcrmLogger::writeCaller(__METHOD__, 'Abandoned carts is disabled, skipping...');
+
+            return true;
         }
 
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller('abandonedCarts', 'set api key & url first');
-            return;
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+
+            return true;
         }
 
         RetailcrmCartUploader::init();
@@ -63,8 +73,15 @@ class RetailcrmAbandonedCartsEvent implements RetailcrmEventInterface
         RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
         RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
         RetailcrmCartUploader::run();
+
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName()
+    {
+        return 'RetailcrmAbandonedCartsEvent';
     }
 }
-
-$event = new RetailcrmAbandonedCartsEvent();
-$event->execute();

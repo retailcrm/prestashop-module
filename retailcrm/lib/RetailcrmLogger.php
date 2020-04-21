@@ -47,6 +47,18 @@ if (!defined('_PS_VERSION_')) {
  */
 class RetailcrmLogger
 {
+    static $cloneToStdout;
+
+    /**
+     * Set to true if you want all output to be cloned into STDOUT
+     *
+     * @param bool $cloneToStdout
+     */
+    public static function setCloneToStdout($cloneToStdout)
+    {
+        self::$cloneToStdout = $cloneToStdout;
+    }
+
     /**
      * Write entry to log
      *
@@ -55,16 +67,22 @@ class RetailcrmLogger
      */
     public static function writeCaller($caller, $message)
     {
-        error_log(
-            sprintf(
-                '[%s] @ [%s] %s' . PHP_EOL,
-                date(DATE_RFC3339),
-                $caller,
-                $message
-            ),
-            3,
-            static::getErrorLog()
+        $result = sprintf(
+            '[%s] @ [%s] %s' . PHP_EOL,
+            date(DATE_RFC3339),
+            $caller,
+            $message
         );
+
+        error_log(
+            $result,
+            3,
+            static::getLogFile()
+        );
+
+        if (self::$cloneToStdout) {
+            self::output($result);
+        }
     }
 
     /**
@@ -74,15 +92,31 @@ class RetailcrmLogger
      */
     public static function writeNoCaller($message)
     {
-        error_log(
-            sprintf(
-                '[%s] %s' . PHP_EOL,
-                date(DATE_RFC3339),
-                $message
-            ),
-            3,
-            static::getErrorLog()
+        $result = sprintf(
+            '[%s] %s' . PHP_EOL,
+            date(DATE_RFC3339),
+            $message
         );
+
+        error_log(
+            $result,
+            3,
+            static::getLogFile()
+        );
+
+        if (self::$cloneToStdout) {
+            self::output($result);
+        }
+    }
+
+    /**
+     * Output message to stdout
+     *
+     * @param string $message
+     */
+    public static function output($message = '')
+    {
+        echo $message . PHP_EOL;
     }
 
     /**
@@ -103,16 +137,34 @@ class RetailcrmLogger
     }
 
     /**
-     * Returns error log path
+     * Returns log file path
      *
      * @return string
      */
-    protected static function getErrorLog()
+    public static function getLogFile()
     {
         if (!defined('_PS_ROOT_DIR_')) {
             return '';
         }
 
-        return _PS_ROOT_DIR_ . '/retailcrm.log';
+        return _PS_ROOT_DIR_ . '/retailcrm_' . self::getLogFilePrefix() . '.log';
+    }
+
+    /**
+     * Returns log file prefix based on current environment
+     *
+     * @return string
+     */
+    private static function getLogFilePrefix()
+    {
+        if (php_sapi_name() == 'cli') {
+            if (isset($_SERVER['TERM'])) {
+                return 'cli';
+            } else {
+                return 'cron';
+            }
+        }
+
+        return 'web';
     }
 }

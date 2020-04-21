@@ -38,29 +38,37 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmMissingEvent implements RetailcrmEventInterface
+class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
         $shortopts = 'o:';
         $options = getopt($shortopts);
 
         if (!isset($options['o'])) {
-            echo ('Parameter -o is missing');
-            exit();
+            echo 'Parameter -o is missing';
+
+            return true;
         }
 
         $apiUrl = Configuration::get(RetailCRM::API_URL);
         $apiKey = Configuration::get(RetailCRM::API_KEY);
 
         if (!empty($apiUrl) && !empty($apiKey)) {
-            $api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+            $api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
         } else {
-            echo('Set api key & url first');
-            exit();
+            echo 'Set api key & url first';
+
+            return true;
         }
 
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
@@ -97,7 +105,7 @@ class RetailcrmMissingEvent implements RetailcrmEventInterface
                 $order['lastName'] = $orderCustomer->lastname;
                 $order['email'] = $orderCustomer->email;
             } else {
-                exit();
+                return true;
             }
         }
 
@@ -195,8 +203,12 @@ class RetailcrmMissingEvent implements RetailcrmEventInterface
         }
 
         $api->ordersEdit($order);
+
+        return true;
+    }
+
+    public function getName()
+    {
+        return 'RetailcrmMissingEvent';
     }
 }
-
-$event = new RetailcrmMissingEvent();
-$event->execute();

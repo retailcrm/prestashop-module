@@ -38,33 +38,49 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmInventoriesEvent implements RetailcrmEventInterface
+class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
+        if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
+            RetailcrmLogger::writeDebug(
+                'RetailcrmInventoriesEvent',
+                'Balances receiving is not enabled, skipping...'
+            );
+
+            return true;
+        }
+
         $apiUrl = Configuration::get(RetailCRM::API_URL);
         $apiKey = Configuration::get(RetailCRM::API_KEY);
 
         if (!empty($apiUrl) && !empty($apiKey)) {
-            RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+            RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
         } else {
             RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
-            exit();
+
+            return true;
         }
 
         RetailcrmInventories::loadStocks();
-    }
-}
 
-if (Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
-    $event = new RetailcrmInventoriesEvent();
-    $event->execute();
-} else {
-    RetailcrmLogger::writeDebug(
-        'RetailcrmInventoriesEvent',
-        'Balances receiving is not enabled, skipping...'
-    );
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName()
+    {
+        return 'RetailcrmInventoriesEvent';
+    }
 }

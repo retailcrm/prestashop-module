@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -38,33 +38,38 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
+abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
-    public function execute()
-    {
-        if ($this->isRunning()) {
-            return false;
-        }
-
-        $this->setRunning();
-
-        $job = new RetailcrmCatalog();
-        $data = $job->getData();
-
-        $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
-        $icml->generate($data[0], $data[1]);
-
-        return true;
-    }
+    abstract public function execute();
 
     /**
      * @inheritDoc
      */
     public function getName()
     {
-        return 'RetailcrmIcmlEvent';
+        throw new InvalidArgumentException("Not implemented.");
+    }
+
+    /**
+     * Returns true if current job is running now
+     *
+     * @return bool
+     */
+    protected function isRunning()
+    {
+        return (strcmp(RetailcrmJobManager::getCurrentJob(), $this->getName() === 0));
+    }
+
+    /**
+     * Sets current job as active
+     *
+     * @return bool
+     */
+    protected function setRunning()
+    {
+        return RetailcrmJobManager::setCurrentJob($this->getName());
     }
 }

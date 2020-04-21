@@ -359,7 +359,7 @@ class RetailcrmTools
         $apiKey = Configuration::get(RetailCRM::API_KEY);
 
         if (!empty($apiUrl) && !empty($apiKey)) {
-            return new RetailcrmProxy($apiUrl, $apiKey, RetailCRM::getErrorLog());
+            return new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
         }
 
         return null;

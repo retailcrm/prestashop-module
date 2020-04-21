@@ -128,7 +128,7 @@ class RetailCRM extends Module
         $this->apiKey = Configuration::get(static::API_KEY);
         $this->ps_versions_compliancy = array('min' => '1.6.1.0', 'max' => _PS_VERSION_);
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
-        $this->log = static::getErrorLog();
+        $this->log = RetailcrmLogger::getLogFile();
         $this->module_key = 'dff3095326546f5fe8995d9e86288491';
         $this->assetsBase =
             Tools::getShopDomainSsl(true, true) .
@@ -186,7 +186,7 @@ class RetailCRM extends Module
             $api = new RetailcrmProxy(
                 $apiUrl,
                 $apiKey,
-                static::getErrorLog()
+                RetailcrmLogger::getLogFile()
             );
 
             $clientId = Configuration::get(static::CLIENT_ID);
@@ -925,20 +925,6 @@ class RetailCRM extends Module
     }
 
     /**
-     * Returns error log path
-     *
-     * @return string
-     */
-    public static function getErrorLog()
-    {
-        if (!defined('_PS_ROOT_DIR_')) {
-            return '';
-        }
-
-        return _PS_ROOT_DIR_ . '/retailcrm.log';
-    }
-
-    /**
      * Loads data from modules list cache
      *
      * @return array|mixed
@@ -1124,6 +1110,22 @@ class RetailCRM extends Module
             fflush($file);
             fclose($file);
         }
+    }
+
+    /**
+     * Returns jobs list
+     *
+     * @return array
+     */
+    public static function getJobs()
+    {
+        return array(
+            'RetailcrmAbandonedCartsEvent' => null,
+            'RetailcrmLongJobEvent' => null,
+            'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
+            'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
+            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
+        );
     }
 
     /**

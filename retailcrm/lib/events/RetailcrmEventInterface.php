@@ -39,9 +39,17 @@
 interface RetailcrmEventInterface
 {
     /**
-     * Execute event
+     * Executes event. Event MUST return true if it was executed. False should be returned only when event
+     * found out that it's already running.
      *
      * @return bool
      */
     public function execute();
+
+    /**
+     * Returns event name
+     *
+     * @return string
+     */
+    public function getName();
 }
