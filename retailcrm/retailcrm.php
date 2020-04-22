@@ -1121,7 +1121,6 @@ class RetailCRM extends Module
     {
         return array(
             'RetailcrmAbandonedCartsEvent' => null,
-            'RetailcrmLongJobEvent' => null,
             'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
