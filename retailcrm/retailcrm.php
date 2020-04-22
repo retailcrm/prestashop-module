@@ -513,7 +513,25 @@ class RetailCRM extends Module
                 RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
             }
 
+            $orderCrm = $this->api->ordersGet($order['externalId']);
+
+            if (!($orderCrm instanceof RetailcrmApiResponse) || !$orderCrm->isSuccessful()) {
+                /** @var Order|\OrderCore $order */
+                $order = $params['order'];
+
+                $this->hookNewOrder(array(
+                    'orderStatus' => $order->current_state,
+                    'id_order' => (int) $order->id,
+                    'order' => $order,
+                    'cart' => new Cart($order->id_cart),
+                    'customer' => new Customer($order->id_customer)
+                ));
+
+                return false;
+            }
+
             $comment = $orderdb->getFirstMessage();
+
             if ($comment !== false) {
                 $order['customerComment'] = $comment;
             }
