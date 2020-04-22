@@ -42,6 +42,15 @@ class RetailcrmCartUploader
      */
     static $api;
 
+    /** @var \Context|\ContextCore */
+    static $context;
+
+    /** @var Cart|\CartCore */
+    static $origCart;
+
+    /** @var \Employee|\EmployeeCore */
+    static $origEmployee;
+
     /**
      * @var array
      */
@@ -92,6 +101,7 @@ class RetailcrmCartUploader
         static::$syncDelay = 0;
         static::$syncStatus = '';
         static::$now = new \DateTime();
+        static::$context = Context::getContext();
     }
 
     /**
@@ -103,6 +113,9 @@ class RetailcrmCartUploader
             return;
         }
 
+        static::backupCurrentCart();
+        static::backupCurrentEmployee();
+        static::setAnyEmployeeToContext();
         static::loadAbandonedCartsIds();
 
         foreach (static::$cartsIds as $cartId) {
@@ -124,6 +137,8 @@ class RetailcrmCartUploader
             )) {
                 continue;
             }
+
+            static::populateContextWithCart($cart);
 
             $response = static::$api->ordersGet($cartExternalId);
 
@@ -159,6 +174,9 @@ class RetailcrmCartUploader
                 }
             }
         }
+
+        static::restoreCurrentCart();
+        static::restoreCurrentEmployee();
     }
 
     /**
@@ -247,13 +265,13 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (count($cart->getProducts()) == 0 || !$shouldBeUploaded) {
+            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
-                sprintf("Failure while trying to get cart total (cart id=%d)", $cart->id)
+                sprintf("Failure while trying to get cart products (cart id=%d)", $cart->id)
             );
             RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
@@ -386,5 +404,70 @@ class RetailcrmCartUploader
         }
 
         return true;
+    }
+
+    /**
+     * Backups current cart in context
+     */
+    private static function backupCurrentCart()
+    {
+        self::$origCart = self::$context->cart;
+    }
+
+    /**
+     * Restores current cart in context
+     */
+    private static function restoreCurrentCart()
+    {
+        self::populateContextWithCart(self::$origCart);
+    }
+
+    /**
+     * Populates current context with provided cart.
+     *
+     * @param Cart|\CartCore $cart
+     */
+    private static function populateContextWithCart($cart)
+    {
+        self::$context->cart = $cart;
+    }
+
+    /**
+     * Backups current employee in context
+     */
+    private static function backupCurrentEmployee()
+    {
+        self::$origEmployee = self::$context->employee;
+    }
+
+    /**
+     * Restores current employee in context
+     */
+    private static function restoreCurrentEmployee()
+    {
+        self::populateContextWithEmployee(self::$origEmployee);
+    }
+
+    /**
+     * Sets any employee to context
+     */
+    private static function setAnyEmployeeToContext()
+    {
+        $employees = EmployeeCore::getEmployees();
+        $employee = reset($employees);
+
+        if (isset($employee['id_employee'])) {
+            self::$context->employee = new Employee($employee['id_employee']);
+        }
+    }
+
+    /**
+     * Populates current context with provided cart.
+     *
+     * @param \Employee|\EmployeeCore $employee
+     */
+    private static function populateContextWithEmployee($employee)
+    {
+        self::$context->employee = $employee;
     }
 }
