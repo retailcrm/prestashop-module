@@ -59,12 +59,18 @@ class RetailcrmCli
 {
     const CURRENT_TASK_CLI = 'RETAILCRM_JOB_CURRENT_CLI';
 
+    /** @var string CLI path */
+    private $cliPath;
+
     /**
      * RetailcrmCli constructor.
+     *
+     * @param string $cliPath
      */
-    public function __construct()
+    public function __construct($cliPath)
     {
         RetailcrmLogger::setCloneToStdout(true);
+        $this->cliPath = $cliPath;
     }
 
     /**
@@ -158,11 +164,11 @@ class RetailcrmCli
         RetailcrmLogger::output();
         RetailcrmLogger::output('Usage:');
         RetailcrmLogger::output();
-        RetailcrmLogger::output(sprintf('> php %s -j <job name> - Runs provided job', __FILE__));
-        RetailcrmLogger::output(sprintf('> php %s --job <job name> - Runs provided job', __FILE__));
+        RetailcrmLogger::output(sprintf('> php %s -j <job name> - Runs provided job', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --job <job name> - Runs provided job', $this->cliPath));
         RetailcrmLogger::output(sprintf(
             '> php %s --reset-job-manager - Will reset job manager internal timers & current job name',
-            __FILE__
+            $this->cliPath
         ));
         RetailcrmLogger::output();
     }
