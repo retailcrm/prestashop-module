@@ -40,6 +40,8 @@ require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
+    private $cliMode;
+
     /**
      * @inheritDoc
      */
@@ -54,22 +56,37 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
     }
 
     /**
+     * Sets cli mode to true. CLI mode here stands for any execution outside of JobManager context.
+     *
+     * @param bool $mode
+     */
+    public function setCliMode($mode)
+    {
+        $this->cliMode = (bool) $mode;
+    }
+
+    /**
      * Returns true if current job is running now
      *
      * @return bool
      */
     protected function isRunning()
     {
-        return (strcmp(RetailcrmJobManager::getCurrentJob(), $this->getName() === 0));
+        return (strcmp(RetailcrmJobManager::getCurrentJob(), $this->getName() === 0))
+            || (strcmp(RetailcrmCli::getCurrentJob(), $this->getName() === 0));
     }
 
     /**
-     * Sets current job as active
+     * Sets current job as active based on execution context.
      *
      * @return bool
      */
     protected function setRunning()
     {
+        if ($this->cliMode) {
+            return RetailcrmCli::setCurrentJob($this->getName());
+        }
+
         return RetailcrmJobManager::setCurrentJob($this->getName());
     }
 }

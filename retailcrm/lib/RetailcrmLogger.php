@@ -81,7 +81,7 @@ class RetailcrmLogger
         );
 
         if (self::$cloneToStdout) {
-            self::output($result);
+            self::output($result, '');
         }
     }
 
@@ -105,7 +105,7 @@ class RetailcrmLogger
         );
 
         if (self::$cloneToStdout) {
-            self::output($result);
+            self::output($result, '');
         }
     }
 
@@ -113,10 +113,13 @@ class RetailcrmLogger
      * Output message to stdout
      *
      * @param string $message
+     * @param string $end
      */
-    public static function output($message = '')
+    public static function output($message = '', $end = PHP_EOL)
     {
-        echo $message . PHP_EOL;
+        if (php_sapi_name() == 'cli') {
+            echo $message . $end;
+        }
     }
 
     /**

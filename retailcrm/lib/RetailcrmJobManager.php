@@ -350,11 +350,6 @@ class RetailcrmJobManager
      */
     public static function reset()
     {
-        if (!static::lock()) {
-            RetailcrmLogger::writeDebug(__METHOD__, 'Cannot acquire lock');
-            return false;
-        }
-
         $result = true;
 
         if (Configuration::hasKey(self::CURRENT_TASK)) {
@@ -449,6 +444,8 @@ class RetailcrmJobManager
                 $jobName
             ));
         }
+
+        $job->setCliMode($cliMode);
 
         return $job->execute();
     }

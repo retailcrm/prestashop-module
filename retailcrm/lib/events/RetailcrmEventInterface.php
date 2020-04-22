@@ -52,4 +52,11 @@ interface RetailcrmEventInterface
      * @return string
      */
     public function getName();
+
+    /**
+     * Sets cli mode to true. CLI mode here stands for any execution outside of JobManager context.
+     *
+     * @param bool $mode
+     */
+    public function setCliMode($mode);
 }
