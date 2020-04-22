@@ -48,7 +48,7 @@ function retailcrmCliInterruptHandler($signo) {
 
 if (php_sapi_name() == 'cli') {
     $cli = new RetailcrmCli();
-    $cli->execute();
+    $cli->execute('retailcrmCliInterruptHandler');
 } else {
     include_once __DIR__ . DIRECTORY_SEPARATOR . 'index.php';
 }

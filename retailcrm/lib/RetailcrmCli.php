@@ -67,7 +67,12 @@ class RetailcrmCli
         RetailcrmLogger::setCloneToStdout(true);
     }
 
-    public function execute()
+    /**
+     * Run cli routine. Callable can be passed which will be used to handle terminate signals.
+     *
+     * @param callable|int|null $signalsHandler
+     */
+    public function execute($signalsHandler = null)
     {
         if (function_exists('pcntl_signal')) {
             if (function_exists('pcntl_async_signals')) {
@@ -78,9 +83,11 @@ class RetailcrmCli
                 pcntl_signal_dispatch();
             }
 
-            pcntl_signal(SIGINT, 'retailcrmCliInterruptHandler');
-            pcntl_signal(SIGTERM, 'retailcrmCliInterruptHandler');
-            pcntl_signal(SIGHUP, 'retailcrmCliInterruptHandler');
+            if (!empty($signalsHandler) && (is_callable($signalsHandler) || function_exists($signalsHandler))) {
+                pcntl_signal(SIGINT, $signalsHandler);
+                pcntl_signal(SIGTERM, $signalsHandler);
+                pcntl_signal(SIGHUP, $signalsHandler);
+            }
         } else {
             RetailcrmLogger::output('WARNING: cannot handle signals properly, force stop can cause problems!');
         }
