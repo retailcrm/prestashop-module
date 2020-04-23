@@ -884,6 +884,10 @@ class RetailcrmOrderBuilder
             );
 
             $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
+
+            if (((float) $crmOrder['discountManualAmount']) > ((float) $order_payment['amount'])) {
+                $crmOrder['discountManualAmount'] = $order_payment['amount'];
+            }
         }
 
         if (isset($order_payment)) {

@@ -500,8 +500,12 @@ class RetailCRM extends Module
                 'createdAt' => RetailcrmTools::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
                     ? $params['order']->date_add : date('Y-m-d H:i:s'),
                 'delivery' => array('cost' => $params['order']->total_shipping),
-                'discountManualAmount' => $params['order']->total_discounts
+                'discountManualAmount' => round($params['order']->total_discounts, 2)
             );
+
+            if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
+                $crmOrder['discountManualAmount'] = $params['order']->total_paid;
+            }
 
             try {
                 $orderdb = new Order($params['order']->id);
