@@ -38,18 +38,25 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmExportEvent implements RetailcrmEventInterface
+class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller('orderHistory', 'set api key & url first');
-            exit();
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+
+            return true;
         }
 
         $orders = array();
@@ -84,11 +91,8 @@ class RetailcrmExportEvent implements RetailcrmEventInterface
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
             } catch (\InvalidArgumentException $exception) {
                 RetailcrmLogger::writeCaller('export', $exception->getMessage());
-                RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-
-                if (PHP_SAPI == 'cli') {
-                    echo $exception->getMessage() . PHP_EOL;
-                }
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                RetailcrmLogger::output($exception->getMessage());
             }
 
             time_nanosleep(0, 500000000);
@@ -101,8 +105,15 @@ class RetailcrmExportEvent implements RetailcrmEventInterface
         foreach ($orders as $chunk) {
             $api->ordersUpload($chunk);
         }
+
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName()
+    {
+        return 'RetailcrmExportEvent';
     }
 }
-
-$event = new RetailcrmExportEvent();
-$event->execute();

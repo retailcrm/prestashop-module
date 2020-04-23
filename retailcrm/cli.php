@@ -28,35 +28,27 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
 
-interface RetailcrmEventInterface
-{
-    /**
-     * Executes event. Event MUST return true if it was executed. False should be returned only when event
-     * found out that it's already running.
-     *
-     * @return bool
-     */
-    public function execute();
+declare(ticks = 1);
 
-    /**
-     * Returns event name
-     *
-     * @return string
-     */
-    public function getName();
+require_once __DIR__ . '/lib/RetailcrmCli.php';
 
-    /**
-     * Sets cli mode to true. CLI mode here stands for any execution outside of JobManager context.
-     *
-     * @param bool $mode
-     */
-    public function setCliMode($mode);
+function retailcrmCliInterruptHandler($signo) {
+    RetailcrmLogger::output('WARNING: Interrupt received, stopping...');
+    RetailcrmCli::clearCurrentJob(null);
+    exit(1);
+}
+
+if (php_sapi_name() == 'cli') {
+    $cli = new RetailcrmCli(__FILE__);
+    $cli->execute('retailcrmCliInterruptHandler');
+} else {
+    include_once __DIR__ . DIRECTORY_SEPARATOR . 'index.php';
 }

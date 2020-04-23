@@ -38,20 +38,33 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmIcmlEvent implements RetailcrmEventInterface
+class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
         $job = new RetailcrmCatalog();
         $data = $job->getData();
 
         $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
         $icml->generate($data[0], $data[1]);
+
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName()
+    {
+        return 'RetailcrmIcmlEvent';
     }
 }
-
-$event = new RetailcrmIcmlEvent();
-$event->execute();

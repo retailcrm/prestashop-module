@@ -38,36 +38,51 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmSyncEvent implements RetailcrmEventInterface
+class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
+        if ($this->isRunning()) {
+            return false;
+        }
+
+        $this->setRunning();
+
+        if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
+                'History uploads is not enabled, skipping...'
+            );
+
+            return true;
+        }
+
         $apiUrl = Configuration::get(RetailCRM::API_URL);
         $apiKey = Configuration::get(RetailCRM::API_KEY);
         RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
 
         if (!empty($apiUrl) && !empty($apiKey)) {
-            RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+            RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
         } else {
-            RetailcrmLogger::writeCaller('orderHistory', 'set api key & url first');
-            exit();
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set api key & url first');
+
+            return true;
         }
 
         RetailcrmHistory::customersHistory();
         RetailcrmHistory::ordersHistory();
+
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName()
+    {
+        return 'RetailcrmSyncEvent';
     }
 }
-
-if (Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
-    $event = new RetailcrmSyncEvent();
-    $event->execute();
-} else {
-    RetailcrmLogger::writeDebug(
-        'RetailcrmSyncEvent',
-        'History uploads is not enabled, skipping...'
-    );
-}
-

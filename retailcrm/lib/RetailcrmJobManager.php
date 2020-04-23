@@ -59,6 +59,7 @@ class RetailcrmJobManager
 {
     const LAST_RUN_NAME = 'RETAILCRM_LAST_RUN';
     const IN_PROGRESS_NAME = 'RETAILCRM_JOBS_IN_PROGRESS';
+    const CURRENT_TASK = 'RETAILCRM_JOB_CURRENT';
 
     /**
      * Entry point for all jobs.
@@ -157,7 +158,11 @@ class RetailcrmJobManager
 
                 if (isset($shouldRunAt) && $shouldRunAt <= $current) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf('Executing job %s', $job));
-                    RetailcrmJobManager::runJob($job, $runOnceInContext);
+                    $result = RetailcrmJobManager::runJob($job, $runOnceInContext);
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
+                    );
                     $lastRuns[$job] = new \DateTime('now');
                 }
             } catch (\Exception $exception) {
@@ -167,6 +172,11 @@ class RetailcrmJobManager
                     $exception->getTraceAsString(),
                     $job
                 );
+                self::clearCurrentJob($job);
+            } finally {
+                if (isset($result) && $result) {
+                    self::clearCurrentJob($job);
+                }
             }
         }
 
@@ -248,39 +258,29 @@ class RetailcrmJobManager
      *
      * @param string $job
      * @param bool   $once
+     * @param bool   $cliMode
      *
+     * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false)
+    public static function runJob($job, $once = false, $cliMode = false)
     {
+        $jobName = self::escapeJobName($job);
         $jobFile = implode(
             DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', self::escapeJobName($job) . '.php')
+            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $jobName . '.php')
         );
 
         if (!file_exists($jobFile)) {
             throw new \RetailcrmJobManagerException('Cannot find job', $job);
         }
 
-        static::execPHP($jobFile, $once);
-    }
-
-    /**
-     * Runs PHP file
-     *
-     * @param string $fileCommandLine
-     * @param bool   $once
-     *
-     * @throws \RetailcrmJobManagerException
-     */
-    private static function execPHP($fileCommandLine, $once = false)
-    {
-        $error = null;
-
         try {
-            static::execHere($fileCommandLine, $once);
+            return static::execHere($jobName, $jobFile, $once, $cliMode);
+        } catch (\RetailcrmJobManagerException $exception) {
+            throw $exception;
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $fileCommandLine);
+            throw new RetailcrmJobManagerException($exception->getMessage(), $jobFile);
         }
     }
 
@@ -298,6 +298,71 @@ class RetailcrmJobManager
         }
 
         return (string)base64_encode(json_encode($jobs));
+    }
+
+    /**
+     * Sets current running job. Every job must call this in order to work properly.
+     * Current running job will be cleared automatically after job was finished (or crashed).
+     * That way, JobManager will maintain it's data integrity and will coexist with manual runs and cron.
+     *
+     * @param string $job
+     *
+     * @return bool
+     */
+    public static function setCurrentJob($job)
+    {
+        return (bool) Configuration::updateValue(self::CURRENT_TASK, $job);
+    }
+
+    /**
+     * Returns current job or empty string if there's no jobs running at this moment
+     *
+     * @return string
+     */
+    public static function getCurrentJob()
+    {
+        return (string) Configuration::get(self::CURRENT_TASK);
+    }
+
+    /**
+     * Clears current job (job name must be provided to ensure we're removed correct job).
+     *
+     * @param string|null $job
+     *
+     * @return bool
+     */
+    public static function clearCurrentJob($job)
+    {
+        if (Configuration::hasKey(self::CURRENT_TASK)) {
+            if (is_null($job) || self::getCurrentJob() == $job) {
+                return Configuration::deleteByName(self::CURRENT_TASK);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Resets JobManager internal state. Doesn't work if JobManager is active.
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    public static function reset()
+    {
+        $result = true;
+
+        if (Configuration::hasKey(self::CURRENT_TASK)) {
+            $result = Configuration::deleteByName(self::CURRENT_TASK);
+        }
+
+        if (Configuration::hasKey(self::LAST_RUN_NAME)) {
+            $result = $result && Configuration::deleteByName(self::LAST_RUN_NAME);
+        }
+
+        self::unlock();
+
+        return $result;
     }
 
     /**
@@ -327,25 +392,34 @@ class RetailcrmJobManager
     }
 
     /**
-     * Executes php script in this context, without hanging up request
+     * Executes job without hanging up request (if executed by a hit).
+     * Returns execution result from job.
      *
+     * @param string $jobName
      * @param string $phpScript
      * @param bool   $once
+     * @param bool   $cliMode
+     *
+     * @return bool
+     * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($phpScript, $once = false)
+    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false)
     {
-        ignore_user_abort(true);
         set_time_limit(static::getTimeLimit());
 
-        if (version_compare(phpversion(), '7.0.16', '>=') &&
-            function_exists('fastcgi_finish_request')
-        ) {
-            if (!headers_sent()) {
-                header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
-                header('Cache-Control: no-store, no-cache, must-revalidate');
-            }
+        if (!$cliMode) {
+            ignore_user_abort(true);
 
-            fastcgi_finish_request();
+            if (version_compare(phpversion(), '7.0.16', '>=') &&
+                function_exists('fastcgi_finish_request')
+            ) {
+                if (!headers_sent()) {
+                    header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
+                    header('Cache-Control: no-store, no-cache, must-revalidate');
+                }
+
+                fastcgi_finish_request();
+            }
         }
 
         if ($once) {
@@ -353,6 +427,27 @@ class RetailcrmJobManager
         } else {
             require($phpScript);
         }
+
+        if (!class_exists($jobName)) {
+            throw new \RetailcrmJobManagerException(sprintf(
+                'The job file "%s" has been found, but job class "%s" was not present in there.',
+                $phpScript,
+                $jobName
+            ));
+        }
+
+        $job = new $jobName();
+
+        if (!($job instanceof RetailcrmEventInterface)) {
+            throw new \RetailcrmJobManagerException(sprintf(
+                'Class "%s" must implement RetailcrmEventInterface',
+                $jobName
+            ));
+        }
+
+        $job->setCliMode($cliMode);
+
+        return $job->execute();
     }
 
     /**
