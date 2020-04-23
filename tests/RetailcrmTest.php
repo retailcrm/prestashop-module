@@ -11,7 +11,15 @@ class RetailCRMTest extends RetailcrmTestCase
 
         $this->setConfig();
 
-        $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
+        $this->apiMock = $this->apiMockBuilder()->getMock();
+
+        $this->retailcrmModule = new RetailCRM();
+        $this->retailcrmModule->api = $this->apiMock;
+    }
+
+    private function apiMockBuilder()
+    {
+        return $this->getMockBuilder('RetailcrmProxy')
             ->disableOriginalConstructor()
             ->setMethods(
                 array(
@@ -24,11 +32,7 @@ class RetailCRMTest extends RetailcrmTestCase
                     'ordersPaymentEdit',
                     'ordersPaymentCreate'
                 )
-            )
-            ->getMock();
-
-        $this->retailcrmModule = new RetailCRM();
-        $this->retailcrmModule->api = $this->apiMock;
+            );
     }
 
     public function testHookActionCustomerAccountAdd()
@@ -52,6 +56,13 @@ class RetailCRMTest extends RetailcrmTestCase
         $order = new Order(1);
         $customer = new Customer($order->id_customer);
         $params = array('order' => $order, 'customer' => $customer);
+        $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode(array(
+                'success' => true,
+                'order' => array()
+            ))
+        ));
 
         $this->assertTrue($this->retailcrmModule->hookActionOrderEdited($params));
     }
