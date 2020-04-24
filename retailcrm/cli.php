@@ -38,10 +38,14 @@
 
 declare(ticks = 1);
 
-require_once __DIR__ . '/lib/RetailcrmCli.php';
+require_once dirname(__FILE__) . '/lib/RetailcrmCli.php';
 
-function retailcrmCliInterruptHandler($signo) {
-    RetailcrmLogger::output('WARNING: Interrupt received, stopping...');
+function retailcrmCliInterruptHandler($signo)
+{
+    RetailcrmLogger::output(sprintf(
+        'WARNING: Interrupt received, stopping... (%s)',
+        print_r($signo, true)
+    ));
     RetailcrmCli::clearCurrentJob(null);
     exit(1);
 }
@@ -50,5 +54,5 @@ if (php_sapi_name() == 'cli') {
     $cli = new RetailcrmCli(__FILE__);
     $cli->execute('retailcrmCliInterruptHandler');
 } else {
-    include_once __DIR__ . DIRECTORY_SEPARATOR . 'index.php';
+    include_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'index.php';
 }

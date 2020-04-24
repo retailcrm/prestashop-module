@@ -504,7 +504,7 @@ class RetailCRM extends Module
             );
 
             if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
-                $crmOrder['discountManualAmount'] = $params['order']->total_paid;
+                $order['discountManualAmount'] = $params['order']->total_paid;
             }
 
             try {
