@@ -116,7 +116,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.0.5';
+        $this->version = '3.0.6';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('retailCRM');
         $this->description = $this->l('Integration module for retailCRM');
@@ -1132,21 +1132,6 @@ class RetailCRM extends Module
             fflush($file);
             fclose($file);
         }
-    }
-
-    /**
-     * Returns jobs list
-     *
-     * @return array
-     */
-    public static function getJobs()
-    {
-        return array(
-            'RetailcrmAbandonedCartsEvent' => null,
-            'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
-            'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
-        );
     }
 
     /**

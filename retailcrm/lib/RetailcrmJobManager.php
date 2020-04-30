@@ -61,6 +61,12 @@ class RetailcrmJobManager
     const IN_PROGRESS_NAME = 'RETAILCRM_JOBS_IN_PROGRESS';
     const CURRENT_TASK = 'RETAILCRM_JOB_CURRENT';
 
+    /** @var callable|null */
+    private static $customShutdownHandler;
+
+    /** @var bool */
+    private static $shutdownHandlerRegistered;
+
     /**
      * Entry point for all jobs.
      * Jobs must be passed in this format:
@@ -366,6 +372,56 @@ class RetailcrmJobManager
     }
 
     /**
+     * Sets custom shutdown handler, it will be called before calling default shutdown handler.
+     *
+     * @param callable $shutdownHandler
+     */
+    public static function setCustomShutdownHandler($shutdownHandler)
+    {
+        if (is_callable($shutdownHandler)) {
+            self::$customShutdownHandler = $shutdownHandler;
+        }
+    }
+
+    /**
+     * Register default shutdown handler (should be be called before any job execution)
+     */
+    private static function registerShutdownHandler()
+    {
+        if (!self::$shutdownHandlerRegistered) {
+            register_shutdown_function(function() {
+                $error = error_get_last();
+
+                if(null !== $error) {
+                    self::defaultShutdownHandler($error);
+                }
+            });
+
+            self::$shutdownHandlerRegistered = true;
+        }
+    }
+
+    /**
+     * Default handler for shutdown function
+     *
+     * @param array $error
+     */
+    private static function defaultShutdownHandler($error)
+    {
+        if (is_callable(self::$customShutdownHandler)) {
+            call_user_func_array(self::$customShutdownHandler, array($error));
+        }
+
+        RetailcrmLogger::writeCaller(
+            __METHOD__,
+            'Warning: something disrupted correct process execution. All information will be provided here.'
+        );
+        RetailcrmLogger::writeCaller(__METHOD__, print_r($error, true));
+        self::unlock();
+        exit(1);
+    }
+
+    /**
      * Writes error to log and returns 500
      *
      * @param string $file
@@ -446,6 +502,8 @@ class RetailcrmJobManager
         }
 
         $job->setCliMode($cliMode);
+
+        self::registerShutdownHandler();
 
         return $job->execute();
     }

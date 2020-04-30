@@ -38,6 +38,10 @@
 
 declare(ticks = 1);
 
+if (!isset($_SERVER['REQUEST_METHOD'])) {
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+}
+
 require_once dirname(__FILE__) . '/lib/RetailcrmCli.php';
 
 function retailcrmCliInterruptHandler($signo)

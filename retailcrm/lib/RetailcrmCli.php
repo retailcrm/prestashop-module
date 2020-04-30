@@ -99,17 +99,32 @@ class RetailcrmCli
         }
 
         $shortopts = "j:";
-        $longopts  = array("job:", "reset-job-manager");
+        $longopts  = array("job:", "reset-job-manager", "reset-all");
         $options = getopt($shortopts, $longopts);
         $jobName = isset($options['j']) ? $options['j'] : (isset($options['job']) ? $options['job'] : null);
 
         if (isset($options['reset-job-manager'])) {
             $this->resetJobManager();
+        } elseif (isset($options['reset-all'])) {
+            $this->resetAll();
         } elseif (empty($jobName)) {
             $this->help();
         } else {
+            $this->setCleanupOnShutdown();
             $this->runJob($jobName);
         }
+    }
+
+    /**
+     * This will register shutdown handler which will clean lock before shutdown
+     */
+    private function setCleanupOnShutdown()
+    {
+        RetailcrmJobManager::setCustomShutdownHandler(function ($error) {
+            if (null !== $error) {
+                self::clearCurrentJob(null);
+            }
+        });
     }
 
     /**
@@ -157,7 +172,7 @@ class RetailcrmCli
         RetailcrmLogger::output('Available jobs:');
         RetailcrmLogger::output();
 
-        foreach (array_keys(RetailCRM::getJobs()) as $job) {
+        foreach ($this->getAllowedJobs() as $job) {
             RetailcrmLogger::output(sprintf(' - %s', $job));
         }
 
@@ -166,8 +181,19 @@ class RetailcrmCli
         RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf('> php %s -j <job name> - Runs provided job', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --job <job name> - Runs provided job', $this->cliPath));
+        RetailcrmLogger::output();
+        RetailcrmLogger::output(
+            "WARNING: Commands below are dangerous and should be used only when " .
+            "job manager or cli doesn't work properly."
+        );
+        RetailcrmLogger::output("Use them at your own risk.");
+        RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf(
             '> php %s --reset-job-manager - Will reset job manager internal timers & current job name',
+            $this->cliPath
+        ));
+        RetailcrmLogger::output(sprintf(
+            '> php %s --reset-all - Will reset the entire job subsystem state, can resolve most problems',
             $this->cliPath
         ));
         RetailcrmLogger::output();
@@ -187,6 +213,16 @@ class RetailcrmCli
         } catch (\Exception $exception) {
             $this->printStack($exception);
         }
+    }
+
+    /**
+     * Resets JobManager and cli internal lock
+     */
+    private function resetAll()
+    {
+        $this->resetJobManager();
+        self::clearCurrentJob(null);
+        RetailcrmLogger::output('CLI command lock was cleared.');
     }
 
     /**
@@ -229,5 +265,21 @@ class RetailcrmCli
         }
 
         return true;
+    }
+
+    /**
+     * Returns list of jobs which are allowed to be executed via cli
+     *
+     * @return string[]
+     */
+    private function getAllowedJobs()
+    {
+        return array(
+            'RetailcrmAbandonedCartsEvent',
+            'RetailcrmIcmlEvent',
+            'RetailcrmSyncEvent',
+            'RetailcrmInventoriesEvent',
+            'RetailcrmExportEvent'
+        );
     }
 }
