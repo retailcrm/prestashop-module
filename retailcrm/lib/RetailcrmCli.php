@@ -172,7 +172,7 @@ class RetailcrmCli
         RetailcrmLogger::output('Available jobs:');
         RetailcrmLogger::output();
 
-        foreach (array_keys(RetailCRM::getJobs()) as $job) {
+        foreach ($this->getAllowedJobs() as $job) {
             RetailcrmLogger::output(sprintf(' - %s', $job));
         }
 
@@ -265,5 +265,21 @@ class RetailcrmCli
         }
 
         return true;
+    }
+
+    /**
+     * Returns list of jobs which are allowed to be executed via cli
+     *
+     * @return string[]
+     */
+    private function getAllowedJobs()
+    {
+        return array(
+            'RetailcrmAbandonedCartsEvent',
+            'RetailcrmIcmlEvent',
+            'RetailcrmSyncEvent',
+            'RetailcrmInventoriesEvent',
+            'RetailcrmExportEvent'
+        );
     }
 }
