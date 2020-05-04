@@ -508,6 +508,10 @@ class RetailcrmHistory
 
                     if (!empty($order['items'])) {
                         foreach ($order['items'] as $item) {
+                            if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                                continue;
+                            }
+
                             $productId = explode('#', $item['offer']['externalId']);
 
                             $product = array();

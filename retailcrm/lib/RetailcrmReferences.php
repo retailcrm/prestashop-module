@@ -37,6 +37,8 @@
  */
 class RetailcrmReferences
 {
+    const GIFT_WRAPPING_ITEM_EXTERNAL_ID = 'giftWrappingCost';
+
     public $default_lang;
     public $carriers;
     public $payment_modules = array();

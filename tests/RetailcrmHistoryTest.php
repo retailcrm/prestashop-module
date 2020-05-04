@@ -216,7 +216,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     ),
                     'properties' => array(),
                     'purchasePrice' => 50
-                )
+                ),
+                RetailcrmOrderBuilder::getGiftItem(10)
             ),
             'fromApi' => false,
             'length' => 0,
@@ -231,7 +232,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $order['payments'][] = array(
             'id' => 97,
             'type' => 'cheque',
-            'amount' => 200
+            'amount' => 210
         );
 
         return $order;
