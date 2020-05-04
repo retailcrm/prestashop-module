@@ -217,7 +217,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'properties' => array(),
                     'purchasePrice' => 50
                 ),
-                RetailcrmOrderBuilder::getGiftItem(10)
+                array_merge(RetailcrmOrderBuilder::getGiftItem(10), array('id' => 25919))
             ),
             'fromApi' => false,
             'length' => 0,
