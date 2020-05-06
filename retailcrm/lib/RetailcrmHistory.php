@@ -964,6 +964,10 @@ class RetailcrmHistory
 
         foreach ($order['items'] as $key => $item) {
             if (isset($item['delete']) && $item['delete'] == true) {
+                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                    $orderToUpdate->gift = false;
+                }
+
                 $parsedExtId = static::parseItemExternalId($item);
                 $product_id = $parsedExtId['product_id'];
                 $product_attribute_id = $parsedExtId['product_attribute_id'];
@@ -982,6 +986,10 @@ class RetailcrmHistory
          */
         foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
             foreach ($order['items'] as $key => $item) {
+                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                    continue;
+                }
+
                 $parsedExtId = static::parseItemExternalId($item);
                 $product_id = $parsedExtId['product_id'];
                 $product_attribute_id = $parsedExtId['product_attribute_id'];
@@ -1105,6 +1113,10 @@ class RetailcrmHistory
          */
         if (!empty($order['items'])) {
             foreach ($order['items'] as $key => $newItem) {
+                if (RetailcrmOrderBuilder::isGiftItem($newItem)) {
+                    continue;
+                }
+
                 $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
 
                 if (!$isNewItem) {
