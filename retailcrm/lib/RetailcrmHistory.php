@@ -621,6 +621,10 @@ class RetailcrmHistory
                         $product_id = $item['offer']['externalId'];
                         $product_attribute_id = 0;
 
+                        if (RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID == $product_id) {
+                            continue;
+                        }
+
                         if (strpos($item['offer']['externalId'], '#') !== false) {
                             $product_id = explode('#', $item['offer']['externalId']);
                             $product_attribute_id = $product_id[1];
