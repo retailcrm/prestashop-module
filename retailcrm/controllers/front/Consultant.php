@@ -49,7 +49,9 @@ class RetailcrmConsultantModuleFrontController extends ModuleFrontController
             $this->ajax = true;
         }
 
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
 
         if (Tools::substr(_PS_VERSION_, 0, 3) == '1.6') {
             echo $response;
