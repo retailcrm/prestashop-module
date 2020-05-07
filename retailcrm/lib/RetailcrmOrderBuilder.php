@@ -1016,6 +1016,10 @@ class RetailcrmOrderBuilder
             $crmOrder['items'][] = $item;
         }
 
+        if ($order->gift && $order->total_wrapping > 0) {
+            self::setOrderGiftItem($order, $crmOrder);
+        }
+
         if ($order->id_customer) {
             if (empty($corporateCustomerId)) {
                 $crmOrder['customer']['externalId'] = $order->id_customer;
@@ -1213,5 +1217,81 @@ class RetailcrmOrderBuilder
         }
 
         return RetailcrmTools::clearArray($customer);
+    }
+
+    /**
+     * Returns true if provided item array contains placeholder item added for equal price with payment.
+     *
+     * @param array $item
+     *
+     * @return bool
+     */
+    public static function isGiftItem($item)
+    {
+        if (isset($item['offer'])
+            && isset($item['offer']['externalId'])
+            && $item['offer']['externalId'] == RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID
+        ) {
+            return true;
+        }
+
+        if (isset($item['externalIds'])) {
+            foreach ($item['externalIds'] as $externalId) {
+                if ($externalId['code'] == 'prestashop'
+                    && $externalId['value'] == RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns gift item
+     *
+     * @param float $giftItemPrice
+     *
+     * @return array
+     */
+    public static function getGiftItem($giftItemPrice)
+    {
+        return array(
+            'externalIds' => array(array(
+                'code' => 'prestashop',
+                'value' => RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID
+            )),
+            'offer' => array('externalId' => RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID),
+            'productName' => 'Gift Wrapping Cost',
+            'quantity' => 1,
+            'initialPrice' => $giftItemPrice,
+            'purchasePrice' => $giftItemPrice
+        );
+    }
+
+    /**
+     * Sets gift item to order (should be called if order is marked as gift)
+     *
+     * @param Order|\OrderCore $orderCms
+     * @param array $orderCrm
+     */
+    private static function setOrderGiftItem($orderCms, &$orderCrm)
+    {
+        $isFound = false;
+        $giftItemPrice = round($orderCms->total_wrapping, 2);
+
+        foreach ($orderCrm['items'] as $key => $item) {
+            if (self::isGiftItem($item)) {
+                $orderCrm['items'][$key] = self::getGiftItem($giftItemPrice);
+                $isFound = true;
+
+                break;
+            }
+        }
+
+        if (!$isFound) {
+            $orderCrm['items'][] = self::getGiftItem($giftItemPrice);
+        }
     }
 }

@@ -392,7 +392,7 @@ class RetailcrmJobManager
             register_shutdown_function(function() {
                 $error = error_get_last();
 
-                if(null !== $error) {
+                if(null !== $error && $error['type'] === E_ERROR) {
                     self::defaultShutdownHandler($error);
                 }
             });

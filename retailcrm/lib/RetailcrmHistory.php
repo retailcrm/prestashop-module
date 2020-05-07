@@ -489,8 +489,23 @@ class RetailcrmHistory
                     static::assignAddressIdByFields($customer, $address);
 
                     if (empty($address->id)) {
+                        RetailcrmLogger::writeDebug(
+                            __METHOD__,
+                            sprintf(
+                                '<Customer ID: %d> %s::%s',
+                                $address->id_customer,
+                                get_class($address),
+                                'add'
+                            )
+                        );
+
                         $address->add();
                     } else {
+                        RetailcrmLogger::writeDebug(
+                            __METHOD__,
+                            sprintf('<%d> %s::%s', $address->id, get_class($address), 'save')
+                        );
+
                         $address->save();
                     }
 
@@ -502,12 +517,26 @@ class RetailcrmHistory
                     $cart->id_address_invoice = (int) $address->id;
                     $cart->id_carrier = (int) $deliveryType;
 
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<Customer ID: %d> %s::%s',
+                            $cart->id_customer,
+                            get_class($cart),
+                            'add'
+                        )
+                    );
+
                     $cart->add();
 
                     $products = array();
 
                     if (!empty($order['items'])) {
                         foreach ($order['items'] as $item) {
+                            if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                                continue;
+                            }
+
                             $productId = explode('#', $item['offer']['externalId']);
 
                             $product = array();
@@ -520,6 +549,17 @@ class RetailcrmHistory
                     }
 
                     $cart->setWsCartRows($products);
+
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<%d> %s::%s',
+                            $cart->id,
+                            get_class($cart),
+                            'update'
+                        )
+                    );
+
                     $cart->update();
 
                     /*
@@ -581,6 +621,10 @@ class RetailcrmHistory
                         $product_id = $item['offer']['externalId'];
                         $product_attribute_id = 0;
 
+                        if (RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID == $product_id) {
+                            continue;
+                        }
+
                         if (strpos($item['offer']['externalId'], '#') !== false) {
                             $product_id = explode('#', $item['offer']['externalId']);
                             $product_attribute_id = $product_id[1];
@@ -625,6 +669,16 @@ class RetailcrmHistory
                     }
 
                     try {
+                        RetailcrmLogger::writeDebug(
+                            __METHOD__,
+                            sprintf(
+                                '<Customer ID: %d> %s::%s',
+                                $newOrder->id_customer,
+                                get_class($newOrder),
+                                'add'
+                            )
+                        );
+
                         $newOrder->add(false, false);
 
                         if (isset($newOrderHistoryRecord)) {
@@ -633,6 +687,17 @@ class RetailcrmHistory
                             $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
                             $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
                             $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
+
+                            RetailcrmLogger::writeDebug(
+                                __METHOD__,
+                                sprintf(
+                                    '<Order ID: %d> %s::%s',
+                                    $newOrderHistoryRecord->id_order,
+                                    get_class($newOrderHistoryRecord),
+                                    'add'
+                                )
+                            );
+
                             $newOrderHistoryRecord->add();
                         }
                     } catch (\Exception $e) {
@@ -664,6 +729,17 @@ class RetailcrmHistory
                                     $orderPayment->id_currency = $default_currency;
                                     $orderPayment->amount = $payment['amount'];
                                     $orderPayment->date_add = $payment['paidAt'];
+
+                                    RetailcrmLogger::writeDebug(
+                                        __METHOD__,
+                                        sprintf(
+                                            '<Order Reference: %s> %s::%s',
+                                            $newOrder->reference,
+                                            get_class($orderPayment),
+                                            'save'
+                                        )
+                                    );
+
                                     $orderPayment->save();
                                 }
                             }
@@ -675,6 +751,17 @@ class RetailcrmHistory
                     $carrier->id_carrier = $deliveryType;
                     $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
                     $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
+
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<Order ID: %d> %s::%s',
+                            $carrier->id_order,
+                            get_class($carrier),
+                            'add'
+                        )
+                    );
+
                     $carrier->add(false, false);
 
                     /*
@@ -738,6 +825,16 @@ class RetailcrmHistory
 
                                 $orderCarrier->id_order = $orderToUpdate->id;
 
+                                RetailcrmLogger::writeDebug(
+                                    __METHOD__,
+                                    sprintf(
+                                        '<%d> %s::%s',
+                                        $orderCarrier->id,
+                                        get_class($orderCarrier),
+                                        'update'
+                                    )
+                                );
+
                                 $orderCarrier->update();
                             }
                         }
@@ -777,6 +874,17 @@ class RetailcrmHistory
                                     $orderPayment->id_currency = $default_currency;
                                     $orderPayment->date_add =
                                         isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
+
+                                    RetailcrmLogger::writeDebug(
+                                        __METHOD__,
+                                        sprintf(
+                                            '<Order Reference: %s> %s::%s',
+                                            $orderToUpdate->reference,
+                                            get_class($orderPayment),
+                                            'save'
+                                        )
+                                    );
+
                                     $orderPayment->save();
                                 }
                             }
@@ -800,9 +908,31 @@ class RetailcrmHistory
                                 $orderHistory->id_order = $orderToUpdate->id;
                                 $orderHistory->id_order_state = $statuses[$stype];
                                 $orderHistory->date_add = date('Y-m-d H:i:s');
+
+                                RetailcrmLogger::writeDebug(
+                                    __METHOD__,
+                                    sprintf(
+                                        '<Order ID: %d> %s::%s',
+                                        $orderToUpdate->id,
+                                        get_class($orderHistory),
+                                        'save'
+                                    )
+                                );
+
                                 $orderHistory->save();
 
                                 $orderToUpdate->current_state = $statuses[$stype];
+
+                                RetailcrmLogger::writeDebug(
+                                    __METHOD__,
+                                    sprintf(
+                                        '<Order ID: %d> %s::%s',
+                                        $orderToUpdate->id,
+                                        get_class($orderToUpdate),
+                                        'update'
+                                    )
+                                );
+
                                 $orderToUpdate->update();
                             }
                         }
@@ -834,6 +964,10 @@ class RetailcrmHistory
 
         foreach ($order['items'] as $key => $item) {
             if (isset($item['delete']) && $item['delete'] == true) {
+                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                    $orderToUpdate->gift = false;
+                }
+
                 $parsedExtId = static::parseItemExternalId($item);
                 $product_id = $parsedExtId['product_id'];
                 $product_attribute_id = $parsedExtId['product_attribute_id'];
@@ -852,6 +986,10 @@ class RetailcrmHistory
          */
         foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
             foreach ($order['items'] as $key => $item) {
+                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                    continue;
+                }
+
                 $parsedExtId = static::parseItemExternalId($item);
                 $product_id = $parsedExtId['product_id'];
                 $product_attribute_id = $parsedExtId['product_attribute_id'];
@@ -909,6 +1047,16 @@ class RetailcrmHistory
                         $orderDetail->product_attribute_id = (int) $product_attribute_id;
                         $orderDetail->product_quantity = (int) $item['quantity'];
 
+                        RetailcrmLogger::writeDebug(
+                            __METHOD__,
+                            sprintf(
+                                '<Order ID: %d> %s::%s',
+                                $orderDetail->id_order,
+                                get_class($orderDetail),
+                                'save'
+                            )
+                        );
+
                         if ($orderDetail->save()) {
                             $upOrderItems = array(
                                 'externalId' => $orderDetail->id_order,
@@ -943,6 +1091,16 @@ class RetailcrmHistory
                         }
                     }
 
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<%d> %s::%s',
+                            $orderDetail->id,
+                            get_class($orderDetail),
+                            'update'
+                        )
+                    );
+
                     $orderDetail->update();
                     $ItemDiscount = true;
                     unset($order['items'][$key]);
@@ -955,6 +1113,10 @@ class RetailcrmHistory
          */
         if (!empty($order['items'])) {
             foreach ($order['items'] as $key => $newItem) {
+                if (RetailcrmOrderBuilder::isGiftItem($newItem)) {
+                    continue;
+                }
+
                 $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
 
                 if (!$isNewItem) {
@@ -1013,6 +1175,16 @@ class RetailcrmHistory
                 $orderDetail->id_order_detail =
                     !empty($parsedExtId['id_order_detail']) ? $parsedExtId['id_order_detail'] : null;
 
+                RetailcrmLogger::writeDebug(
+                    __METHOD__,
+                    sprintf(
+                        '<Order ID: %d> %s::%s',
+                        $orderDetail->id_order,
+                        get_class($orderDetail),
+                        'save'
+                    )
+                );
+
                 if ($orderDetail->save()) {
                     $upOrderItems = array(
                         'externalId' => $orderDetail->id_order,
@@ -1053,6 +1225,17 @@ class RetailcrmHistory
         $infoOrder = $infoOrd->order;
         $totalPaid = $infoOrder['totalSumm'];
         $orderToUpdate->total_paid = $totalPaid;
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__,
+            sprintf(
+                '<%d> %s::%s',
+                $orderToUpdate->id,
+                get_class($orderToUpdate),
+                'update'
+            )
+        );
+
         $orderToUpdate->update();
 
         /*
@@ -1085,6 +1268,17 @@ class RetailcrmHistory
             $orderToUpdate->total_paid_tax_incl = $totalPaid;
             $orderToUpdate->total_paid_tax_excl = $totalPaid;
             $orderToUpdate->total_products_wt = $orderTotalProducts;
+
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
+                sprintf(
+                    '<%d> %s::%s',
+                    $orderToUpdate->id,
+                    get_class($orderToUpdate),
+                    'update'
+                )
+            );
+
             $orderToUpdate->update();
             unset($ItemDiscount);
         }
@@ -1127,6 +1321,28 @@ class RetailcrmHistory
      */
     private static function loadInCMS($object, $action)
     {
+        $prefix = $object->id;
+
+        if (empty($object->id)) {
+            if (property_exists(get_class($object), 'id_customer')) {
+                $prefix = sprintf('Customer ID: %d', $object->id_customer);
+            }
+
+            if (property_exists(get_class($object), 'id_order')) {
+                $prefix = sprintf('Order ID: %d', $object->id_order);
+            }
+        }
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__,
+            sprintf(
+                '<%s> %s::%s',
+                $prefix,
+                get_class($object),
+                $action
+            )
+        );
+
         try {
             $object->$action();
         } catch (PrestaShopException $e) {
