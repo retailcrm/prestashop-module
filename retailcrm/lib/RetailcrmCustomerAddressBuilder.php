@@ -48,6 +48,11 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     private $dataCrm;
 
     /**
+     * @var int $idCustomer
+     */
+    private $idCustomer;
+
+    /**
      * @var string $firstName
      */
     private $firstName;
@@ -88,6 +93,16 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setDataCrm($dataCrm)
     {
         $this->dataCrm = $dataCrm;
+        return $this;
+    }
+
+    /**
+     * @param int $idCustomer
+     * @return RetailcrmCustomerAddressBuilder
+     */
+    public function setIdCustomer($idCustomer)
+    {
+        $this->idCustomer = $idCustomer;
         return $this;
     }
 
@@ -143,12 +158,17 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function reset()
     {
         $this->customerAddress = new Address();
+
         return $this;
     }
 
     public function build()
     {
-        $this->customerAddress->id = isset($this->dataCrm['id']) ? $this->dataCrm['id'] : 0;
+        if (empty($this->customerAddress)) {
+            $this->customerAddress = new Address();
+        }
+
+        $this->customerAddress->id_customer = $this->idCustomer;
         $this->customerAddress->alias = !empty($this->alias) ? $this->alias : 'default';
         $this->customerAddress->lastname = $this->lastName;
         $this->customerAddress->firstname = $this->firstName;
@@ -166,7 +186,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             }
         }
 
-        $this->customerAddress->city = isset($this->dataCrm['city']) ? $this->dataCrm['city'] : '';
+        $this->customerAddress->city = isset($this->dataCrm['city']) ? $this->dataCrm['city'] : '--';
         $this->customerAddress->postcode = isset($this->dataCrm['index']) ? $this->dataCrm['index'] : '';
         $this->customerAddress->phone = !empty($this->phone) ? $this->phone : '';
     }

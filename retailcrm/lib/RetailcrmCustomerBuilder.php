@@ -87,11 +87,9 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
 
     public function reset()
     {
+        $this->customer = new Customer();
         $this->customerAddress = null;
         $this->addressBuilder = null;
-        $this->customer = null;
-
-        $this->customer = new Customer();
 
         return $this;
     }
@@ -107,12 +105,13 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
 
         if (isset($this->dataCrm['address'])) {
             $this->addressBuilder
+                ->setIdCustomer($this->arrayValue('externalId', 0))
                 ->setDataCrm($this->dataCrm['address'])
                 ->setFirstName($this->arrayValue('firstName'))
                 ->setLastName($this->arrayValue('lastName'))
-                ->setPhone( isset($this->dataCrm['phones']['number'])
-                    && !empty($this->dataCrm['phones']['number'])
-                    ?  $this->dataCrm['phones']['number'] : '')
+                ->setPhone( isset($this->dataCrm['phones'][0]['number'])
+                && !empty($this->dataCrm['phones'][0]['number'])
+                    ?  $this->dataCrm['phones'][0]['number'] : '')
                 ->build();
 
             $this->customerAddress = $this->addressBuilder->getData();
@@ -123,11 +122,19 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
 
     public function build()
     {
+        if (isset($this->dataCrm['externalId'])) {
+            $this->customer->id = $this->dataCrm['externalId'];
+        }
+
         $this->customer->firstname = $this->arrayValue('firstName');
         $this->customer->lastname = $this->arrayValue('lastName');
 
         if (isset($this->dataCrm['subscribed']) && $this->dataCrm['subscribed'] == false) {
             $this->customer->newsletter = false;
+        }
+
+        if (empty($this->customer->id_shop)) {
+            $this->customer->id_shop = Context::getContext()->shop->id;
         }
 
         $this->customer->birthday = $this->arrayValue('birthday', '');

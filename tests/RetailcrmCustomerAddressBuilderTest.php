@@ -44,8 +44,6 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
             ->build();
 
         $addressResult = $this->customerAddress->getData();
-
-        $this->assertEquals(9718, $addressResult->id);
         $this->assertEquals('Test', $addressResult->firstname);
         $this->assertEquals('Test2', $addressResult->lastname);
         $this->assertEquals(Country::getByIso('RU'), $addressResult->id_country);

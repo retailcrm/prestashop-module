@@ -37,16 +37,15 @@
  */
 class RetailcrmCustomerBuilderResult
 {
-
     /** @var Customer|CustomerCore $customer */
     private $customer;
-
 
     /**@var Address|AddressCore|null $customerAddress */
     private $customerAddress;
 
     /**
      * RetailcrmCustomerBuilderResult constructor.
+     *
      * @param Customer|CustomerCore $customer
      * @param Address|AddressCore|null $customerAddress
      */
@@ -72,3 +71,4 @@ class RetailcrmCustomerBuilderResult
         return $this->customerAddress;
     }
 }
+

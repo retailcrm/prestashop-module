@@ -78,7 +78,7 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
         $this->assertEquals('hello@world.ru', $customerResult->email);
 
         $addressResult = $this->customer->getData()->getCustomerAddress();
-        $this->assertEquals(9718, $addressResult->id);
+
         $this->assertEquals(Country::getByIso('RU'), $addressResult->id_country);
         $this->assertEquals('г. Москва', $addressResult->city);
     }

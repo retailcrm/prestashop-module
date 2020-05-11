@@ -125,6 +125,23 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
         return $this;
     }
 
+    /**
+     * Set data in address, name and inn company corporate customer
+     *
+     * @param array $dataCrm
+     * @return RetailcrmCorporateCustomerBuilder
+     */
+    public function extractCompanyDataFromOrder($dataCrm)
+    {
+        $this->setCompanyName(isset($dataCrm['company']['name']) ? $dataCrm['company']['name'] : '');
+
+        if (isset($dataCrm['company']['contragent']) && !empty($dataCrm['company']['contragent']['INN'])) {
+            $this->setCompanyInn($dataCrm['company']['contragent']['INN']);
+        }
+
+        return $this;
+    }
+
     public function setDataCrm($dataCrm)
     {
         $this->dataCrm = $dataCrm;
@@ -138,11 +155,9 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
 
     public function reset()
     {
-        $this->corporateCustomer = null;
+        $this->corporateCustomer = new Customer();
         $this->customerBuilder = null;
         $this->corporateAddress = null;
-
-        $this->corporateCustomer = new Customer();
 
         return $this;
     }
@@ -160,7 +175,9 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
             $this->customerBuilder->setDataCrm($this->dataCrm);
         }
 
-        $this->customerBuilder->build();
+        if (isset($this->dataCrm['address'])) {
+            $this->customerBuilder->build();
+        }
 
         $this->corporateCustomer = $this->customerBuilder->getData()->getCustomer();
         $this->corporateAddress = $this->customerBuilder->getData()->getCustomerAddress();
@@ -169,7 +186,13 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
     public function build()
     {
         $this->buildCustomer();
+
         if (!empty($this->corporateAddress)) {
+
+            if (empty($this->corporateAddress->alias) || $this->corporateAddress->alias == 'default') {
+                $this->corporateAddress->alias = '--';
+            }
+
             $this->corporateAddress->vat_number = !empty($this->companyInn) ? $this->companyInn : '';
             $this->corporateAddress->company = !empty($this->companyName) ? $this->companyName : '';
 
