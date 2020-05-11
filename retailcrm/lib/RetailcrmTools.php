@@ -365,6 +365,11 @@ class RetailcrmTools
         return null;
     }
 
+    public static function isWebJobsEnabled()
+    {
+        return '0' !== Configuration::getGlobalValue(RetailCRM::ENABLE_WEB_JOBS);
+    }
+
     /**
      * Merge new address to customer, preserves old phone numbers.
      *

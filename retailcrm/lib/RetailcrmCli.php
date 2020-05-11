@@ -99,7 +99,14 @@ class RetailcrmCli
         }
 
         $shortopts = "j:";
-        $longopts  = array("job:", "reset-job-manager", "reset-all");
+        $longopts  = array(
+            "job:",
+            "set-web-jobs:",
+            "query-web-jobs",
+            "reset-job-manager",
+            "reset-all"
+        );
+
         $options = getopt($shortopts, $longopts);
         $jobName = isset($options['j']) ? $options['j'] : (isset($options['job']) ? $options['job'] : null);
 
@@ -107,6 +114,10 @@ class RetailcrmCli
             $this->resetJobManager();
         } elseif (isset($options['reset-all'])) {
             $this->resetAll();
+        } elseif (isset($options['query-web-jobs'])) {
+            $this->queryWebJobs();
+        } elseif (isset($options['set-web-jobs'])) {
+            $this->setWebJobs(self::getBool($options['set-web-jobs']));
         } elseif (empty($jobName)) {
             $this->help();
         } else {
@@ -181,6 +192,8 @@ class RetailcrmCli
         RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf('> php %s -j <job name> - Runs provided job', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --job <job name> - Runs provided job', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --set-web-jobs true / false - Enable or disable web jobs', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --query-web-jobs - Check web jobs status', $this->cliPath));
         RetailcrmLogger::output();
         RetailcrmLogger::output(
             "WARNING: Commands below are dangerous and should be used only when " .
@@ -197,6 +210,43 @@ class RetailcrmCli
             $this->cliPath
         ));
         RetailcrmLogger::output();
+    }
+
+    /**
+     * Sets new web jobs state
+     *
+     * @param bool $state
+     */
+    private function setWebJobs($state)
+    {
+        $this->loadConfiguration();
+
+        Configuration::updateGlobalValue(RetailCRM::ENABLE_WEB_JOBS, $state ? '1' : '0');
+        RetailcrmLogger::output('Updated web jobs state.');
+        $this->queryWebJobs();
+    }
+
+    /**
+     * Prints web jobs status
+     */
+    private function queryWebJobs()
+    {
+        $this->loadConfiguration();
+
+        RetailcrmLogger::output(sprintf(
+            'Web jobs status: %s',
+            RetailcrmTools::isWebJobsEnabled() ? 'true (enabled)' : 'false (disabled)'
+        ));
+    }
+
+    /**
+     * Load PrestaShop configuration if it's not loaded yet
+     */
+    private function loadConfiguration()
+    {
+        if (!Configuration::configurationIsLoaded()) {
+            Configuration::loadConfiguration();
+        }
     }
 
     /**
@@ -265,6 +315,24 @@ class RetailcrmCli
         }
 
         return true;
+    }
+
+    /**
+     * Converts string param from CLI into boolean
+     *
+     * @param string $param
+     */
+    private static function getBool($param)
+    {
+        if ('true' == $param) {
+            return true;
+        }
+
+        if ('false' == $param) {
+            return false;
+        }
+
+        return (bool) $param;
     }
 
     /**

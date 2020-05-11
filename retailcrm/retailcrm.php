@@ -71,6 +71,7 @@ class RetailCRM extends Module
     const LATEST_API_VERSION = '5';
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
+    const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
 
     /**
      * @var array $templateErrors
