@@ -465,4 +465,19 @@ class RetailcrmTools
 
         return $code;
     }
+
+    /**
+     * Starts JobManager with list of pre-registered jobs
+     *
+     * @throws \Exception
+     */
+    public static function startJobManager()
+    {
+        RetailcrmJobManager::startJobs(array(
+            'RetailcrmAbandonedCartsEvent' => null,
+            'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
+            'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
+            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
+        ));
+    }
 }

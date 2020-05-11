@@ -103,6 +103,7 @@ class RetailcrmCli
             "job:",
             "set-web-jobs:",
             "query-web-jobs",
+            "run-jobs",
             "reset-job-manager",
             "reset-all"
         );
@@ -116,6 +117,8 @@ class RetailcrmCli
             $this->resetAll();
         } elseif (isset($options['query-web-jobs'])) {
             $this->queryWebJobs();
+        } elseif (isset($options['run-jobs'])) {
+            RetailcrmTools::startJobManager();
         } elseif (isset($options['set-web-jobs'])) {
             $this->setWebJobs(self::getBool($options['set-web-jobs']));
         } elseif (empty($jobName)) {
@@ -192,6 +195,7 @@ class RetailcrmCli
         RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf('> php %s -j <job name> - Runs provided job', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --job <job name> - Runs provided job', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --run-jobs - Run default jobs routine', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --set-web-jobs true / false - Enable or disable web jobs', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --query-web-jobs - Check web jobs status', $this->cliPath));
         RetailcrmLogger::output();

@@ -89,12 +89,7 @@ class RetailcrmJobsModuleFrontController extends ModuleFrontController
     protected function getData()
     {
         if (RetailcrmTools::isWebJobsEnabled()) {
-            RetailcrmJobManager::startJobs(array(
-                'RetailcrmAbandonedCartsEvent' => null,
-                'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
-                'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-                'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
-            ));
+            RetailcrmTools::startJobManager();
         }
 
         return array('success' => true);
