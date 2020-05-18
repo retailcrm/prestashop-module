@@ -365,6 +365,11 @@ class RetailcrmTools
         return null;
     }
 
+    public static function isWebJobsEnabled()
+    {
+        return '0' !== Configuration::getGlobalValue(RetailCRM::ENABLE_WEB_JOBS);
+    }
+
     /**
      * Merge new address to customer, preserves old phone numbers.
      *
@@ -459,5 +464,20 @@ class RetailcrmTools
         }
 
         return $code;
+    }
+
+    /**
+     * Starts JobManager with list of pre-registered jobs
+     *
+     * @throws \Exception
+     */
+    public static function startJobManager()
+    {
+        RetailcrmJobManager::startJobs(array(
+            'RetailcrmAbandonedCartsEvent' => null,
+            'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
+            'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
+            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
+        ));
     }
 }
