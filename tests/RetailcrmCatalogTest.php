@@ -42,6 +42,36 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
         }
     }
 
+    public function testIsPricesWithTax()
+    {
+        $products = $this->data[1];
+
+        foreach ($products as $product) {
+            $this->assertArrayHasKey('productId', $product);
+            $this->assertArrayHasKey('price', $product);
+
+            $prestaProduct = new ProductCore($product['productId']);
+            $price = !empty($prestaProduct->tax_rate)
+                ? round($prestaProduct->price, 2) + (round($prestaProduct->price, 2) * $prestaProduct->tax_rate / 100)
+                : round($prestaProduct->price, 2);
+
+            if (strpos($product['id'], '#') !== false) {
+                $offerId = explode('#', $product['id']);
+                $offerId = end($offerId);
+                $offerCombination = new Combination($offerId);
+
+                $offerCombinationPrice = !empty($prestaProduct->tax_rate)
+                    ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $prestaProduct->tax_rate / 100)
+                    : round($offerCombination->price, 2);
+                $offerPrice = round($offerCombinationPrice, 2) + $price;
+
+                $this->assertEquals($offerPrice, $product['price']);
+            } else {
+                $this->assertEquals($price, $product['price']);
+            }
+        }
+    }
+
     public function testIcmlGenerate()
     {
         $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');

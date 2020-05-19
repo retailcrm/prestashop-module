@@ -156,7 +156,12 @@ class RetailcrmCli
                 $result ? 'true' : 'false'
             ));
         } catch (\Exception $exception) {
-            $this->printStack($exception);
+            if ($exception instanceof RetailcrmJobManagerException && !empty($exception->getPrevious())) {
+                $this->printStack($exception->getPrevious());
+            } else {
+                $this->printStack($exception);
+            }
+
             self::clearCurrentJob($jobName);
         } finally {
             if (isset($result) && $result) {
@@ -169,10 +174,11 @@ class RetailcrmCli
      * Prints error details
      *
      * @param \Exception $exception
+     * @param string     $header
      */
-    private function printStack($exception)
+    private function printStack($exception, $header = 'Error while executing a job: ')
     {
-        RetailcrmLogger::output(sprintf('Error while executing a job: %s', $exception->getMessage()));
+        RetailcrmLogger::output(sprintf('%s%s', $header, $exception->getMessage()));
         RetailcrmLogger::output(sprintf('%s:%d', $exception->getFile(), $exception->getLine()));
         RetailcrmLogger::output();
         RetailcrmLogger::output($exception->getTraceAsString());

@@ -221,7 +221,11 @@ class RetailcrmCatalog
 
                     $offerCombination = new Combination($offer['id_product_attribute']);
 
-                    $offerPrice = $offerCombination->price + $price;
+                    $offerCombinationPrice = !empty($product['rate'])
+                        ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $product['rate'] / 100)
+                        : round($offerCombination->price, 2);
+
+                    $offerPrice = round($offerCombinationPrice, 2) + $price;
                     $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
 
                     if ($offerCombination->wholesale_price > 0) {

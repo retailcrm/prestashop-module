@@ -172,12 +172,22 @@ class RetailcrmJobManager
                     $lastRuns[$job] = new \DateTime('now');
                 }
             } catch (\Exception $exception) {
-                static::handleError(
-                    $exception->getFile(),
-                    $exception->getMessage(),
-                    $exception->getTraceAsString(),
-                    $job
-                );
+                if ($exception instanceof RetailcrmJobManagerException && !empty($exception->getPrevious())) {
+                    static::handleError(
+                        $exception->getPrevious()->getFile(),
+                        $exception->getPrevious()->getMessage(),
+                        $exception->getPrevious()->getTraceAsString(),
+                        $job
+                    );
+                } else {
+                    static::handleError(
+                        $exception->getFile(),
+                        $exception->getMessage(),
+                        $exception->getTraceAsString(),
+                        $job
+                    );
+                }
+
                 self::clearCurrentJob($job);
             } finally {
                 if (isset($result) && $result) {
@@ -286,7 +296,7 @@ class RetailcrmJobManager
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $jobFile);
+            throw new RetailcrmJobManagerException($exception->getMessage(), $jobFile, array(), 0, $exception);
         }
     }
 
@@ -444,7 +454,10 @@ class RetailcrmJobManager
 
         RetailcrmLogger::writeNoCaller(sprintf('%s: %s (%s)', $file, $msg, implode(', ', $data)));
         RetailcrmLogger::writeNoCaller($trace);
-        RetailcrmTools::http_response_code(500);
+
+        if (PHP_SAPI != 'cli' && !headers_sent()) {
+            RetailcrmTools::http_response_code(500);
+        }
     }
 
     /**
