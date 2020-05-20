@@ -42,6 +42,51 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
         }
     }
 
+    public function testIsPricesWithTax()
+    {
+        $products = $this->data[1];
+        $productsPresta = array();
+        $productsPrestaList = Product::getProducts(
+            (int) Configuration::get('PS_LANG_DEFAULT'),
+            0,
+            0,
+            'name',
+            'asc'
+        );
+
+        foreach ($productsPrestaList as $productData) {
+            $productsPresta[$productData['id_product']] = $productData;
+        }
+
+        unset($productsPrestaList);
+
+        foreach ($products as $product) {
+            $this->assertArrayHasKey('productId', $product);
+            $this->assertArrayHasKey('price', $product);
+
+            $prestaProduct = $productsPresta[$product['productId']];
+            $price = !empty($prestaProduct['rate'])
+                ? round($prestaProduct['price'], 2) + (round($prestaProduct['price'], 2) * $prestaProduct['rate'] / 100)
+                : round($prestaProduct['price'], 2);
+
+            if (strpos($product['id'], '#') !== false) {
+                $offerId = explode('#', $product['id']);
+                $offerId = $offerId[1];
+                $offerCombination = new Combination($offerId);
+
+                $offerCombinationPrice = !empty($prestaProduct['rate'])
+                    ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $prestaProduct['rate'] / 100)
+                    : round($offerCombination->price, 2);
+                $offerPrice = round($offerCombinationPrice, 2) + $price;
+                $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+
+                $this->assertEquals(round($offerPrice, 2), round($product['price'], 2));
+            } else {
+                $this->assertEquals(round($price, 2), round($product['price'], 2));
+            }
+        }
+    }
+
     public function testIcmlGenerate()
     {
         $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
