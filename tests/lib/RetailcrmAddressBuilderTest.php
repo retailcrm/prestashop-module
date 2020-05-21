@@ -28,14 +28,15 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
         $address->lastname = 'LastName';
         $address->phone = '123';
         $address->phone_mobile = '123';
+        $this->address = $address;
     }
 
     public function testBuildRegular()
     {
         $builder = new RetailcrmAddressBuilder();
         $result = $builder
-            ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER)
+            ->setAddress($this->address)
             ->setIsMain(true)
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
@@ -56,8 +57,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     {
         $builder = new RetailcrmAddressBuilder();
         $result = $builder
-            ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER)
+            ->setAddress($this->address)
             ->setIsMain(true)
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
@@ -74,8 +75,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     {
         $builder = new RetailcrmAddressBuilder();
         $result = $builder
-            ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
+            ->setAddress($this->address)
             ->setIsMain(true)
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
