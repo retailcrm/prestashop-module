@@ -2,9 +2,6 @@
 
 class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 {
-    /** @var \RetailcrmAddressBuilder $builder */
-    protected $builder;
-
     /** @var \AddressCore|Address $address */
     protected $address;
 
@@ -18,8 +15,7 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     {
         parent::setUp();
 
-        $this->builder = new RetailcrmAddressBuilder();
-        $this->defaultLang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $this->defaultLang = (int) Configuration::get('PS_LANG_DEFAULT');
         $address = new Address();
         $address->id_state = State::getIdByName('Alabama');
         $address->address1 = 'address1';
@@ -36,7 +32,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 
     public function testBuildRegular()
     {
-        $result = $this->builder
+        $builder = new RetailcrmAddressBuilder();
+        $result = $builder
             ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER)
             ->setIsMain(true)
@@ -57,7 +54,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 
     public function testBuildCorporate()
     {
-        $result = $this->builder
+        $builder = new RetailcrmAddressBuilder();
+        $result = $builder
             ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER)
             ->setIsMain(true)
@@ -74,7 +72,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 
     public function testBuildOrder()
     {
-        $result = $this->builder
+        $builder = new RetailcrmAddressBuilder();
+        $result = $builder
             ->setAddress($this->address)
             ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
             ->setIsMain(true)
