@@ -87,9 +87,9 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
         $this->assertNotEmpty($result);
         $this->assertArrayHasKey('delivery', $result);
         $this->assertArrayHasKey('address', $result['delivery']);
-        $this->assertFalse(array_key_exists('externalId', $result['address']));
+        $this->assertFalse(array_key_exists('externalId', $result['delivery']['address']));
         $this->assertFalse(array_key_exists('isMain', $result));
-        $this->assertFalse(array_key_exists('isMain', $result['address']));
+        $this->assertFalse(array_key_exists('isMain', $result['delivery']['address']));
         $this->assertArrayHasKey('countryIso', $result);
         $this->assertNotEmpty($result['countryIso']);
         $this->assertArrayHasKey('phone', $result);
