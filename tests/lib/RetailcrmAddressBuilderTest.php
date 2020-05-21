@@ -28,6 +28,7 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
         $address->lastname = 'LastName';
         $address->phone = '123';
         $address->phone_mobile = '123';
+        $address->postcode = '333000';
         $this->address = $address;
     }
 
