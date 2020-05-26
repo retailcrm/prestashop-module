@@ -221,12 +221,23 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
      */
     private function parseAddress()
     {
-        return array(
+        $state = null;
+
+        if (!empty($this->address->id_state)) {
+            $stateName = State::getNameById($this->address->id_state);
+
+            if (!empty($stateName)) {
+                $state = $stateName;
+            }
+        }
+
+        return array_filter(array(
             'index' => $this->address->postcode,
             'city' => $this->address->city,
             'countryIso' => Country::getIsoById($this->address->id_country),
-            'text' => sprintf("%s %s", $this->address->address1, $this->address->address2)
-        );
+            'text' => sprintf("%s %s", $this->address->address1, $this->address->address2),
+            'region' => $state
+        ));
     }
 
     /**
