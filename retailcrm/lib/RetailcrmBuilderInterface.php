@@ -55,6 +55,8 @@ interface RetailcrmBuilderInterface
 
     /**
      * Build result
+     *
+     * @return \RetailcrmBuilderInterface
      */
     public function build();
 

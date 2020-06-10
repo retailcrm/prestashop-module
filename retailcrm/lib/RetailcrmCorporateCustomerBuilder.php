@@ -200,6 +200,8 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
                 $this->corporateCustomer->firstname = $this->companyName;
             }
         }
+
+        return $this;
     }
 }
 

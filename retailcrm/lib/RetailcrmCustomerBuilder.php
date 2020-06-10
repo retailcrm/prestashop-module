@@ -154,6 +154,8 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
         if (empty($this->customer->passwd )) {
             $this->customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
         }
+
+        return $this;
     }
 }
 

@@ -189,6 +189,8 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         $this->customerAddress->city = isset($this->dataCrm['city']) ? $this->dataCrm['city'] : '--';
         $this->customerAddress->postcode = isset($this->dataCrm['index']) ? $this->dataCrm['index'] : '';
         $this->customerAddress->phone = !empty($this->phone) ? $this->phone : '';
+
+        return $this;
     }
 }
 

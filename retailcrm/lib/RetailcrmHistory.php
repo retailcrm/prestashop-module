@@ -88,7 +88,7 @@ class RetailcrmHistory
                 if (isset($customerHistory['externalId'])) {
                     $customerData = self::$api->customersGet($customerHistory['externalId'], 'externalId');
                     $foundCustomer = new Customer($customerHistory['externalId']);
-                    $customerAddress = new Address(self::searchAddress($foundCustomer));
+                    $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
                     $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
                     $addressBuilder
@@ -108,7 +108,7 @@ class RetailcrmHistory
                     }
 
                     if (!empty($address)) {
-                        static::assignAddressIdByFields($customer, $address);
+                        RetailcrmTools::assignAddressIdByFields($customer, $address);
 
                         if (self::loadInCMS($address, 'update') === false) {
                             continue;
@@ -184,8 +184,6 @@ class RetailcrmHistory
 
         $customerFix = array();
         $orderFix = array();
-        $changesCustomerInOrder = null;
-        $changesCompanyInOrder = null;
         $historyChanges = array();
         $request = new RetailcrmApiPaginatedRequest();
         $history = $request
@@ -199,12 +197,6 @@ class RetailcrmHistory
 
         if (count($history) > 0) {
             $historyChanges = static::filterHistory($history, 'order');
-
-            /*
-             * Select changes customer and company
-             */
-            $changesCustomerInOrder = self::selectChangesCustomer($history);
-            $changesCompanyInOrder = self::selectChangesCompany($history);
         }
 
         if (count($historyChanges)) {
@@ -381,7 +373,7 @@ class RetailcrmHistory
                     if (!empty($address)) {
                         $address->id_customer = $customer->id;
 
-                        static::assignAddressIdByFields($customer, $address);
+                        RetailcrmTools::assignAddressIdByFields($customer, $address);
 
                         if (empty($address->id)) {
                             RetailcrmLogger::writeDebug(
@@ -709,6 +701,7 @@ class RetailcrmHistory
                     }
 
                     $orderToUpdate = new Order((int) $order['externalId']);
+                    self::handleCustomerDataChange($orderToUpdate, $order);
 
                     /*
                      * check delivery changes
@@ -737,69 +730,6 @@ class RetailcrmHistory
                             $address->id = $orderToUpdate->id_address_delivery;
 
                             $address->update();
-                            $orderToUpdate->update();
-                        }
-                    }
-
-                    if (!empty($changesCustomerInOrder)) {
-                        foreach ($changesCustomerInOrder as $changesCustomers) {
-                            self::switchCustomerOrder($order, $orderToUpdate, $changesCustomers['idCustomer']);
-                        }
-                    }
-
-                    /*
-                     * Check changes company
-                     */
-                    if (!empty($changesCompanyInOrder) && RetailcrmTools::isCorporateEnabled()) {
-                        $address = null;
-                        $orderInCrm = self::$api->ordersGet($order['externalId']);
-
-                        if (!empty($orderInCrm)) {
-                            if ($orderInCrm['order']['customer']['type'] != 'customer') {
-                                if (isset($orderInCrm['order']['company']['address']['externalId'])) {
-                                    $address = new Address($orderInCrm['order']['company']['address']['externalId']);
-
-                                    if (!empty($address->id)) {
-                                        $orderToUpdate->id_address_delivery = (int) $address->id;
-                                        $orderToUpdate->id_address_invoice = (int) $address->id;
-                                    }
-                                } elseif (isset($orderInCrm['order']['company']['address'])) {
-                                    if (isset($orderInCrm['order']['contact'])) {
-                                        $corporateCustomerBuilder = new RetailcrmCorporateCustomerBuilder();
-
-                                        if (isset($orderInCrm['order']['company']['address'])) {
-                                            $dataOrder = array_merge(
-                                                $orderInCrm['order']['contact'],
-                                                array('address' => $orderInCrm['order']['company']['address'])
-                                            );
-                                        } else {
-                                            $dataOrder = $orderInCrm['order']['contact'];
-                                        }
-
-                                        $corporateCustomerBuilder
-                                            ->setDataCrm($dataOrder)
-                                            ->extractCompanyDataFromOrder($orderInCrm['order'])
-                                            ->build();
-
-                                        $customer = $corporateCustomerBuilder->getData()->getCustomer();
-                                        $address = $corporateCustomerBuilder->getData()->getCustomerAddress();
-                                        
-                                        $address->add();
-
-                                        self::$api->customersCorporateAddressesEdit(
-                                            $orderInCrm['order']['customer']['id'],
-                                            $orderInCrm['order']['company']['address']['id'],
-                                            array_merge($orderInCrm['order']['company']['address'], array('externalId' => $address->id)),
-                                            'id',
-                                            'id'
-                                        );
-
-                                        $orderToUpdate->id_address_delivery = (int) $address->id;
-                                        $orderToUpdate->id_address_invoice = (int) $address->id;
-                                    }
-                                }
-                            }
-
                             $orderToUpdate->update();
                         }
                     }
@@ -957,141 +887,164 @@ class RetailcrmHistory
     }
 
     /**
-     * Search address for customer
+     * Returns retailCRM order by id or by externalId.
+     * It returns only order data, not ApiResponse or something.
      *
-     * @param Customer|CustomerCore $foundCustomer
-     * @return int
+     * @param string $id Order identifier
+     * @param string $by Search field (default: 'externalId')
+     *
+     * @return array
      */
-    private static function searchAddress($foundCustomer) {
-        if (!empty($foundCustomer->id)) {
-            foreach ($foundCustomer->getAddresses(self::$default_lang) as $addressArray) {
-                if ($addressArray['alias'] == 'default') {
-                    return (int) $addressArray['id_address'];
-                }
-            }
+    protected static function getCRMOrder($id, $by = 'externalId')
+    {
+        $crmOrderResponse = self::$api->ordersGet($id, $by);
+
+        if (!empty($crmOrderResponse)
+            && $crmOrderResponse->isSuccessful()
+            && $crmOrderResponse->offsetExists('order')
+        ) {
+            return (array) $crmOrderResponse['order'];
         }
 
-        return 0;
+        return array();
     }
 
     /**
-     * Switch customer in order
+     * Sets all needed data for customer switch to switcher state
      *
-     * @param array           $order
-     * @param Order|OrderCore $orderToUpdate
-     * @param int             $idCustomer
-     *
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
+     * @param array                           $crmCustomer
+     * @param \RetailcrmCustomerSwitcherState $data
+     * @param bool                            $isContact
      */
-    private static function switchCustomerOrder($order, $orderToUpdate, $idCustomer)
+    protected static function prepareChangeToIndividual($crmCustomer, $data, $isContact = false)
     {
-        $orderInCrm = self::$api->ordersGet($order['externalId'], 'externalId');
-        $orderInPrestaShop = new Order((int) $order['externalId']);
-        $idCustomerInPrestaShop = $orderInPrestaShop->id_customer;
-        $idCustomerInCrm = $idCustomer;
-        $customerType = $orderInCrm['order']['customer']['type'];
-        $customer = null;
-        $address = null;
+        RetailcrmLogger::writeDebugArray(
+            __METHOD__,
+            array(
+                'Using this individual person data in order to set it into order,',
+                $data->getOrder()->id,
+                ': ',
+                $crmCustomer
+            )
+        );
 
-        if ($idCustomerInPrestaShop != $idCustomerInCrm && !empty($idCustomerInCrm)) {
-            if ($customerType == 'customer') {
-                $customerBuilder = new RetailcrmCustomerBuilder();
-
-                if (isset($orderInCrm['order']['customer']) && isset($orderInCrm['order']['delivery']['address'])) {
-                    $dataOrder = array_merge(
-                        $orderInCrm['order']['customer'],
-                        array('address' => $orderInCrm['order']['delivery']['address'])
-                    );
-                } else {
-                    $dataOrder = $orderInCrm['customer'];
-                }
-
-                $customerBuilder
-                    ->setCustomer(new Customer($idCustomerInCrm))
-                    ->setDataCrm($dataOrder)
-                    ->build();
-
-                $customer = $customerBuilder->getData()->getCustomer();
-                $address = $customerBuilder->getData()->getCustomerAddress();
-
-                static::assignAddressIdByFields($customer, $address);
-            } elseif($customerType == 'customer_corporate'
-                && RetailcrmTools::isCorporateEnabled()
-                && isset($orderInCrm['order']['company'])
-            ) {
-                $customerData = self::$api->customersGet($idCustomerInCrm, 'externalId');
-                $corporateCustomerBuilder = new RetailcrmCorporateCustomerBuilder();
-
-                if (isset($orderInCrm['order']['company']['address'])) {
-                    $dataOrder = array_merge(
-                        $customerData['customer'],
-                        array('address' => $orderInCrm['order']['company']['address'])
-                    );
-                } else {
-                    $dataOrder = $customerData['customer'];
-                }
-
-                $corporateCustomerBuilder
-                    ->setDataCrm($dataOrder)
-                    ->extractCompanyDataFromOrder($orderInCrm['order'])
-                    ->build();
-
-                $customer = $corporateCustomerBuilder->getData()->getCustomer();
-                $address = $corporateCustomerBuilder->getData()->getCustomerAddress();
-            }
-
-            $orderToUpdate->id_customer = $customer->id;
-
-            if (!empty($address)) {
-                if (RetailcrmTools::isCorporateEnabled()
-                    && isset($orderInCrm['order']['company'])
-                    && isset($orderInCrm['order']['company']['address'])
-                    && isset($orderInCrm['order']['company']['address']['externalId'])
-                ) {
-                    $address->id = $orderInCrm['order']['company']['address']['externalId'];
-                }
-
-                $customer = new Customer($address->id_customer);
-
-                self::assignAddressIdByFields($customer, $address);
-                $address->save();
-
-                $orderToUpdate->id_address_delivery = (int) $address->id;
-                $orderToUpdate->id_address_invoice = (int) $address->id;
-            }
-
-            $orderToUpdate->update();
-        } elseif (!empty($idCustomerInCrm) && isset($orderInCrm['order']) && $customerType == 'customer') {
-            $orderEntity = new Order($orderInCrm['order']['externalId']);
-
-            if (!empty($orderEntity->id_customer)) {
-                $customerBuilder = new RetailcrmCustomerBuilder();
-                $dataOrder = array_merge($orderInCrm['order']['customer'],
-                    array('address' => $orderInCrm['order']['delivery']['address']));
-
-                $customerBuilder
-                    ->setCustomer(new Customer($idCustomerInCrm))
-                    ->setDataCrm($dataOrder)
-                    ->build();
-
-                $customer = $customerBuilder->getData()->getCustomer();
-                $address = $customerBuilder->getData()->getCustomerAddress();
-
-                self::assignAddressIdByFields($customer, $address);
-
-                if (empty($address->id)) {
-                    $address->id = self::searchAddress($customer);
-                }
-
-                $address->save();
-            }
-
-            $orderToUpdate->id_address_delivery = (int) $address->id;
-            $orderToUpdate->id_address_invoice = (int) $address->id;
-
-            $orderToUpdate->update();
+        if ($isContact) {
+            $data->setNewContact($crmCustomer);
+        } else {
+            $data->setNewCustomer($crmCustomer);
         }
+    }
+
+    /**
+     * Handle customer data change (from individual to corporate, company change, etc)
+     *
+     * @param \Order $order
+     * @param array  $historyOrder
+     *
+     * @return bool True if customer change happened; false otherwise.
+     */
+    private static function handleCustomerDataChange($order, $historyOrder)
+    {
+        $handled = false;
+        $crmOrder = array();
+        $newCustomerId = null;
+        $switcher = new RetailcrmCustomerSwitcher();
+        $data = new RetailcrmCustomerSwitcherState();
+        $data->setOrder($order);
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__,
+            $historyOrder
+        );
+
+        if (isset($historyOrder['customer'])) {
+            $crmOrder = self::getCRMOrder($historyOrder['id'], 'id');
+
+            if (empty($crmOrder)) {
+                RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+                    'Cannot get order data from retailCRM. Skipping customer change. History data: %s',
+                    print_r($historyOrder, true)
+                ));
+
+                return false;
+            }
+
+            $newCustomerId = $historyOrder['customer']['id'];
+            $isChangedToRegular = RetailcrmTools::isCustomerChangedToRegular($historyOrder);
+            $isChangedToCorporate = RetailcrmTools::isCustomerChangedToLegal($historyOrder);
+
+            if (!$isChangedToRegular && !$isChangedToCorporate) {
+                $isChangedToCorporate = RetailcrmTools::isCrmOrderCorporate($crmOrder);
+                $isChangedToRegular = !$isChangedToCorporate;
+            }
+
+            if ($isChangedToRegular) {
+                self::prepareChangeToIndividual(
+                    RetailcrmTools::arrayValue($crmOrder, 'customer', array()),
+                    $data
+                );
+            }
+        }
+
+        if (isset($historyOrder['contact'])) {
+            $newCustomerId = $historyOrder['contact']['id'];
+
+            if (empty($crmOrder)) {
+                $crmOrder = self::getCRMOrder($historyOrder['id'], 'id');
+            }
+
+            if (empty($crmOrder)) {
+                RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+                    'Cannot get order data from retailCRM. Skipping customer change. History data: %s',
+                    print_r($historyOrder, true)
+                ));
+
+                return false;
+            }
+
+            if (RetailcrmTools::isCrmOrderCorporate($crmOrder)) {
+                self::prepareChangeToIndividual(
+                    RetailcrmTools::arrayValue($crmOrder, 'contact', array()),
+                    $data,
+                    true
+                );
+
+                $data->setNewCustomer(array());
+            }
+        }
+
+        if (isset($historyOrder['company'])) {
+            $data->setNewCompany($historyOrder['company']);
+        }
+
+        if ($data->feasible()) {
+            try {
+                $result = $switcher->setData($data)
+                    ->build()
+                    ->getResult();
+                $result->save();
+                $handled = true;
+            } catch (\Exception $exception) {
+                $errorMessage = sprintf(
+                    'Error switching order externalId=%s to customer id=%s (new company: id=%s %s). Reason: %s',
+                    $historyOrder['externalId'],
+                    $newCustomerId,
+                    isset($historyOrder['company']) ? $historyOrder['company']['id'] : '',
+                    isset($historyOrder['company']) ? $historyOrder['company']['name'] : '',
+                    $exception->getMessage()
+                );
+                RetailcrmLogger::writeCaller(__METHOD__, $errorMessage);
+                RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                    '%s%s%s',
+                    $errorMessage,
+                    PHP_EOL,
+                    $exception->getTraceAsString()
+                ));
+                $handled = false;
+            }
+        }
+
+        return $handled;
     }
 
     /**
@@ -1602,45 +1555,6 @@ class RetailcrmHistory
     }
 
     /**
-     * Assign address ID from customer addresses
-     *
-     * @param Customer|CustomerCore $customer
-     * @param Address|\AddressCore $address
-     */
-    private static function assignAddressIdByFields($customer, &$address)
-    {
-        $checkMapping = array(
-            'id_customer',
-            'id_country',
-            'lastname',
-            'firstname',
-            'alias',
-            'postcode',
-            'city',
-            'address1',
-            'phone',
-            'company',
-            'vat_number'
-        );
-
-        // Assigns id to $address if same address was found in customer
-        foreach ($customer->getAddresses(static::$default_lang) as $customerInnerAddress) {
-            /** @var Address|\AddressCore $customerAddress */
-            $customerAddress = new Address($customerInnerAddress['id_address']);
-
-            foreach ($checkMapping as $field) {
-                if ($customerAddress->$field != $address->$field) {
-                    continue 2;
-                }
-            }
-
-            $address->id = $customerInnerAddress['id_address'];
-
-            break;
-        }
-    }
-
-    /**
      * Returns array with product id and product attribute id.
      * Returns 0 as attribute id if attribute is not present.
      * Returns array(0, 0) in case of failure.
@@ -1750,62 +1664,6 @@ class RetailcrmHistory
         if ($object->validateField('product_name', $object->product_name) !== true) {
             $object->product_name = implode('', array('\'', $name, '\''));
         }
-    }
-
-    /**
-     * Select changes customer in order history
-     *
-     * @param array $history
-     * @return array
-     */
-    private static function selectChangesCustomer($history)
-    {
-        $changesCustomerInOrder = null;
-
-        foreach ($history as $changes) {
-            if (isset($changes['order']['externalId'])) {
-                $orderId = $changes['order']['externalId'];
-
-                if (isset($changes['field'])
-                    && ($changes['field'] == 'customer'
-                    || $changes['field'] == 'contact')
-                    && isset($changes['newValue']['externalId'])
-                    // TODO What if corporate customer was selected in the order, and this particular corporate customer actually has the externalId?
-                ) {
-                    $newId = $changes['newValue']['externalId'];
-                    $changesCustomerInOrder[$orderId] = array('idCustomer' => $newId);
-                }
-            }
-        }
-
-        return $changesCustomerInOrder;
-    }
-
-    /**
-     * Select changes company in order history
-     *
-     * @param array $history
-     * @return array
-     */
-    private static function selectChangesCompany($history)
-    {
-        $changesCompanyInOrder = null;
-
-        foreach ($history as $changes) {
-            if (isset($changes['order']['externalId'])) {
-                $orderId = $changes['order']['externalId'];
-
-                if (isset($changes['field'])
-                    && $changes['field'] == 'contragent.legal_name'
-                    && RetailcrmTools::isCorporateEnabled()
-                ) {
-                    $name = isset($changes['newValue']) ? $changes['newValue'] : null;
-                    $changesCompanyInOrder[$orderId] = array('name' => $name);
-                }
-            }
-        }
-
-        return $changesCompanyInOrder;
     }
 }
 
