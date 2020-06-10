@@ -601,7 +601,6 @@ class RetailcrmTools
             'id_country',
             'lastname',
             'firstname',
-            'alias',
             'postcode',
             'city',
             'address1',
@@ -617,14 +616,26 @@ class RetailcrmTools
 
             foreach ($checkMapping as $field) {
                 if ($customerAddress->$field != $address->$field) {
+                    RetailcrmLogger::writeDebugArray(__METHOD__, array(
+                        sprintf(
+                            'Found difference between address id=%d and id=%d',
+                            $customerAddress->id_customer,
+                            $address->id
+                        ),
+                        array(
+                            sprintf('customerAddress[%s]', $field) => $customerAddress->$field,
+                            sprintf('$address[%s]', $field) => $address->$field
+                        )
+                    ));
+
                     continue 2;
                 }
             }
 
-            $address->id = $customerInnerAddress['id_address'];
-
-            break;
+            return $customerInnerAddress['id_address'];
         }
+
+        return 0;
     }
 
     /**
