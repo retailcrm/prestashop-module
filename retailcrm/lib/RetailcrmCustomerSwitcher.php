@@ -67,6 +67,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         $newCustomer = $this->data->getNewCustomer();
         $newContact = $this->data->getNewContact();
         $newCompany = $this->data->getNewCompanyName();
+        $companyAddress = $this->data->getCompanyAddress();
 
         if (!empty($newCustomer)) {
             RetailcrmLogger::writeDebugArray(
@@ -105,6 +106,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 );
                 $this->processCompanyChange();
             }
+
+            if (!empty($companyAddress)) {
+                $this->processCompanyAddress();
+            }
         }
 
         return $this;
@@ -135,6 +140,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         );
 
         if (isset($newCustomer['externalId'])) {
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                'Switching to existing customer id=%s',
+                $newCustomer['externalId']
+            ));
             $customer = new Customer($newCustomer['externalId']);
 
             if (!empty($customer->id)) {
@@ -142,29 +151,95 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 $address = $builder->build()->getData()->getCustomerAddress();
 
                 if ($isContact) {
+                    RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
+
                     if ($address->alias == '' || $address->alias == 'default') {
                         $address->alias = '--';
                     }
 
                     RetailcrmTools::assignAddressIdsByFields($customer, $address);
+                    RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
                 } else {
+                    RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for an individual');
                     RetailcrmTools::searchIndividualAddress($customer);
 
                     if (empty($address->id)) {
                         $address->alias = 'default';
                         RetailcrmTools::assignAddressIdsByFields($customer, $address);
                     }
+
+                    RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
                 }
+            } else {
+                RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                    'Customer id=%s was not found, skipping...',
+                    $newCustomer['externalId']
+                ));
             }
         }
 
         if (empty($customer) || empty($customer->id)) {
+            RetailcrmLogger::writeDebug(__METHOD__, "Customer wasn't found, generating new...");
+
             $result = $builder->build()->getData();
             $customer = $result->getCustomer();
             $address = $result->getCustomerAddress();
+
+            RetailcrmLogger::writeDebugArray(__METHOD__, array('Result:', array(
+                'customer' => RetailcrmTools::dumpEntity($customer),
+                'address' => RetailcrmTools::dumpEntity($address)
+            )));
         }
 
         $this->result = new RetailcrmCustomerSwitcherResult($customer, $address, $order);
+    }
+
+    public function processCompanyAddress()
+    {
+        $companyAddress = $this->data->getCompanyAddress();
+        $customer = $this->data->getOrder()->getCustomer();
+        $address = new Address($this->data->getOrder()->id_address_invoice);
+
+        if (!empty($companyAddress)) {
+            $firstName = '--';
+            $lastName = '--';
+            $billingPhone = $address->phone;
+
+            if (empty($billingPhone)) {
+                $billingPhone = $address->phone_mobile;
+            }
+
+            if (!empty($this->result)) {
+                $customer = $this->result->getCustomer();
+            }
+
+            if (empty($customer)) {
+                $customer = $this->data->getOrder()->getCustomer();
+            }
+
+            if (!empty($customer)) {
+                $firstName = !empty($customer->firstname) ? $customer->firstname : '--';
+                $lastName = !empty($customer->lastname) ? $customer->lastname : '--';
+            }
+
+            $builder = new RetailcrmCustomerAddressBuilder();
+            $address = $builder
+                ->setDataCrm($companyAddress)
+                ->setFirstName($firstName)
+                ->setLastName($lastName)
+                ->setPhone($billingPhone)
+                ->setAlias('--')
+                ->build()
+                ->getData();
+            $address->company = $this->data->getNewCompanyName();
+            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+        }
+
+        if (empty($this->result)) {
+            $this->result = new RetailcrmCustomerSwitcherResult($customer, $address, $this->data->getOrder());
+        } else {
+            $this->result->setAddress($address);
+        }
     }
 
     /**
@@ -175,15 +250,11 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         $customer = $this->data->getOrder()->getCustomer();
         $address = new Address($this->data->getOrder()->id_address_invoice);
 
-        if ($this->data->getNewCompanyName() == $address->company) {
-            return;
-        }
-
         if (!empty($this->result)) {
             $newAddress = $this->result->getAddress();
             $newCustomer = $this->result->getCustomer();
 
-            if (!empty($newAddress)) {
+            if (!empty($newAddress) && empty($companyAddress)) {
                 $address = $newAddress;
             }
 
@@ -275,6 +346,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 'newCustomer' => $this->data->getNewCustomer(),
                 'newContact' => $this->data->getNewContact(),
                 'newCompanyName' => $this->data->getNewCompanyName(),
+                'companyAddress' => $this->data->getCompanyAddress(),
                 'order' => RetailcrmTools::dumpEntity($this->data->getOrder()),
             )));
         }

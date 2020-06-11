@@ -184,10 +184,16 @@ class RetailcrmTools
      *
      * @param \ObjectModel $object
      *
-     * @return array
+     * @return array|string
      */
     public static function dumpEntity($object)
     {
+        if (empty($object)) {
+            ob_start();
+            var_dump($object);
+            return (string) ob_get_clean();
+        }
+
         $data = array();
         $type = get_class($object);
 

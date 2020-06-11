@@ -76,6 +76,7 @@ class RetailcrmHistory
             Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $end['id']);
 
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
+            RetailcrmLogger::writeDebugArray(__METHOD__, array('Assembled history:', $customersHistory));
 
             foreach ($customersHistory as $customerHistory) {
                 if (isset($customerHistory['deleted']) && $customerHistory['deleted']) {
@@ -210,6 +211,7 @@ class RetailcrmHistory
             $deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
             $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
             $orders = RetailcrmHistoryHelper::assemblyOrder($historyChanges);
+            RetailcrmLogger::writeDebugArray(__METHOD__, array('Assembled history:', $orders));
 
             foreach ($orders as $order_history) {
                 if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
@@ -1013,7 +1015,11 @@ class RetailcrmHistory
         }
 
         if (isset($historyOrder['company'])) {
-            $data->setNewCompany($historyOrder['company']);
+            if (!empty($crmOrder['company'])) {
+                $data->setNewCompany($crmOrder['company']);
+            } else {
+                $data->setNewCompany($historyOrder['company']);
+            }
         }
 
         if ($data->feasible()) {

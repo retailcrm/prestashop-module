@@ -49,6 +49,9 @@ class RetailcrmCustomerSwitcherState
    /** @var string $newCompanyName */
     private $newCompanyName;
 
+    /** @var array $companyAddress */
+    private $companyAddress;
+
     /**
      * @return \Order
      */
@@ -126,6 +129,25 @@ class RetailcrmCustomerSwitcherState
     }
 
     /**
+     * @return array
+     */
+    public function getCompanyAddress()
+    {
+        return $this->companyAddress;
+    }
+
+    /**
+     * @param array $companyAddress
+     *
+     * @return RetailcrmCustomerSwitcherState
+     */
+    public function setCompanyAddress($companyAddress)
+    {
+        $this->companyAddress = $companyAddress;
+        return $this;
+    }
+
+    /**
      * @param array $newCompany
      *
      * @return RetailcrmCustomerSwitcherState
@@ -134,6 +156,10 @@ class RetailcrmCustomerSwitcherState
     {
         if (isset($newCompany['name'])) {
             $this->setNewCompanyName($newCompany['name']);
+        }
+
+        if (isset($newCompany['address']) & !empty($newCompany['address'])) {
+            $this->setCompanyAddress($newCompany['address']);
         }
 
         return $this;

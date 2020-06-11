@@ -81,6 +81,17 @@ class RetailcrmCustomerSwitcherResult
     }
 
     /**
+     * @param \Address $address
+     *
+     * @return RetailcrmCustomerSwitcherResult
+     */
+    public function setAddress($address)
+    {
+        $this->address = $address;
+        return $this;
+    }
+
+    /**
      * @return \Order
      */
     public function getOrder()
