@@ -108,7 +108,7 @@ class RetailcrmHistory
                     }
 
                     if (!empty($address)) {
-                        $address->id = RetailcrmTools::assignAddressIdByFields($customer, $address);
+                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
 
                         if (self::loadInCMS($address, 'update') === false) {
                             continue;
@@ -372,7 +372,7 @@ class RetailcrmHistory
 
                     if (!empty($address)) {
                         $address->id_customer = $customer->id;
-                        $address->id = RetailcrmTools::assignAddressIdByFields($customer, $address);
+                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
 
                         if (empty($address->id)) {
                             RetailcrmLogger::writeDebug(

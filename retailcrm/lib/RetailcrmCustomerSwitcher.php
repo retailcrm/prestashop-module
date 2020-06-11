@@ -146,13 +146,13 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                         $address->alias = '--';
                     }
 
-                    $address->id = RetailcrmTools::assignAddressIdByFields($customer, $address);
+                    RetailcrmTools::assignAddressIdsByFields($customer, $address);
                 } else {
-                    $address->id = RetailcrmTools::searchIndividualAddress($customer);
+                    RetailcrmTools::searchIndividualAddress($customer);
 
                     if (empty($address->id)) {
                         $address->alias = 'default';
-                        $address->id = RetailcrmTools::assignAddressIdByFields($customer, $address);
+                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
                     }
                 }
             }
@@ -193,8 +193,9 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         }
 
         $oldId = $address->id;
+        $address->alias = '--';
         $address->company = $this->data->getNewCompanyName();
-        $address->id = RetailcrmTools::assignAddressIdByFields($customer, $address);
+        RetailcrmTools::assignAddressIdsByFields($customer, $address);
 
         if (empty($oldId) || $oldId == $address->id) {
             $address->id = 0;

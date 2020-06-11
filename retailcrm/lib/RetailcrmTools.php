@@ -200,6 +200,10 @@ class RetailcrmTools
                         $data[$field] = $object->$field;
                     }
                 }
+
+                if (property_exists($object, 'id')) {
+                    $data['id'] = $object->id;
+                }
             }
         }
 
@@ -589,53 +593,25 @@ class RetailcrmTools
     }
 
     /**
-     * Assign address ID from customer addresses
+     * Assign address ID and customer ID from customer addresses.
+     * Customer ID in the address isn't checked (it will be set to id from provided customer, even if it doesn't have ID yet).
      *
      * @param Customer|CustomerCore $customer
-     * @param Address|\AddressCore $address
+     * @param Address|\AddressCore  $address
      */
-    public static function assignAddressIdByFields($customer, $address)
+    public static function assignAddressIdsByFields($customer, $address)
     {
-        $checkMapping = array(
-            'id_customer',
-            'id_country',
-            'lastname',
-            'firstname',
-            'postcode',
-            'city',
-            'address1',
-            'phone',
-            'company',
-            'vat_number'
-        );
-
-        // Assigns id to $address if same address was found in customer
-        foreach ($customer->getAddresses(static::$default_lang) as $customerInnerAddress) {
-            /** @var Address|\AddressCore $customerAddress */
+        foreach ($customer->getAddresses(self::defaultLang()) as $customerInnerAddress) {
             $customerAddress = new Address($customerInnerAddress['id_address']);
 
-            foreach ($checkMapping as $field) {
-                if ($customerAddress->$field != $address->$field) {
-                    RetailcrmLogger::writeDebugArray(__METHOD__, array(
-                        sprintf(
-                            'Found difference between address id=%d and id=%d',
-                            $customerAddress->id_customer,
-                            $address->id
-                        ),
-                        array(
-                            sprintf('customerAddress[%s]', $field) => $customerAddress->$field,
-                            sprintf('$address[%s]', $field) => $address->$field
-                        )
-                    ));
-
-                    continue 2;
+            if (self::isAddressesEqualByFields($address, $customerAddress)) {
+                if ($address->id_customer != $customerAddress->id_customer) {
+                    $address->id_customer = $customerAddress->id_customer;
                 }
+
+                $address->id = $customerAddress->id;
             }
-
-            return $customerInnerAddress['id_address'];
         }
-
-        return 0;
     }
 
     /**
@@ -651,5 +627,39 @@ class RetailcrmTools
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
         ));
+    }
+
+    /**
+     * Returns true if mapped fields in address are equal. Returns false otherwise.
+     *
+     * @param \Address $first
+     * @param \Address $second
+     *
+     * @return bool
+     */
+    protected static function isAddressesEqualByFields($first, $second)
+    {
+        $equal = true;
+        $checkMapping = array(
+            'alias',
+            'id_country',
+            'lastname',
+            'firstname',
+            'postcode',
+            'city',
+            'address1',
+            'phone',
+            'company',
+            'vat_number'
+        );
+
+        foreach ($checkMapping as $field) {
+            if ($first->$field != $second->$field) {
+                $equal = false;
+                break;
+            }
+        }
+
+        return $equal;
     }
 }

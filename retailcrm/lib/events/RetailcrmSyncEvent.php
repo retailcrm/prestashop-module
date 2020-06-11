@@ -50,7 +50,7 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
         }
 
         $this->setRunning();
-
+        
         if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
             RetailcrmLogger::writeDebug(
                 __METHOD__,
