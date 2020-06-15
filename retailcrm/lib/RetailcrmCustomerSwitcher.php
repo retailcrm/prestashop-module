@@ -122,7 +122,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      * @param array  $newCustomer
      * @param bool   $isContact
      */
-    public function processChangeToRegular($order, $newCustomer, $isContact)
+    protected function processChangeToRegular($order, $newCustomer, $isContact)
     {
         $customer = null;
         $address = null;
@@ -150,11 +150,30 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 $order->id_customer = $customer->id;
                 $address = $builder->build()->getData()->getCustomerAddress();
 
+                if (empty($address)) {
+                    if ($isContact) {
+                        $address = $this->createPlaceholderAddress($customer, '--');
+                    } else {
+                        $address = $this->createPlaceholderAddress($customer);
+                    }
+                }
+
                 if ($isContact) {
+                    $newCompany = $this->data->getNewCompanyName();
                     RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
 
                     if ($address->alias == '' || $address->alias == 'default') {
                         $address->alias = '--';
+                    }
+
+                    if (!empty($newCompany)) {
+                        $address->company = $newCompany;
+                    } else {
+                        $oldAddress = new Address($this->data->getOrder()->id_address_invoice);
+
+                        if ($oldAddress->company) {
+                            $address->company = $oldAddress->company;
+                        }
                     }
 
                     RetailcrmTools::assignAddressIdsByFields($customer, $address);
@@ -194,7 +213,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         $this->result = new RetailcrmCustomerSwitcherResult($customer, $address, $order);
     }
 
-    public function processCompanyAddress()
+    /**
+     * Process company address.
+     */
+    protected function processCompanyAddress()
     {
         $companyAddress = $this->data->getCompanyAddress();
         $customer = $this->data->getOrder()->getCustomer();
@@ -245,7 +267,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
     /**
      * This will update company in the address.
      */
-    public function processCompanyChange()
+    protected function processCompanyChange()
     {
         $customer = $this->data->getOrder()->getCustomer();
         $address = new Address($this->data->getOrder()->id_address_invoice);
@@ -350,6 +372,26 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 'order' => RetailcrmTools::dumpEntity($this->data->getOrder()),
             )));
         }
+    }
+
+    /**
+     * Builds placeholder address for customer if he doesn't have address.
+     *
+     * @param \Customer $customer
+     * @param string    $alias
+     *
+     * @return \Address|\AddressCore|array|mixed
+     */
+    private function createPlaceholderAddress($customer, $alias = 'default')
+    {
+        $addressBuilder = new RetailcrmCustomerAddressBuilder();
+        return $addressBuilder
+            ->setIdCustomer($customer->id)
+            ->setFirstName($customer->firstname)
+            ->setLastName($customer->lastname)
+            ->setAlias($alias)
+            ->build()
+            ->getData();
     }
 
     /**

@@ -74,7 +74,7 @@ class RetailcrmTools
      *
      * @return bool
      */
-    public static function isCustomerCorporate(Customer $customer)
+    public static function isCustomerCorporate($customer)
     {
         $addresses = $customer->getAddresses((int)Configuration::get('PS_LANG_DEFAULT'));
 
@@ -201,15 +201,16 @@ class RetailcrmTools
             $defs = $type::$definition;
 
             if (!empty($defs['fields'])) {
+                if (property_exists($object, 'id')) {
+                    $data['id'] = $object->id;
+                }
+
                 foreach (array_keys($defs['fields']) as $field) {
                     if (property_exists($object, $field)) {
                         $data[$field] = $object->$field;
                     }
                 }
 
-                if (property_exists($object, 'id')) {
-                    $data['id'] = $object->id;
-                }
             }
         }
 
@@ -607,6 +608,8 @@ class RetailcrmTools
      */
     public static function assignAddressIdsByFields($customer, $address)
     {
+        RetailcrmLogger::writeDebugArray(__METHOD__, array('Called with customer', $customer->id, 'and address', self::dumpEntity($address)));
+
         foreach ($customer->getAddresses(self::defaultLang()) as $customerInnerAddress) {
             $customerAddress = new Address($customerInnerAddress['id_address']);
 
@@ -662,6 +665,15 @@ class RetailcrmTools
         foreach ($checkMapping as $field) {
             if ($first->$field != $second->$field) {
                 $equal = false;
+                RetailcrmLogger::writeDebugArray(__METHOD__, array(
+                    'first' => self::dumpEntity($first),
+                    'second' => self::dumpEntity($second),
+                    'field' => array(
+                        'name' => $field,
+                        'firstValue' => $first->$field,
+                        'secondValue' => $second->$field
+                    )
+                ));
                 break;
             }
         }
