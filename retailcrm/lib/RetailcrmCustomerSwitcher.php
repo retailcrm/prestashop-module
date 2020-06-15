@@ -47,6 +47,9 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      */
     private $result;
 
+    /** @var bool $isContact */
+    private $isContact;
+
     /**
      * RetailcrmCustomerSwitcher constructor.
      */
@@ -77,7 +80,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                     $this->data->getOrder()->id
                 )
             );
-            $this->processChangeToRegular($this->data->getOrder(), $newCustomer, false);
+            $this->isContact = false;
+            $this->processChangeToRegular($this->data->getOrder(), $newCustomer);
 
             if (!empty($this->result)) {
                 $this->result->getAddress()->company = '';
@@ -91,7 +95,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                         $this->data->getOrder()->id
                     )
                 );
-                $this->processChangeToRegular($this->data->getOrder(), $newContact, true);
+                $this->isContact = true;
+                $this->processChangeToRegular($this->data->getOrder(), $newContact);
             }
 
             if (!empty($newCompany)) {
@@ -120,9 +125,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      *
      * @param \Order $order
      * @param array  $newCustomer
-     * @param bool   $isContact
      */
-    protected function processChangeToRegular($order, $newCustomer, $isContact)
+    protected function processChangeToRegular($order, $newCustomer)
     {
         $customer = null;
         $address = null;
@@ -148,47 +152,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
 
             if (!empty($customer->id)) {
                 $order->id_customer = $customer->id;
-                $address = $builder->build()->getData()->getCustomerAddress();
-
-                if (empty($address)) {
-                    if ($isContact) {
-                        $address = $this->createPlaceholderAddress($customer, '--');
-                    } else {
-                        $address = $this->createPlaceholderAddress($customer);
-                    }
-                }
-
-                if ($isContact) {
-                    $newCompany = $this->data->getNewCompanyName();
-                    RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
-
-                    if ($address->alias == '' || $address->alias == 'default') {
-                        $address->alias = '--';
-                    }
-
-                    if (!empty($newCompany)) {
-                        $address->company = $newCompany;
-                    } else {
-                        $oldAddress = new Address($this->data->getOrder()->id_address_invoice);
-
-                        if ($oldAddress->company) {
-                            $address->company = $oldAddress->company;
-                        }
-                    }
-
-                    RetailcrmTools::assignAddressIdsByFields($customer, $address);
-                    RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
-                } else {
-                    RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for an individual');
-                    RetailcrmTools::searchIndividualAddress($customer);
-
-                    if (empty($address->id)) {
-                        $address->alias = 'default';
-                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
-                    }
-
-                    RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
-                }
+                $address = $this->getCustomerAddress($customer, $builder->build()->getData()->getCustomerAddress());
+                $this->processCustomerAddress($customer, $address);
             } else {
                 RetailcrmLogger::writeDebug(__METHOD__, sprintf(
                     'Customer id=%s was not found, skipping...',
@@ -202,7 +167,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
 
             $result = $builder->build()->getData();
             $customer = $result->getCustomer();
-            $address = $result->getCustomerAddress();
+            $address = $this->getCustomerAddress($customer, $result->getCustomerAddress());
 
             RetailcrmLogger::writeDebugArray(__METHOD__, array('Result:', array(
                 'customer' => RetailcrmTools::dumpEntity($customer),
@@ -371,6 +336,68 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 'companyAddress' => $this->data->getCompanyAddress(),
                 'order' => RetailcrmTools::dumpEntity($this->data->getOrder()),
             )));
+        }
+    }
+
+    /**
+     * Returns placeholder address if customer hasn't one; returns address without any changes otherwise.
+     *
+     * @param \Customer|\CustomerCore   $customer
+     * @param Address|\AddressCore|null $address
+     *
+     * @return \Address|\AddressCore|array|mixed
+     */
+    private function getCustomerAddress($customer, $address)
+    {
+        if (empty($address)) {
+            if ($this->isContact) {
+                $address = $this->createPlaceholderAddress($customer, '--');
+            } else {
+                $address = $this->createPlaceholderAddress($customer);
+            }
+        }
+
+        return $address;
+    }
+
+    /**
+     * Process address fields for existing customer.
+     *
+     * @param Customer|\CustomerCore $customer
+     * @param Address|\AddressCore   $address
+     */
+    private function processCustomerAddress($customer, $address)
+    {
+        if ($this->isContact) {
+            $newCompany = $this->data->getNewCompanyName();
+            RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
+
+            if ($address->alias == '' || $address->alias == 'default') {
+                $address->alias = '--';
+            }
+
+            if (!empty($newCompany)) {
+                $address->company = $newCompany;
+            } else {
+                $oldAddress = new Address($this->data->getOrder()->id_address_invoice);
+
+                if ($oldAddress->company) {
+                    $address->company = $oldAddress->company;
+                }
+            }
+
+            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
+        } else {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for an individual');
+            RetailcrmTools::searchIndividualAddress($customer);
+
+            if (empty($address->id)) {
+                $address->alias = 'default';
+                RetailcrmTools::assignAddressIdsByFields($customer, $address);
+            }
+
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf('Address id=%d', $address->id));
         }
     }
 
