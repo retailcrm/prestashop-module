@@ -158,7 +158,7 @@ class RetailcrmCustomerSwitcherState
             $this->setNewCompanyName($newCompany['name']);
         }
 
-        if (isset($newCompany['address']) & !empty($newCompany['address'])) {
+        if (isset($newCompany['address']) && !empty($newCompany['address'])) {
             $this->setCompanyAddress($newCompany['address']);
         }
 
