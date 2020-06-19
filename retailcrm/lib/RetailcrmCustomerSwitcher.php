@@ -130,6 +130,12 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
     {
         $customer = null;
         $address = null;
+        $orderShippingAddress = $this->data->getCrmOrderShippingAddress();
+
+        if ((!isset($newCustomer['address']) || empty($newCustomer['address'])) && !empty($orderShippingAddress)) {
+            $newCustomer['address'] = $orderShippingAddress;
+        }
+
         $builder = new RetailcrmCustomerBuilder();
         $builder->setDataCrm($newCustomer);
 

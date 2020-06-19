@@ -1022,6 +1022,10 @@ class RetailcrmHistory
             }
         }
 
+        if (!empty($crmOrder) && !empty($crmOrder['delivery']) && !empty($crmOrder['delivery']['address'])) {
+            $data->setCrmOrderShippingAddress($crmOrder['delivery']['address']);
+        }
+
         if ($data->feasible()) {
             try {
                 $result = $switcher->setData($data)

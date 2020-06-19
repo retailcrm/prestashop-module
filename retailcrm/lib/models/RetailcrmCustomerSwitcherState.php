@@ -52,6 +52,9 @@ class RetailcrmCustomerSwitcherState
     /** @var array $companyAddress */
     private $companyAddress;
 
+    /** @var array $crmOrderShippingAddress */
+    private $crmOrderShippingAddress;
+
     /**
      * @return \Order
      */
@@ -162,6 +165,25 @@ class RetailcrmCustomerSwitcherState
             $this->setCompanyAddress($newCompany['address']);
         }
 
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getCrmOrderShippingAddress()
+    {
+        return $this->crmOrderShippingAddress;
+    }
+
+    /**
+     * @param array $crmOrderShippingAddress
+     *
+     * @return RetailcrmCustomerSwitcherState
+     */
+    public function setCrmOrderShippingAddress($crmOrderShippingAddress)
+    {
+        $this->crmOrderShippingAddress = $crmOrderShippingAddress;
         return $this;
     }
 
