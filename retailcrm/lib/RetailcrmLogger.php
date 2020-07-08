@@ -140,6 +140,32 @@ class RetailcrmLogger
     }
 
     /**
+     * Debug log record with multiple entries
+     *
+     * @param string       $caller
+     * @param array|string $messages
+     */
+    public static function writeDebugArray($caller, $messages)
+    {
+        if (RetailcrmTools::isDebug()) {
+            if (!empty($caller) && !empty($messages)) {
+                $result = is_array($messages) ? substr(
+                    array_reduce(
+                        $messages,
+                        function ($carry, $item) {
+                            $carry .= ' ' . print_r($item, true);
+                            return $carry;
+                        }
+                    ),
+                    1
+                ) : $messages;
+
+                self::writeDebug($caller, $result);
+            }
+        }
+    }
+
+    /**
      * Returns log file path
      *
      * @return string

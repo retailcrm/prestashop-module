@@ -172,7 +172,9 @@ class RetailcrmJobManager
                     $lastRuns[$job] = new \DateTime('now');
                 }
             } catch (\Exception $exception) {
-                if ($exception instanceof RetailcrmJobManagerException && !empty($exception->getPrevious())) {
+                if ($exception instanceof RetailcrmJobManagerException
+                    && $exception->getPrevious() instanceof \Exception
+                ) {
                     static::handleError(
                         $exception->getPrevious()->getFile(),
                         $exception->getPrevious()->getMessage(),
@@ -189,10 +191,10 @@ class RetailcrmJobManager
                 }
 
                 self::clearCurrentJob($job);
-            } finally {
-                if (isset($result) && $result) {
-                    self::clearCurrentJob($job);
-                }
+            }
+
+            if (isset($result) && $result) {
+                self::clearCurrentJob($job);
             }
         }
 
@@ -394,19 +396,24 @@ class RetailcrmJobManager
     }
 
     /**
+     * Wrapper for shutdown handler. Moved here in order to keep compatibility with older PHP versions.
+     */
+    public static function shutdownHandlerWrapper()
+    {
+        $error = error_get_last();
+
+        if(null !== $error && $error['type'] === E_ERROR) {
+            self::defaultShutdownHandler($error);
+        }
+    }
+
+    /**
      * Register default shutdown handler (should be be called before any job execution)
      */
     private static function registerShutdownHandler()
     {
         if (!self::$shutdownHandlerRegistered) {
-            register_shutdown_function(function() {
-                $error = error_get_last();
-
-                if(null !== $error && $error['type'] === E_ERROR) {
-                    self::defaultShutdownHandler($error);
-                }
-            });
-
+            register_shutdown_function(array('RetailcrmJobManager', 'shutdownHandlerWrapper'));
             self::$shutdownHandlerRegistered = true;
         }
     }

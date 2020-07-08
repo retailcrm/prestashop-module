@@ -30,4 +30,11 @@ class RetailcrmTestHelper
             'SELECT MAX(id_order) FROM `' . _DB_PREFIX_ . 'orders`'
         );
     }
+
+    public static function getMaxCustomerId()
+    {
+        return Db::getInstance()->getValue(
+            'SELECT MAX(id_customer) FROM `' . _DB_PREFIX_ . 'customer`'
+        );
+    }
 }

@@ -130,15 +130,23 @@ class RetailcrmCli
     }
 
     /**
+     * Shutdown handler. Moved here in order to keep compatibility with older PHP versions.
+     *
+     * @param mixed $error
+     */
+    public function cleanupOnShutdown($error)
+    {
+        if (null !== $error) {
+            self::clearCurrentJob(null);
+        }
+    }
+
+    /**
      * This will register shutdown handler which will clean lock before shutdown
      */
     private function setCleanupOnShutdown()
     {
-        RetailcrmJobManager::setCustomShutdownHandler(function ($error) {
-            if (null !== $error) {
-                self::clearCurrentJob(null);
-            }
-        });
+        RetailcrmJobManager::setCustomShutdownHandler(array($this, 'cleanupOnShutdown'));
     }
 
     /**
@@ -156,17 +164,17 @@ class RetailcrmCli
                 $result ? 'true' : 'false'
             ));
         } catch (\Exception $exception) {
-            if ($exception instanceof RetailcrmJobManagerException && !empty($exception->getPrevious())) {
+            if ($exception instanceof RetailcrmJobManagerException && $exception->getPrevious() instanceof \Exception) {
                 $this->printStack($exception->getPrevious());
             } else {
                 $this->printStack($exception);
             }
 
             self::clearCurrentJob($jobName);
-        } finally {
-            if (isset($result) && $result) {
-                self::clearCurrentJob($jobName);
-            }
+        }
+
+        if (isset($result) && $result) {
+            self::clearCurrentJob($jobName);
         }
     }
 

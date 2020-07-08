@@ -42,6 +42,21 @@ class RetailcrmTools
      */
     static $currentStatusCode;
 
+    /** @var int */
+    public static $default_lang;
+
+    /**
+     * @return int
+     */
+    public static function defaultLang()
+    {
+        if (empty(self::$default_lang)) {
+            self::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        }
+
+        return self::$default_lang;
+    }
+
     /**
      * Returns true if corporate customers are enabled in settings
      *
@@ -59,7 +74,7 @@ class RetailcrmTools
      *
      * @return bool
      */
-    public static function isCustomerCorporate(Customer $customer)
+    public static function isCustomerCorporate($customer)
     {
         $addresses = $customer->getAddresses((int)Configuration::get('PS_LANG_DEFAULT'));
 
@@ -90,6 +105,38 @@ class RetailcrmTools
         $address = new Address($order->id_address_invoice);
 
         return $address instanceof Address && !empty($address->company);
+    }
+
+    /**
+     * Returns true if provided crm order is corporate
+     *
+     * @param array $order
+     *
+     * @return bool
+     */
+    public static function isCrmOrderCorporate($order)
+    {
+        return isset($order['customer']['type']) && $order['customer']['type'] == 'customer_corporate';
+    }
+
+    /**
+     * Search address for individual customer (not corporate one)
+     *
+     * @param Customer|CustomerCore $customer
+     *
+     * @return int
+     */
+    public static function searchIndividualAddress($customer)
+    {
+        if (!empty($customer->id)) {
+            foreach ($customer->getAddresses(self::defaultLang()) as $addressArray) {
+                if ($addressArray['alias'] == 'default') {
+                    return (int) $addressArray['id_address'];
+                }
+            }
+        }
+
+        return 0;
     }
 
     /**
@@ -130,6 +177,44 @@ class RetailcrmTools
         $ids = explode(',', $ids);
 
         return $ids;
+    }
+
+    /**
+     * Dumps entity using it's definition mapping.
+     *
+     * @param \ObjectModel $object
+     *
+     * @return array|string
+     */
+    public static function dumpEntity($object)
+    {
+        if (empty($object)) {
+            ob_start();
+            var_dump($object);
+            return (string) ob_get_clean();
+        }
+
+        $data = array();
+        $type = get_class($object);
+
+        if (property_exists($type, 'definition')) {
+            $defs = $type::$definition;
+
+            if (!empty($defs['fields'])) {
+                if (property_exists($object, 'id')) {
+                    $data['id'] = $object->id;
+                }
+
+                foreach (array_keys($defs['fields']) as $field) {
+                    if (property_exists($object, $field)) {
+                        $data[$field] = $object->$field;
+                    }
+                }
+
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -467,6 +552,78 @@ class RetailcrmTools
     }
 
     /**
+     * This assertion returns true if customer was changed from legal entity to individual person.
+     * It doesn't return true if customer was changed from one individual person to another.
+     *
+     * @param array $assembledOrder Order data, assembled from history
+     *
+     * @return bool True if customer in order was changed from corporate to regular
+     */
+    public static function isCustomerChangedToRegular($assembledOrder)
+    {
+        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'individual';
+    }
+
+    /**
+     * This assertion returns true if customer was changed from individual person to a legal entity.
+     * It doesn't return true if customer was changed from one legal entity to another.
+     *
+     * @param array $assembledOrder Order data, assembled from history
+     *
+     * @return bool True if customer in order was changed from corporate to regular
+     */
+    public static function isCustomerChangedToLegal($assembledOrder)
+    {
+        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'legal-entity';
+    }
+
+    /**
+     * Get value by key from array if it exists, returns default value otherwise.
+     *
+     * @param array|\ArrayObject|\ArrayAccess $arr
+     * @param string $key
+     * @param string $def
+     *
+     * @return mixed|string
+     */
+    public static function arrayValue($arr, $key, $def = '')
+    {
+        if (!is_array($arr) && !($arr instanceof ArrayObject) && !($arr instanceof ArrayAccess)) {
+            return $def;
+        }
+
+        if (!array_key_exists($key, $arr) && !empty($arr[$key])) {
+            return $def;
+        }
+
+        return isset($arr[$key]) ? $arr[$key] : $def;
+    }
+
+    /**
+     * Assign address ID and customer ID from customer addresses.
+     * Customer ID in the address isn't checked (it will be set to id from provided customer, even if it doesn't have ID yet).
+     *
+     * @param Customer|CustomerCore $customer
+     * @param Address|\AddressCore  $address
+     */
+    public static function assignAddressIdsByFields($customer, $address)
+    {
+        RetailcrmLogger::writeDebugArray(__METHOD__, array('Called with customer', $customer->id, 'and address', self::dumpEntity($address)));
+
+        foreach ($customer->getAddresses(self::defaultLang()) as $customerInnerAddress) {
+            $customerAddress = new Address($customerInnerAddress['id_address']);
+
+            if (self::isAddressesEqualByFields($address, $customerAddress)) {
+                if ($address->id_customer != $customerAddress->id_customer) {
+                    $address->id_customer = $customerAddress->id_customer;
+                }
+
+                $address->id = $customerAddress->id;
+            }
+        }
+    }
+
+    /**
      * Starts JobManager with list of pre-registered jobs
      *
      * @throws \Exception
@@ -479,5 +636,48 @@ class RetailcrmTools
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
         ));
+    }
+
+    /**
+     * Returns true if mapped fields in address are equal. Returns false otherwise.
+     *
+     * @param \Address $first
+     * @param \Address $second
+     *
+     * @return bool
+     */
+    protected static function isAddressesEqualByFields($first, $second)
+    {
+        $equal = true;
+        $checkMapping = array(
+            'alias',
+            'id_country',
+            'lastname',
+            'firstname',
+            'postcode',
+            'city',
+            'address1',
+            'phone',
+            'company',
+            'vat_number'
+        );
+
+        foreach ($checkMapping as $field) {
+            if ($first->$field != $second->$field) {
+                $equal = false;
+                RetailcrmLogger::writeDebugArray(__METHOD__, array(
+                    'first' => self::dumpEntity($first),
+                    'second' => self::dumpEntity($second),
+                    'field' => array(
+                        'name' => $field,
+                        'firstValue' => $first->$field,
+                        'secondValue' => $second->$field
+                    )
+                ));
+                break;
+            }
+        }
+
+        return $equal;
     }
 }

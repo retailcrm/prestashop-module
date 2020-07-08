@@ -204,6 +204,11 @@ class RetailcrmHistoryHelper {
                     $customers[$change['customer']['id']]['subscribed'] = true;
                 }
             }
+
+            // Sometimes address can be found in this key.
+            if (isset($change['address'])) {
+                $customers[$change['customer']['id']]['address'] = $change['address'];
+            }
         }
 
         return $customers;

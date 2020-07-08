@@ -5,3 +5,4 @@ retailcrm/views/css/*.css
 retailcrm/views/css/*.map
 !retailcrm/views/css/*.min.css
 retailcrm/config_*.xml
+coverage.xml
