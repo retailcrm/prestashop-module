@@ -351,10 +351,8 @@ class RetailcrmJobManager
      */
     public static function clearCurrentJob($job)
     {
-        if (Configuration::hasKey(self::CURRENT_TASK)) {
-            if (is_null($job) || self::getCurrentJob() == $job) {
-                return Configuration::deleteByName(self::CURRENT_TASK);
-            }
+        if (is_null($job) || self::getCurrentJob() == $job) {
+            return Configuration::deleteByName(self::CURRENT_TASK);
         }
 
         return true;
@@ -368,15 +366,8 @@ class RetailcrmJobManager
      */
     public static function reset()
     {
-        $result = true;
-
-        if (Configuration::hasKey(self::CURRENT_TASK)) {
-            $result = Configuration::deleteByName(self::CURRENT_TASK);
-        }
-
-        if (Configuration::hasKey(self::LAST_RUN_NAME)) {
-            $result = $result && Configuration::deleteByName(self::LAST_RUN_NAME);
-        }
+        $result = Configuration::deleteByName(self::CURRENT_TASK);
+        $result = $result && Configuration::deleteByName(self::LAST_RUN_NAME);
 
         self::unlock();
 
