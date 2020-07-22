@@ -326,10 +326,8 @@ class RetailcrmCli
      */
     public static function clearCurrentJob($job)
     {
-        if (Configuration::hasKey(self::CURRENT_TASK_CLI)) {
-            if (is_null($job) || self::getCurrentJob() == $job) {
-                return Configuration::deleteByName(self::CURRENT_TASK_CLI);
-            }
+        if (is_null($job) || self::getCurrentJob() == $job) {
+            return Configuration::deleteByName(self::CURRENT_TASK_CLI);
         }
 
         return true;
