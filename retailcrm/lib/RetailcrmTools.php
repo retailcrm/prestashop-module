@@ -392,7 +392,7 @@ class RetailcrmTools
                 ? self::clearArray($node)
                 : $node;
 
-            if ($result[$index] == ''
+            if ($result[$index] === ''
                 || $result[$index] === null
                 || (is_array($result[$index]) && count($result[$index]) < 1)
             ) {
@@ -404,7 +404,9 @@ class RetailcrmTools
             return array_filter($result, $filterFunc);
         }
 
-        return array_filter($result);
+        return array_filter($result, function ($value) {
+            return !is_null($value);
+        });
     }
 
     /**

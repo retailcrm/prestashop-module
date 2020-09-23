@@ -1,0 +1,162 @@
+<?php
+
+class RetailcrmOrderBuilderTest extends RetailcrmTestCase
+{
+    public function setUp()
+    {
+        parent::setUp();
+    }
+
+    public function testInitialPriceZero()
+    {
+        $item = $this->getDataItemInitialPriceZero();
+        $resultItem = RetailcrmTools::clearArray($item);
+
+        $this->assertTrue(isset($resultItem['initialPrice']));
+        $this->assertEquals(0, $resultItem['initialPrice']);
+    }
+
+    /**
+     * @return array
+     */
+    private function getDataItemInitialPriceZero()
+    {
+        return array(
+            'id' => 160,
+            'initialPrice' => 0,
+            'createdAt' => '2018-01-01 00:00:00',
+            'quantity' => 1,
+            'status' => 'new',
+            'offer' => array(
+                'id' => 1,
+                'externalId' => 1,
+                'xmlId' => '1',
+                'name' => 'Test name',
+                'vatRate' => 'none'
+            ),
+            'properties' => array(),
+            'purchasePrice' => 50
+        );
+    }
+
+    /**
+     * @return array
+     */
+    private function getDataOrder()
+    {
+        $order = array(
+            'slug' => 1,
+            'id' => 1,
+            'number' => '1C',
+            'orderType' => 'eshop-individual',
+            'orderMethod' => 'phone',
+            'countryIso' => 'RU',
+            'createdAt' => '2018-01-01 00:00:00',
+            'statusUpdatedAt' => '2018-01-01 00:00:00',
+            'summ' => 100,
+            'totalSumm' => 100,
+            'prepaySum' => 0,
+            'purchaseSumm' => 50,
+            'markDatetime' => '2018-01-01 00:00:00',
+            'firstName' => 'Test',
+            'lastName' => 'Test',
+            'phone' => '80000000000',
+            'call' => false,
+            'expired' => false,
+            'customer' => array(
+                'segments' => array(),
+                'id' => 1,
+                'externalId' => '777',
+                'type' => 'customer',
+                'firstName' => 'Test',
+                'lastName' => 'Test',
+                'email' => 'email@test.ru',
+                'phones' => array(
+                    array(
+                        'number' => '111111111111111'
+                    ),
+                    array(
+                        'number' => '+7111111111'
+                    )
+                ),
+                'address' => array(
+                    'id_customer' => 2222,
+                    'index' => '111111',
+                    'countryIso' => 'RU',
+                    'region' => 'Test region',
+                    'city' => 'Test',
+                    'text' => 'Test text address'
+                ),
+                'createdAt' => '2018-01-01 00:00:00',
+                'managerId' => 1,
+                'vip' => false,
+                'bad' => false,
+                'site' => 'test-com',
+                'contragent' => array(
+                    'contragentType' => 'individual'
+                ),
+                'personalDiscount' => 0,
+                'cumulativeDiscount' => 0,
+                'marginSumm' => 58654,
+                'totalSumm' => 61549,
+                'averageSumm' => 15387.25,
+                'ordersCount' => 4,
+                'costSumm' => 101,
+                'customFields' => array(
+                    'custom' => 'test'
+                )
+            ),
+            'contragent' => array(),
+            'delivery' => array(
+                'code' => 'delivery',
+                'cost' => 100,
+                'netCost' => 0,
+                'address' => array(
+                    'id_customer' => 2222,
+                    'index' => '111111',
+                    'countryIso' => 'RU',
+                    'region' => 'Test region',
+                    'city' => 'Test',
+                    'text' => 'Test text address'
+                )
+            ),
+            'site' => 'test-com',
+            'status' => 'new',
+            'items' => array(
+                array(
+                    'id' => 160,
+                    'initialPrice' => 100,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'quantity' => 1,
+                    'status' => 'new',
+                    'offer' => array(
+                        'id' => 1,
+                        'externalId' => 1,
+                        'xmlId' => '1',
+                        'name' => 'Test name',
+                        'vatRate' => 'none'
+                    ),
+                    'properties' => array(),
+                    'purchasePrice' => 50
+                ),
+            ),
+            'fromApi' => false,
+            'length' => 0,
+            'width' => 0,
+            'height' => 0,
+            'shipmentStore' => 'main',
+            'shipped' => false,
+            'customFields' => array(),
+            'uploadedToExternalStoreSystem' => false
+        );
+
+        $order['payments'][] = array(
+            'id' => 97,
+            'type' => 'cheque',
+            'amount' => 210
+        );
+
+        return $order;
+    }
+}
+
