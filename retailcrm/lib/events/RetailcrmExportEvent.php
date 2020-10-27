@@ -65,10 +65,20 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
         $orderBuilder->defaultLangFromConfiguration()->setApi($api);
 
         foreach ($orderRecords as $record) {
+            $orderBuilder->reset();
+
             $order = new Order($record['id_order']);
 
             $orderCart = new Cart($order->id_cart);
             $orderCustomer = new Customer($order->id_customer);
+
+            $orderBuilder->setCmsOrder($order);
+
+            if (!empty($orderCart->id)) {
+                $orderBuilder->setCmsCart($orderCart);
+            } else {
+                $orderBuilder->setCmsCart(null);
+            }
 
             if (!empty($orderCustomer->id)) {
                 $orderBuilder->setCmsCustomer($orderCustomer);
@@ -78,14 +88,6 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
                 // Current version *shouldn't* do this, but I suggest more tests for guest customers.
                 $orderBuilder->setCmsCustomer(null);
             }
-
-            if (!empty($orderCart->id)) {
-                $orderBuilder->setCmsCart($orderCart);
-            } else {
-                $orderBuilder->setCmsCart(null);
-            }
-
-            $orderBuilder->setCmsOrder($order);
 
             try {
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
