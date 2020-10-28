@@ -88,7 +88,7 @@ class RetailcrmCatalog
             $categoriesIds[] = $categoryId;
             $categories[] = array(
                 'id' => $categoryId,
-                'parentId' => self::getParentCategoryId($category['id_parent']),
+                'parentId' => self::getParentCategoryId($categoryId, $category['id_parent']),
                 'name' => $category['name'],
                 'picture' => $picture ? $protocol . $picture : ''
             );
@@ -173,7 +173,7 @@ class RetailcrmCatalog
             $width = round($product['width'], 3);
             $height = round($product['height'], 3);
             $depth = round($product['depth'], 3);
-            
+
             if (!empty($width) && !empty($height)) {
                 $dimensions = implode('/', array($width, $height, $depth));
             } else {
@@ -231,7 +231,7 @@ class RetailcrmCatalog
                     if ($offerCombination->wholesale_price > 0) {
                         $offerPurchasePrice = round($offerCombination->wholesale_price, 2);
                     } else {
-                        $offerPurchasePrice = $purchasePrice; 
+                        $offerPurchasePrice = $purchasePrice;
                     }
 
                     if (!empty($offerCombination->reference)) {
@@ -295,7 +295,7 @@ class RetailcrmCatalog
                     'vendor' => $vendor,
                     'article' => $article,
                     'weight' => $weight,
-                    'dimensions' => $dimensions                
+                    'dimensions' => $dimensions
                 );
 
                 $items[] = $item;
@@ -336,16 +336,21 @@ class RetailcrmCatalog
     /**
      * Returns active parent category
      *
+     * @param int $categoryId
      * @param int $parentId
      *
      * @return null
      */
-    private static function getParentCategoryId($parentId)
+    private static function getParentCategoryId($categoryId, $parentId)
     {
         $home = Configuration::get('PS_HOME_CATEGORY');
 
         if (empty($parentId)) {
-            return $home;
+            return null;
+        }
+
+        if ($categoryId == $home) {
+            return null;
         }
 
         if ($parentId == $home) {
