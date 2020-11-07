@@ -61,6 +61,12 @@ class RetailcrmAutoloader
     protected static $pathTop;
 
     /**
+     * The top level directory where recursion for custom classes will begin.
+     *
+     */
+    protected static $pathTopCustom;
+
+    /**
      * Autoload function for registration with spl_autoload_register
      *
      * Looks recursively through project directory and loads class files based on
@@ -70,6 +76,21 @@ class RetailcrmAutoloader
      */
     public static function loader($className)
     {
+        if (file_exists(self::$pathTopCustom) && is_dir(self::$pathTopCustom)) {
+            $directory = new RecursiveDirectoryIterator(self::$pathTopCustom);
+            $fileIterator = new RecursiveIteratorIterator($directory);
+            $filename = $className . self::$fileExt;
+
+            foreach ($fileIterator as $file) {
+                if (Tools::strtolower($file->getFilename()) === Tools::strtolower($filename)
+                    && $file->isReadable()
+                    && !class_exists($className)
+                ) {
+                    include_once $file->getPathname();
+                }
+            }
+        }
+
         $directory = new RecursiveDirectoryIterator(self::$pathTop);
         $fileIterator = new RecursiveIteratorIterator($directory);
         $filename = $className . self::$fileExt;
@@ -104,8 +125,20 @@ class RetailcrmAutoloader
     {
         self::$pathTop = $path;
     }
+
+    /**
+     * Sets the $pathTopCustom property
+     *
+     * @param string $path The path representing the top level where recursion for custom
+     *                     classes should begin. Defaults to 'modules/retailcrm_custom/classes'.
+     */
+    public static function setPathCustom($path)
+    {
+        self::$pathTopCustom = $path;
+    }
 }
 
 RetailcrmAutoloader::setPath(realpath(dirname(__FILE__)));
+RetailcrmAutoloader::setPathCustom(realpath(_PS_MODULE_DIR_ . '/retailcrm_custom/classes'));
 RetailcrmAutoloader::setFileExt('.php');
 spl_autoload_register('RetailcrmAutoloader::loader');
