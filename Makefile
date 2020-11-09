@@ -19,7 +19,7 @@ composer: clone_prestashop
 ifeq ($(COMPOSER_IN_TESTS),1)
 	@cd $(PRESTASHOP_DIR)/tests && composer install
 else
-	@cd $(PRESTASHOP_DIR) && composer install --prefer-dist --no-interaction --no-progress
+	@cd $(PRESTASHOP_DIR) && php -r "copy('https://getcomposer.org/download/1.10.17/composer.phar', 'composer.phar');" && php composer.phar install --prefer-dist --no-interaction --no-progress
 endif
 
 clone_prestashop:
@@ -52,6 +52,6 @@ test:
 ifeq ($(COMPOSER_IN_TESTS),1)
 	phpunit -c phpunit.xml.dist
 else
-	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
+	cd $(PRESTASHOP_DIR) && php composer.phar run-script create-test-db --timeout=0
 	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
 endif
