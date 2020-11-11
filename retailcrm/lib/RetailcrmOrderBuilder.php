@@ -197,6 +197,24 @@ class RetailcrmOrderBuilder
     }
 
     /**
+     * Clear object
+     *
+     * @return mixed
+     */
+    public function reset()
+    {
+        $this->cmsOrder = null;
+        $this->cmsCart = null;
+        $this->cmsCustomer = null;
+        $this->invoiceAddress = null;
+        $this->deliveryAddress = null;
+        $this->createdCustomer = null;
+        $this->corporateCompanyExtractCache = null;
+
+        return $this;
+    }
+
+    /**
      * Returns order with prepared customer data. Customer is created if it's not exist, shouldn't be called to just
      * build order.
      *
