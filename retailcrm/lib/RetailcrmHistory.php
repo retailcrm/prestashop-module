@@ -87,34 +87,39 @@ class RetailcrmHistory
                 $customerBuilder->setDataCrm($customerHistory);
 
                 if (isset($customerHistory['externalId'])) {
+
                     $customerData = self::$api->customersGet($customerHistory['externalId'], 'externalId');
-                    $foundCustomer = new Customer($customerHistory['externalId']);
-                    $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
-                    $addressBuilder = new RetailcrmCustomerAddressBuilder();
+                    if (isset($customerData['customer']) && $customerData['customer']) {
 
-                    $addressBuilder
-                        ->setCustomerAddress($customerAddress);
+                        $foundCustomer = new Customer($customerHistory['externalId']);
+                        $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
+                        $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
-                    $customerBuilder
-                        ->setCustomer($foundCustomer)
-                        ->setAddressBuilder($addressBuilder)
-                        ->setDataCrm($customerData['customer'])
-                        ->build();
+                        $addressBuilder
+                            ->setCustomerAddress($customerAddress);
 
-                    $customer = $customerBuilder->getData()->getCustomer();
-                    $address = $customerBuilder->getData()->getCustomerAddress();
+                        $customerBuilder
+                            ->setCustomer($foundCustomer)
+                            ->setAddressBuilder($addressBuilder)
+                            ->setDataCrm($customerData['customer'])
+                            ->build();
 
-                    if (self::loadInCMS($customer, 'update') === false) {
-                        continue;
-                    }
+                        $customer = $customerBuilder->getData()->getCustomer();
+                        $address = $customerBuilder->getData()->getCustomerAddress();
 
-                    if (!empty($address)) {
-                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
-
-                        if (self::loadInCMS($address, 'update') === false) {
+                        if (self::loadInCMS($customer, 'update') === false) {
                             continue;
                         }
+
+                        if (!empty($address)) {
+                            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+
+                            if (self::loadInCMS($address, 'update') === false) {
+                                continue;
+                            }
+                        }
                     }
+
                 } else {
                     $customerBuilder->build();
 

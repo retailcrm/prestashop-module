@@ -171,7 +171,6 @@ class RetailcrmHistoryHelper {
 
             if (isset($change['deleted'])
                 && $change['deleted']
-                && isset($customers[$change['customer']['id']])
             ) {
                 $customers[$change['customer']['id']]['deleted'] = true;
                 continue;
