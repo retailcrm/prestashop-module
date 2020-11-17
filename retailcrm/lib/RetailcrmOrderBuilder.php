@@ -894,14 +894,14 @@ class RetailcrmOrderBuilder
             }
         }
 
+        $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
+
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
             $order_payment = array(
                 'externalId' => $order->id . '#' . $order->reference,
                 'amount' => round($order->total_paid, 2),
                 'type' => $payment[$paymentType]
             );
-
-            $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
 
             if (((float) $crmOrder['discountManualAmount']) > ((float) $order_payment['amount'])) {
                 $crmOrder['discountManualAmount'] = $order_payment['amount'];
