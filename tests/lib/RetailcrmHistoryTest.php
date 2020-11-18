@@ -47,6 +47,19 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 )
             );
 
+        $this->apiMock->expects($this->any())
+            ->method('customersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        array(
+                            'customer' => $this->getApiCustomer()
+                        )
+                    )
+                )
+            );
+
         RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
