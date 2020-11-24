@@ -268,14 +268,17 @@ class RetailcrmOrderBuilder
 
     private function buildRegularOrder($dataFromCart = false)
     {
-        $this->createCustomerIfNotExist();
+        $customer = $this->createCustomerIfNotExist();
         $order = static::buildCrmOrder(
             $this->cmsOrder,
             $this->cmsCustomer,
             $this->cmsCart,
             false,
             false,
-            $dataFromCart
+            $dataFromCart,
+            '',
+            '',
+            isset($customer['id']) ? $customer['id'] : ''
         );
 
         return RetailcrmTools::clearArray($order);
@@ -797,8 +800,7 @@ class RetailcrmOrderBuilder
      * @param bool                        $dataFromCart          Prefer data from cart
      * @param string                      $contactPersonId       Contact person id to append
      * @param string                      $contactPersonExternalId Contact person externalId to append.
-     * @param string                      $corporateCustomerId   Corporate customer id (will be used instead of regular
-     *                                                           customer)
+     * @param string                      $customerId            Customer id
      * @param string                      $site                  Site code (for customer only)
      *
      * @return array   retailCRM order data
@@ -813,7 +815,7 @@ class RetailcrmOrderBuilder
         $dataFromCart = false,
         $contactPersonId = '',
         $contactPersonExternalId = '',
-        $corporateCustomerId = '',
+        $customerId = '',
         $site = ''
     ) {
         $statusExport = Configuration::get(RetailCRM::STATUS_EXPORT);
@@ -894,18 +896,12 @@ class RetailcrmOrderBuilder
             }
         }
 
-        $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
-
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
             $order_payment = array(
                 'externalId' => $order->id . '#' . $order->reference,
                 'amount' => round($order->total_paid, 2),
                 'type' => $payment[$paymentType]
             );
-
-            if (((float) $crmOrder['discountManualAmount']) > ((float) $order_payment['amount'])) {
-                $crmOrder['discountManualAmount'] = $order_payment['amount'];
-            }
         }
 
         if (isset($order_payment)) {
@@ -937,12 +933,23 @@ class RetailcrmOrderBuilder
             $crmOrder['delivery']['code'] = $delivery[$idCarrier];
         }
 
+        if(isset($totalShipping) && $order->total_discounts > $order->total_products_wt ) {
+            $totalShipping  -= $order->total_discounts - $order->total_products_wt;
+            $crmOrder['discountManualAmount'] = round($order->total_products_wt, 2);
+        } else {
+            $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
+        }
+
         if (isset($totalShipping) && ((int)$totalShipping) > 0) {
             $crmOrder['delivery']['cost'] = round($totalShipping, 2);
+        } else {
+            $crmOrder['delivery']['cost'] = 0.00;
         }
 
         if (isset($totalShippingWithoutTax) && $totalShippingWithoutTax > 0) {
             $crmOrder['delivery']['netCost'] = round($totalShippingWithoutTax, 2);
+        } else {
+            $crmOrder['delivery']['netCost'] = 0.00;
         }
 
         $comment = $order->getFirstMessage();
@@ -1039,10 +1046,8 @@ class RetailcrmOrderBuilder
         }
 
         if ($order->id_customer) {
-            if (empty($corporateCustomerId)) {
-                $crmOrder['customer']['externalId'] = $order->id_customer;
-            } else {
-                $crmOrder['customer']['id'] = $corporateCustomerId;
+            if (!empty($customerId)) {
+                $crmOrder['customer']['id'] = $customerId;
             }
 
             if (!empty($contactPersonExternalId)) {
