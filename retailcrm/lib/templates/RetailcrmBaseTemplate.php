@@ -47,12 +47,12 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
                 break;
             case 'es':
                 $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://retailcrm.es/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
+                $registerUrl = 'https://calendly.com/retailcrm_es/15min';
                 $supportEmail = 'support@retailcrm.es';
                 break;
             default:
                 $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://retailcrm.pro/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
+                $registerUrl = 'https://calendly.com/retailcrm_es/15min';
                 $supportEmail = 'support@retailcrm.pro';
                 break;
         }
