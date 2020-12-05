@@ -221,6 +221,8 @@ class RetailcrmJobManager
      */
     private static function getLastRuns()
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         $lastRuns = json_decode((string)Configuration::get(self::LAST_RUN_NAME), true);
 
         if (json_last_error() != JSON_ERROR_NONE) {
@@ -249,6 +251,8 @@ class RetailcrmJobManager
      */
     private static function setLastRuns($lastRuns = array())
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         $now = new DateTime();
 
         if (!is_array($lastRuns)) {
@@ -281,7 +285,7 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false, $cliMode = false)
+    public static function runJob($job, $once = false, $cliMode = false, $shopId = null)
     {
         $jobName = self::escapeJobName($job);
         $jobFile = implode(
@@ -294,7 +298,7 @@ class RetailcrmJobManager
         }
 
         try {
-            return static::execHere($jobName, $jobFile, $once, $cliMode);
+            return static::execHere($jobName, $jobFile, $once, $cliMode, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
@@ -329,7 +333,9 @@ class RetailcrmJobManager
      */
     public static function setCurrentJob($job)
     {
-        return (bool) Configuration::updateValue(self::CURRENT_TASK, $job);
+        Shop::setContext(Shop::CONTEXT_ALL);
+
+        return (bool)Configuration::updateValue(self::CURRENT_TASK, $job);
     }
 
     /**
@@ -339,7 +345,9 @@ class RetailcrmJobManager
      */
     public static function getCurrentJob()
     {
-        return (string) Configuration::get(self::CURRENT_TASK);
+        Shop::setContext(Shop::CONTEXT_ALL);
+
+        return (string)Configuration::get(self::CURRENT_TASK);
     }
 
     /**
@@ -351,6 +359,8 @@ class RetailcrmJobManager
      */
     public static function clearCurrentJob($job)
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         if (is_null($job) || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK);
         }
@@ -366,6 +376,8 @@ class RetailcrmJobManager
      */
     public static function reset()
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         $result = Configuration::deleteByName(self::CURRENT_TASK);
         $result = $result && Configuration::deleteByName(self::LAST_RUN_NAME);
 
@@ -470,7 +482,7 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false)
+    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $shopId = null)
     {
         set_time_limit(static::getTimeLimit());
 
@@ -513,6 +525,7 @@ class RetailcrmJobManager
         }
 
         $job->setCliMode($cliMode);
+        $job->setShopId($shopId);
 
         self::registerShutdownHandler();
 
@@ -578,6 +591,8 @@ class RetailcrmJobManager
      */
     private static function isLocked()
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         $inProcess = (bool)Configuration::get(self::IN_PROGRESS_NAME);
         $lastRan = static::getLastRun();
         $lastRanSeconds = $lastRan->format('U');
@@ -618,6 +633,8 @@ class RetailcrmJobManager
      */
     private static function unlock()
     {
+        Shop::setContext(Shop::CONTEXT_ALL);
+
         RetailcrmLogger::writeDebug(__METHOD__, 'Removing lock...');
         Configuration::updateValue(self::IN_PROGRESS_NAME, false);
         RetailcrmLogger::writeDebug(__METHOD__, 'Lock removed.');

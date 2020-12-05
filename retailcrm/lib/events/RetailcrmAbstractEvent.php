@@ -41,6 +41,7 @@ require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     private $cliMode;
+    private $shopId;
 
     /**
      * @inheritDoc
@@ -66,6 +67,17 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
     }
 
     /**
+     * Sets context shop id.
+     *
+     * @param string|int|null $shopId
+     */
+    public function setShopId($shopId = null)
+    {
+        if (!is_null($shopId))
+            $this->shopId = intval($shopId);
+    }
+
+    /**
      * Returns true if current job is running now
      *
      * @return bool
@@ -88,5 +100,42 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
         }
 
         return RetailcrmJobManager::setCurrentJob($this->getName());
+    }
+
+    /**
+     * Returns array of active shops or false.
+     *
+     * @return array|false
+     */
+    protected function getShops()
+    {
+        $shops = Shop::getShops();
+
+        if ($this->shopId > 0) {
+            if (isset($shops[$this->shopId])) {
+                RetailcrmLogger::writeDebug(
+                    __METHOD__,
+                    sprintf(
+                        "Running job for shop %s (%s).",
+                        $shops[$this->shopId]['name'],
+                        $this->shopId
+                    )
+                );
+
+                return [$shops[$this->shopId]];
+            } else {
+                RetailcrmLogger::writeDebug(
+                    __METHOD__,
+                    sprintf(
+                        'Shop with id=%s not found.',
+                        $this->shopId
+                    )
+                );
+
+                return false;
+            }
+        }
+
+        return $shops;
     }
 }

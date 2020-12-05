@@ -51,28 +51,37 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
 
         $this->setRunning();
 
-        if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
-            RetailcrmLogger::writeDebug(
-                'RetailcrmInventoriesEvent',
-                'Balances receiving is not enabled, skipping...'
-            );
+        $shops = $this->getShops();
 
+        if(!$shops) {
             return true;
         }
 
-        $apiUrl = Configuration::get(RetailCRM::API_URL);
-        $apiKey = Configuration::get(RetailCRM::API_KEY);
+        foreach ($shops as $shop) {
+            RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
-        if (!empty($apiUrl) && !empty($apiKey)) {
-            RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
-        } else {
-            RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
+            if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
+                RetailcrmLogger::writeDebug(
+                    'RetailcrmInventoriesEvent',
+                    'Balances receiving is not enabled, skipping...'
+                );
 
-            return true;
+                continue;
+            }
+
+            $apiUrl = Configuration::get(RetailCRM::API_URL);
+            $apiKey = Configuration::get(RetailCRM::API_KEY);
+
+            if (!empty($apiUrl) && !empty($apiKey)) {
+                RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
+            } else {
+                RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
+
+                continue;
+            }
+
+            RetailcrmInventories::loadStocks();
         }
-
-        RetailcrmInventories::loadStocks();
-
         return true;
     }
 

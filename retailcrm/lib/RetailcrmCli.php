@@ -98,9 +98,10 @@ class RetailcrmCli
             RetailcrmLogger::output('WARNING: cannot handle signals properly, force stop can cause problems!');
         }
 
-        $shortopts = "j:";
-        $longopts  = array(
+        $shortopts = "j:s:";
+        $longopts = array(
             "job:",
+            "shop:",
             "set-web-jobs:",
             "query-web-jobs",
             "run-jobs",
@@ -110,6 +111,7 @@ class RetailcrmCli
 
         $options = getopt($shortopts, $longopts);
         $jobName = isset($options['j']) ? $options['j'] : (isset($options['job']) ? $options['job'] : null);
+        $shopId = isset($options['s']) ? $options['s'] : (isset($options['shop']) ? $options['shop'] : null);
 
         if (isset($options['reset-job-manager'])) {
             $this->resetJobManager();
@@ -125,7 +127,7 @@ class RetailcrmCli
             $this->help();
         } else {
             $this->setCleanupOnShutdown();
-            $this->runJob($jobName);
+            $this->runJob($jobName, $shopId);
         }
     }
 
@@ -154,10 +156,10 @@ class RetailcrmCli
      *
      * @param string $jobName
      */
-    private function runJob($jobName)
+    private function runJob($jobName, $shopId)
     {
         try {
-            $result = RetailcrmJobManager::runJob($jobName, true, true);
+            $result = RetailcrmJobManager::runJob($jobName, true, true, $shopId);
             RetailcrmLogger::output(sprintf(
                 'Job %s was executed, result: %s',
                 $jobName,
@@ -212,6 +214,15 @@ class RetailcrmCli
         RetailcrmLogger::output(sprintf('> php %s --run-jobs - Run default jobs routine', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --set-web-jobs true / false - Enable or disable web jobs', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --query-web-jobs - Check web jobs status', $this->cliPath));
+        RetailcrmLogger::output();
+        RetailcrmLogger::output(
+            "NOTICE: If you have MultiShop feature enabled, you can additionally " .
+            "specify shop id when manually running job: "
+        );
+        RetailcrmLogger::output("At default jobs are running for all active shops alternately.");
+        RetailcrmLogger::output();
+        RetailcrmLogger::output(sprintf('> php %s -j <job name> -s <shop id> - Runs provided job for specified shop', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --job <job name> --shop <shop id> - Runs provided job for specified shop', $this->cliPath));
         RetailcrmLogger::output();
         RetailcrmLogger::output(
             "WARNING: Commands below are dangerous and should be used only when " .

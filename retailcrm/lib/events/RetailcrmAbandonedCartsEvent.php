@@ -51,28 +51,38 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
 
         $this->setRunning();
 
-        $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
+        $shops = $this->getShops();
 
-        if (empty($syncCartsActive)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Abandoned carts is disabled, skipping...');
-
+        if (!$shops) {
             return true;
         }
 
-        $api = RetailcrmTools::getApiClient();
+        foreach ($shops as $shop) {
+            RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
-        if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+            $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
 
-            return true;
+            if (empty($syncCartsActive)) {
+                RetailcrmLogger::writeCaller(__METHOD__, 'Abandoned carts is disabled, skipping...');
+
+                continue;
+            }
+
+            $api = RetailcrmTools::getApiClient();
+
+            if (empty($api)) {
+                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+
+                continue;
+            }
+
+            RetailcrmCartUploader::init();
+            RetailcrmCartUploader::$api = $api;
+            RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
+            RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
+            RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
+            RetailcrmCartUploader::run();
         }
-
-        RetailcrmCartUploader::init();
-        RetailcrmCartUploader::$api = $api;
-        RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
-        RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
-        RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
-        RetailcrmCartUploader::run();
 
         return true;
     }

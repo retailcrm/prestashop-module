@@ -153,6 +153,10 @@ class RetailCRM extends Module
 
     public function install()
     {
+        if (Shop::isFeatureActive()) {
+            Shop::setContext(Shop::CONTEXT_ALL);
+        }
+
         return (
             parent::install() &&
             $this->registerHook('newOrder') &&

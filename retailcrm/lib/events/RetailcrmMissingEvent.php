@@ -51,7 +51,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
         $this->setRunning();
 
-        $shortopts = 'o:';
+        $shortopts = 'j:o:';
         $options = getopt($shortopts);
 
         if (!isset($options['o'])) {
@@ -59,6 +59,9 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
             return true;
         }
+
+        $orderInstance = new Order($options['o']);
+        RetailcrmTools::setShopContext($orderInstance->id_shop);
 
         $apiUrl = Configuration::get(RetailCRM::API_URL);
         $apiKey = Configuration::get(RetailCRM::API_KEY);
@@ -74,8 +77,6 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
         $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
         $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
-
-        $orderInstance = new Order($options['o']);
 
         $order = array(
             'externalId' => $orderInstance->id,
