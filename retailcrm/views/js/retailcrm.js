@@ -49,6 +49,8 @@ $(function(){
         },
         selects: {
             init: function () {
+                var _this = this;
+
                 try {
                     $('.jq-select').SumoSelect();
                     $('li.opt').each((_, el) => {
@@ -58,9 +60,42 @@ $(function(){
                             $(el).addClass('disabled');
                         }
                     });
+
+                    // auto disabled selected options
+                    _this.update();
+                    $(document).on('change', '.jq-select', function() {
+                        _this.update();
+                    });
+
                 } catch (e) {
                     console.warn('Cannot initialize select: ' + e.message);
                 }
+            },
+            update: function() {
+
+                var selected = {};
+
+                let selects = $('.retail-tab__enabled').find('select');
+                selects.each((i, select) => {
+
+                    var value = $(select).val();
+                    if (value && value.length) {
+                        selected[i] = $('option[value="' + $(select).val() + '"]', $(select)).index();
+                    }
+                });
+
+                let values = Object.values(selected);
+
+                selects.each((i, select) => {
+                    $('option', select).each((o, option) => {
+
+                        if ($.inArray(o, values) === -1 || (typeof selected[i] !== 'undefined' && selected[i] == o)) {
+                            select.sumo.enableItem(o);
+                        } else {
+                            select.sumo.disableItem(o);
+                        }
+                    });
+                });
             }
         },
         player: {
