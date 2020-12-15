@@ -6,11 +6,11 @@
 Prestashop module
 =================
 
-Module allows integrate CMS Prestashop with [retailCRM](https://www.retailcrm.pro)
+Module allows integrate CMS Prestashop with [RetailCRM](https://www.retailcrm.pro) ([Documentation](https://docs.retailcrm.ru/Users/Integration/SiteModules/PrestaShop) page)
 
 #### Features:
 
-* Export orders to retailCRM & fetch changes back
+* Export orders to RetailCRM & fetch changes back
 * Export product catalog into [ICML](https://help.retailcrm.pro/Developers/ICML) format
 
 #### Setup
@@ -22,7 +22,7 @@ Module allows integrate CMS Prestashop with [retailCRM](https://www.retailcrm.pr
 #### Notice
 
 * This release contains an experimental feature "corporate customers". Use at your own risk.
-* This release only supports retailCRM API v5.
+* This release only supports RetailCRM API v5.
 
 #### Customization
 
