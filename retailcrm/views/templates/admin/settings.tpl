@@ -41,7 +41,7 @@
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/sumoselect-custom.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-upload.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/styles.min.css">
-<title>retailCRM</title>
+<title>RetailCRM</title>
 <div class="retail retail-wrap hidden">
     {include file='./module_messages.tpl'}
     <div class="retail-container retail-column">
@@ -59,14 +59,14 @@
             </div>
         </aside>
         <article class="retail-column__content">
-            <h1 class="retail-title retail-title_content">retailCRM</h1>
+            <h1 class="retail-title retail-title_content">RetailCRM</h1>
             <div class="retail-form retail-form_main">
                 <form class="rcrm-form-submit-trigger" action="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
                     <input type="hidden" name="submitretailcrm" value="1" />
                     <div id="rcrm_tab_connection">
                         <div class="retail-form__title">{l s='Connection Settings' mod='retailcrm'}</div>
                         <div class="retail-form__row">
-                            <input required type="text" name="{$urlName|escape:'htmlall':'UTF-8'}" value="{$url|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='retailCRM URL' mod='retailcrm'}">
+                            <input required type="text" name="{$urlName|escape:'htmlall':'UTF-8'}" value="{$url|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='RetailCRM URL' mod='retailcrm'}">
                         </div>
                         <div class="retail-form__row">
                             <input required type="text" name="{$apiKeyName|escape:'htmlall':'UTF-8'}" value="{$apiKey|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='API key' mod='retailcrm'}">
@@ -80,7 +80,7 @@
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
-                                <label for="receivebalances-active">{l s='Receive stocks from retailCRM' mod='retailcrm'}</label>
+                                <label for="receivebalances-active">{l s='Receive stocks from RetailCRM' mod='retailcrm'}</label>
                             </div>
                         </div>
                         <div class="retail-form__row">
@@ -90,7 +90,7 @@
                             </div>
                         </div><div class="retail-form__row">
                             <div class="retail-form__message-warning">
-                                <span>{l s='Activate only in case if you have enabled the option “Corporate customers” in retailCRM' mod='retailcrm'}</span>
+                                <span>{l s='Activate only in case if you have enabled the option “Corporate customers” in RetailCRM' mod='retailcrm'}</span>
                             </div>
                         </div>
                     </div>
