@@ -63,7 +63,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setCliMode($mode)
     {
-        $this->cliMode = (bool) $mode;
+        $this->cliMode = (bool)$mode;
     }
 
     /**
@@ -111,31 +111,36 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
     {
         $shops = Shop::getShops();
 
-        if ($this->shopId > 0) {
-            if (isset($shops[$this->shopId])) {
-                RetailcrmLogger::writeDebug(
-                    __METHOD__,
-                    sprintf(
-                        "Running job for shop %s (%s).",
-                        $shops[$this->shopId]['name'],
-                        $this->shopId
-                    )
-                );
+        if (Shop::isFeatureActive()) {
+            if ($this->shopId > 0) {
+                if (isset($shops[$this->shopId])) {
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            "Running job for shop %s (%s).",
+                            $shops[$this->shopId]['name'],
+                            $this->shopId
+                        )
+                    );
 
-                return [$shops[$this->shopId]];
-            } else {
-                RetailcrmLogger::writeDebug(
-                    __METHOD__,
-                    sprintf(
-                        'Shop with id=%s not found.',
-                        $this->shopId
-                    )
-                );
+                    return [$shops[$this->shopId]];
+                } else {
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            'Shop with id=%s not found.',
+                            $this->shopId
+                        )
+                    );
 
-                return false;
+                    return false;
+                }
             }
-        }
 
-        return $shops;
+            return $shops;
+        } else {
+
+            return [$shops[Shop::getContextShopID()]];
+        }
     }
 }
