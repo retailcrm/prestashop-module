@@ -132,208 +132,206 @@ class RetailcrmCatalog
         $start = 0;
         $count = self::getProductsCount($id_lang);
 
-        if ($count == 0)
-            return [];
+        if ($count > 0)
+            do {
+                $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
 
-        do {
-            $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
+                foreach ($products as $product) {
+                    $category = $product['id_category_default'];
 
-            foreach ($products as $product) {
-                $category = $product['id_category_default'];
-
-                if (!in_array($category, $categoriesIds)) {
-                    continue;
-                }
-
-                $currentProductCategories = Product::getProductCategories($product['id_product']);
-                $categoriesLeft = array_filter(
-                    $currentProductCategories,
-                    function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
-                        if ($val == $homeCategory) {
-                            return false;
-                        }
-
-                        if (in_array($val, $inactiveCategories)) {
-                            return false;
-                        }
-
-                        return in_array($val, $categoriesIds);
+                    if (!in_array($category, $categoriesIds)) {
+                        continue;
                     }
-                );
 
-                if (empty($categoriesLeft)) {
-                    continue;
-                }
-
-                if ($this->version == "1.3") {
-                    $available_for_order = $product['active'] && $product['quantity'];
-                } else {
-                    $available_for_order = $product['active'] && $product['available_for_order'];
-                }
-
-                $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
-                $url = $this->link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
-
-                if (!empty($product['wholesale_price'])) {
-                    $purchasePrice = round($product['wholesale_price'], 2);
-                } else {
-                    $purchasePrice = null;
-                }
-
-                $price = !empty($product['rate'])
-                    ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
-                    : round($product['price'], 2);
-
-                if (!empty($product['manufacturer_name'])) {
-                    $vendor = $product['manufacturer_name'];
-                } else {
-                    $vendor = null;
-                }
-
-                if (!empty($product['reference'])) {
-                    $article = htmlspecialchars($product['reference']);
-                } else {
-                    $article = null;
-                }
-
-                $weight = round($product['weight'], 2);
-                if ($weight === 0.0) {
-                    $weight = null;
-                }
-
-                $width = round($product['width'], 3);
-                $height = round($product['height'], 3);
-                $depth = round($product['depth'], 3);
-
-                if ($width !== 0.0 && $height !== 0.0) {
-                    $dimensions = implode('/', array($width, $height, $depth));
-                } else {
-                    $dimensions = null;
-                }
-
-                $offers = Product::getProductAttributesIds($product['id_product']);
-
-                if (!empty($offers)) {
-                    $productForCombination = new Product($product['id_product']);
-
-                    foreach ($offers as $offer) {
-                        $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute'], $id_lang);
-
-                        if (!empty($combinations)) {
-                            foreach ($combinations as $combination) {
-                                $arSet = array(
-                                    'group_name' => $combination['group_name'],
-                                    'attribute' => $combination['attribute_name'],
-                                );
-
-                                $arComb[] = $arSet;
+                    $currentProductCategories = Product::getProductCategories($product['id_product']);
+                    $categoriesLeft = array_filter(
+                        $currentProductCategories,
+                        function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
+                            if ($val == $homeCategory) {
+                                return false;
                             }
+
+                            if (in_array($val, $inactiveCategories)) {
+                                return false;
+                            }
+
+                            return in_array($val, $categoriesIds);
                         }
+                    );
+
+                    if (empty($categoriesLeft)) {
+                        continue;
+                    }
+
+                    if ($this->version == "1.3") {
+                        $available_for_order = $product['active'] && $product['quantity'];
+                    } else {
+                        $available_for_order = $product['active'] && $product['available_for_order'];
+                    }
+
+                    $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
+                    $url = $this->link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
+
+                    if (!empty($product['wholesale_price'])) {
+                        $purchasePrice = round($product['wholesale_price'], 2);
+                    } else {
+                        $purchasePrice = null;
+                    }
+
+                    $price = !empty($product['rate'])
+                        ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
+                        : round($product['price'], 2);
+
+                    if (!empty($product['manufacturer_name'])) {
+                        $vendor = $product['manufacturer_name'];
+                    } else {
+                        $vendor = null;
+                    }
+
+                    if (!empty($product['reference'])) {
+                        $article = htmlspecialchars($product['reference']);
+                    } else {
+                        $article = null;
+                    }
+
+                    $weight = round($product['weight'], 2);
+                    if ($weight === 0.0) {
+                        $weight = null;
+                    }
+
+                    $width = round($product['width'], 3);
+                    $height = round($product['height'], 3);
+                    $depth = round($product['depth'], 3);
+
+                    if ($width !== 0.0 && $height !== 0.0) {
+                        $dimensions = implode('/', array($width, $height, $depth));
+                    } else {
+                        $dimensions = null;
+                    }
+
+                    $offers = Product::getProductAttributesIds($product['id_product']);
+
+                    if (!empty($offers)) {
+                        $productForCombination = new Product($product['id_product']);
+
+                        foreach ($offers as $offer) {
+                            $combinations = $productForCombination->getAttributeCombinationsById($offer['id_product_attribute'], $id_lang);
+
+                            if (!empty($combinations)) {
+                                foreach ($combinations as $combination) {
+                                    $arSet = array(
+                                        'group_name' => $combination['group_name'],
+                                        'attribute' => $combination['attribute_name'],
+                                    );
+
+                                    $arComb[] = $arSet;
+                                }
+                            }
+
+                            $pictures = array();
+                            $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
+
+                            foreach ($covers as $cover) {
+                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                                $pictures[] = $picture;
+                            }
+
+                            if (!$pictures) {
+                                $image = Image::getCover($product['id_product']);
+                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $image['id_image'], 'large_default');
+                                $pictures[] = $picture;
+                            }
+
+                            if ($this->version == "1.3") {
+                                $quantity = $product['quantity'];
+                            } else {
+                                $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
+                            }
+
+                            $offerCombination = new Combination($offer['id_product_attribute']);
+
+                            $offerCombinationPrice = !empty($product['rate'])
+                                ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $product['rate'] / 100)
+                                : round($offerCombination->price, 2);
+
+                            $offerPrice = round($offerCombinationPrice, 2) + $price;
+                            $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+
+                            if ($offerCombination->wholesale_price > 0) {
+                                $offerPurchasePrice = round($offerCombination->wholesale_price, 2);
+                            } else {
+                                $offerPurchasePrice = $purchasePrice;
+                            }
+
+                            if (!empty($offerCombination->reference)) {
+                                $offerArticle = htmlspecialchars($offerCombination->reference);
+                            } else {
+                                $offerArticle = $article;
+                            }
+
+                            $item = array(
+                                'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
+                                'productId' => $product['id_product'],
+                                'productActivity' => ($available_for_order) ? 'Y' : 'N',
+                                'name' => htmlspecialchars(strip_tags(Product::getProductName($product['id_product'], $offer['id_product_attribute']))),
+                                'productName' => htmlspecialchars(strip_tags($product['name'])),
+                                'categoryId' => array($category),
+                                'picture' => $pictures,
+                                'url' => $url,
+                                'quantity' => $quantity > 0 ? $quantity : 0,
+                                'purchasePrice' => $offerPurchasePrice,
+                                'price' => round($offerPrice, 2),
+                                'vendor' => $vendor,
+                                'article' => $offerArticle,
+                                'weight' => $weight,
+                                'dimensions' => $dimensions
+                            );
+
+                            if (!empty($combinations)) {
+                                foreach ($arComb as $itemComb) {
+                                    $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
+                                }
+                            }
+
+                            yield $item;
+                        }
+                    } else {
 
                         $pictures = array();
-                        $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-
+                        $covers = Image::getImages($id_lang, $product['id_product'], null);
                         foreach ($covers as $cover) {
                             $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-                            $pictures[] = $picture;
-                        }
-
-                        if (!$pictures) {
-                            $image = Image::getCover($product['id_product']);
-                            $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $image['id_image'], 'large_default');
                             $pictures[] = $picture;
                         }
 
                         if ($this->version == "1.3") {
                             $quantity = $product['quantity'];
                         } else {
-                            $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
+                            $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product']);
                         }
 
-                        $offerCombination = new Combination($offer['id_product_attribute']);
-
-                        $offerCombinationPrice = !empty($product['rate'])
-                            ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $product['rate'] / 100)
-                            : round($offerCombination->price, 2);
-
-                        $offerPrice = round($offerCombinationPrice, 2) + $price;
-                        $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
-
-                        if ($offerCombination->wholesale_price > 0) {
-                            $offerPurchasePrice = round($offerCombination->wholesale_price, 2);
-                        } else {
-                            $offerPurchasePrice = $purchasePrice;
-                        }
-
-                        if (!empty($offerCombination->reference)) {
-                            $offerArticle = htmlspecialchars($offerCombination->reference);
-                        } else {
-                            $offerArticle = $article;
-                        }
-
-                        $item = array(
-                            'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
+                        yield array(
+                            'id' => $product['id_product'],
                             'productId' => $product['id_product'],
                             'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                            'name' => htmlspecialchars(strip_tags(Product::getProductName($product['id_product'], $offer['id_product_attribute']))),
+                            'name' => htmlspecialchars(strip_tags($product['name'])),
                             'productName' => htmlspecialchars(strip_tags($product['name'])),
                             'categoryId' => array($category),
                             'picture' => $pictures,
                             'url' => $url,
                             'quantity' => $quantity > 0 ? $quantity : 0,
-                            'purchasePrice' => $offerPurchasePrice,
-                            'price' => round($offerPrice, 2),
+                            'purchasePrice' => round($purchasePrice, 2),
+                            'price' => $price,
                             'vendor' => $vendor,
-                            'article' => $offerArticle,
+                            'article' => $article,
                             'weight' => $weight,
                             'dimensions' => $dimensions
                         );
-
-                        if (!empty($combinations)) {
-                            foreach ($arComb as $itemComb) {
-                                $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
-                            }
-                        }
-
-                        yield $item;
                     }
-                } else {
-
-                    $pictures = array();
-                    $covers = Image::getImages($id_lang, $product['id_product'], null);
-                    foreach ($covers as $cover) {
-                        $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-                        $pictures[] = $picture;
-                    }
-
-                    if ($this->version == "1.3") {
-                        $quantity = $product['quantity'];
-                    } else {
-                        $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product']);
-                    }
-
-                    yield array(
-                        'id' => $product['id_product'],
-                        'productId' => $product['id_product'],
-                        'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                        'name' => htmlspecialchars(strip_tags($product['name'])),
-                        'productName' => htmlspecialchars(strip_tags($product['name'])),
-                        'categoryId' => array($category),
-                        'picture' => $pictures,
-                        'url' => $url,
-                        'quantity' => $quantity > 0 ? $quantity : 0,
-                        'purchasePrice' => round($purchasePrice, 2),
-                        'price' => $price,
-                        'vendor' => $vendor,
-                        'article' => $article,
-                        'weight' => $weight,
-                        'dimensions' => $dimensions
-                    );
                 }
-            }
 
-            $start += $limit;
-        } while ($start < $count && count($products) > 0);
+                $start += $limit;
+            } while ($start < $count && count($products) > 0);
     }
 
     private static function getProductsCount(
