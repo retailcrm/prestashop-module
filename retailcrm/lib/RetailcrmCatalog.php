@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MIT License
  *
@@ -28,9 +29,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -129,7 +130,7 @@ class RetailcrmCatalog
 
         $limit = 2000;
         $start = 0;
-        $count = $this->getProductsCount($id_lang);
+        $count = self::getProductsCount($id_lang);
 
         if ($count == 0)
             return [];
@@ -168,7 +169,7 @@ class RetailcrmCatalog
 
                 if (!empty($offers)) {
 
-                    yield from $this->getProductOffers($product, $offers);
+                    yield from self::getProductOffers($id_lang, $product, $offers);
                 } else {
                     $crewrite = Category::getLinkRewrite($product['id_category_default'], $id_lang);
                     $url = $this->link->getProductLink($product['id_product'], $product['link_rewrite'], $crewrite);
@@ -196,7 +197,7 @@ class RetailcrmCatalog
                     }
 
                     $weight = round($product['weight'], 2);
-                    if (empty($weight)) {
+                    if ($weight === 0.0) {
                         $weight = null;
                     }
 
@@ -204,7 +205,7 @@ class RetailcrmCatalog
                     $height = round($product['height'], 3);
                     $depth = round($product['depth'], 3);
 
-                    if (!empty($width) && !empty($height)) {
+                    if ($width !== 0.0 && $height !== 0.0) {
                         $dimensions = implode('/', array($width, $height, $depth));
                     } else {
                         $dimensions = null;
@@ -249,12 +250,11 @@ class RetailcrmCatalog
         } while ($start < $count && count($products) > 0);
     }
 
-    public function getProductOffers($product, $offers)
+    private static function getProductOffers($id_lang, $product, $offers)
     {
-        $id_lang = $this->default_lang;
-        $protocol = $this->protocol;
-        $link = $this->link;
-        $version = $this->version;
+        $protocol = (Configuration::get('PS_SSL_ENABLED')) ? "https://" : "http://";
+        $link = new Link();
+        $version = substr(_PS_VERSION_, 0, 3);
 
         // todo duplicated code
         $category = $product['id_category_default'];
@@ -291,7 +291,7 @@ class RetailcrmCatalog
         }
 
         $weight = round($product['weight'], 2);
-        if (empty($weight)) {
+        if ($weight === 0.0) {
             $weight = null;
         }
 
@@ -299,7 +299,7 @@ class RetailcrmCatalog
         $height = round($product['height'], 3);
         $depth = round($product['depth'], 3);
 
-        if (!empty($width) && !empty($height)) {
+        if ($width !== 0.0 && $height !== 0.0) {
             $dimensions = implode('/', array($width, $height, $depth));
         } else {
             $dimensions = null;
@@ -390,7 +390,7 @@ class RetailcrmCatalog
         }
     }
 
-    public function getProductsCount(
+    private static function getProductsCount(
         $id_lang,
         Context $context = null
     )
