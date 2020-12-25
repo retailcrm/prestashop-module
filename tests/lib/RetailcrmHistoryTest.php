@@ -26,7 +26,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
-        $this->product = $data[1][0];
+        $this->product = $data[1]->current();
 
         Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', 2);
         Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', 'bankwire');

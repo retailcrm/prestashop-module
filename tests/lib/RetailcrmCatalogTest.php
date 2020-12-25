@@ -21,7 +21,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
         $products = $this->data[1];
 
         $this->assertNotEmpty($categories);
-        $this->assertNotEmpty($products);
+        $this->assertTrue($products->valid());
 
         foreach ($categories as $category) {
             $this->assertNotEmpty($category);
