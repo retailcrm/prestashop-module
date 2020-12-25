@@ -53,10 +53,6 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
 
         $shops = $this->getShops();
 
-        if(!$shops) {
-            return true;
-        }
-
         foreach ($shops as $shop) {
             RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
@@ -82,6 +78,7 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
 
             RetailcrmInventories::loadStocks();
         }
+
         return true;
     }
 

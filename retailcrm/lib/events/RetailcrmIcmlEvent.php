@@ -53,10 +53,6 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
 
         $shops = $this->getShops();
 
-        if(!$shops) {
-            return true;
-        }
-
         $isMultiStoreActive = Shop::isFeatureActive();
 
         foreach ($shops as $shop) {

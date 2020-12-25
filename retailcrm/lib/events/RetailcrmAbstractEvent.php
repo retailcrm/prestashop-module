@@ -133,7 +133,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
                         )
                     );
 
-                    return false;
+                    return [];
                 }
             }
 
