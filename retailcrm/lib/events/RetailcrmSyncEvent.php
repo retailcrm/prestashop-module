@@ -51,29 +51,35 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
 
         $this->setRunning();
 
-        if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
-            RetailcrmLogger::writeDebug(
-                __METHOD__,
-                'History uploads is not enabled, skipping...'
-            );
+        $shops = $this->getShops();
 
-            return true;
+        foreach ($shops as $shop) {
+            RetailcrmTools::setShopContext(intval($shop['id_shop']));
+
+            if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
+                RetailcrmLogger::writeDebug(
+                    __METHOD__,
+                    'History uploads is not enabled, skipping...'
+                );
+
+                continue;
+            }
+
+            $apiUrl = Configuration::get(RetailCRM::API_URL);
+            $apiKey = Configuration::get(RetailCRM::API_KEY);
+            RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+
+            if (!empty($apiUrl) && !empty($apiKey)) {
+                RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
+            } else {
+                RetailcrmLogger::writeCaller(__METHOD__, 'Set api key & url first');
+
+                continue;
+            }
+
+            RetailcrmHistory::customersHistory();
+            RetailcrmHistory::ordersHistory();
         }
-
-        $apiUrl = Configuration::get(RetailCRM::API_URL);
-        $apiKey = Configuration::get(RetailCRM::API_KEY);
-        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-
-        if (!empty($apiUrl) && !empty($apiKey)) {
-            RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
-        } else {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set api key & url first');
-
-            return true;
-        }
-
-        RetailcrmHistory::customersHistory();
-        RetailcrmHistory::ordersHistory();
 
         return true;
     }

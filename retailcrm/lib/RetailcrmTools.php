@@ -682,4 +682,15 @@ class RetailcrmTools
 
         return $equal;
     }
+
+    /**
+     * Change shop in the context
+     *
+     * @param $id_shop
+     */
+    public static function setShopContext($id_shop)
+    {
+        Shop::setContext(Shop::CONTEXT_SHOP, $id_shop);
+        Context::getContext()->shop = new Shop($id_shop);
+    }
 }

@@ -51,61 +51,67 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
 
         $this->setRunning();
 
-        $api = RetailcrmTools::getApiClient();
+        $shops = $this->getShops();
 
-        if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+        foreach ($shops as $shop) {
+            RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
-            return true;
-        }
+            $api = RetailcrmTools::getApiClient();
 
-        $orders = array();
-        $orderRecords = Order::getOrdersWithInformations();
-        $orderBuilder = new RetailcrmOrderBuilder();
-        $orderBuilder->defaultLangFromConfiguration()->setApi($api);
+            if (empty($api)) {
+                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
 
-        foreach ($orderRecords as $record) {
-            $orderBuilder->reset();
-
-            $order = new Order($record['id_order']);
-
-            $orderCart = new Cart($order->id_cart);
-            $orderCustomer = new Customer($order->id_customer);
-
-            $orderBuilder->setCmsOrder($order);
-
-            if (!empty($orderCart->id)) {
-                $orderBuilder->setCmsCart($orderCart);
-            } else {
-                $orderBuilder->setCmsCart(null);
+                continue;
             }
 
-            if (!empty($orderCustomer->id)) {
-                $orderBuilder->setCmsCustomer($orderCustomer);
-            } else {
-                //TODO
-                // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
-                // Current version *shouldn't* do this, but I suggest more tests for guest customers.
-                $orderBuilder->setCmsCustomer(null);
+            $orders = array();
+            $orderRecords = Order::getOrdersWithInformations();
+            $orderBuilder = new RetailcrmOrderBuilder();
+            $orderBuilder->defaultLangFromConfiguration()->setApi($api);
+
+            foreach ($orderRecords as $record) {
+                $orderBuilder->reset();
+
+                $order = new Order($record['id_order']);
+
+                $orderCart = new Cart($order->id_cart);
+                $orderCustomer = new Customer($order->id_customer);
+
+                $orderBuilder->setCmsOrder($order);
+
+                if (!empty($orderCart->id)) {
+                    $orderBuilder->setCmsCart($orderCart);
+                } else {
+                    $orderBuilder->setCmsCart(null);
+                }
+
+                if (!empty($orderCustomer->id)) {
+                    $orderBuilder->setCmsCustomer($orderCustomer);
+                } else {
+                    //TODO
+                    // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
+                    // Current version *shouldn't* do this, but I suggest more tests for guest customers.
+                    $orderBuilder->setCmsCustomer(null);
+                }
+
+                try {
+                    $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
+                } catch (\InvalidArgumentException $exception) {
+                    RetailcrmLogger::writeCaller('export', $exception->getMessage());
+                    RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                    RetailcrmLogger::output($exception->getMessage());
+                }
+
+                time_nanosleep(0, 500000000);
             }
 
-            try {
-                $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
-            } catch (\InvalidArgumentException $exception) {
-                RetailcrmLogger::writeCaller('export', $exception->getMessage());
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                RetailcrmLogger::output($exception->getMessage());
+            unset($orderRecords);
+
+            $orders = array_chunk($orders, 50);
+
+            foreach ($orders as $chunk) {
+                $api->ordersUpload($chunk);
             }
-
-            time_nanosleep(0, 500000000);
-        }
-
-        unset($orderRecords);
-
-        $orders = array_chunk($orders, 50);
-
-        foreach ($orders as $chunk) {
-            $api->ordersUpload($chunk);
         }
 
         return true;

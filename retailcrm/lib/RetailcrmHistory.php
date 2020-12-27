@@ -418,6 +418,8 @@ class RetailcrmHistory
                     $cart = new Cart();
                     $cart->id_currency = $default_currency;
                     $cart->id_lang = self::$default_lang;
+                    $cart->id_shop = Context::getContext()->shop->id;
+                    $cart->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
                     $cart->id_customer = $customer->id;
                     $cart->id_address_delivery = (int) $address->id;
                     $cart->id_address_invoice = (int) $address->id;
@@ -471,9 +473,8 @@ class RetailcrmHistory
                      * Create order
                     */
                     $newOrder = new Order();
-                    $shops = Shop::getShops();
                     $newOrder->id_shop = Context::getContext()->shop->id;
-                    $newOrder->id_shop_group = (int)$shops[Context::getContext()->shop->id]['id_shop_group'];
+                    $newOrder->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
                     $newOrder->reference = $newOrder->generateReference();
                     $newOrder->id_address_delivery = (int) $address->id;
                     $newOrder->id_address_invoice = (int) $address->id;

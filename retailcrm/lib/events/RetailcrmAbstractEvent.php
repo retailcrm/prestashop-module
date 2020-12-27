@@ -41,6 +41,7 @@ require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     private $cliMode;
+    private $shopId;
 
     /**
      * @inheritDoc
@@ -62,7 +63,18 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setCliMode($mode)
     {
-        $this->cliMode = (bool) $mode;
+        $this->cliMode = (bool)$mode;
+    }
+
+    /**
+     * Sets context shop id.
+     *
+     * @param string|int|null $shopId
+     */
+    public function setShopId($shopId = null)
+    {
+        if (!is_null($shopId))
+            $this->shopId = intval($shopId);
     }
 
     /**
@@ -88,5 +100,47 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
         }
 
         return RetailcrmJobManager::setCurrentJob($this->getName());
+    }
+
+    /**
+     * Returns array of active shops or false.
+     *
+     * @return array|false
+     */
+    protected function getShops()
+    {
+        $shops = Shop::getShops();
+
+        if (Shop::isFeatureActive()) {
+            if ($this->shopId > 0) {
+                if (isset($shops[$this->shopId])) {
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            "Running job for shop %s (%s).",
+                            $shops[$this->shopId]['name'],
+                            $this->shopId
+                        )
+                    );
+
+                    return [$shops[$this->shopId]];
+                } else {
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            'Shop with id=%s not found.',
+                            $this->shopId
+                        )
+                    );
+
+                    return [];
+                }
+            }
+
+            return $shops;
+        } else {
+
+            return [$shops[Shop::getContextShopID()]];
+        }
     }
 }

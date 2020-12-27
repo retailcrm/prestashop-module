@@ -108,6 +108,10 @@ class RetailcrmJobManager
         $current = date_create('now');
         $lastRuns = array();
 
+        if (Shop::isFeatureActive()) {
+            Shop::setContext(Shop::CONTEXT_ALL);
+        }
+
         try {
             $lastRuns = static::getLastRuns();
         } catch (Exception $exception) {
@@ -172,6 +176,10 @@ class RetailcrmJobManager
                     $lastRuns[$job] = new \DateTime('now');
                 }
             } catch (\Exception $exception) {
+                if (Shop::isFeatureActive()) {
+                    Shop::setContext(Shop::CONTEXT_ALL);
+                }
+
                 if ($exception instanceof RetailcrmJobManagerException
                     && $exception->getPrevious() instanceof \Exception
                 ) {
@@ -191,6 +199,10 @@ class RetailcrmJobManager
                 }
 
                 self::clearCurrentJob($job);
+            }
+
+            if (Shop::isFeatureActive()) {
+                Shop::setContext(Shop::CONTEXT_ALL);
             }
 
             if (isset($result) && $result) {
@@ -281,7 +293,7 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false, $cliMode = false)
+    public static function runJob($job, $once = false, $cliMode = false, $shopId = null)
     {
         $jobName = self::escapeJobName($job);
         $jobFile = implode(
@@ -294,7 +306,7 @@ class RetailcrmJobManager
         }
 
         try {
-            return static::execHere($jobName, $jobFile, $once, $cliMode);
+            return static::execHere($jobName, $jobFile, $once, $cliMode, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
@@ -329,7 +341,7 @@ class RetailcrmJobManager
      */
     public static function setCurrentJob($job)
     {
-        return (bool) Configuration::updateValue(self::CURRENT_TASK, $job);
+        return (bool)Configuration::updateValue(self::CURRENT_TASK, $job);
     }
 
     /**
@@ -339,7 +351,7 @@ class RetailcrmJobManager
      */
     public static function getCurrentJob()
     {
-        return (string) Configuration::get(self::CURRENT_TASK);
+        return (string)Configuration::get(self::CURRENT_TASK);
     }
 
     /**
@@ -470,7 +482,7 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false)
+    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $shopId = null)
     {
         set_time_limit(static::getTimeLimit());
 
@@ -513,6 +525,7 @@ class RetailcrmJobManager
         }
 
         $job->setCliMode($cliMode);
+        $job->setShopId($shopId);
 
         self::registerShutdownHandler();
 

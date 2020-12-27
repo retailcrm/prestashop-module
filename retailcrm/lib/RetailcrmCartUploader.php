@@ -358,6 +358,7 @@ class RetailcrmCartUploader
         $sql = 'SELECT c.id_cart, c.date_upd 
                 FROM ' . _DB_PREFIX_ . 'cart AS c
                 WHERE id_customer != 0 
+                ' . Shop::addSqlRestriction(false, 'c') . '
                   AND TIME_TO_SEC(TIMEDIFF(\'' . pSQL(static::$now->format('Y-m-d H:i:s'))
             . '\', date_upd)) >= ' . pSQL(static::$syncDelay) . '
                   AND c.id_cart NOT IN(SELECT id_cart from ' . _DB_PREFIX_ . 'orders);';

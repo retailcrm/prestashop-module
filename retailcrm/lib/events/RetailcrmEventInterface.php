@@ -59,4 +59,11 @@ interface RetailcrmEventInterface
      * @param bool $mode
      */
     public function setCliMode($mode);
+
+    /**
+     * Sets context shop id.
+     *
+     * @param $shopId
+     */
+    public function setShopId($shopId);
 }
