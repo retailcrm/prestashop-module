@@ -25,8 +25,9 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
 
-        $this->product1 = $data[1][0];
-        $this->product2 = $data[1][1];
+        $this->product1 = $data[1]->current();
+        $data[1]->next();
+        $this->product2 = $data[1]->current();
     }
 
     /**
