@@ -430,6 +430,10 @@ class RetailcrmJobManager
     {
         if (is_callable(self::$customShutdownHandler)) {
             call_user_func_array(self::$customShutdownHandler, array($error));
+        } else {
+            if (null !== $error) {
+                self::clearCurrentJob(null);
+            }
         }
 
         RetailcrmLogger::writeCaller(
