@@ -113,10 +113,6 @@ class RetailcrmCli
         $jobName = isset($options['j']) ? $options['j'] : (isset($options['job']) ? $options['job'] : null);
         $shopId = isset($options['s']) ? $options['s'] : (isset($options['shop']) ? $options['shop'] : null);
 
-        if (Shop::isFeatureActive()) {
-            Shop::setContext(Shop::CONTEXT_ALL);
-        }
-
         if (isset($options['reset-job-manager'])) {
             $this->resetJobManager();
         } elseif (isset($options['reset-all'])) {
@@ -170,10 +166,6 @@ class RetailcrmCli
                 $result ? 'true' : 'false'
             ));
         } catch (\Exception $exception) {
-            if (Shop::isFeatureActive()) {
-                Shop::setContext(Shop::CONTEXT_ALL);
-            }
-
             if ($exception instanceof RetailcrmJobManagerException && $exception->getPrevious() instanceof \Exception) {
                 $this->printStack($exception->getPrevious());
             } else {
@@ -181,10 +173,6 @@ class RetailcrmCli
             }
 
             self::clearCurrentJob($jobName);
-        }
-
-        if (Shop::isFeatureActive()) {
-            Shop::setContext(Shop::CONTEXT_ALL);
         }
 
         if (isset($result) && $result) {
@@ -327,7 +315,7 @@ class RetailcrmCli
      */
     public static function setCurrentJob($job)
     {
-        return (bool) Configuration::updateValue(self::CURRENT_TASK_CLI, $job);
+        return (bool) Configuration::updateGlobalValue(self::CURRENT_TASK_CLI, $job);
     }
 
     /**
@@ -337,7 +325,7 @@ class RetailcrmCli
      */
     public static function getCurrentJob()
     {
-        return (string) Configuration::get(self::CURRENT_TASK_CLI);
+        return (string) Configuration::getGlobalValue(self::CURRENT_TASK_CLI);
     }
 
     /**

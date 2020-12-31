@@ -55,6 +55,7 @@ function retailcrmCliInterruptHandler($signo)
         print_r($signo, true)
     ));
     RetailcrmCli::clearCurrentJob(null);
+    RetailcrmJobManager::clearCurrentJob(null);
     exit(1);
 }
 
