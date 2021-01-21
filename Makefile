@@ -1,6 +1,6 @@
 ROOT_DIR=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PRESTASHOP_DIR=$(ROOT_DIR)/../PrestaShop
-FILE = $(TRAVIS_BUILD_DIR)/VERSION
+FILE = $(ROOT_DIR)/VERSION
 VERSION = `cat $(FILE)`
 ARCHIVE_NAME = '/tmp/retailcrm-'$(VERSION)'.zip'
 
@@ -15,11 +15,11 @@ delete_archive:
 	rm -f /tmp/retailcrm.zip
 
 composer: clone_prestashop
-	@cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
-ifeq ($(COMPOSER_IN_TESTS),1)
-	@cd $(PRESTASHOP_DIR)/tests && composer install
+	cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
+ifeq ($(COMPOSERV1),1)
+	cd $(PRESTASHOP_DIR) && php -r "copy('https://getcomposer.org/download/1.10.17/composer.phar', 'composer.phar');" && php composer.phar install --prefer-dist --no-interaction --no-progress
 else
-	@cd $(PRESTASHOP_DIR) && php -r "copy('https://getcomposer.org/download/1.10.17/composer.phar', 'composer.phar');" && php composer.phar install --prefer-dist --no-interaction --no-progress
+	cd $(PRESTASHOP_DIR)/tests && composer install
 endif
 
 clone_prestashop:
@@ -37,21 +37,20 @@ setup_apache:
 	sudo service apache2 restart
 
 before_script: composer
-ifneq ($(COMPOSER_IN_TESTS),1)
-    ifeq ("$(wildcard $(PRESTASHOP_DIR)/tests/parameters.yml.travis)","")
-		cd $(PRESTASHOP_DIR) && cp tests/parameters.yml.travis app/config/parameters.yml
-    else
-		cd $(PRESTASHOP_DIR) && cp tests-legacy/parameters.yml.travis app/config/parameters.yml
-    endif
-	cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop
+	mkdir coverage
+ifeq ($(COMPOSERV1),1)
+	cd $(PRESTASHOP_DIR) && sed -i 's/--db_name=prestashop/--db_name=prestashop --db_user=root --db_password=root/g' travis-scripts/install-prestashop && bash travis-scripts/install-prestashop
 else
-	cd $(PRESTASHOP_DIR) && bash travis-scripts/install-prestashop.sh
+	cd $(PRESTASHOP_DIR) && sed -i 's/--db_name=prestashop/--db_name=prestashop --db_user=root --db_password=root/g' travis-scripts/install-prestashop.sh && bash travis-scripts/install-prestashop.sh
 endif
 
 test:
-ifeq ($(COMPOSER_IN_TESTS),1)
-	phpunit -c phpunit.xml.dist
-else
+ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) && php composer.phar run-script create-test-db --timeout=0
 	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
+else
+	phpunit -c phpunit.xml.dist
 endif
+
+coverage:
+	wget https://phar.phpunit.de/phpcov-2.0.2.phar && php phpcov-2.0.2.phar merge coverage/ --clover coverage.xml
