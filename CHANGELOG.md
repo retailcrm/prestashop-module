@@ -1,3 +1,6 @@
+## v3.2.2
+* GitHub actions
+
 ## v3.2.1
 * Ребрендинг RetailCRM
 
