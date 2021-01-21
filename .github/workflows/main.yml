@@ -1,0 +1,179 @@
+name: presta
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '*.*'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - php-version: '5.6'
+            branch: '1.6.1.18'
+            phpunit-version: 'phpunit:5.7.23'
+            coverage: 1
+          - php-version: '7.0'
+            branch: '1.6.1.18'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.18'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.19'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.19'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.19'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.20'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.20'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.20'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.21'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.21'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.21'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.22'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.22'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.22'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.23'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.23'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.23'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '5.6'
+            branch: '1.6.1.24'
+            phpunit-version: 'phpunit:5.7.23'
+          - php-version: '7.0'
+            branch: '1.6.1.24'
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.1'
+            branch: '1.6.1.24'
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '7.1'
+            branch: '1.7.4.0'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.2'
+            branch: '1.7.4.0'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: xdebug
+          tools: composer:v2, ${{ matrix.phpunit-version }}
+          extensions: gd, mbstring, zip, mcrypt, pdo_mysql, dom
+      - name: Start mysql service
+        run: sudo /etc/init.d/mysql start
+      - name: Status mysql service
+        run: sudo systemctl status mysql
+      - name: Install PrestaShop
+        env:
+          BRANCH: ${{ matrix.branch }}
+          COMPOSERV1: ${{ matrix.composerv1 }}
+        run: make before_script
+      - name: Run tests
+        env:
+          BRANCH: ${{ matrix.branch }}
+          COMPOSERV1: ${{ matrix.composerv1 }}
+        run: make test
+      - name: Coverage
+        env:
+          COVERAGE: ${{ matrix.coverage }}
+        if: env.COVERAGE == 1
+        run: |
+          make coverage
+          bash <(curl -s https://codecov.io/bash)
+
+
+  deploy:
+    needs: ['test']
+    if: success() && github.event_name == 'push' && github.repository_owner == 'retailcrm' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup PHP 7.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.2'
+          tools: composer:v1
+      - name: Build release
+        run: |
+          git fetch origin --unshallow --tags
+          export LAST_TAG=`git describe --abbrev=0 --tags`
+          export VERSION=`cat VERSION`
+          export ARCHIVE_NAME=retailcrm-$VERSION.ocmod.zip
+          export ARCHIVE_PATH="/tmp/$ARCHIVE_NAME"
+          export RELEASE_TAG=v$VERSION
+          export LAST_COMMIT=`git log --oneline --format=%B -n 1 HEAD | head -n 1`
+          echo RELEASE_TAG=$RELEASE_TAG >> $GITHUB_ENV
+          echo LAST_TAG=$LAST_TAG >> $GITHUB_ENV
+          echo LAST_COMMIT=$LAST_COMMIT >> $GITHUB_ENV
+          echo ARCHIVE_PATH=$ARCHIVE_PATH >> $GITHUB_ENV
+          echo ARCHIVE_NAME=$ARCHIVE_NAME >> $GITHUB_ENV
+          make build_archive
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        if: env.LAST_TAG != env.RELEASE_TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: ${{ env.RELEASE_TAG }}
+          body: ${{ env.LAST_COMMIT }}
+          draft: false
+          prerelease: false
+      - name: Deploy
+        run: make build_archive
+      - name: Cleanup
+        if: env.LAST_TAG != env.RELEASE_TAG
+        run: make delete_archive
