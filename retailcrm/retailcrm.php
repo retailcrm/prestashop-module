@@ -665,9 +665,24 @@ class RetailCRM extends Module
             return false;
         }
 
+        $externalId = false;
+
         $response = $this->api->ordersGet(RetailcrmTools::getCartOrderExternalId($params['cart']));
 
         if ($response !== false && isset($response['order'])) {
+            $externalId = RetailcrmTools::getCartOrderExternalId($params['cart']);
+        } else {
+            $order = Order::getByCartId($params['cart']->id);
+
+            $response = $this->api->ordersGet($order->id);
+            if ($response !== false && isset($response['order'])) {
+                $externalId = $order->id;
+            }
+        }
+
+        $status = (round($params['paymentCC']->amount, 2) > 0 ? 'paid' : null);
+
+        if ($externalId !== false) {
             $orderCRM = $response['order'];
 
             if ($orderCRM && $orderCRM['payments']) {
@@ -676,24 +691,22 @@ class RetailCRM extends Module
                         $updatePayment = $orderPayment;
                         $updatePayment['amount'] = $params['paymentCC']->amount;
                         $updatePayment['paidAt'] = $params['paymentCC']->date_add;
-                        if ($params['paymentCC']->amount == $orderCRM['totalSumm']) {
-                            $updatePayment['status'] = 'paid';
-                        }
+                        $updatePayment['status'] = $status;
                     }
                 }
             }
 
             if (isset($updatePayment)) {
-                $this->api->ordersPaymentEdit($updatePayment);
+                $this->api->ordersPaymentEdit($updatePayment, 'id');
             } else {
                 $createPayment = array(
                     'externalId' => $params['paymentCC']->id,
                     'amount'     => $params['paymentCC']->amount,
                     'paidAt'     => $params['paymentCC']->date_add,
                     'type'       => $payment,
-                    'status'     => 'paid',
+                    'status'     => $status,
                     'order'      => array(
-                        'externalId' => RetailcrmTools::getCartOrderExternalId($params['cart']),
+                        'externalId' => $externalId,
                     ),
                 );
 

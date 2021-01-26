@@ -899,7 +899,8 @@ class RetailcrmOrderBuilder
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
             $order_payment = array(
                 'externalId' => $order->id . '#' . $order->reference,
-                'amount' => round($order->total_paid, 2),
+                'amount' => round($order->total_paid_real, 2),
+                'status' => ((round($order->total_paid_real, 2) > 0) ? 'paid' : null),
                 'type' => $payment[$paymentType]
             );
         }
@@ -940,13 +941,13 @@ class RetailcrmOrderBuilder
             $crmOrder['discountManualAmount'] = round($order->total_discounts, 2);
         }
 
-        if (isset($totalShipping) && ((int)$totalShipping) > 0) {
+        if (isset($totalShipping) && round($totalShipping, 2) > 0) {
             $crmOrder['delivery']['cost'] = round($totalShipping, 2);
         } else {
             $crmOrder['delivery']['cost'] = 0.00;
         }
 
-        if (isset($totalShippingWithoutTax) && $totalShippingWithoutTax > 0) {
+        if (isset($totalShippingWithoutTax) && round($totalShippingWithoutTax, 2) > 0) {
             $crmOrder['delivery']['netCost'] = round($totalShippingWithoutTax, 2);
         } else {
             $crmOrder['delivery']['netCost'] = 0.00;
