@@ -38,10 +38,10 @@
 $(function(){
     var Main = {
         init: function() {
+            this.selects.init();
             this.player.init();
             this.tabs.init();
             this.uploadForm.init(this.settingsTabs.init());
-            this.selects.init();
             this.popup.init();
             this.toggleBox();
             this.trimConsultant();
@@ -75,7 +75,8 @@ $(function(){
 
                 var selected = {};
 
-                let selects = $('.retail-tab__enabled').find('select');
+                let selects = $('.retail-tab__enabled')
+                    .find('select:not(#RETAILCRM_API_DELIVERY_DEFAULT, #RETAILCRM_API_PAYMENT_DEFAULT)');
                 selects.each((i, select) => {
 
                     var value = $(select).val();
@@ -130,6 +131,11 @@ $(function(){
                     '.rcrm-form-submit-trigger'
                 );
 
+                let selectsUpdate = {
+                    afterActivate: function () {
+                        Main.selects.update();
+                    }
+                };
                 let mainSubmitHide = {
                     beforeActivate: function () {
                         $('#main-submit').hide();
@@ -140,9 +146,12 @@ $(function(){
                 };
 
                 tabs.tabsCallbacks({
+                    'rcrm_tab_delivery_types': selectsUpdate,
+                    'rcrm_tab_order_statuses': selectsUpdate,
+                    'rcrm_tab_payment_types': selectsUpdate,
                     'rcrm_tab_consultant': mainSubmitHide,
                     'rcrm_tab_orders_upload': mainSubmitHide
-                })
+                });
                 tabs.initializeTabs();
 
                 return tabs;
