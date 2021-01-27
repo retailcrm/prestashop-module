@@ -47,21 +47,21 @@
     <div class="retail-container retail-column">
         <aside class="retail-column__aside">
             <div class="retail-menu">
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_connection" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_active"><span>{l s='Connection' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_delivery_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Delivery' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_order_statuses" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Order statuses' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_payment_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Payment types' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_default_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Default' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_orders_upload" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Upload orders' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
-                <a href="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_connection" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_active"><span>{l s='Connection' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_delivery_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Delivery' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_order_statuses" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Order statuses' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_payment_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Payment types' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_default_types" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Default' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_orders_upload" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Upload orders' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
             </div>
         </aside>
         <article class="retail-column__content">
             <h1 class="retail-title retail-title_content">RetailCRM</h1>
             <div class="retail-form retail-form_main">
-                <form class="rcrm-form-submit-trigger" action="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
+                <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
                     <input type="hidden" name="submitretailcrm" value="1" />
                     <div id="rcrm_tab_connection">
                         <div class="retail-form__title">{l s='Connection Settings' mod='retailcrm'}</div>
@@ -203,7 +203,7 @@
                     </div>
                 </form>
                 <div id="rcrm_tab_consultant">
-                    <form class="rcrm-form-submit-trigger" action="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" method="post">
+                    <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" method="post">
                         <input type="hidden" name="submitretailcrm" value="1" />
                         <div class="retail-form__title">{l s='Online consultant' mod='retailcrm'}</div>
                         <div class="retail-form__row">

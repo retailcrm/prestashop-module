@@ -60,7 +60,7 @@
             <a href="{$registerUrl|escape:'htmlall':'UTF-8'}" target="_black" class="btn btn_max btn_invert">{l s='Get a free demo' mod='retailcrm'}</a>
         </div>
         <div class="retail-form toggle-box" id="toggle-form">
-            <form action="{$current|escape:'htmlall':'UTF-8'}&amp;token={$token|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
+            <form action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
                 <input type="hidden" name="submitretailcrm" value="1" />
                 <div class="retail-form__title">{l s='Connection Settings' mod='retailcrm'}</div>
                 <div class="retail-form__row">
