@@ -145,7 +145,7 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
                     }
 
                     if (count($customers) == 50) {
-                        $api->ordersUpload($customers);
+                        $api->customersUpload($customers);
                         $customers = array();
 
                         time_nanosleep(0, 250000000);
@@ -154,7 +154,7 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
             }
 
             if (count($customers)) {
-                $api->ordersUpload($customers);
+                $api->customersUpload($customers);
             }
         }
 
