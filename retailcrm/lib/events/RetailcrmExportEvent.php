@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -65,7 +65,7 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
             }
 
             $orders = array();
-            $orderRecords = Order::getOrdersWithInformations();
+            $orderRecords = RetailcrmExport::getOrdersIds();
             $orderBuilder = new RetailcrmOrderBuilder();
             $orderBuilder->defaultLangFromConfiguration()->setApi($api);
 
@@ -97,20 +97,64 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
                 try {
                     $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
                 } catch (\InvalidArgumentException $exception) {
-                    RetailcrmLogger::writeCaller('export', $exception->getMessage());
+                    RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $record['id_order'], $exception->getMessage()));
                     RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
                     RetailcrmLogger::output($exception->getMessage());
                 }
 
-                time_nanosleep(0, 500000000);
+                time_nanosleep(0, 250000000);
+
+                if (count($orders) == 50) {
+                    $api->ordersUpload($orders);
+                    $orders = array();
+                }
             }
 
-            unset($orderRecords);
+            if (count($orders)) {
+                $api->ordersUpload($orders);
+            }
 
-            $orders = array_chunk($orders, 50);
+            $customers = array();
+            $customersRecords = RetailcrmExport::getCustomersIds();
 
-            foreach ($orders as $chunk) {
-                $api->ordersUpload($chunk);
+            foreach ($customersRecords as $record) {
+                $customerId = $record['id_customer'];
+                $addressId = $record['id_address'];
+
+                $cmsCustomer = new Customer($customerId);
+
+                if (Validate::isLoadedObject($cmsCustomer)) {
+                    if ($addressId) {
+                        $cmsAddress = new Address($addressId);
+
+                        $addressBuilder = new RetailcrmAddressBuilder();
+                        $address = $addressBuilder
+                            ->setAddress($cmsAddress)
+                            ->build()
+                            ->getDataArray();
+                    } else {
+                        $address = array();
+                    }
+
+                    try {
+                        $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
+                    } catch (\Exception $exception) {
+                        RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $customerId, $exception->getMessage()));
+                        RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                        RetailcrmLogger::output($exception->getMessage());
+                    }
+
+                    if (count($customers) == 50) {
+                        $api->ordersUpload($customers);
+                        $customers = array();
+
+                        time_nanosleep(0, 250000000);
+                    }
+                }
+            }
+
+            if (count($customers)) {
+                $api->ordersUpload($customers);
             }
         }
 
