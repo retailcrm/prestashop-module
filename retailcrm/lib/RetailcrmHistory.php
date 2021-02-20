@@ -1693,14 +1693,7 @@ class RetailcrmHistory
                 'initialPrice' => $item['unit_price_tax_incl'],
                 'quantity' => $item['product_quantity'],
                 'offer' => array('externalId' => $productId),
-                'productName' => $item['product_name'],
-                'properties' => (
-                (isset($item['product_quantity_refunded']) && $item['product_quantity_refunded']) ?
-                   [[
-                        'code' => 'partial-refund',
-                        'name' => 'Refund',
-                        'value' => 'Refunded (' . $item['product_quantity_refunded'] . ')'
-                    ]] : null),
+                'productName' => $item['product_name']
             );
         }
 

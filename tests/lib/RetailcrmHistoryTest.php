@@ -16,6 +16,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'customersHistory',
                     'ordersHistory',
                     'ordersGet',
+                    'ordersEdit',
                     'customersGet',
                     'customersFixExternalIds',
                     'ordersFixExternalIds',
@@ -200,6 +201,17 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 )
             );
 
+        $this->apiMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
+                    )
+                )
+            );
+
         $this->orderCreate($this->apiMock);
     }
 
@@ -225,6 +237,17 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         array(
                             'order' => $this->getApiOrderWitchCorporateCustomer()
                         )
+                    )
+                )
+            );
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrderWitchCorporateCustomer())
                     )
                 )
             );
@@ -318,6 +341,15 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 'currentPage' => 1,
                 'totalPageCount' => 1
             )
+        );
+    }
+
+    private function getEditedOrder($orderData)
+    {
+        return array(
+            'success' => true,
+            'id' => $orderData['id'],
+            'order' => $orderData
         );
     }
 
