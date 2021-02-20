@@ -137,12 +137,6 @@ class RetailcrmCatalog
                 $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
 
                 foreach ($products as $product) {
-                    $category = $product['id_category_default'];
-
-                    if (!in_array($category, $categoriesIds)) {
-                        continue;
-                    }
-
                     $currentProductCategories = Product::getProductCategories($product['id_product']);
                     $categoriesLeft = array_filter(
                         $currentProductCategories,
@@ -275,7 +269,7 @@ class RetailcrmCatalog
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
                                 'name' => htmlspecialchars(strip_tags(Product::getProductName($product['id_product'], $offer['id_product_attribute']))),
                                 'productName' => htmlspecialchars(strip_tags($product['name'])),
-                                'categoryId' => array($category),
+                                'categoryId' => $categoriesLeft,
                                 'picture' => $pictures,
                                 'url' => $url,
                                 'quantity' => $quantity > 0 ? $quantity : 0,
@@ -316,7 +310,7 @@ class RetailcrmCatalog
                             'productActivity' => ($available_for_order) ? 'Y' : 'N',
                             'name' => htmlspecialchars(strip_tags($product['name'])),
                             'productName' => htmlspecialchars(strip_tags($product['name'])),
-                            'categoryId' => array($category),
+                            'categoryId' => $categoriesLeft,
                             'picture' => $pictures,
                             'url' => $url,
                             'quantity' => $quantity > 0 ? $quantity : 0,
