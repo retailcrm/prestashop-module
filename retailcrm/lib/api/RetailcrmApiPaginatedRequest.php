@@ -158,7 +158,7 @@ class RetailcrmApiPaginatedRequest
             );
 
             if ($response instanceof RetailcrmApiResponse && $response->offsetExists($this->dataKey)) {
-                $this->data = array_merge($response[$this->dataKey]);
+                $this->data = array_merge($this->data, $response[$this->dataKey]);
                 $page = $response['pagination']['currentPage'] + 1;
             }
 
