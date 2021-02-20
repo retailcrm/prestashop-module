@@ -286,11 +286,18 @@ class RetailcrmJobManager
         $jobName = self::escapeJobName($job);
         $jobFile = implode(
             DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $jobName . '.php')
+            array(_PS_ROOT_DIR_, 'modules', 'retailcrm_custom','classes', 'lib', 'events', $jobName . '.php')
         );
 
         if (!file_exists($jobFile)) {
-            throw new \RetailcrmJobManagerException('Cannot find job', $job);
+            $jobFile = implode(
+                DIRECTORY_SEPARATOR,
+                array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $jobName . '.php')
+            );
+
+            if (!file_exists($jobFile)) {
+                throw new \RetailcrmJobManagerException('Cannot find job', $job);
+            }
         }
 
         try {
