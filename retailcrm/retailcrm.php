@@ -667,6 +667,9 @@ class RetailCRM extends Module
 
         $externalId = false;
 
+        if(empty($params['cart']))
+            return false;
+
         $response = $this->api->ordersGet(RetailcrmTools::getCartOrderExternalId($params['cart']));
 
         if ($response !== false && isset($response['order'])) {
@@ -674,9 +677,11 @@ class RetailCRM extends Module
         } else {
             $order = Order::getByCartId($params['cart']->id);
 
-            $response = $this->api->ordersGet($order->id);
-            if ($response !== false && isset($response['order'])) {
-                $externalId = $order->id;
+            if($order !== null) {
+                $response = $this->api->ordersGet($order->id);
+                if ($response !== false && isset($response['order'])) {
+                    $externalId = $order->id;
+                }
             }
         }
 
