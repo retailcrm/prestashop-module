@@ -1705,7 +1705,8 @@ class RetailcrmHistory
         }
 
         unset($orderdb);
-        self::$api->ordersEdit($upOrderItems);
+        if(isset($upOrderItems['items']))
+            self::$api->ordersEdit($upOrderItems);
     }
 }
 
