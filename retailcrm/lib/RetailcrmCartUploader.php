@@ -67,6 +67,11 @@ class RetailcrmCartUploader
     static $syncDelay;
 
     /**
+     * @var int
+     */
+    static $allowedUpdateInterval;
+
+    /**
      * @var string
      */
     static $syncStatus;
@@ -99,6 +104,7 @@ class RetailcrmCartUploader
         static::$cartsIds = array();
         static::$paymentTypes = array();
         static::$syncDelay = 0;
+        static::$allowedUpdateInterval = 86400;
         static::$syncStatus = '';
         static::$now = new \DateTime();
         static::$context = Context::getContext();
@@ -123,7 +129,7 @@ class RetailcrmCartUploader
             $cartExternalId = RetailcrmTools::getCartOrderExternalId($cart);
             $cartLastUpdateDate = null;
 
-            if (static::isGuestCart($cart) || static::isCartTooOld($cart->date_upd) || static::isCartEmpty($cart)) {
+            if (static::isGuestCart($cart) || static::isCartEmpty($cart)) {
                 continue;
             }
 
@@ -193,41 +199,6 @@ class RetailcrmCartUploader
 
         if (!empty($cart->id_guest) && $cart->id_customer == $cart->id_guest && $guestCustomer->is_guest) {
             return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns true if cart is too old to update.
-     *
-     * @param string $cartDateUpd It's $cart->date_upd
-     *
-     * @return bool
-     */
-    private static function isCartTooOld($cartDateUpd)
-    {
-        try {
-            $allowedUpdateInterval = new \DateInterval('P1D');
-            $cartLastUpdate = \DateTime::createFromFormat('Y-m-d H:i:s', $cartDateUpd);
-
-            if ($cartLastUpdate instanceof \DateTime) {
-                $cartLastUpdateDiff = $cartLastUpdate->diff(new \DateTime('now'));
-
-                // Workaround for PHP bug: https://bugs.php.net/bug.php?id=49914
-                ob_start();
-                var_dump($allowedUpdateInterval);
-                var_dump($cartLastUpdateDiff);
-                ob_clean();
-                ob_end_flush();
-
-                if ($cartLastUpdateDiff > $allowedUpdateInterval) {
-                    return true;
-                }
-            }
-        } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
-            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }
 
         return false;
@@ -357,10 +328,16 @@ class RetailcrmCartUploader
     {
         $sql = 'SELECT c.id_cart, c.date_upd 
                 FROM ' . _DB_PREFIX_ . 'cart AS c
-                WHERE id_customer != 0 
+                LEFT JOIN ' . _DB_PREFIX_ . 'customer cus
+                  ON
+                    c.id_customer = cus.id_customer
+                WHERE c.id_customer != 0 
+                  AND cus.is_guest = 0
                 ' . Shop::addSqlRestriction(false, 'c') . '
                   AND TIME_TO_SEC(TIMEDIFF(\'' . pSQL(static::$now->format('Y-m-d H:i:s'))
-            . '\', date_upd)) >= ' . pSQL(static::$syncDelay) . '
+            . '\', c.date_upd)) >= ' . pSQL(static::$syncDelay) . '
+                  AND TIME_TO_SEC(TIMEDIFF(\'' . pSQL(static::$now->format('Y-m-d H:i:s'))
+            . '\', c.date_upd)) <= ' . pSQL(static::$allowedUpdateInterval) . '
                   AND c.id_cart NOT IN(SELECT id_cart from ' . _DB_PREFIX_ . 'orders);';
         static::$cartsIds = Db::getInstance()->executeS($sql);
     }
