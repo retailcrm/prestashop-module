@@ -172,6 +172,17 @@ jobs:
           body: ${{ env.LAST_COMMIT }}
           draft: false
           prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        if: env.LAST_TAG != env.RELEASE_TAG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.ARCHIVE_PATH }}
+          asset_name: ${{ env.ARCHIVE_NAME }}
+          asset_content_type: application/zip
       - name: Deploy
         run: make build_archive
       - name: Cleanup
