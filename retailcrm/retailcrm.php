@@ -367,6 +367,10 @@ class RetailCRM extends Module
             /** @var Customer|CustomerCore|null $customer */
             $customer = isset($params['customer']) ? $params['customer'] : null;
 
+            if (empty($customer)) {
+                return false;
+            }
+
             /** @var Cart|CartCore|null $cart */
             $cart = isset($params['cart']) ? $params['cart'] : null;
 
@@ -379,62 +383,58 @@ class RetailCRM extends Module
             /** @var Address|\AddressCore|array $address */
             $address = array();
 
-            if (empty($customer)) {
-                return false;
-            }
-
-            // Necessary part if we don't want to overwrite other phone numbers.
             if (isset($customerSend['externalId'])) {
                 $customerData = $this->api->customersGet($customerSend['externalId']);
 
+                // Necessary part if we don't want to overwrite other phone numbers.
                 if ($customerData instanceof RetailcrmApiResponse
                     && $customerData->isSuccessful()
                     && $customerData->offsetExists('customer')
                 ) {
                     $customerSend['phones'] = $customerData['customer']['phones'];
                 }
-            }
 
-            // Workaround: PrestaShop will return OLD address data, before editing.
-            // In order to circumvent this we are using post data to fill new address object.
-            if (Tools::getIsset('submitAddress')
-                && Tools::getIsset('id_customer')
-                && Tools::getIsset('id_address')
-            ) {
-                $address = new Address(Tools::getValue('id_address'));
+                // Workaround: PrestaShop will return OLD address data, before editing.
+                // In order to circumvent this we are using post data to fill new address object.
+                if (Tools::getIsset('submitAddress')
+                    && Tools::getIsset('id_customer')
+                    && Tools::getIsset('id_address')
+                ) {
+                    $address = new Address(Tools::getValue('id_address'));
 
-                foreach (array_keys(Address::$definition['fields']) as $field) {
-                    if (property_exists($address, $field) && Tools::getIsset($field)) {
-                        $address->$field = Tools::getValue($field);
+                    foreach (array_keys(Address::$definition['fields']) as $field) {
+                        if (property_exists($address, $field) && Tools::getIsset($field)) {
+                            $address->$field = Tools::getValue($field);
+                        }
                     }
-                }
-            } else {
-                $addresses = $customer->getAddresses($this->default_lang);
-                $address = array_shift($addresses);
-            }
-
-            if (!empty($address)) {
-                $addressBuilder->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER);
-
-                if (is_object($address)) {
-                    $addressBuilder->setAddress($address);
                 } else {
-                    $addressBuilder->setAddressId($address['id_address']);
+                    $addresses = $customer->getAddresses($this->default_lang);
+                    $address = array_shift($addresses);
                 }
 
-                $addressBuilder->build();
-            } elseif (!empty($cart)) {
-                $addressBuilder
-                    ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
-                    ->setAddressId($cart->id_address_invoice)
-                    ->build();
+                if (!empty($address)) {
+                    $addressBuilder->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER);
+
+                    if (is_object($address)) {
+                        $addressBuilder->setAddress($address);
+                    } else {
+                        $addressBuilder->setAddressId($address['id_address']);
+                    }
+
+                    $addressBuilder->build();
+                } elseif (!empty($cart)) {
+                    $addressBuilder
+                        ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
+                        ->setAddressId($cart->id_address_invoice)
+                        ->build();
+                }
+
+                $customerSend = RetailcrmTools::mergeCustomerAddress($customerSend, $addressBuilder->getDataArray());
+
+                $this->api->customersEdit($customerSend);
+
+                return true;
             }
-
-            $customerSend = RetailcrmTools::mergeCustomerAddress($customerSend, $addressBuilder->getDataArray());
-
-            $this->api->customersEdit($customerSend);
-
-            return true;
         }
 
         return false;
