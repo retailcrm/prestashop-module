@@ -675,12 +675,16 @@ class RetailCRM extends Module
         if ($response !== false && isset($response['order'])) {
             $externalId = RetailcrmTools::getCartOrderExternalId($params['cart']);
         } else {
-            $order = Order::getByCartId($params['cart']->id);
+            if (version_compare(_PS_VERSION_, '1.7.1.0', '>=')) {
+                $id_order = (int)Order::getIdByCartId((int)$params['cart']->id);
+            } else {
+                $id_order = (int)Order::getOrderByCartId((int)$params['cart']->id);
+            }
 
-            if($order !== null) {
-                $response = $this->api->ordersGet($order->id);
+            if ($id_order > 0) {
+                $response = $this->api->ordersGet($id_order);
                 if ($response !== false && isset($response['order'])) {
-                    $externalId = $order->id;
+                    $externalId = $id_order;
                 }
             }
         }
