@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/release/retailcrm/prestashop-module.svg?logo=codecov)](https://github.com/retailcrm/prestashop-module/releases)
 [![PHP version](https://img.shields.io/badge/PHP->=5.4-blue.svg?logo=php)](https://php.net/)
 
-Prestashop module
+Prestashop module.
 =================
 
 Module allows integrate CMS Prestashop with [RetailCRM](https://www.retailcrm.pro) ([Documentation](https://docs.retailcrm.ru/Users/Integration/SiteModules/PrestaShop) page)
