@@ -117,7 +117,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.2.4';
+        $this->version = '3.2.5';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('retailCRM');
         $this->description = $this->l('Integration module for retailCRM');
