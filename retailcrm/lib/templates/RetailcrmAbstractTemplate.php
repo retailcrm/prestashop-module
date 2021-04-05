@@ -117,6 +117,12 @@ abstract class RetailcrmAbstractTemplate
             throw new \RuntimeException("Template not be blank");
         }
 
+        // set url post for forms
+        if (empty($this->smarty->getTemplateVars('url_post'))) {
+            $this->data['url_post'] = $this->smarty->getTemplateVars('current')
+                .'&token='.$this->smarty->getTemplateVars('token');
+        }
+
         $this->smarty->assign(\array_merge($this->data, array(
             'moduleErrors' => $this->errors,
             'moduleWarnings' => $this->warnings,
