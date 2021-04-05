@@ -667,8 +667,9 @@ class RetailCRM extends Module
 
         $externalId = false;
 
-        if(empty($params['cart']))
+        if (empty($params['cart'])) {
             return false;
+        }
 
         $response = $this->api->ordersGet(RetailcrmTools::getCartOrderExternalId($params['cart']));
 
