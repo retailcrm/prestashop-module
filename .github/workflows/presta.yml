@@ -98,7 +98,7 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:
           - 3306/tcp
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
@@ -115,10 +115,13 @@ jobs:
         run: sudo /etc/init.d/mysql start
       - name: Status mysql service
         run: sudo systemctl status mysql
+      - name: Test MySQL Connection
+        run: mysql -u root -h '127.0.0.1' --port ${{ job.services.mysql.ports['3306'] }} -e "show databases"
       - name: Install PrestaShop
         env:
           BRANCH: ${{ matrix.branch }}
           COMPOSERV1: ${{ matrix.composerv1 }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
         run: make before_script
       - name: Run tests
         env:
@@ -177,7 +180,7 @@ jobs:
         if: env.LAST_TAG != env.RELEASE_TAG
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ env.ARCHIVE_PATH }}
