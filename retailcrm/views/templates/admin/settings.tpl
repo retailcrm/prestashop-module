@@ -56,6 +56,7 @@
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_job_manager" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Job Manager' mod='retailcrm'}<span/></a>
             </div>
         </aside>
         <article class="retail-column__content">
@@ -215,6 +216,51 @@
                             <input type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
                         </div>
                     </form>
+                </div>
+                <div id="rcrm_tab_job_manager">
+                    <div class="retail-form__title">{l s='Job Manager' mod='retailcrm'}</div>
+                    <table class="retail-table retail-table-top">
+                        <thead>
+                            <th>{l s='Job name' mod='retailcrm'}</th>
+                            <th>{l s='Last Run' mod='retailcrm'}</th>
+                            <th>{l s='Status' mod='retailcrm'}</th>
+                            <th>{l s='Comment' mod='retailcrm'}</th>
+                        </thead>
+                        <tbody>
+                        {foreach from=$lastRunDetails key=key item=item}
+                            <tr class="retail-table__row-top">
+                                <td>{$key}</td>
+                                <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
+                                <td class="retail-table-center">
+                                    {if isset($item['success'])}
+                                        {if $item['success'] === true}
+                                            <span style="color: green;">
+                                            &#10004;
+                                            </span>
+                                        {else}
+                                            <span style="color: red;">
+                                            &#10060;
+                                            </span>
+                                        {/if}
+                                    {/if}
+                                </td>
+                                <td>
+                                    {if isset($item['error']['message'])}
+                                        <div class="retail-collapsible">
+                                            <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
+                                            <label for="error_{$key}" class="retail-collapsible__title">
+                                                <span class="retail-error-msg">{$item['error']['message']}</span>
+                                                <p class="retail-collapsible__content">
+                                                    <b>{l s='StackTrace' mod='retailcrm'}:</b><br>{$item['error']['trace']}
+                                                </p>
+                                            </label>
+                                        </div>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/foreach}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </article>

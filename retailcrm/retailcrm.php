@@ -1035,6 +1035,7 @@ class RetailCRM extends Module
             'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
             'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
             'statusExport' => (string)(Configuration::get(static::STATUS_EXPORT)),
+            'lastRunDetails' =>  json_decode(Configuration::get(RetailcrmJobManager::LAST_RUN_DETAIL_NAME), true),
             'collectorActive' => (Configuration::get(static::COLLECTOR_ACTIVE)),
             'collectorKey' => (string)(Configuration::get(static::COLLECTOR_KEY)),
             'clientId' => Configuration::get(static::CLIENT_ID),

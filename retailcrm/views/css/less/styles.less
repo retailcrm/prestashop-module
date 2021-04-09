@@ -554,4 +554,77 @@ body, html {
   .toggle-box {
     display: none;
   }
+  &-table {
+    width: 100%;
+    border: none;
+    border-radius: 20px;
+    thead {
+      th {
+        background: rgba(122, 122, 122, 0.15);
+        font-size: 16px;
+      }
+    }
+    tbody {
+      tr {
+        td {
+          border-bottom: 1px solid #ccc;
+        }
+      }
+    }
+    td, th {
+      color: #333;
+      font-size: 14px;
+      line-height: 60px;
+      padding: 4px 4px 4px 6px;
+    }
+    &__row {
+      &-top {
+          vertical-align: top;
+      }
+    }
+    &-no-wrap {
+      white-space: nowrap;
+    }
+    &-center {
+      text-align: center;
+    }
+  }
+  &-collapsible {
+    &__input {
+      display: none;
+    }
+    label&__title {
+      cursor: pointer;
+      font-weight: normal;
+      text-align: center;
+      padding: 0;
+      position: relative;
+    }
+    &__content {
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #fff;
+      border: 1px solid rgba(122,122,122,0.15);
+      position: absolute;
+      top: 20px;
+      left: 0;
+      padding: 18px;
+      margin: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      max-height: 0;
+      transition-duration: 0.2s;
+      transition-timing-function: ease-out;
+      transition-property: max-height, visibility;
+      visibility: hidden;
+    }
+    &__input:checked + &__title &__content {
+      max-height: 100vh;
+      visibility: visible;
+    }
+  }
+  &-error-msg {
+    color: red;
+  }
 }
