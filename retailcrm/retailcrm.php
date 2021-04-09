@@ -72,6 +72,12 @@ class RetailCRM extends Module
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
+    const JOBS_NAMES = [
+        'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
+        'RetailcrmIcmlEvent' => 'Icml generation',
+        'RetailcrmSyncEvent' => 'History synchronization',
+        'RetailcrmInventoriesEvent' => 'Inventories uploads'
+    ];
 
     /**
      * @var array $templateErrors
@@ -1075,7 +1081,8 @@ class RetailCRM extends Module
             'consultantScriptName' => static::CONSULTANT_SCRIPT,
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
-            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING
+            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING,
+            'jobsNames' => static::JOBS_NAMES
         );
     }
 

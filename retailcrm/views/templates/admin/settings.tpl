@@ -229,7 +229,13 @@
                         <tbody>
                         {foreach from=$lastRunDetails key=key item=item}
                             <tr class="retail-table__row-top">
-                                <td>{$key}</td>
+                                <td>
+                                    {if isset($jobsNames[$key]) }
+                                        <span title="{$key}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
+                                    {else}
+                                        {$key}
+                                    {/if}
+                                </td>
                                 <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
                                 <td class="retail-table-center">
                                     {if isset($item['success'])}
