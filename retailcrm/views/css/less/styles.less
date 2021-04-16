@@ -588,6 +588,35 @@ body, html {
     &-center {
       text-align: center;
     }
+    &-sort {
+      &__btn, &__switch {
+        cursor: pointer;
+        &:hover {
+          color: #005add;
+        }
+      }
+      &__btn {
+        float: left;
+        clear: both;
+        line-height: 15px;
+        font-size: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+        opacity: 0;
+        transition: opacity 0.2s ease-out;
+      }
+      &__asc {
+        padding-top: 15px;
+        padding-bottom: 0;
+      }
+      &__desc {
+        padding-top: 0;
+        padding-bottom: 15px;
+      }
+      & thead th:hover &__btn, & thead td:hover &__btn {
+        opacity: 1;
+      }
+    }
   }
   &-collapsible {
     &__input {
@@ -599,6 +628,14 @@ body, html {
       text-align: center;
       padding: 0;
       position: relative;
+      &:before {
+        content: '\25B6';
+        opacity: 0;
+        transition: opacity 0.2s ease-out;
+      }
+      &:hover:before {
+        opacity: 1;
+      }
     }
     &__content {
       text-align: left;
@@ -625,6 +662,8 @@ body, html {
     }
   }
   &-error-msg {
-    color: red;
+    &, &:after, &:before {
+      color: #dd2e44;
+    }
   }
 }

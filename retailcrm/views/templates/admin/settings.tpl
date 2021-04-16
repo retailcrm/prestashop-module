@@ -219,12 +219,26 @@
                 </div>
                 <div id="rcrm_tab_job_manager">
                     <div class="retail-form__title">{l s='Job Manager' mod='retailcrm'}</div>
-                    <table class="retail-table retail-table-top">
+                    <table class="retail-table retail-table-top retail-table-sort">
                         <thead>
-                            <th>{l s='Job name' mod='retailcrm'}</th>
-                            <th>{l s='Last Run' mod='retailcrm'}</th>
-                            <th>{l s='Status' mod='retailcrm'}</th>
-                            <th>{l s='Comment' mod='retailcrm'}</th>
+                            <tr>
+                                <th>
+                                    <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                    <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
+                                    <span class="retail-table-sort__switch">{l s='Job name' mod='retailcrm'}</span></th>
+                                <th>
+                                    <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                    <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
+                                    <span class="retail-table-sort__switch">{l s='Last Run' mod='retailcrm'}</span></th>
+                                <th>
+                                    <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                    <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
+                                    <span class="retail-table-sort__switch">{l s='Status' mod='retailcrm'}</span></th>
+                                <th>
+                                    <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                    <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
+                                    <span class="retail-table-sort__switch">{l s='Comment' mod='retailcrm'}</span></th>
+                            </tr>
                         </thead>
                         <tbody>
                         {foreach from=$lastRunDetails key=key item=item}
@@ -240,11 +254,11 @@
                                 <td class="retail-table-center">
                                     {if isset($item['success'])}
                                         {if $item['success'] === true}
-                                            <span style="color: green;">
+                                            <span style="color: #2e8b57;">
                                             &#10004;
                                             </span>
                                         {else}
-                                            <span style="color: red;">
+                                            <span style="color: #dd2e44;">
                                             &#10060;
                                             </span>
                                         {/if}
@@ -254,7 +268,7 @@
                                     {if isset($item['error']['message'])}
                                         <div class="retail-collapsible">
                                             <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
-                                            <label for="error_{$key}" class="retail-collapsible__title">
+                                            <label for="error_{$key}" class="retail-collapsible__title retail-error-msg">
                                                 <span class="retail-error-msg">{$item['error']['message']}</span>
                                                 <p class="retail-collapsible__content">
                                                     <b>{l s='StackTrace' mod='retailcrm'}:</b><br>{$item['error']['trace']}

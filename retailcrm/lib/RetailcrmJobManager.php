@@ -693,7 +693,7 @@ class RetailcrmJobManager
         $lastRan = static::getLastRun();
         $lastRanSeconds = $lastRan->format('U');
 
-        if (($lastRanSeconds + self::getTimeLimit()) < time()) {
+        if ($inProcess && ($lastRanSeconds + self::getTimeLimit()) < time()) {
             RetailcrmLogger::writeDebug(__METHOD__, 'Removing lock because time limit exceeded.');
             static::unlock();
 

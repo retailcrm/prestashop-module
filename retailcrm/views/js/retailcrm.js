@@ -39,6 +39,7 @@ $(function(){
     var Main = {
         init: function() {
             this.selects.init();
+            this.tableSort.init();
             this.player.init();
             this.tabs.init();
             this.uploadForm.init(this.settingsTabs.init());
@@ -97,6 +98,71 @@ $(function(){
                         }
                     });
                 });
+            }
+        },
+        tableSort: {
+            init: function () {
+                var _this = this;
+
+                $('.retail-table-sort').each((i, table) => {
+
+                    $(table).find('.retail-table-sort__switch').each((j, header) => {
+                        $(header).click((e) => {
+                            e.preventDefault();
+                            _this.sort(table, j);
+                        })
+                    })
+                    $(table).find('.retail-table-sort__asc').each((j, header) => {
+                        $(header).click((e) => {
+                            e.preventDefault();
+                            _this.sort(table, j, 'asc');
+                        })
+                    })
+                    $(table).find('.retail-table-sort__desc').each((j, header) => {
+                        $(header).click((e) => {
+                            e.preventDefault();
+                            _this.sort(table, j,'desc');
+                        })
+                    })
+
+                    $(table).find('.retail-table-sort__initial').click()
+                });
+            },
+            sort: function (table, column, direction = undefined) {
+                let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+                switching = true;
+                dir = (direction ? direction : "asc");
+                
+                while (switching) {
+                    switching = false;
+                    rows = table.rows;
+                    for (i = 1; i < (rows.length - 1); i++) {
+                        shouldSwitch = false;
+                        x = rows[i].getElementsByTagName("TD")[column];
+                        y = rows[i + 1].getElementsByTagName("TD")[column];
+                        if (dir === "asc") {
+                            if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                                shouldSwitch = true;
+                                break;
+                            }
+                        } else if (dir === "desc") {
+                            if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                                shouldSwitch = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (shouldSwitch) {
+                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                        switching = true;
+                        switchcount ++;
+                    } else {
+                        if (direction === undefined && switchcount === 0 && dir === "asc") {
+                            dir = "desc";
+                            switching = true;
+                        }
+                    }
+                }
             }
         },
         player: {
