@@ -322,7 +322,7 @@ class RetailcrmJobManager
     /**
      * Extracts jobs last runs from db
      *
-     * @return array<string, \DateTime>
+     * @return array<string, array>
      * @throws \Exception
      */
     private static function getLastRunDetails()
@@ -526,6 +526,30 @@ class RetailcrmJobManager
             call_user_func_array(self::$customShutdownHandler, array($error));
         } else {
             if (null !== $error) {
+                $job = self::getCurrentJob();
+                if(!empty($job)) {
+                    $lastRunsDetails = self::getLastRunDetails();
+
+                    $lastRunsDetails[$job] = [
+                        'success' => false,
+                        'lastRun' => new \DateTime('now'),
+                        'error' => [
+                            'message' => (isset($error['message']) ? $error['message'] : print_r($error, true)),
+                            'trace' => print_r($error, true),
+                        ],
+                    ];
+                    try {
+                        self::setLastRunDetails($lastRunsDetails);
+                    } catch (Exception $exception) {
+                        static::handleError(
+                            $exception->getFile(),
+                            $exception->getMessage(),
+                            $exception->getTraceAsString(),
+                            $job
+                        );
+                    }
+                }
+
                 self::clearCurrentJob(null);
             }
         }

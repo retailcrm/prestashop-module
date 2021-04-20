@@ -227,6 +227,11 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
+            Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
             $this->uninstallDB();
     }
 

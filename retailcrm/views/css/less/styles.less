@@ -576,11 +576,8 @@ body, html {
       font-size: 14px;
       line-height: 60px;
       padding: 4px 4px 4px 6px;
-    }
-    &__row {
-      &-top {
-          vertical-align: top;
-      }
+      max-width: 300px;
+      vertical-align: middle;
     }
     &-no-wrap {
       white-space: nowrap;
@@ -604,6 +601,9 @@ body, html {
         padding-right: 10px;
         opacity: 0;
         transition: opacity 0.2s ease-out;
+        &-wrap {
+          position: absolute;
+        }
       }
       &__asc {
         padding-top: 15px;
@@ -628,6 +628,8 @@ body, html {
       text-align: center;
       padding: 0;
       position: relative;
+      line-height: 1;
+      width: 100%;
       &:before {
         content: '\25B6';
         opacity: 0;

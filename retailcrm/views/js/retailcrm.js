@@ -105,27 +105,29 @@ $(function(){
                 var _this = this;
 
                 $('.retail-table-sort').each((i, table) => {
-
                     $(table).find('.retail-table-sort__switch').each((j, header) => {
+                        const column = $(header).closest('th,td').index();
                         $(header).click((e) => {
                             e.preventDefault();
-                            _this.sort(table, j);
+                            _this.sort(table, column);
                         })
                     })
                     $(table).find('.retail-table-sort__asc').each((j, header) => {
+                        const column = $(header).closest('th,td').index();
                         $(header).click((e) => {
                             e.preventDefault();
-                            _this.sort(table, j, 'asc');
+                            _this.sort(table, column, 'asc');
                         })
                     })
                     $(table).find('.retail-table-sort__desc').each((j, header) => {
+                        const column = $(header).closest('th,td').index();
                         $(header).click((e) => {
                             e.preventDefault();
-                            _this.sort(table, j,'desc');
+                            _this.sort(table, column, 'desc');
                         })
                     })
 
-                    $(table).find('.retail-table-sort__initial').click()
+                    $(table).find('.retail-table-sort__initial').click();
                 });
             },
             sort: function (table, column, direction = undefined) {

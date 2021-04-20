@@ -519,9 +519,8 @@ html {
   font-size: 14px;
   line-height: 60px;
   padding: 4px 4px 4px 6px;
-}
-.retail-table__row-top {
-  vertical-align: top;
+  max-width: 300px;
+  vertical-align: middle;
 }
 .retail-table-no-wrap {
   white-space: nowrap;
@@ -547,6 +546,9 @@ html {
   opacity: 0;
   transition: opacity 0.2s ease-out;
 }
+.retail-table-sort__btn-wrap {
+  position: absolute;
+}
 .retail-table-sort__asc {
   padding-top: 15px;
   padding-bottom: 0;
@@ -568,6 +570,8 @@ label.retail-collapsible__title {
   text-align: center;
   padding: 0;
   position: relative;
+  line-height: 1;
+  width: 100%;
 }
 label.retail-collapsible__title:before {
   content: '\25B6';
