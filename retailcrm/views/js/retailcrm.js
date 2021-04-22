@@ -43,6 +43,7 @@ $(function(){
             this.player.init();
             this.tabs.init();
             this.uploadForm.init(this.settingsTabs.init());
+            this.exportForm.init()
             this.popup.init();
             this.toggleBox();
             this.trimConsultant();
@@ -230,6 +231,13 @@ $(function(){
             init: function (tabController) {
                 if (!(typeof RetailcrmUploadForm === 'undefined')) {
                     new RetailcrmUploadForm(tabController);
+                }
+            }
+        },
+        exportForm: {
+            init: function () {
+                if (!(typeof RetailcrmExportForm === 'undefined')) {
+                    new RetailcrmExportForm();
                 }
             }
         },

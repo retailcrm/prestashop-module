@@ -74,6 +74,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['methodsForDefault'] = $this->module->reference->getPaymentAndDeliveryForDefault(
                 array($this->module->translate('Delivery method'), $this->module->translate('Payment type'))
             );
+            $params['exportOrdersCount'] = RetailcrmExport::getOrdersCount();
+            $params['exportCustomersCount'] = RetailcrmExport::getCustomersCount();
+            $params['exportOrdersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
+            $params['exportCustomersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
         }
 
         return $params;

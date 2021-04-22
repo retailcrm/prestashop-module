@@ -38,6 +38,35 @@
  */
 class RetailcrmExport
 {
+    const RETAILCRM_EXPORT_ORDERS_STEP_SIZE_CLI = 5000;
+    const RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_CLI = 5000;
+    const RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB = 50;
+    const RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB = 300;
+
+    /**
+     * @var \RetailcrmProxy|\RetailcrmApiClientV5
+     */
+    static $api;
+
+    /**
+     * @var integer
+     */
+    static $ordersOffset;
+
+    /**
+     * @var integer
+     */
+    static $customersOffset;
+
+    /**
+     * Initialize inner state
+     */
+    public static function init()
+    {
+        static::$api = null;
+        static::$ordersOffset = self::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_CLI;
+        static::$customersOffset = self::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_CLI;
+    }
 
     /**
      * Get total count of orders for context shop
@@ -66,19 +95,23 @@ class RetailcrmExport
     public static function getOrdersIds($start = 0, $count = null)
     {
         if (is_null($count)) {
-            $count = static::getOrdersCount();
+            $to = static::getOrdersCount();
+            $count = $to - $start;
+        } else {
+            $to = $start + $count;
         }
 
         if ($count > 0) {
-            $loadSize = 5000;
             $predefinedSql = 'SELECT o.`id_order`
                 FROM `' . _DB_PREFIX_ . 'orders` o 
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 ORDER BY o.`id_order` ASC';
 
-            while ($start <= $count) {
-                $offset = ($start + $loadSize > $count) ? $count - $start : $loadSize;
+            while ($start < $to) {
+                $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
+                if($offset <= 0)
+                    break;
 
                 $sql = $predefinedSql . '
                     LIMIT ' . (int)$start . ', ' . (int)$offset;
@@ -94,6 +127,67 @@ class RetailcrmExport
 
                 $start += $offset;
             }
+        }
+    }
+
+    /**
+     * @param int $from
+     * @param int|null $count
+     */
+    public static function exportOrders($from = 0, $count = null)
+    {
+        if (!static::validateState()) {
+            return;
+        }
+
+        $orders = array();
+        $orderRecords = static::getOrdersIds($from, $count);
+        $orderBuilder = new RetailcrmOrderBuilder();
+        $orderBuilder->defaultLangFromConfiguration()->setApi(static::$api);
+
+        foreach ($orderRecords as $record) {
+            $orderBuilder->reset();
+
+            $order = new Order($record['id_order']);
+
+            $orderCart = new Cart($order->id_cart);
+            $orderCustomer = new Customer($order->id_customer);
+
+            $orderBuilder->setCmsOrder($order);
+
+            if (!empty($orderCart->id)) {
+                $orderBuilder->setCmsCart($orderCart);
+            } else {
+                $orderBuilder->setCmsCart(null);
+            }
+
+            if (!empty($orderCustomer->id)) {
+                $orderBuilder->setCmsCustomer($orderCustomer);
+            } else {
+                //TODO
+                // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
+                // Current version *shouldn't* do this, but I suggest more tests for guest customers.
+                $orderBuilder->setCmsCustomer(null);
+            }
+
+            try {
+                $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
+            } catch (\InvalidArgumentException $exception) {
+                RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $record['id_order'], $exception->getMessage()));
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                RetailcrmLogger::output($exception->getMessage());
+            }
+
+            time_nanosleep(0, 250000000);
+
+            if (count($orders) == 50) {
+                static::$api->ordersUpload($orders);
+                $orders = array();
+            }
+        }
+
+        if (count($orders)) {
+            static::$api->ordersUpload($orders);
         }
     }
 
@@ -132,11 +226,13 @@ class RetailcrmExport
     public static function getCustomersIds($start = 0, $count = null, $withAddressId = true)
     {
         if (is_null($count)) {
-            $count = static::getCustomersCount();
+            $to = static::getCustomersCount();
+            $count = $to - $start;
+        } else {
+            $to = $start + $count;
         }
 
         if ($count > 0) {
-            $loadSize = 500;
             $predefinedSql = 'SELECT c.`id_customer`
                 ' . ($withAddressId ? ', a.`id_address`' : '') . '
                 FROM `' . _DB_PREFIX_ . 'customer` c
@@ -178,8 +274,10 @@ class RetailcrmExport
                 ORDER BY c.`id_customer` ASC';
 
 
-            while ($start <= $count) {
-                $offset = ($start + $loadSize > $count) ? $count - $start : $loadSize;
+            while ($start < $to) {
+                $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
+                if($offset <= 0)
+                    break;
 
                 $sql = $predefinedSql . '
                     LIMIT ' . (int)$start . ', ' . (int)$offset;
@@ -198,4 +296,74 @@ class RetailcrmExport
         }
     }
 
+    /**
+     * @param int $from
+     * @param int|null $count
+     */
+    public static function exportCustomers($from = 0, $count = null)
+    {
+        if (!static::validateState()) {
+            return;
+        }
+
+        $customers = array();
+        $customersRecords = RetailcrmExport::getCustomersIds($from, $count);
+
+        foreach ($customersRecords as $record) {
+            $customerId = $record['id_customer'];
+            $addressId = $record['id_address'];
+
+            $cmsCustomer = new Customer($customerId);
+
+            if (Validate::isLoadedObject($cmsCustomer)) {
+                if ($addressId) {
+                    $cmsAddress = new Address($addressId);
+
+                    $addressBuilder = new RetailcrmAddressBuilder();
+                    $address = $addressBuilder
+                        ->setAddress($cmsAddress)
+                        ->build()
+                        ->getDataArray();
+                } else {
+                    $address = array();
+                }
+
+                try {
+                    $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
+                } catch (\Exception $exception) {
+                    RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $customerId, $exception->getMessage()));
+                    RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                    RetailcrmLogger::output($exception->getMessage());
+                }
+
+                if (count($customers) == 50) {
+                    static::$api->customersUpload($customers);
+                    $customers = array();
+
+                    time_nanosleep(0, 250000000);
+                }
+            }
+        }
+
+        if (count($customers)) {
+            static::$api->customersUpload($customers);
+        }
+    }
+
+    /**
+     * Returns false if inner state is not correct
+     *
+     * @return bool
+     */
+    private static function validateState()
+    {
+        if (!static::$api ||
+            !static::$ordersOffset ||
+            !static::$customersOffset
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }
