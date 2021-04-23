@@ -72,6 +72,12 @@ class RetailCRM extends Module
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
+    const JOBS_NAMES = [
+        'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
+        'RetailcrmIcmlEvent' => 'Icml generation',
+        'RetailcrmSyncEvent' => 'History synchronization',
+        'RetailcrmInventoriesEvent' => 'Inventories uploads'
+    ];
 
     /**
      * @var array $templateErrors
@@ -221,6 +227,11 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
+            Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
             $this->uninstallDB();
     }
 
@@ -1035,6 +1046,7 @@ class RetailCRM extends Module
             'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
             'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
             'statusExport' => (string)(Configuration::get(static::STATUS_EXPORT)),
+            'lastRunDetails' =>  json_decode(Configuration::get(RetailcrmJobManager::LAST_RUN_DETAIL_NAME), true),
             'collectorActive' => (Configuration::get(static::COLLECTOR_ACTIVE)),
             'collectorKey' => (string)(Configuration::get(static::COLLECTOR_KEY)),
             'clientId' => Configuration::get(static::CLIENT_ID),
@@ -1074,7 +1086,8 @@ class RetailCRM extends Module
             'consultantScriptName' => static::CONSULTANT_SCRIPT,
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
-            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING
+            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING,
+            'jobsNames' => static::JOBS_NAMES
         );
     }
 

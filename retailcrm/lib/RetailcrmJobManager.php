@@ -58,6 +58,7 @@ if (!defined('_PS_VERSION_')) {
 class RetailcrmJobManager
 {
     const LAST_RUN_NAME = 'RETAILCRM_LAST_RUN';
+    const LAST_RUN_DETAIL_NAME = 'RETAILCRM_LAST_RUN_DETAIL';
     const IN_PROGRESS_NAME = 'RETAILCRM_JOBS_IN_PROGRESS';
     const CURRENT_TASK = 'RETAILCRM_JOB_CURRENT';
 
@@ -107,9 +108,11 @@ class RetailcrmJobManager
     {
         $current = date_create('now');
         $lastRuns = array();
+        $lastRunsDetails = array();
 
         try {
             $lastRuns = static::getLastRuns();
+            $lastRunsDetails = static::getLastRunDetails();
         } catch (Exception $exception) {
             static::handleError(
                 $exception->getFile(),
@@ -139,6 +142,24 @@ class RetailcrmJobManager
                 unset($lastRuns[$name]);
             }
         }
+
+        uasort($jobs, function ($diff1, $diff2) {
+            $date1 = new \DateTime();
+            $date2 = new \DateTime();
+
+            if (!is_null($diff1)) {
+                $date1->add($diff1);
+            }
+            if (!is_null($diff2)) {
+                $date2->add($diff2);
+            }
+
+            if ($date1 == $date2) {
+                return 0;
+            }
+
+            return ($date1 > $date2) ? -1 : 1;
+        });
 
         foreach ($jobs as $job => $diff) {
             try {
@@ -170,11 +191,27 @@ class RetailcrmJobManager
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
                     );
                     $lastRuns[$job] = new \DateTime('now');
+                    $lastRunsDetails[$job] = [
+                        'success' => true,
+                        'lastRun' =>  new \DateTime('now'),
+                        'error' => null,
+                    ];
+
+                    break;
                 }
             } catch (\Exception $exception) {
                 if ($exception instanceof RetailcrmJobManagerException
                     && $exception->getPrevious() instanceof \Exception
                 ) {
+                    $lastRunsDetails[$job] = [
+                        'success' => false,
+                        'lastRun' => new \DateTime('now'),
+                        'error' => [
+                            'message' => $exception->getPrevious()->getMessage(),
+                            'trace' => $exception->getPrevious()->getTraceAsString(),
+                        ],
+                    ];
+
                     static::handleError(
                         $exception->getPrevious()->getFile(),
                         $exception->getPrevious()->getMessage(),
@@ -182,6 +219,15 @@ class RetailcrmJobManager
                         $job
                     );
                 } else {
+                    $lastRunsDetails[$job] = [
+                        'success' => false,
+                        'lastRun' => new \DateTime('now'),
+                        'error' => [
+                            'message' => $exception->getMessage(),
+                            'trace' => $exception->getTraceAsString(),
+                        ],
+                    ];
+
                     static::handleError(
                         $exception->getFile(),
                         $exception->getMessage(),
@@ -192,14 +238,15 @@ class RetailcrmJobManager
 
                 self::clearCurrentJob($job);
             }
+        }
 
-            if (isset($result) && $result) {
-                self::clearCurrentJob($job);
-            }
+        if (isset($result) && $result) {
+            self::clearCurrentJob($job);
         }
 
         try {
             static::setLastRuns($lastRuns);
+            static::setLastRunDetails($lastRunsDetails);
         } catch (Exception $exception) {
             static::handleError(
                 $exception->getFile(),
@@ -269,6 +316,58 @@ class RetailcrmJobManager
         }
 
         Configuration::updateGlobalValue(self::LAST_RUN_NAME, (string)json_encode($lastRuns));
+    }
+
+
+    /**
+     * Extracts jobs last runs from db
+     *
+     * @return array<string, array>
+     * @throws \Exception
+     */
+    private static function getLastRunDetails()
+    {
+        $lastRuns = json_decode((string)Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            $lastRuns = array();
+        } else {
+            foreach ($lastRuns as $job => $details) {
+                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $details['lastRun']);
+
+                if ($lastRan instanceof DateTime) {
+                    $lastRuns[$job]['lastRun'] = $lastRan;
+                } else {
+                    $lastRuns[$job]['lastRun'] = null;
+                }
+            }
+        }
+
+        return (array)$lastRuns;
+    }
+
+    /**
+     * Updates jobs last runs in db
+     *
+     * @param array $lastRuns
+     *
+     * @throws \Exception
+     */
+    private static function setLastRunDetails($lastRuns = array())
+    {
+        if (!is_array($lastRuns)) {
+            $lastRuns = array();
+        }
+
+        foreach ($lastRuns as $job => $details) {
+            if ($details['lastRun'] instanceof DateTime) {
+                $lastRuns[$job]['lastRun'] = $details['lastRun']->format(DATE_RFC3339);
+            } else {
+                $lastRuns[$job]['lastRun'] = null;
+            }
+        }
+
+        Configuration::updateGlobalValue(self::LAST_RUN_DETAIL_NAME, (string)json_encode($lastRuns));
     }
 
     /**
@@ -427,6 +526,30 @@ class RetailcrmJobManager
             call_user_func_array(self::$customShutdownHandler, array($error));
         } else {
             if (null !== $error) {
+                $job = self::getCurrentJob();
+                if(!empty($job)) {
+                    $lastRunsDetails = self::getLastRunDetails();
+
+                    $lastRunsDetails[$job] = [
+                        'success' => false,
+                        'lastRun' => new \DateTime('now'),
+                        'error' => [
+                            'message' => (isset($error['message']) ? $error['message'] : print_r($error, true)),
+                            'trace' => print_r($error, true),
+                        ],
+                    ];
+                    try {
+                        self::setLastRunDetails($lastRunsDetails);
+                    } catch (Exception $exception) {
+                        static::handleError(
+                            $exception->getFile(),
+                            $exception->getMessage(),
+                            $exception->getTraceAsString(),
+                            $job
+                        );
+                    }
+                }
+
                 self::clearCurrentJob(null);
             }
         }
@@ -594,7 +717,7 @@ class RetailcrmJobManager
         $lastRan = static::getLastRun();
         $lastRanSeconds = $lastRan->format('U');
 
-        if (($lastRanSeconds + self::getTimeLimit()) < time()) {
+        if ($inProcess && ($lastRanSeconds + self::getTimeLimit()) < time()) {
             RetailcrmLogger::writeDebug(__METHOD__, 'Removing lock because time limit exceeded.');
             static::unlock();
 

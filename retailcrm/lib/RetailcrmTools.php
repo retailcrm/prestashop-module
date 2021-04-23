@@ -633,7 +633,7 @@ class RetailcrmTools
     public static function startJobManager()
     {
         RetailcrmJobManager::startJobs(array(
-            'RetailcrmAbandonedCartsEvent' => null,
+            'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M'),
             'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')

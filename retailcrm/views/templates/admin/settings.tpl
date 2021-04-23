@@ -56,6 +56,7 @@
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_job_manager" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Job Manager' mod='retailcrm'}<span/></a>
             </div>
         </aside>
         <article class="retail-column__content">
@@ -215,6 +216,65 @@
                             <input type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
                         </div>
                     </form>
+                </div>
+                <div id="rcrm_tab_job_manager">
+                    <div class="retail-form__title">{l s='Job Manager' mod='retailcrm'}</div>
+                    <table class="retail-table retail-table-sort">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <span>{l s='Job name' mod='retailcrm'}</span></th>
+                                <th>
+                                    <div class="retail-table-sort__btn-wrap">
+                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                        <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
+                                    </div>
+                                    <span class="retail-table-sort__switch">{l s='Last Run' mod='retailcrm'}</span></th>
+                                <th>
+                                    <span>{l s='Status' mod='retailcrm'}</span></th>
+                                <th>
+                                    <span>{l s='Comment' mod='retailcrm'}</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {foreach from=$lastRunDetails key=key item=item}
+                            <tr class="retail-table__row-top">
+                                <td>
+                                    {if isset($jobsNames[$key]) }
+                                        <span title="{$key}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
+                                    {else}
+                                        {$key}
+                                    {/if}
+                                </td>
+                                <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
+                                <td class="retail-table-center">
+                                    {if isset($item['success'])}
+                                        {if $item['success'] === true}
+                                            <span style="color: #2e8b57;">
+                                            &#10004;
+                                            </span>
+                                        {else}
+                                            <span style="color: #dd2e44;">
+                                            &#10060;
+                                            </span>
+                                        {/if}
+                                    {/if}
+                                </td>
+                                <td class="retail-collapsible">
+                                    {if isset($item['error']['message'])}
+                                        <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
+                                        <label for="error_{$key}" class="retail-collapsible__title retail-error-msg">
+                                            <span class="retail-error-msg">{$item['error']['message']}</span>
+                                            <p class="retail-collapsible__content">
+                                                <b>{l s='StackTrace' mod='retailcrm'}:</b><br>{$item['error']['trace']}
+                                            </p>
+                                        </label>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/foreach}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </article>
