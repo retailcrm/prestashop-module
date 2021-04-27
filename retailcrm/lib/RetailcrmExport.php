@@ -110,7 +110,7 @@ class RetailcrmExport
 
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
-                if($offset <= 0)
+                if ($offset <= 0)
                     break;
 
                 $sql = $predefinedSql . '
@@ -192,16 +192,21 @@ class RetailcrmExport
     }
 
     /**
-     * Get total count of customers without orders for context shop
+     * Get total count of customers for context shop
+     * @param bool $withOrders If set to <b>true</b>, then return total count of customers.
+     *                         If set to <b>false</b>, then return count of customers without orders
      *
      * @return int
      */
-    public static function getCustomersCount()
+    public static function getCustomersCount($withOrders = true)
     {
         $sql = 'SELECT count(c.id_customer) 
             FROM `' . _DB_PREFIX_ . 'customer` c
             WHERE 1
-            ' . Shop::addSqlRestriction(false, 'c') . '
+            ' . Shop::addSqlRestriction(false, 'c');
+
+        if (!$withOrders) {
+            $sql .= '
             AND c.id_customer not in (
                 select o.id_customer 
                 from `' . _DB_PREFIX_ . 'orders` o 
@@ -209,6 +214,7 @@ class RetailcrmExport
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 group by o.id_customer
             )';
+        }
 
         return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
@@ -218,15 +224,17 @@ class RetailcrmExport
      *
      * @param int $start Sets the LIMIT start parameter for sql query
      * @param null $count Sets the count of customers to get from database
-     * @param bool $withAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
+     * @param bool $withOrders If set to <b>true</b>, then return all customers ids.
+     *                         If set to <b>false</b>, then return ids only of customers without orders
+     * @param bool $returnAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
      *
      * @return Generator
      * @throws PrestaShopDatabaseException
      */
-    public static function getCustomersIds($start = 0, $count = null, $withAddressId = true)
+    public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
         if (is_null($count)) {
-            $to = static::getCustomersCount();
+            $to = static::getCustomersCount($withOrders);
             $count = $to - $start;
         } else {
             $to = $start + $count;
@@ -234,9 +242,9 @@ class RetailcrmExport
 
         if ($count > 0) {
             $predefinedSql = 'SELECT c.`id_customer`
-                ' . ($withAddressId ? ', a.`id_address`' : '') . '
+                ' . ($returnAddressId ? ', a.`id_address`' : '') . '
                 FROM `' . _DB_PREFIX_ . 'customer` c
-                ' . ($withAddressId ? '
+                ' . ($returnAddressId ? '
                 LEFT JOIN
                 (
                     SELECT
@@ -263,20 +271,21 @@ class RetailcrmExport
                     a.`id_customer` = c.`id_customer`
                 ' : '') . '
                 WHERE 1
-                ' . Shop::addSqlRestriction(false, 'c') . '
+                ' . Shop::addSqlRestriction(false, 'c') .
+                ($withOrders ? '' : '
                 AND c.`id_customer` not in (
                     select o.`id_customer` 
                     from `' . _DB_PREFIX_ . 'orders` o 
                     WHERE 1
                     ' . Shop::addSqlRestriction(false, 'o') . '
                     group by o.`id_customer`
-                )
+                )') . '
                 ORDER BY c.`id_customer` ASC';
 
 
             while ($start < $to) {
                 $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
-                if($offset <= 0)
+                if ($offset <= 0)
                     break;
 
                 $sql = $predefinedSql . '
@@ -307,7 +316,7 @@ class RetailcrmExport
         }
 
         $customers = array();
-        $customersRecords = RetailcrmExport::getCustomersIds($from, $count);
+        $customersRecords = RetailcrmExport::getCustomersIds($from, $count, false);
 
         foreach ($customersRecords as $record) {
             $customerId = $record['id_customer'];

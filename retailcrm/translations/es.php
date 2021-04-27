@@ -55,6 +55,7 @@ $_MODULE['<{retailcrm}prestashop>settings_30a8be02b0e6e45988617eca94301966'] = '
 $_MODULE['<{retailcrm}prestashop>settings_f4af7f6987dfee28741ce77ff2d09d46'] = 'Exportar pedidos y clientes';
 $_MODULE['<{retailcrm}prestashop>settings_06d94a1c5dfe9d54ef201d2217ca477c'] = 'Puede exportar todos los pedidos y clientes de CMS a RetailCRM presionando el botón "Exportar". Este proceso puede llevar mucho tiempo y es necesario que mantenga la pestaña abierta hasta que termine.';
 $_MODULE['<{retailcrm}prestashop>settings_7442e29d7d53e549b78d93c46b8cdcfc'] = 'Pedidos';
+$_MODULE['<{retailcrm}prestashop>settings_e6d0e1c8fc6a4fcf47869df87e04cd88'] = 'Clientes';
 $_MODULE['<{retailcrm}prestashop>settings_f8f36c02fa6f370808135c66cfc788aa'] = 'Clientes sin pedidos';
 $_MODULE['<{retailcrm}prestashop>settings_0095a9fa74d1713e43e370a7d7846224'] = 'Exportar';
 $_MODULE['<{retailcrm}prestashop>settings_4f18e3f1c9941a6ec5a38bc716c521b4'] = 'Código que necesita insertar en la web';

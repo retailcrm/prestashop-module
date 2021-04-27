@@ -197,14 +197,19 @@
                             <div class="retail-circle">
                                 <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
                                 <input type="text" name="RETAILCRM_EXPORT_ORDERS_COUNT" readonly="readonly"
-                                       class="retail-circle__content" value="{$exportOrdersCount}"/>
+                                       class="retail-circle__content" value="{$ordersCount}"/>
                                 <input type="hidden" name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"
                                        value="{$exportOrdersStepSize}"/>
                             </div>
                             <div class="retail-circle">
-                                <div class="retail-circle__title">{l s='Customers without orders' mod='retailcrm'}</div>
-                                <input type="text" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT" readonly="readonly"
-                                       class="retail-circle__content" value="{$exportCustomersCount}"/>
+                                <div class="retail-circle__title">
+                                    {l s='Customers' mod='retailcrm'}
+                                </div>
+                                <input type="text" readonly="readonly"
+                                       title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount}"
+                                       class="retail-circle__content" value="{$customersCount}"/>
+                                <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"
+                                       value="{$exportCustomersCount}"/>
                                 <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE"
                                        value="{$exportCustomersStepSize}"/>
                             </div>

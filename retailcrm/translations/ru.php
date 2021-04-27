@@ -56,6 +56,7 @@ $_MODULE['<{retailcrm}prestashop>settings_30a8be02b0e6e45988617eca94301966'] = '
 $_MODULE['<{retailcrm}prestashop>settings_f4af7f6987dfee28741ce77ff2d09d46'] = 'Экспортировать заказы и клиентов';
 $_MODULE['<{retailcrm}prestashop>settings_06d94a1c5dfe9d54ef201d2217ca477c'] = 'Вы можете экспортировать все заказы и клиентов из CMS в RetailCRM, нажав кнопку «Экспорт». Этот процесс может занять много времени, и до его завершения необходимо держать вкладку открытой.';
 $_MODULE['<{retailcrm}prestashop>settings_7442e29d7d53e549b78d93c46b8cdcfc'] = 'Заказы';
+$_MODULE['<{retailcrm}prestashop>settings_e6d0e1c8fc6a4fcf47869df87e04cd88'] = 'Клиенты';
 $_MODULE['<{retailcrm}prestashop>settings_f8f36c02fa6f370808135c66cfc788aa'] = 'Клиенты без заказов';
 $_MODULE['<{retailcrm}prestashop>settings_0095a9fa74d1713e43e370a7d7846224'] = 'Экспортировать';
 $_MODULE['<{retailcrm}prestashop>settings_9082f68bc90113d8950e4ed7fe8fa0a4'] = 'Менеджер задач';
