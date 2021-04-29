@@ -64,98 +64,10 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
                 continue;
             }
 
-            $orders = array();
-            $orderRecords = RetailcrmExport::getOrdersIds();
-            $orderBuilder = new RetailcrmOrderBuilder();
-            $orderBuilder->defaultLangFromConfiguration()->setApi($api);
-
-            foreach ($orderRecords as $record) {
-                $orderBuilder->reset();
-
-                $order = new Order($record['id_order']);
-
-                $orderCart = new Cart($order->id_cart);
-                $orderCustomer = new Customer($order->id_customer);
-
-                $orderBuilder->setCmsOrder($order);
-
-                if (!empty($orderCart->id)) {
-                    $orderBuilder->setCmsCart($orderCart);
-                } else {
-                    $orderBuilder->setCmsCart(null);
-                }
-
-                if (!empty($orderCustomer->id)) {
-                    $orderBuilder->setCmsCustomer($orderCustomer);
-                } else {
-                    //TODO
-                    // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
-                    // Current version *shouldn't* do this, but I suggest more tests for guest customers.
-                    $orderBuilder->setCmsCustomer(null);
-                }
-
-                try {
-                    $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
-                } catch (\InvalidArgumentException $exception) {
-                    RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $record['id_order'], $exception->getMessage()));
-                    RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                    RetailcrmLogger::output($exception->getMessage());
-                }
-
-                time_nanosleep(0, 250000000);
-
-                if (count($orders) == 50) {
-                    $api->ordersUpload($orders);
-                    $orders = array();
-                }
-            }
-
-            if (count($orders)) {
-                $api->ordersUpload($orders);
-            }
-
-            $customers = array();
-            $customersRecords = RetailcrmExport::getCustomersIds();
-
-            foreach ($customersRecords as $record) {
-                $customerId = $record['id_customer'];
-                $addressId = $record['id_address'];
-
-                $cmsCustomer = new Customer($customerId);
-
-                if (Validate::isLoadedObject($cmsCustomer)) {
-                    if ($addressId) {
-                        $cmsAddress = new Address($addressId);
-
-                        $addressBuilder = new RetailcrmAddressBuilder();
-                        $address = $addressBuilder
-                            ->setAddress($cmsAddress)
-                            ->build()
-                            ->getDataArray();
-                    } else {
-                        $address = array();
-                    }
-
-                    try {
-                        $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
-                    } catch (\Exception $exception) {
-                        RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $customerId, $exception->getMessage()));
-                        RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                        RetailcrmLogger::output($exception->getMessage());
-                    }
-
-                    if (count($customers) == 50) {
-                        $api->customersUpload($customers);
-                        $customers = array();
-
-                        time_nanosleep(0, 250000000);
-                    }
-                }
-            }
-
-            if (count($customers)) {
-                $api->customersUpload($customers);
-            }
+            RetailcrmExport::init();
+            RetailcrmExport::$api = $api;
+            RetailcrmExport::exportOrders();
+            RetailcrmExport::exportCustomers();
         }
 
         return true;

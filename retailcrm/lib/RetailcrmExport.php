@@ -38,6 +38,35 @@
  */
 class RetailcrmExport
 {
+    const RETAILCRM_EXPORT_ORDERS_STEP_SIZE_CLI = 5000;
+    const RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_CLI = 5000;
+    const RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB = 50;
+    const RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB = 300;
+
+    /**
+     * @var \RetailcrmProxy|\RetailcrmApiClientV5
+     */
+    static $api;
+
+    /**
+     * @var integer
+     */
+    static $ordersOffset;
+
+    /**
+     * @var integer
+     */
+    static $customersOffset;
+
+    /**
+     * Initialize inner state
+     */
+    public static function init()
+    {
+        static::$api = null;
+        static::$ordersOffset = self::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_CLI;
+        static::$customersOffset = self::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_CLI;
+    }
 
     /**
      * Get total count of orders for context shop
@@ -66,19 +95,23 @@ class RetailcrmExport
     public static function getOrdersIds($start = 0, $count = null)
     {
         if (is_null($count)) {
-            $count = static::getOrdersCount();
+            $to = static::getOrdersCount();
+            $count = $to - $start;
+        } else {
+            $to = $start + $count;
         }
 
         if ($count > 0) {
-            $loadSize = 5000;
             $predefinedSql = 'SELECT o.`id_order`
                 FROM `' . _DB_PREFIX_ . 'orders` o 
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 ORDER BY o.`id_order` ASC';
 
-            while ($start <= $count) {
-                $offset = ($start + $loadSize > $count) ? $count - $start : $loadSize;
+            while ($start < $to) {
+                $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
+                if ($offset <= 0)
+                    break;
 
                 $sql = $predefinedSql . '
                     LIMIT ' . (int)$start . ', ' . (int)$offset;
@@ -98,16 +131,82 @@ class RetailcrmExport
     }
 
     /**
-     * Get total count of customers without orders for context shop
+     * @param int $from
+     * @param int|null $count
+     */
+    public static function exportOrders($from = 0, $count = null)
+    {
+        if (!static::validateState()) {
+            return;
+        }
+
+        $orders = array();
+        $orderRecords = static::getOrdersIds($from, $count);
+        $orderBuilder = new RetailcrmOrderBuilder();
+        $orderBuilder->defaultLangFromConfiguration()->setApi(static::$api);
+
+        foreach ($orderRecords as $record) {
+            $orderBuilder->reset();
+
+            $order = new Order($record['id_order']);
+
+            $orderCart = new Cart($order->id_cart);
+            $orderCustomer = new Customer($order->id_customer);
+
+            $orderBuilder->setCmsOrder($order);
+
+            if (!empty($orderCart->id)) {
+                $orderBuilder->setCmsCart($orderCart);
+            } else {
+                $orderBuilder->setCmsCart(null);
+            }
+
+            if (!empty($orderCustomer->id)) {
+                $orderBuilder->setCmsCustomer($orderCustomer);
+            } else {
+                //TODO
+                // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
+                // Current version *shouldn't* do this, but I suggest more tests for guest customers.
+                $orderBuilder->setCmsCustomer(null);
+            }
+
+            try {
+                $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
+            } catch (\InvalidArgumentException $exception) {
+                RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $record['id_order'], $exception->getMessage()));
+                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                RetailcrmLogger::output($exception->getMessage());
+            }
+
+            time_nanosleep(0, 250000000);
+
+            if (count($orders) == 50) {
+                static::$api->ordersUpload($orders);
+                $orders = array();
+            }
+        }
+
+        if (count($orders)) {
+            static::$api->ordersUpload($orders);
+        }
+    }
+
+    /**
+     * Get total count of customers for context shop
+     * @param bool $withOrders If set to <b>true</b>, then return total count of customers.
+     *                         If set to <b>false</b>, then return count of customers without orders
      *
      * @return int
      */
-    public static function getCustomersCount()
+    public static function getCustomersCount($withOrders = true)
     {
         $sql = 'SELECT count(c.id_customer) 
             FROM `' . _DB_PREFIX_ . 'customer` c
             WHERE 1
-            ' . Shop::addSqlRestriction(false, 'c') . '
+            ' . Shop::addSqlRestriction(false, 'c');
+
+        if (!$withOrders) {
+            $sql .= '
             AND c.id_customer not in (
                 select o.id_customer 
                 from `' . _DB_PREFIX_ . 'orders` o 
@@ -115,6 +214,7 @@ class RetailcrmExport
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 group by o.id_customer
             )';
+        }
 
         return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
@@ -124,23 +224,27 @@ class RetailcrmExport
      *
      * @param int $start Sets the LIMIT start parameter for sql query
      * @param null $count Sets the count of customers to get from database
-     * @param bool $withAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
+     * @param bool $withOrders If set to <b>true</b>, then return all customers ids.
+     *                         If set to <b>false</b>, then return ids only of customers without orders
+     * @param bool $returnAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
      *
      * @return Generator
      * @throws PrestaShopDatabaseException
      */
-    public static function getCustomersIds($start = 0, $count = null, $withAddressId = true)
+    public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
         if (is_null($count)) {
-            $count = static::getCustomersCount();
+            $to = static::getCustomersCount($withOrders);
+            $count = $to - $start;
+        } else {
+            $to = $start + $count;
         }
 
         if ($count > 0) {
-            $loadSize = 500;
             $predefinedSql = 'SELECT c.`id_customer`
-                ' . ($withAddressId ? ', a.`id_address`' : '') . '
+                ' . ($returnAddressId ? ', a.`id_address`' : '') . '
                 FROM `' . _DB_PREFIX_ . 'customer` c
-                ' . ($withAddressId ? '
+                ' . ($returnAddressId ? '
                 LEFT JOIN
                 (
                     SELECT
@@ -167,19 +271,22 @@ class RetailcrmExport
                     a.`id_customer` = c.`id_customer`
                 ' : '') . '
                 WHERE 1
-                ' . Shop::addSqlRestriction(false, 'c') . '
+                ' . Shop::addSqlRestriction(false, 'c') .
+                ($withOrders ? '' : '
                 AND c.`id_customer` not in (
                     select o.`id_customer` 
                     from `' . _DB_PREFIX_ . 'orders` o 
                     WHERE 1
                     ' . Shop::addSqlRestriction(false, 'o') . '
                     group by o.`id_customer`
-                )
+                )') . '
                 ORDER BY c.`id_customer` ASC';
 
 
-            while ($start <= $count) {
-                $offset = ($start + $loadSize > $count) ? $count - $start : $loadSize;
+            while ($start < $to) {
+                $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
+                if ($offset <= 0)
+                    break;
 
                 $sql = $predefinedSql . '
                     LIMIT ' . (int)$start . ', ' . (int)$offset;
@@ -198,4 +305,74 @@ class RetailcrmExport
         }
     }
 
+    /**
+     * @param int $from
+     * @param int|null $count
+     */
+    public static function exportCustomers($from = 0, $count = null)
+    {
+        if (!static::validateState()) {
+            return;
+        }
+
+        $customers = array();
+        $customersRecords = RetailcrmExport::getCustomersIds($from, $count, false);
+
+        foreach ($customersRecords as $record) {
+            $customerId = $record['id_customer'];
+            $addressId = $record['id_address'];
+
+            $cmsCustomer = new Customer($customerId);
+
+            if (Validate::isLoadedObject($cmsCustomer)) {
+                if ($addressId) {
+                    $cmsAddress = new Address($addressId);
+
+                    $addressBuilder = new RetailcrmAddressBuilder();
+                    $address = $addressBuilder
+                        ->setAddress($cmsAddress)
+                        ->build()
+                        ->getDataArray();
+                } else {
+                    $address = array();
+                }
+
+                try {
+                    $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
+                } catch (\Exception $exception) {
+                    RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $customerId, $exception->getMessage()));
+                    RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                    RetailcrmLogger::output($exception->getMessage());
+                }
+
+                if (count($customers) == 50) {
+                    static::$api->customersUpload($customers);
+                    $customers = array();
+
+                    time_nanosleep(0, 250000000);
+                }
+            }
+        }
+
+        if (count($customers)) {
+            static::$api->customersUpload($customers);
+        }
+    }
+
+    /**
+     * Returns false if inner state is not correct
+     *
+     * @return bool
+     */
+    private static function validateState()
+    {
+        if (!static::$api ||
+            !static::$ordersOffset ||
+            !static::$customersOffset
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }

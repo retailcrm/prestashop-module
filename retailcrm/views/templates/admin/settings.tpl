@@ -40,6 +40,7 @@
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/vendor/sumoselect.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/sumoselect-custom.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-upload.min.css">
+<link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-export.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/styles.min.css">
 <title>RetailCRM</title>
 <div class="retail retail-wrap hidden">
@@ -180,11 +181,44 @@
                     </div>
                     <div id="rcrm_tab_orders_upload">
                         <div class="retail-form__title">{l s='Upload orders' mod='retailcrm'}</div>
+                        <div class="retail-form__label">{l s='Enter order IDs to upload to RetailCRM, divided by a comma. You can also specify ranges, like "1-10". It\'s allowed to upload to 10 orders at a time.' mod='retailcrm'}</div>
                         <div class="retail-form__row">
-                            <input type="text" name="{$uploadOrders|escape:'htmlall':'UTF-8'}" value="" class="retail-form__area" placeholder="{l s='Orders IDs' mod='retailcrm'}">
+                            <input type="text" name="{$uploadOrders|escape:'htmlall':'UTF-8'}" value=""
+                                   class="retail-form__area" placeholder="{l s='Orders IDs' mod='retailcrm'}">
                         </div>
                         <div class="retail-form__row retail-form__row_submit">
-                            <button id="upload-orders-submit" class="btn btn_invert btn_submit" style="outline: none;">{l s='Upload' mod='retailcrm'}</button>
+                            <button id="upload-orders-submit" class="btn btn_invert btn_submit"
+                                    style="outline: none;">{l s='Upload' mod='retailcrm'}</button>
+                        </div>
+                        <div class="retail-form__title"
+                             style="margin-top: 40px;">{l s='Export orders & customers' mod='retailcrm'}</div>
+                        <div class="retail-form__label">{l s='You can export all the orders and customers from CMS to RetailCRM by pressing "Export" button. This process can take a long time, and it\'s required that you keep the tab opened until it\'s done.' mod='retailcrm'}</div>
+                        <div class="retail-form__row">
+                            <div class="retail-circle">
+                                <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
+                                <input type="text" name="RETAILCRM_EXPORT_ORDERS_COUNT" readonly="readonly"
+                                       class="retail-circle__content" value="{$ordersCount}"/>
+                                <input type="hidden" name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"
+                                       value="{$exportOrdersStepSize}"/>
+                            </div>
+                            <div class="retail-circle">
+                                <div class="retail-circle__title">
+                                    {l s='Customers' mod='retailcrm'}
+                                </div>
+                                <input type="text" readonly="readonly"
+                                       title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount}"
+                                       class="retail-circle__content" value="{$customersCount}"/>
+                                <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"
+                                       value="{$exportCustomersCount}"/>
+                                <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE"
+                                       value="{$exportCustomersStepSize}"/>
+                            </div>
+                        </div>
+                        <div class="retail-form__row retail-form__row_submit"
+                             style="text-align: center; height: 60px; margin-bottom: 20px; clear:both;">
+                            <button id="export-orders-submit" class="btn btn_invert btn_submit"
+                                    style="outline: none;">{l s='Export' mod='retailcrm'}</button>
+                            <div id="export-orders-progress" class="retail-progress retail-hidden"></div>
                         </div>
                     </div>
                     <div id="rcrm_tab_daemon_collector">
@@ -286,4 +320,5 @@
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/vendor/jquery.sumoselect.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-tabs.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-upload.min.js"></script>
+<script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-export.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm.min.js"></script>

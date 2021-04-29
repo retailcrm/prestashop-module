@@ -63,6 +63,8 @@ class RetailCRM extends Module
     const SYNC_CARTS_STATUS = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
     const SYNC_CARTS_DELAY = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
+    const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
+    const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
@@ -261,9 +263,15 @@ class RetailCRM extends Module
 
         if (Tools::isSubmit('submit' . $this->name)) {
             $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
+            $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
+            $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
+            } elseif (!empty($exportOrders)) {
+                return $this->export($exportOrders);
+            } elseif (!empty($exportCustomers)) {
+                return $this->export($exportCustomers, 'customer');
             } else {
                 $output .= $this->saveSettings();
             }
@@ -355,6 +363,45 @@ class RetailCRM extends Module
 
             return $result;
         }
+    }
+
+    /**
+     * @param int $step
+     * @param string $entity
+     * @return bool
+     */
+    public function export($step, $entity = 'order')
+    {
+        $step--;
+        if ($step < 0)
+            return false;
+
+        $api = RetailcrmTools::getApiClient();
+
+        if (empty($api)) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+
+            return false;
+        }
+
+        RetailcrmExport::init();
+        RetailcrmExport::$api = $api;
+
+        if ($entity === 'order') {
+            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
+
+            RetailcrmExport::$ordersOffset = $stepSize;
+            RetailcrmExport::exportOrders($step * $stepSize, $stepSize);
+            // todo maybe save current step to database
+        } elseif ($entity === 'customer') {
+            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
+
+            RetailcrmExport::$customersOffset = $stepSize;
+            RetailcrmExport::exportCustomers($step * $stepSize, $stepSize);
+            // todo maybe save current step to database
+        }
+
+        return true;
     }
 
     public function hookActionCustomerAccountAdd($params)
