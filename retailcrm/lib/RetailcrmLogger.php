@@ -176,7 +176,7 @@ class RetailcrmLogger
             return '';
         }
 
-        return _PS_ROOT_DIR_ . '/retailcrm_' . self::getLogFilePrefix() . '.log';
+        return _PS_ROOT_DIR_ . '/var/logs/retailcrm_' . self::getLogFilePrefix() . '_' . date('Y_m_d') . '.log';
     }
 
     /**
@@ -195,5 +195,21 @@ class RetailcrmLogger
         }
 
         return 'web';
+    }
+
+    /**
+     * Removes module log files from var/logs which is older than 30 days
+     */
+    public static function clearObsoleteLogs()
+    {
+        $dh = opendir(_PS_ROOT_DIR_ . '/var/logs');
+        while (($file = readdir($dh)) !== false) {
+            if (preg_match('/^retailcrm/', $file)) {
+                $path = _PS_ROOT_DIR_ . '/var/logs/' . $file;
+                if (filemtime($path) < strtotime('-30 days')) {
+                    unlink($path);
+                }
+            }
+        }
     }
 }
