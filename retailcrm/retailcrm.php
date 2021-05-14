@@ -65,10 +65,12 @@ class RetailCRM extends Module
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
     const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
     const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
+    const UPDATE_SINCE_ID = 'RETAILCRM_UPDATE_SINCE_ID';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
     const ENABLE_BALANCES_RECEIVING = 'RETAILCRM_ENABLE_BALANCES_RECEIVING';
+    const ENABLE_DEBUG_MODE = 'RETAILCRM_ENABLE_DEBUG_MODE';
 
     const LATEST_API_VERSION = '5';
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
@@ -78,7 +80,8 @@ class RetailCRM extends Module
         'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
         'RetailcrmIcmlEvent' => 'Icml generation',
         'RetailcrmSyncEvent' => 'History synchronization',
-        'RetailcrmInventoriesEvent' => 'Inventories uploads'
+        'RetailcrmInventoriesEvent' => 'Inventories uploads',
+        'RetailcrmClearLogsEvent' => 'Clearing logs'
     ];
 
     /**
@@ -226,6 +229,7 @@ class RetailCRM extends Module
             Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS) &&
             Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS) &&
             Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING) &&
+            Configuration::deleteByName(static::ENABLE_DEBUG_MODE) &&
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
@@ -265,6 +269,9 @@ class RetailCRM extends Module
             $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
             $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
             $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
+            $updateSinceId = (bool)(Tools::getValue(static::UPDATE_SINCE_ID));
+            $logNames = (string)(Tools::getValue('logName'));
+            $downloadLogs = (bool)(Tools::getValue('downloadLogs'));
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
@@ -272,6 +279,10 @@ class RetailCRM extends Module
                 return $this->export($exportOrders);
             } elseif (!empty($exportCustomers)) {
                 return $this->export($exportCustomers, 'customer');
+            } elseif ($updateSinceId) {
+               return $this->updateSinceId();
+            } elseif ($downloadLogs) {
+                return $this->downloadLogs($logNames);
             } else {
                 $output .= $this->saveSettings();
             }
@@ -372,16 +383,18 @@ class RetailCRM extends Module
      */
     public function export($step, $entity = 'order')
     {
+        if (!Tools::getValue('ajax'))
+            return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
+
         $step--;
         if ($step < 0)
-            return false;
+            return RetailcrmJsonResponse::invalidResponse('Invalid request data');
 
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
             RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
-            return false;
+            return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
         }
 
         RetailcrmExport::init();
@@ -399,6 +412,65 @@ class RetailCRM extends Module
             RetailcrmExport::$customersOffset = $stepSize;
             RetailcrmExport::exportCustomers($step * $stepSize, $stepSize);
             // todo maybe save current step to database
+        }
+
+        return RetailcrmJsonResponse::successfullResponse();
+    }
+
+    public function updateSinceId()
+    {
+        if (!Tools::getValue('ajax'))
+            return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
+
+        $api = RetailcrmTools::getApiClient();
+
+        if (empty($api)) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+            return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
+        }
+
+        RetailcrmHistory::$api = $api;
+        RetailcrmHistory::updateSinceId('customers');
+        RetailcrmHistory::updateSinceId('orders');
+
+        return RetailcrmJsonResponse::successfullResponse();
+    }
+
+    public function downloadLogs($name = '')
+    {
+        if (!Tools::getValue('ajax'))
+            return false;
+
+        if (!empty($name)) {
+            if (false === ($filePath = RetailcrmLogger::checkFileName($name))) {
+                return false;
+            }
+
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($filePath));
+            readfile($filePath);
+        } else {
+            $zipname = _PS_DOWNLOAD_DIR_ . '/retailcrm_logs_' . date('Y-m-d H-i-s') . '.zip';
+
+            $zipFile = new ZipArchive();
+            $zipFile->open($zipname, ZIPARCHIVE::CREATE);
+
+            foreach (RetailcrmLogger::getLogFilesInfo() as $logFile) {
+                $zipFile->addFile($logFile['path'], $logFile['name']);
+            }
+
+            $zipFile->close();
+
+            header('Content-Type: application/zip');
+            header('Content-disposition: attachment; filename=' . basename($zipname));
+            header('Content-Length: ' . filesize($zipname));
+            readfile($zipname);
+            unlink($zipname);
         }
 
         return true;
@@ -811,6 +883,7 @@ class RetailCRM extends Module
                 'enableCorporate' => (Tools::getValue(static::ENABLE_CORPORATE_CLIENTS) !== false),
                 'enableHistoryUploads' => (Tools::getValue(static::ENABLE_HISTORY_UPLOADS) !== false),
                 'enableBalancesReceiving' => (Tools::getValue(static::ENABLE_BALANCES_RECEIVING) !== false),
+                'debugMode' => (Tools::getValue(static::ENABLE_DEBUG_MODE) !== false),
                 'collectorActive' => (Tools::getValue(static::COLLECTOR_ACTIVE) !== false),
                 'collectorKey' => (string)(Tools::getValue(static::COLLECTOR_KEY)),
                 'clientId' => Configuration::get(static::CLIENT_ID),
@@ -838,6 +911,7 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);
                 Configuration::updateValue(static::SYNC_CARTS_STATUS, $settings['synchronizedCartStatus']);
                 Configuration::updateValue(static::SYNC_CARTS_DELAY, $settings['synchronizedCartDelay']);
+                Configuration::updateValue(static::ENABLE_DEBUG_MODE, $settings['debugMode']);
 
                 $this->apiUrl = $settings['url'];
                 $this->apiKey = $settings['apiKey'];
@@ -1093,7 +1167,6 @@ class RetailCRM extends Module
             'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
             'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
             'statusExport' => (string)(Configuration::get(static::STATUS_EXPORT)),
-            'lastRunDetails' =>  json_decode(Configuration::get(RetailcrmJobManager::LAST_RUN_DETAIL_NAME), true),
             'collectorActive' => (Configuration::get(static::COLLECTOR_ACTIVE)),
             'collectorKey' => (string)(Configuration::get(static::COLLECTOR_KEY)),
             'clientId' => Configuration::get(static::CLIENT_ID),
@@ -1104,6 +1177,7 @@ class RetailCRM extends Module
             'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
             'enableHistoryUploads' => (bool)(Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
             'enableBalancesReceiving' => (bool)(Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
+            'debugMode' => (bool)(Configuration::get(static::ENABLE_DEBUG_MODE)),
         );
     }
 
@@ -1134,6 +1208,7 @@ class RetailCRM extends Module
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
             'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING,
+            'debugModeName' => static::ENABLE_DEBUG_MODE,
             'jobsNames' => static::JOBS_NAMES
         );
     }

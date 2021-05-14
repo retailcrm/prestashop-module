@@ -191,11 +191,6 @@ class RetailcrmJobManager
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
                     );
                     $lastRuns[$job] = new \DateTime('now');
-                    $lastRunsDetails[$job] = [
-                        'success' => true,
-                        'lastRun' =>  new \DateTime('now'),
-                        'error' => null,
-                    ];
 
                     break;
                 }
@@ -241,6 +236,12 @@ class RetailcrmJobManager
         }
 
         if (isset($result) && $result) {
+            $lastRunsDetails[$job] = [
+                'success' => true,
+                'lastRun' =>  new \DateTime('now'),
+                'error' => null,
+            ];
+
             self::clearCurrentJob($job);
         }
 
@@ -325,7 +326,7 @@ class RetailcrmJobManager
      * @return array<string, array>
      * @throws \Exception
      */
-    private static function getLastRunDetails()
+    public static function getLastRunDetails()
     {
         $lastRuns = json_decode((string)Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 

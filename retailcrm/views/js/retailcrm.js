@@ -219,7 +219,7 @@ $(function(){
                     'rcrm_tab_order_statuses': selectsUpdate,
                     'rcrm_tab_payment_types': selectsUpdate,
                     'rcrm_tab_consultant': mainSubmitHide,
-                    'rcrm_tab_job_manager': mainSubmitHide,
+                    'rcrm_tab_advanced': mainSubmitHide,
                     'rcrm_tab_orders_upload': mainSubmitHide
                 });
                 tabs.initializeTabs();

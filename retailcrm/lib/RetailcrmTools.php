@@ -410,15 +410,14 @@ class RetailcrmTools
     }
 
     /**
-     * Returns true if _RCRM_MODE_DEV_ const defined to true.
-     * Add define('_RCRM_MODE_DEV_', true); to enable extended logging (dev mode) for retailCRM module.
+     * Returns true if debug mode is checked in advance settings page
      * In developer mode module will log every JobManager run and every request and response from retailCRM API.
      *
      * @return bool
      */
     public static function isDebug()
     {
-        return (defined('_RCRM_MODE_DEV_') && _RCRM_MODE_DEV_ == true);
+        return '1' === Configuration::get(RetailCRM::ENABLE_DEBUG_MODE);
     }
 
     /**
