@@ -367,11 +367,9 @@
                                         <form class="rcrm-form-submit-trigger"
                                               action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
                                               method="post">
-                                            <input type="hidden" name="submitretailcrm"
-                                                   value="1"/>
-                                            <input type="hidden" name="downloadLogs"
-                                                   value="1"/>
-                                            <input type="hidden" name="logName"
+                                            <input type="hidden" name="submitretailcrm" value="1"/>
+                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
+                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS_NAME"
                                                    value="{$logItem.name|escape:'htmlall':'UTF-8'}"/>
                                             <input type="submit"
                                                    value="{l s='Download' mod='retailcrm'}"/>
@@ -386,7 +384,7 @@
                                           action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
                                           method="post">
                                         <input type="hidden" name="submitretailcrm" value="1"/>
-                                        <input type="hidden" name="downloadLogs" value="1"/>
+                                        <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
                                         <input type="submit" value="{l s='Download All' mod='retailcrm'}">
                                     </form>
                                 </td>

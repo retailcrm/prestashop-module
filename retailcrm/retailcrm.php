@@ -66,6 +66,8 @@ class RetailCRM extends Module
     const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
     const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
     const UPDATE_SINCE_ID = 'RETAILCRM_UPDATE_SINCE_ID';
+    const DOWNLOAD_LOGS_NAME = 'RETAILCRM_DOWNLOAD_LOGS_NAME';
+    const DOWNLOAD_LOGS = 'RETAILCRM_DOWNLOAD_LOGS';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
@@ -270,8 +272,8 @@ class RetailCRM extends Module
             $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
             $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
             $updateSinceId = (bool)(Tools::getValue(static::UPDATE_SINCE_ID));
-            $logNames = (string)(Tools::getValue('logName'));
-            $downloadLogs = (bool)(Tools::getValue('downloadLogs'));
+            $logNames = (string)(Tools::getValue(static::DOWNLOAD_LOGS_NAME));
+            $downloadLogs = (bool)(Tools::getValue(static::DOWNLOAD_LOGS));
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
