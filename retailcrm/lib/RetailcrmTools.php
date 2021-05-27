@@ -692,4 +692,32 @@ class RetailcrmTools
         Shop::setContext(Shop::CONTEXT_SHOP, $id_shop);
         Context::getContext()->shop = new Shop($id_shop);
     }
+
+    /**
+     * Call custom filters for the object
+     *
+     * @param string $filter
+     * @param object|array|string $object
+     * @param array $parameters
+     *
+     * @return false|mixed
+     */
+    public static function filter($filter, $object, $parameters = array())
+    {
+        if (class_exists($filter) && method_exists($filter, 'filter')) {
+            try {
+                $result = call_user_func_array(
+                    array($filter, 'filter'),
+                    array($object, $parameters)
+                );
+
+                return (null === $result || false === $result) ? $object : $result;
+            } catch (Exception $e) {
+                RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
+                RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
+            }
+        }
+
+        return $object;
+    }
 }
