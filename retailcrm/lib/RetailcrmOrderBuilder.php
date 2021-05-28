@@ -256,6 +256,10 @@ class RetailcrmOrderBuilder
             $customer = $this->createdCustomer;
         } else {
             $crmCustomer = RetailcrmTools::mergeCustomerAddress($customer, $this->buildRegularAddress());
+            if (isset($crmCustomer['tags'])) {
+                unset($crmCustomer['tags']);
+            }
+
             $response = $this->api->customersEdit($crmCustomer);
 
             if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
