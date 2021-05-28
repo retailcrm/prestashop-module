@@ -155,6 +155,13 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
             $this->customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
         }
 
+        $this->customer = RetailcrmTools::filter(
+            'RetailcrmFilterSaveCustomer',
+            $this->customer,
+            array(
+                'dataCrm' => $this->dataCrm,
+            ));
+
         return $this;
     }
 }

@@ -287,7 +287,14 @@ class RetailcrmCatalog
                                 }
                             }
 
-                            yield $item;
+                            yield RetailcrmTools::filter(
+                                'RetailcrmFilterProcessOffer',
+                                $item,
+                                array(
+                                    'product' => $product,
+                                    'offer' => $offer
+                                )
+                            );
                         }
                     } else {
 
@@ -304,7 +311,7 @@ class RetailcrmCatalog
                             $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product']);
                         }
 
-                        yield array(
+                        $item = array(
                             'id' => $product['id_product'],
                             'productId' => $product['id_product'],
                             'productActivity' => ($available_for_order) ? 'Y' : 'N',
@@ -320,6 +327,14 @@ class RetailcrmCatalog
                             'article' => $article,
                             'weight' => $weight,
                             'dimensions' => $dimensions
+                        );
+
+                        yield RetailcrmTools::filter(
+                            'RetailcrmFilterProcessOffer',
+                            $item,
+                            array(
+                                'product' => $product
+                            )
                         );
                     }
                 }
