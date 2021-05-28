@@ -410,16 +410,14 @@ class RetailcrmTools
     }
 
     /**
-     * Returns true if PrestaShop in debug mode or _RCRM_MODE_DEV_ const defined to true.
-     * Add define('_RCRM_MODE_DEV_', true); to enable extended logging (dev mode) ONLY for retailCRM module.
+     * Returns true if debug mode is checked in advance settings page
      * In developer mode module will log every JobManager run and every request and response from retailCRM API.
      *
      * @return bool
      */
     public static function isDebug()
     {
-        return (defined('_PS_MODE_DEV_') && _PS_MODE_DEV_ == true)
-            || (defined('_RCRM_MODE_DEV_') && _RCRM_MODE_DEV_ == true);
+        return '1' === Configuration::get(RetailCRM::ENABLE_DEBUG_MODE);
     }
 
     /**
@@ -633,10 +631,11 @@ class RetailcrmTools
     public static function startJobManager()
     {
         RetailcrmJobManager::startJobs(array(
-            'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M'),
+            'RetailcrmClearLogsEvent' => new \DateInterval('P1D'),
             'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
+            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M'),
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-            'RetailcrmInventoriesEvent' => new \DateInterval('PT15M')
+            'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M')
         ));
     }
 

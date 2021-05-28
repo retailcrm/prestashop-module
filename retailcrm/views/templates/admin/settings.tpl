@@ -57,13 +57,13 @@
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
-                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_job_manager" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Job Manager' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_advanced" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive retail-menu__btn_hidden"><span>{l s='Advanced' mod='retailcrm'}<span/></a>
             </div>
         </aside>
         <article class="retail-column__content">
             <h1 class="retail-title retail-title_content">RetailCRM</h1>
             <div class="retail-form retail-form_main">
-                <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
+                <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post" id="submitretailcrm-form">
                     <input type="hidden" name="submitretailcrm" value="1" />
                     <div id="rcrm_tab_connection">
                         <div class="retail-form__title">{l s='Connection Settings' mod='retailcrm'}</div>
@@ -238,11 +238,15 @@
                     </div>
                 </form>
                 <div id="rcrm_tab_consultant">
-                    <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" method="post">
-                        <input type="hidden" name="submitretailcrm" value="1" />
+                    <form class="rcrm-form-submit-trigger"
+                          action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant"
+                          method="post">
+                        <input type="hidden" name="submitretailcrm" value="1"/>
                         <div class="retail-form__title">{l s='Online consultant' mod='retailcrm'}</div>
                         <div class="retail-form__row">
-                        <textarea name="{$consultantScriptName|escape:'htmlall':'UTF-8'}" class="retail-form__area retail-form__area_txt" id="retail-txt-area" placeholder="{l s='Code you need to insert on the web' mod='retailcrm'}">
+                        <textarea name="{$consultantScriptName|escape:'htmlall':'UTF-8'}"
+                                  class="retail-form__area retail-form__area_txt" id="retail-txt-area"
+                                  placeholder="{l s='Code you need to insert on the web' mod='retailcrm'}">
                             {$consultantScript|escape:'htmlall':'UTF-8'}
                         </textarea>
                         </div>
@@ -251,10 +255,27 @@
                         </div>
                     </form>
                 </div>
-                <div id="rcrm_tab_job_manager">
-                    <div class="retail-form__title">{l s='Job Manager' mod='retailcrm'}</div>
-                    <table class="retail-table retail-table-sort">
-                        <thead>
+
+                <div id="rcrm_tab_advanced">
+                    <div class="retail-form__title">{l s='Advanced' mod='retailcrm'}</div>
+                    <div class="retail-form__row">
+                        <div class="retail-form__checkbox">
+                            <input form="submitretailcrm-form" type="checkbox" name="{$debugModeName|escape:'htmlall':'UTF-8'}"
+                                   value="{$debugMode|escape:'htmlall':'UTF-8'}"
+                                   {if $debugMode}checked="checked"{/if} id="debugmode-active">
+                            <label for="debugmode-active"
+                                   class="retail-form__label">{l s='Debug mode' mod='retailcrm'}</label>
+                        </div>
+
+                        <div class="retail-form__row retail-form__row_submit">
+                            <input form="submitretailcrm-form" type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
+                        </div>
+                    </div>
+
+                    <div class="retail-form__row">
+                        <label class="retail-form__label">{l s='Job Manager' mod='retailcrm'}</label>
+                        <table class="retail-table retail-table-sort">
+                            <thead>
                             <tr>
                                 <th>
                                     <span>{l s='Job name' mod='retailcrm'}</span></th>
@@ -269,47 +290,112 @@
                                 <th>
                                     <span>{l s='Comment' mod='retailcrm'}</span></th>
                             </tr>
-                        </thead>
-                        <tbody>
-                        {foreach from=$lastRunDetails key=key item=item}
-                            <tr class="retail-table__row-top">
-                                <td>
-                                    {if isset($jobsNames[$key]) }
-                                        <span title="{$key}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
-                                    {else}
-                                        {$key}
-                                    {/if}
-                                </td>
-                                <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
-                                <td class="retail-table-center">
-                                    {if isset($item['success'])}
-                                        {if $item['success'] === true}
-                                            <span style="color: #2e8b57;">
-                                            &#10004;
-                                            </span>
+                            </thead>
+                            <tbody>
+                            {foreach from=$lastRunDetails key=key item=item}
+                                <tr class="retail-table__row-top">
+                                    <td>
+                                        {if isset($jobsNames[$key]) }
+                                            <span title="{$key}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
                                         {else}
-                                            <span style="color: #dd2e44;">
-                                            &#10060;
-                                            </span>
+                                            {$key}
                                         {/if}
-                                    {/if}
-                                </td>
-                                <td class="retail-collapsible">
-                                    {if isset($item['error']['message'])}
-                                        <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
-                                        <label for="error_{$key}" class="retail-collapsible__title retail-error-msg">
-                                            <span class="retail-error-msg">{$item['error']['message']}</span>
-                                            <p class="retail-collapsible__content">
-                                                <b>{l s='StackTrace' mod='retailcrm'}:</b><br>{$item['error']['trace']}
-                                            </p>
-                                        </label>
-                                    {/if}
+                                    </td>
+                                    <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
+                                    <td class="retail-table-center">
+                                        {if $key === $currentJob || $key === $currentJobCli}
+                                            <span>&#8987;</span>
+                                        {else}
+                                            {if isset($item['success'])}
+                                                {if $item['success'] === true}
+                                                    <span style="color: #2e8b57;">&#10004;</span>
+                                                {else}
+                                                    <span style="color: #dd2e44;">&#10060;</span>
+                                                {/if}
+                                            {/if}
+                                        {/if}
+                                    </td>
+                                    <td class="retail-collapsible">
+                                        {if isset($item['error']['message'])}
+                                            <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
+                                            <label for="error_{$key}"
+                                                   class="retail-collapsible__title retail-error-msg">
+                                                <span class="retail-error-msg">{$item['error']['message']}</span>
+                                                <p class="retail-collapsible__content">
+                                                    <b>{l s='StackTrace' mod='retailcrm'}
+                                                        :</b><br>{$item['error']['trace']}
+                                                </p>
+                                            </label>
+                                        {/if}
+                                    </td>
+                                </tr>
+                            {/foreach}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="retail-form__row">
+                        <label class="retail-form__label">{l s='Logs' mod='retailcrm'}</label>
+                        <table class="retail-table retail-table-sort">
+                            <thead>
+                            <tr>
+                                <th><span>{l s='File name' mod='retailcrm'}</span></th>
+                                <th>
+                                    <div class="retail-table-sort__btn-wrap">
+                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                        <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
+                                    </div>
+                                    <span class="retail-table-sort__switch">{l s='Modified date' mod='retailcrm'}</span>
+                                </th>
+                                <th>
+                                    <div class="retail-table-sort__btn-wrap">
+                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                        <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
+                                    </div>
+                                    <span class="retail-table-sort__switch">{l s='Size' mod='retailcrm'}</span>
+                                </th>
+                                <th><span>{l s='Actions' mod='retailcrm'}</span></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {foreach from=$retailcrmLogsInfo key=key item=logItem}
+                                <tr class="retail-table__row-top">
+                                    <td>{$logItem.name}</td>
+                                    <td class="retail-table-center">{$logItem.modified}</td>
+                                    <td class="retail-table-center">{$logItem.size}</td>
+                                    <td class="retail-table-center">
+                                        <form class="rcrm-form-submit-trigger"
+                                              action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                                              method="post">
+                                            <input type="hidden" name="submitretailcrm" value="1"/>
+                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
+                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS_NAME"
+                                                   value="{$logItem.name|escape:'htmlall':'UTF-8'}"/>
+                                            <input type="submit"
+                                                   value="{l s='Download' mod='retailcrm'}"/>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {/foreach}
+                            <tr>
+                                <td colspan="3"></td>
+                                <td class="retail-table-center">
+                                    <form class="rcrm-form-submit-trigger"
+                                          action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                                          method="post">
+                                        <input type="hidden" name="submitretailcrm" value="1"/>
+                                        <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
+                                        <input type="submit" value="{l s='Download All' mod='retailcrm'}">
+                                    </form>
                                 </td>
                             </tr>
-                        {/foreach}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+
+                    </div>
                 </div>
+
+
             </div>
         </article>
     </div>

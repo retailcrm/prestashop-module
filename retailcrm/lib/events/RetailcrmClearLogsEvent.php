@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -38,7 +38,7 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
+class RetailcrmClearLogsEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
@@ -51,28 +51,7 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
 
         $this->setRunning();
 
-        $shops = $this->getShops();
-
-        foreach ($shops as $shop) {
-            RetailcrmTools::setShopContext(intval($shop['id_shop']));
-
-            $api = RetailcrmTools::getApiClient();
-
-            if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
-                continue;
-            }
-
-            RetailcrmExport::init();
-            RetailcrmExport::$api = $api;
-            RetailcrmExport::exportOrders();
-            RetailcrmExport::exportCustomers();
-
-            RetailcrmHistory::$api = $api;
-            RetailcrmHistory::updateSinceId('customers');
-            RetailcrmHistory::updateSinceId('orders');
-        }
+        RetailcrmLogger::clearObsoleteLogs();
 
         return true;
     }
@@ -82,6 +61,6 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
      */
     public function getName()
     {
-        return 'RetailcrmExportEvent';
+        return 'RetailcrmClearLogsEvent';
     }
 }

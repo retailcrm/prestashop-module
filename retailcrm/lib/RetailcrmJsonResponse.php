@@ -35,53 +35,57 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
 
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
-
-class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
+/**
+ * Class RetailcrmLogger
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @license   GPL
+ * @link      https://retailcrm.ru
+ */
+class RetailcrmJsonResponse
 {
-    /**
-     * @inheritDoc
-     */
-    public function execute()
+    private static function jsonResponse($response)
     {
-        if ($this->isRunning()) {
-            return false;
-        }
+        header('Content-Type: application/json');
 
-        $this->setRunning();
+        $result = json_encode($response);
 
-        $shops = $this->getShops();
-
-        foreach ($shops as $shop) {
-            RetailcrmTools::setShopContext(intval($shop['id_shop']));
-
-            $api = RetailcrmTools::getApiClient();
-
-            if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
-                continue;
-            }
-
-            RetailcrmExport::init();
-            RetailcrmExport::$api = $api;
-            RetailcrmExport::exportOrders();
-            RetailcrmExport::exportCustomers();
-
-            RetailcrmHistory::$api = $api;
-            RetailcrmHistory::updateSinceId('customers');
-            RetailcrmHistory::updateSinceId('orders');
-        }
-
-        return true;
+        echo $result;
+        return $result;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getName()
+    public static function invalidResponse($msg, $status = 404)
     {
-        return 'RetailcrmExportEvent';
+        http_response_code($status);
+
+        return self::jsonResponse([
+            'success' => false,
+            'errorMsg' => $msg
+        ]);
+    }
+
+    public static function successfullResponse($data = null, $key = null)
+    {
+        $response = [
+            'success' => true,
+        ];
+
+        if (!is_null($data)) {
+            if (is_array($key)) {
+                foreach ($key as $i => $value) {
+                    if (isset($data[$i]))
+                        $response[$value] = $data[$i];
+                }
+            } elseif (is_string($key)) {
+                $response[$key] = $data;
+            } else {
+                $response['response'] = $data;
+            }
+        }
+
+        return self::jsonResponse($response);
     }
 }

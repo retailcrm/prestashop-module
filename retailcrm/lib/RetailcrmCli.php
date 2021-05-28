@@ -374,8 +374,9 @@ class RetailcrmCli
             'RetailcrmIcmlEvent',
             'RetailcrmSyncEvent',
             'RetailcrmInventoriesEvent',
+            'RetailcrmExportEvent',
             'RetailcrmUpdateSinceIdEvent',
-            'RetailcrmExportEvent'
+            'RetailcrmClearLogsEvent'
         );
     }
 }

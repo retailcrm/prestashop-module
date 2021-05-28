@@ -176,7 +176,12 @@ class RetailcrmLogger
             return '';
         }
 
-        return _PS_ROOT_DIR_ . '/retailcrm_' . self::getLogFilePrefix() . '.log';
+        return self::getLogDir() . '/retailcrm_' . self::getLogFilePrefix() . '_' . date('Y_m_d') . '.log';
+    }
+
+    public static function getLogDir()
+    {
+        return _PS_ROOT_DIR_ . '/var/logs';
     }
 
     /**
@@ -195,5 +200,57 @@ class RetailcrmLogger
         }
 
         return 'web';
+    }
+
+    /**
+     * Removes module log files from var/logs which is older than 30 days
+     */
+    public static function clearObsoleteLogs()
+    {
+        $logDir = self::getLogDir();
+        $handle = opendir($logDir);
+        while (($file = readdir($handle)) !== false) {
+            if (false !== self::checkFileName($file)) {
+                $path = "$logDir/$file";
+                if (filemtime($path) < strtotime('-30 days')) {
+                    unlink($path);
+                }
+            }
+        }
+    }
+
+    public static function getLogFilesInfo()
+    {
+        $fileNames = [];
+        $logDir = self::getLogDir();
+
+        $handle = opendir($logDir);
+        while (false !== $file = readdir($handle)) {
+            if (false !== self::checkFileName($file)) {
+                $path = "$logDir/$file";
+                $fileNames[] = [
+                    'name' => $file,
+                    'path' => $path,
+                    'size' => number_format(filesize($path), 0, '.', ' ') . ' bytes',
+                    'modified' => date('Y-m-d H:i:s', filemtime($path)),
+                ];
+            }
+        }
+        closedir($handle);
+
+        return $fileNames;
+    }
+
+    public static function checkFileName($file)
+    {
+        $logDir = self::getLogDir();
+        if (preg_match('/^retailcrm[a-zA-Z0-9-_]+.log$/', $file)) {
+            $path = "$logDir/$file";
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        return false;
     }
 }

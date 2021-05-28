@@ -42,6 +42,7 @@ $(function () {
             return false;
         }
 
+        this.isDone = false;
         this.ordersCount = parseInt($(this.form).find('input[name="RETAILCRM_EXPORT_ORDERS_COUNT"]').val());
         this.customersCount = parseInt($(this.form).find('input[name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"]').val());
         this.ordersStepSize = parseInt($(this.form).find('input[name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"]').val());
@@ -69,22 +70,20 @@ $(function () {
     };
 
     RetailcrmExportForm.prototype.exportAction = function () {
-        let data = {};
+        let data = {
+            submitretailcrm: 1,
+            ajax: 1
+        };
         if (this.ordersStep * this.ordersStepSize < this.ordersCount) {
             this.ordersStep++;
-            data = {
-                submitretailcrm: 1,
-                RETAILCRM_EXPORT_ORDERS_STEP: this.ordersStep
-            }
+            data.RETAILCRM_EXPORT_ORDERS_STEP = this.ordersStep;
         } else {
             if (this.customersStep * this.customersStepSize < this.customersCount) {
                 this.customersStep++;
-                data = {
-                    submitretailcrm: 1,
-                    RETAILCRM_EXPORT_CUSTOMERS_STEP: this.customersStep
-                }
+                data.RETAILCRM_EXPORT_CUSTOMERS_STEP = this.customersStep;
             } else {
-                return this.exportDone();
+                data.RETAILCRM_UPDATE_SINCE_ID = 1;
+                this.isDone = true;
             }
         }
 
@@ -97,6 +96,10 @@ $(function () {
             data: data
         })
             .done(function (response) {
+                if(_this.isDone) {
+                   return _this.exportDone();
+                }
+
                 _this.updateProgressBar();
                 _this.exportAction();
             })
@@ -126,7 +129,7 @@ $(function () {
 
         $(this.progressBar).find('.retail-progress__loader').text(percents + '%');
         $(this.progressBar).find('.retail-progress__loader').css('width', percents + '%');
-        $(this.progressBar).find('.retail-progress__loader').attr('alt', processed + '/' + total);
+        $(this.progressBar).find('.retail-progress__loader').attr('title', processed + '/' + total);
     };
 
     RetailcrmExportForm.prototype.confirmLeave = function (event) {
