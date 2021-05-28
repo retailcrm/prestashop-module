@@ -26,7 +26,31 @@ Module allows integrate CMS Prestashop with [RetailCRM](https://www.retailcrm.pr
 
 #### Customization
 
-If you want to change the default behavior of a module classes and be sure that these changes won't be overwritten during the module upgrade process, you should **copy the original classes** that you are going to customize to the `prestashop-root/modules/retailcrm_custom/classes` directory. 
+##### Filters
+
+If you want to modify data, sent between CRM and CMS you can use custom filters.
+There are list of available filters:
+
+* *RetailcrmFilterProcessOrder* - order array, which will be sent to CRM
+* *RetailcrmFilterProcessCustomer* - customer array, which will be sent to CRM
+* *RetailcrmFilterProcessCustomerCorporate* - corporate customer array, which will be sent to CRM
+* *RetailcrmFilterProcessAddress* - address array, which will be sent to CRM
+* *RetailcrmFilterProcessOffer* - offer array, which will be sent to CRM (saved into Icml file)
+  
+* *RetailcrmFilterCustomersHistory* - array with assembled history for customer, loaded from CRM
+* *RetailcrmFilterOrdersHistory* - array with assembled history for order, loaded from CRM
+  
+* *RetailcrmFilterSaveCustomer* - built customer object, which will be saved to CMS
+* *RetailcrmFilterSaveCustomerAddress* - built customer address object, which will be saved to CMS
+* *RetailcrmFilterSaveCorporateCustomer* - built corporate customer object, which will be saved to CMS
+* *RetailcrmFilterSaveCorporateCustomerAddress* - built corporate customer address object, which will be saved to CMS
+  
+To use filters you should define a new class in `<prestashop-root>/modules/retailcrm/custom/hooks`. Filename and classname must match the filter name.
+Filter class should implement interface *RetailcrmFilterInterface*. In filter class you must define *filter()* function, which will take initial `$object` and return customized `$object`. 
+
+##### Classes
+
+If you want to change the default behavior of a module classes and be sure that these changes won't be overwritten during the module upgrade process, you should **copy the original classes** that you are going to customize to the `<prestashop-root>/modules/retailcrm/custom/classes` directory. 
 
 From here you can modify the methods of the classes for your own purposes, and they will not be affected during the module upgrade process.
 

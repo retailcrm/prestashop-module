@@ -185,6 +185,14 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             }
         }
 
+        $this->data = RetailcrmTools::filter(
+            'RetailcrmFilterProcessAddress',
+            $this->data,
+            array(
+                'address' => $this->address,
+                'mode' => $this->mode
+            ));
+
         return $this;
     }
 

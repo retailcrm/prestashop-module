@@ -1070,7 +1070,14 @@ class RetailcrmOrderBuilder
             }
         }
 
-        return RetailcrmTools::clearArray($crmOrder);
+        return RetailcrmTools::filter(
+            'RetailcrmFilterProcessOrder',
+            RetailcrmTools::clearArray($crmOrder),
+            array(
+                'order' => $order,
+                'customer' => $customer,
+                'cart' => $cart
+            ));
     }
 
     /**
@@ -1142,7 +1149,7 @@ class RetailcrmOrderBuilder
      */
     public static function buildCrmCustomer(Customer $object, $address = array())
     {
-        return array_filter(array_merge(
+        $customer = array_filter(array_merge(
             array(
                 'externalId' => !empty($object->id) ? $object->id : null,
                 'firstName' => $object->firstname,
@@ -1159,6 +1166,14 @@ class RetailcrmOrderBuilder
         ), function ($value) {
             return !($value === '' || $value === null || (is_array($value) ? count($value) == 0 : false));
         });
+
+        return RetailcrmTools::filter(
+            'RetailcrmFilterProcessCustomer',
+            $customer,
+            array(
+                'customer' => $object,
+                'address' => $address
+            ));
     }
 
     public static function buildCrmCustomerCorporate(
@@ -1240,7 +1255,12 @@ class RetailcrmOrderBuilder
             $customer['addresses'] = $customerAddresses;
         }
 
-        return RetailcrmTools::clearArray($customer);
+        return RetailcrmTools::filter(
+            'RetailcrmFilterProcessCustomerCorporate',
+            RetailcrmTools::clearArray($customer),
+            array(
+                'customer' => $object
+            ));
     }
 
     /**

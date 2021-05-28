@@ -79,6 +79,11 @@ class RetailcrmHistory
             RetailcrmLogger::writeDebugArray(__METHOD__, array('Assembled history:', $customersHistory));
 
             foreach ($customersHistory as $customerHistory) {
+                $customerHistory = RetailcrmTools::filter(
+                    'RetailcrmFilterCustomersHistory',
+                    $customerHistory
+                    );
+
                 if (isset($customerHistory['deleted']) && $customerHistory['deleted']) {
                     continue;
                 }
@@ -217,6 +222,11 @@ class RetailcrmHistory
             RetailcrmLogger::writeDebugArray(__METHOD__, array('Assembled history:', $orders));
 
             foreach ($orders as $order_history) {
+                $order_history = RetailcrmTools::filter(
+                    'RetailcrmFilterOrdersHistory',
+                    $order_history
+                );
+
                 if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
                     continue;
                 }

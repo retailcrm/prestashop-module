@@ -87,6 +87,8 @@ class RetailcrmAutoloader
                     && !class_exists($className)
                 ) {
                     include_once $file->getPathname();
+
+                    return;
                 }
             }
         }
@@ -101,6 +103,8 @@ class RetailcrmAutoloader
                 && !class_exists($className)
             ) {
                 include_once $file->getPathname();
+
+                return;
             }
         }
     }
@@ -139,6 +143,6 @@ class RetailcrmAutoloader
 }
 
 RetailcrmAutoloader::setPath(realpath(dirname(__FILE__)));
-RetailcrmAutoloader::setPathCustom(realpath(_PS_MODULE_DIR_ . '/retailcrm_custom/classes'));
+RetailcrmAutoloader::setPathCustom(realpath(_PS_MODULE_DIR_ . '/retailcrm/custom'));
 RetailcrmAutoloader::setFileExt('.php');
 spl_autoload_register('RetailcrmAutoloader::loader');
