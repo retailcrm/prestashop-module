@@ -724,6 +724,9 @@ class RetailcrmHistory
                     }
 
                     $orderToUpdate = new Order((int)$order['externalId']);
+                    if(!Validate::isLoadedObject($orderToUpdate)) {
+                        continue;
+                    }
                     self::handleCustomerDataChange($orderToUpdate, $order);
 
                     /*
