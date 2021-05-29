@@ -130,7 +130,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.2.6';
+        $this->version = '3.3.0';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('retailCRM');
         $this->description = $this->l('Integration module for retailCRM');
@@ -282,7 +282,7 @@ class RetailCRM extends Module
             } elseif (!empty($exportCustomers)) {
                 return $this->export($exportCustomers, 'customer');
             } elseif ($updateSinceId) {
-               return $this->updateSinceId();
+                return $this->updateSinceId();
             } elseif ($downloadLogs) {
                 return $this->downloadLogs($logNames);
             } else {
@@ -385,12 +385,14 @@ class RetailCRM extends Module
      */
     public function export($step, $entity = 'order')
     {
-        if (!Tools::getValue('ajax'))
+        if (!Tools::getValue('ajax')) {
             return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
+        }
 
         $step--;
-        if ($step < 0)
+        if ($step < 0) {
             return RetailcrmJsonResponse::invalidResponse('Invalid request data');
+        }
 
         $api = RetailcrmTools::getApiClient();
 
@@ -421,8 +423,9 @@ class RetailCRM extends Module
 
     public function updateSinceId()
     {
-        if (!Tools::getValue('ajax'))
+        if (!Tools::getValue('ajax')) {
             return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
+        }
 
         $api = RetailcrmTools::getApiClient();
 
@@ -440,8 +443,9 @@ class RetailCRM extends Module
 
     public function downloadLogs($name = '')
     {
-        if (!Tools::getValue('ajax'))
+        if (!Tools::getValue('ajax')) {
             return false;
+        }
 
         if (!empty($name)) {
             if (false === ($filePath = RetailcrmLogger::checkFileName($name))) {

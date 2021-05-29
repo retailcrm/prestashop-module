@@ -197,21 +197,21 @@
                             <div class="retail-circle">
                                 <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
                                 <input type="text" name="RETAILCRM_EXPORT_ORDERS_COUNT" readonly="readonly"
-                                       class="retail-circle__content" value="{$ordersCount}"/>
+                                       class="retail-circle__content" value="{$ordersCount|escape:'htmlall':'UTF-8'}"/>
                                 <input type="hidden" name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"
-                                       value="{$exportOrdersStepSize}"/>
+                                       value="{$exportOrdersStepSize|escape:'htmlall':'UTF-8'}"/>
                             </div>
                             <div class="retail-circle">
                                 <div class="retail-circle__title">
                                     {l s='Customers' mod='retailcrm'}
                                 </div>
                                 <input type="text" readonly="readonly"
-                                       title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount}"
-                                       class="retail-circle__content" value="{$customersCount}"/>
+                                       title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount|escape:'htmlall':'UTF-8'}"
+                                       class="retail-circle__content" value="{$customersCount|escape:'htmlall':'UTF-8'}"/>
                                 <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"
-                                       value="{$exportCustomersCount}"/>
+                                       value="{$exportCustomersCount|escape:'htmlall':'UTF-8'}"/>
                                 <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE"
-                                       value="{$exportCustomersStepSize}"/>
+                                       value="{$exportCustomersStepSize|escape:'htmlall':'UTF-8'}"/>
                             </div>
                         </div>
                         <div class="retail-form__row retail-form__row_submit"
@@ -296,12 +296,12 @@
                                 <tr class="retail-table__row-top">
                                     <td>
                                         {if isset($jobsNames[$key]) }
-                                            <span title="{$key}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
+                                            <span title="{$key|escape:'htmlall':'UTF-8'}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
                                         {else}
-                                            {$key}
+                                            {$key|escape:'htmlall':'UTF-8'}
                                         {/if}
                                     </td>
-                                    <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'}{/if}</td>
+                                    <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'|escape:'htmlall':'UTF-8'}{/if}</td>
                                     <td class="retail-table-center">
                                         {if $key === $currentJob || $key === $currentJobCli}
                                             <span>&#8987;</span>
@@ -317,13 +317,13 @@
                                     </td>
                                     <td class="retail-collapsible">
                                         {if isset($item['error']['message'])}
-                                            <input type="checkbox" class="retail-collapsible__input" id="error_{$key}">
-                                            <label for="error_{$key}"
+                                            <input type="checkbox" class="retail-collapsible__input" id="error_{$key|escape:'htmlall':'UTF-8'}">
+                                            <label for="error_{$key|escape:'htmlall':'UTF-8'}"
                                                    class="retail-collapsible__title retail-error-msg">
-                                                <span class="retail-error-msg">{$item['error']['message']}</span>
+                                                <span class="retail-error-msg">{$item['error']['message']|escape:'htmlall':'UTF-8'}</span>
                                                 <p class="retail-collapsible__content">
                                                     <b>{l s='StackTrace' mod='retailcrm'}
-                                                        :</b><br>{$item['error']['trace']}
+                                                        :</b><br>{$item['error']['trace']|escape:'htmlall':'UTF-8'}
                                                 </p>
                                             </label>
                                         {/if}
@@ -360,9 +360,9 @@
                             <tbody>
                             {foreach from=$retailcrmLogsInfo key=key item=logItem}
                                 <tr class="retail-table__row-top">
-                                    <td>{$logItem.name}</td>
-                                    <td class="retail-table-center">{$logItem.modified}</td>
-                                    <td class="retail-table-center">{$logItem.size}</td>
+                                    <td>{$logItem.name|escape:'htmlall':'UTF-8'}</td>
+                                    <td class="retail-table-center">{$logItem.modified|escape:'htmlall':'UTF-8'}</td>
+                                    <td class="retail-table-center">{$logItem.size|escape:'htmlall':'UTF-8'}</td>
                                     <td class="retail-table-center">
                                         <form class="rcrm-form-submit-trigger"
                                               action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"

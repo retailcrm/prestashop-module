@@ -41,13 +41,13 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Upgrade module to version 3.2.7
+ * Upgrade module to version 3.3.0
  *
  * @param \RetailCRM $module
  *
  * @return bool
  */
-function upgrade_module_3_2_7($module)
+function upgrade_module_3_3_0($module)
 {
     if ('retailcrm' != $module->name) {
         return false;
@@ -71,13 +71,14 @@ function retailcrm_upgrade_recursive_copy($src, $dst, $childFolder = '')
 {
     $dir = opendir($src);
 
-    if(!file_exists($dst)) {
+    if (!file_exists($dst)) {
         mkdir($dst);
     }
 
     if ($childFolder != '') {
-        if(!file_exists($dst . '/' . $childFolder))
+        if (!file_exists($dst . '/' . $childFolder)) {
             mkdir($dst . '/' . $childFolder);
+        }
 
         while (false !== ($file = readdir($dir))) {
             if (($file != '.') && ($file != '..')) {
