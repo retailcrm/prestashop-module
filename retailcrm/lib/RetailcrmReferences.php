@@ -286,17 +286,21 @@ class RetailcrmReferences
             $crmStatusTypes[] = array(
                 'id_option' => '',
                 'name' => '',
-                'ordering' => ''
+                'ordering' => '',
             );
             foreach ($request->statuses as $sType) {
                 $crmStatusTypes[] = array(
                     'id_option' => $sType['code'],
                     'name' => $sType['name'],
-                    'ordering' => $sType['ordering']
+                    'ordering' => $sType['ordering'],
                 );
             }
             usort($crmStatusTypes, function ($a, $b) {
-                return $a['ordering'] <=> $b['ordering'];
+                if ($a['ordering'] == $b['ordering']) {
+                    return 0;
+                } else {
+                    return ($a['ordering'] < $b['ordering'] ? -1 : 1);
+                }
             });
         }
 
