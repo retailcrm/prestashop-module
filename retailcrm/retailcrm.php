@@ -1312,22 +1312,6 @@ class RetailCRM extends Module
     {
         return array(
             array(
-                'id_option' => '0',
-                'name' => $this->l('Immediately')
-            ),
-            array(
-                'id_option' => '60',
-                'name' => $this->l('After 1 minute')
-            ),
-            array(
-                'id_option' => '300',
-                'name' => $this->l('After 5 minutes')
-            ),
-            array(
-                'id_option' => '600',
-                'name' => $this->l('After 10 minutes')
-            ),
-            array(
                 'id_option' => '900',
                 'name' => $this->l('After 15 minutes')
             ),
