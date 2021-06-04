@@ -1164,7 +1164,7 @@ class RetailcrmOrderBuilder
                     ? $object->date_add : date('Y-m-d H:i:s'),
                 'birthday' => RetailcrmTools::verifyDate($object->birthday, 'Y-m-d')
                     ? $object->birthday : '',
-                'sex' => $object->id_gender == "0" ? "" : ($object->id_gender == "1" ? "male" : "female")
+                'sex' => $object->id_gender == "1" ? "male" : ($object->id_gender == "2" ? "female" : "")
             ),
             $address
         ), function ($value) {
