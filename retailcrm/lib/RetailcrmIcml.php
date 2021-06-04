@@ -60,7 +60,8 @@ class RetailcrmIcml
             'url',
             'xmlId',
             'productActivity',
-            'dimensions'
+            'dimensions',
+            'vatRate',
         );
 
         $this->params = array(

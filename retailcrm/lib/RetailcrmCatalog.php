@@ -278,7 +278,8 @@ class RetailcrmCatalog
                                 'vendor' => $vendor,
                                 'article' => $offerArticle,
                                 'weight' => $weight,
-                                'dimensions' => $dimensions
+                                'dimensions' => $dimensions,
+                                'vatRate' => $product['rate'],
                             );
 
                             if (!empty($combinations)) {
@@ -326,7 +327,8 @@ class RetailcrmCatalog
                             'vendor' => $vendor,
                             'article' => $article,
                             'weight' => $weight,
-                            'dimensions' => $dimensions
+                            'dimensions' => $dimensions,
+                            'vatRate' => $product['rate'],
                         );
 
                         yield RetailcrmTools::filter(
