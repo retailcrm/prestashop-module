@@ -310,11 +310,11 @@ class RetailCRM extends Module
     public function uploadOrders($orderIds)
     {
         if (count($orderIds) > 10) {
-            return $this->displayConfirmation($this->l("Can't upload more than 10 orders per request"));
+            return $this->displayError($this->l("Can't upload more than 10 orders per request"));
         }
 
         if (count($orderIds) < 1) {
-            return $this->displayConfirmation($this->l("At least one order ID should be specified"));
+            return $this->displayError($this->l("At least one order ID should be specified"));
         }
 
         $apiUrl = Configuration::get(static::API_URL);
@@ -330,12 +330,18 @@ class RetailCRM extends Module
         }
 
         $result = '';
+        $skippedOrders = array();
 
         foreach ($orderIds as $orderId) {
             $object = new Order($orderId);
             $customer = new Customer($object->id_customer);
             $apiResponse = $this->api->ordersGet($object->id);
             $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : array();
+
+            if (!Validate::isLoadedObject($object)) {
+                array_push($skippedOrders, $orderId);
+                continue;
+            }
 
             try {
                 $orderBuilder = new RetailcrmOrderBuilder();
@@ -365,13 +371,22 @@ class RetailCRM extends Module
             }
         }
 
-        if ($isSuccessful) {
+        if ($isSuccessful && empty($skippedOrders)) {
             return $this->displayConfirmation($this->l('All orders were uploaded successfully'));
         } else {
             $result .= $this->displayWarning($this->l('Not all orders were uploaded successfully'));
 
-            foreach (RetailcrmApiErrors::getErrors() as $error) {
-                $result .= $this->displayError($error);
+            if ($errors = RetailcrmApiErrors::getErrors()) {
+                foreach ($errors as $error) {
+                    $result .= $this->displayError($error);
+                }
+            }
+
+            if (!empty($skippedOrders)) {
+                $result .= $this->displayWarning(sprintf(
+                    $this->l('Orders skipped due to non-existence: %s', 'retailcrm'),
+                    implode(', ', $skippedOrders)
+                ));
             }
 
             return $result;
