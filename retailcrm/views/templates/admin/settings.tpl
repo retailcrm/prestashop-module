@@ -122,7 +122,10 @@
                         </div>
                     </div>
                     <div id="rcrm_tab_delivery_types">
-                        <div class="retail-form__title">{l s='Delivery' mod='retailcrm'}</div>
+                        <div class="retail-form__title">
+                            {l s='Delivery' mod='retailcrm'}
+                            <a href="{$url|cat:'/admin/delivery-types'|escape:'htmlall':'UTF-8'}" target="_blank" class="retail-form__title_link">{l s='Manage delivery types' mod='retailcrm'}</a>
+                        </div>
                         {foreach from=$deliveryTypes item=item}
                             <div class="retail-form__row">
                                 <label class="retail-form__label" for="{$item.name|escape:'htmlall':'UTF-8'}">{l s=$item.label mod='retailcrm'}</label>
@@ -135,7 +138,10 @@
                         {/foreach}
                     </div>
                     <div id="rcrm_tab_order_statuses">
-                        <div class="retail-form__title">{l s='Order statuses' mod='retailcrm'}</div>
+                        <div class="retail-form__title">
+                            {l s='Order statuses' mod='retailcrm'}
+                            <a href="{$url|cat:'/admin/statuses'|escape:'htmlall':'UTF-8'}" target="_blank" class="retail-form__title_link">{l s='Manage order statuses' mod='retailcrm'}</a>
+                        </div>
                         {foreach from=$orderStatuses item=item}
                             <div class="retail-form__row">
                                 <label class="retail-form__label" for="{$item.name|escape:'htmlall':'UTF-8'}">{l s=$item.label mod='retailcrm'}</label>
@@ -148,7 +154,10 @@
                         {/foreach}
                     </div>
                     <div id="rcrm_tab_payment_types">
-                        <div class="retail-form__title">{l s='Payment types' mod='retailcrm'}</div>
+                        <div class="retail-form__title">
+                            {l s='Payment types' mod='retailcrm'}
+                            <a href="{$url|cat:'/admin/payment-types'|escape:'htmlall':'UTF-8'}" target="_blank" class="retail-form__title_link">{l s='Manage payment types' mod='retailcrm'}</a>
+                        </div>
                         {foreach from=$paymentTypes item=item}
                             <div class="retail-form__row">
                                 <label class="retail-form__label" for="{$item.name|escape:'htmlall':'UTF-8'}">{l s=$item.label mod='retailcrm'}</label>
