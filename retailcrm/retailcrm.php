@@ -892,7 +892,7 @@ class RetailCRM extends Module
 
         if (!empty($url) && !empty($apiKey)) {
             $settings  = array(
-                'url' => $url,
+                'url' => rtrim($url, '/'),
                 'apiKey' => $apiKey,
                 'address' => (string)(Tools::getValue(static::API_URL)),
                 'delivery' => json_encode(Tools::getValue(static::DELIVERY)),

@@ -144,6 +144,16 @@ body, html {
       font-weight: 600;
       line-height: 24px;
       margin-bottom: 22px;
+      
+      &_link {
+        color: @red;
+        transition: .25s ease;
+        float: right;
+  
+        &:hover {
+          color: @redHover;
+        }
+      }
     }
     &__label {
       width: 100% !important;

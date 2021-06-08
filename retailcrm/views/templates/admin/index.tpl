@@ -57,7 +57,7 @@
         <div class="retail-btns">
             <a href="#toggle-form" class="btn btn_max toggle-btn">{l s='I have an account in RetailCRM' mod='retailcrm'}</a>
             <div class="retail-btns__separate">{l s='or' mod='retailcrm'}</div>
-            <a href="{$registerUrl|escape:'htmlall':'UTF-8'}" target="_black" class="btn btn_max btn_invert">{l s='Get a free demo' mod='retailcrm'}</a>
+            <a href="{$registerUrl|escape:'htmlall':'UTF-8'}" target="_blank" class="btn btn_max btn_invert">{l s='Get a free demo' mod='retailcrm'}</a>
         </div>
         <div class="retail-form toggle-box" id="toggle-form">
             <form action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post">
