@@ -109,9 +109,8 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
                 ->setDataCrm($this->dataCrm['address'])
                 ->setFirstName($this->arrayValue('firstName'))
                 ->setLastName($this->arrayValue('lastName'))
-                ->setPhone( isset($this->dataCrm['phones'][0]['number'])
-                && !empty($this->dataCrm['phones'][0]['number'])
-                    ?  $this->dataCrm['phones'][0]['number'] : '')
+                ->setPhone(isset($this->dataCrm['phones'][0]['number']) && !empty($this->dataCrm['phones'][0]['number'])
+                    ? $this->dataCrm['phones'][0]['number'] : '')
                 ->build();
 
             $this->customerAddress = $this->addressBuilder->getData();
