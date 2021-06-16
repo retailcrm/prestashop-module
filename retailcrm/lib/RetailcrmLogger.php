@@ -181,7 +181,9 @@ class RetailcrmLogger
 
     public static function getLogDir()
     {
-        return _PS_ROOT_DIR_ . '/var/logs';
+        $logDir = version_compare(_PS_VERSION_, '1.7', '<') ? '/log' : '/var/logs';
+
+        return _PS_ROOT_DIR_ . $logDir;
     }
 
     /**
