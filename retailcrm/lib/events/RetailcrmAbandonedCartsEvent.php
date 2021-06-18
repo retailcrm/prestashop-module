@@ -63,7 +63,7 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
             $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
 
             if (empty($syncCartsActive)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Abandoned carts is disabled, skipping...');
+                RetailcrmLogger::writeDebug(__METHOD__, 'Abandoned carts is disabled, skipping...');
 
                 continue;
             }
