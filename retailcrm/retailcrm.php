@@ -818,7 +818,7 @@ class RetailCRM extends Module
 
         $externalId = false;
 
-        if (empty($params['cart'])) {
+        if (empty($params['cart']) || empty((int) $params['cart']->id)) {
             return false;
         }
 
