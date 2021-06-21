@@ -210,9 +210,14 @@ class RetailcrmLogger
     public static function clearObsoleteLogs()
     {
         $logDir = self::getLogDir();
+
+        if (!is_dir($logDir)) {
+            return;
+        }
+
         $handle = opendir($logDir);
         while (($file = readdir($handle)) !== false) {
-            if (false !== self::checkFileName($file)) {
+            if (self::checkFileName($file) !== false) {
                 $path = "$logDir/$file";
                 if (filemtime($path) < strtotime('-30 days')) {
                     unlink($path);
@@ -226,9 +231,13 @@ class RetailcrmLogger
         $fileNames = [];
         $logDir = self::getLogDir();
 
+        if (!is_dir($logDir)) {
+            return;
+        }
+
         $handle = opendir($logDir);
-        while (false !== $file = readdir($handle)) {
-            if (false !== self::checkFileName($file)) {
+        while ($file = readdir($handle) !== false) {
+            if (self::checkFileName($file) !== false) {
                 $path = "$logDir/$file";
                 $fileNames[] = [
                     'name' => $file,
