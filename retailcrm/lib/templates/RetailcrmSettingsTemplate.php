@@ -83,6 +83,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['currentJob'] = Configuration::get(RetailcrmJobManager::CURRENT_TASK);
             $params['currentJobCli'] = Configuration::get(RetailcrmCli::CURRENT_TASK_CLI);
             $params['retailcrmLogsInfo'] = RetailcrmLogger::getLogFilesInfo();
+            $params['errorTabs'] = $this->module->validateStoredSettings();
         }
 
         return $params;
