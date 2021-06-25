@@ -256,7 +256,7 @@ class RetailcrmReferences
         return $this->getApiStatuses();
     }
 
-    protected function getApiDeliveryTypes()
+    public function getApiDeliveryTypes()
     {
         $crmDeliveryTypes = array();
         $request = $this->api->deliveryTypesList();
@@ -281,7 +281,7 @@ class RetailcrmReferences
         return $crmDeliveryTypes;
     }
 
-    protected function getApiStatuses()
+    public function getApiStatuses()
     {
         $crmStatusTypes = array();
         $request = $this->api->statusesList();
@@ -315,7 +315,7 @@ class RetailcrmReferences
         return $crmStatusTypes;
     }
 
-    protected function getApiPaymentTypes()
+    public function getApiPaymentTypes()
     {
         $crmPaymentTypes = array();
         $request = $this->api->paymentTypesList();

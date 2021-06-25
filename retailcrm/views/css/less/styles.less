@@ -1,8 +1,11 @@
 @import "fonts.less";
 
-@red: #0068FF;
-@redHover: #005add;
+@red: #ff553b;
+@redHover: #da4932;
 @redActive: darken(@redHover, 10%);
+@blue: #0068FF;
+@blueHover: #005add;
+@blueActive: darken(@blueHover, 10%);
 @gray: #7A7A7A;
 @grayBg: #EAEBEC;
 @grayBtn: rgba(122, 122, 122, 0.1);
@@ -146,12 +149,12 @@ body, html {
       margin-bottom: 22px;
       
       &_link {
-        color: @red;
+        color: @blue;
         transition: .25s ease;
         float: right;
   
         &:hover {
-          color: @redHover;
+          color: @blueHover;
         }
       }
     }
@@ -273,7 +276,7 @@ body, html {
         right: 0;
         opacity: 0;
         visibility: hidden;
-        background: @red;
+        background: @blue;
         transition: .25s ease;
       }
 
@@ -372,14 +375,14 @@ body, html {
       margin-top: 10px;
     }
     &__link {
-      color: @red;
+      color: @blue;
       font-size: 16px;
       font-weight: 600;
       line-height: 24px;
       transition: .25s ease;
 
       &:hover {
-        color: @redHover;
+        color: @blueHover;
       }
     }
   }
@@ -489,6 +492,18 @@ body, html {
 
       &_active {
         color: white !important;
+        background: @blue !important;
+
+        &:hover {
+          background: @blueHover !important;
+        }
+
+        &.retail-menu__btn_error {
+          background: @redHover !important;
+        }
+      }
+      &_error {
+        color: white !important;
         background: @red !important;
 
         &:hover {
@@ -520,7 +535,7 @@ body, html {
     font-size: 18px;
     font-weight: 600;
     text-align: center;
-    color: @red;
+    color: @blue;
     text-decoration: none;
     cursor: pointer;
     appearance: none;
@@ -540,15 +555,15 @@ body, html {
       min-width: 356px;
     }
     &_invert {
-      background: @red;
+      background: @blue;
       color: white;
 
       &:hover {
-        background: @redHover;
+        background: @blueHover;
       }
 
       &:active {
-        background: @redActive;
+        background: @blueActive;
       }
     }
     &_whatsapp {

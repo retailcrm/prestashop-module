@@ -86,6 +86,14 @@ class RetailCRM extends Module
         'RetailcrmClearLogsEvent' => 'Clearing logs'
     ];
 
+    const TABS_TO_VALIDATE = [
+        'delivery' => self::DELIVERY,
+        'statuses' => self::STATUS,
+        'payment' => self::PAYMENT,
+        'deliveryDefault' => self::DELIVERY_DEFAULT,
+        'paymentDefault' => self::PAYMENT_DEFAULT,
+    ];
+
     /**
      * @var array $templateErrors
      */
@@ -1086,6 +1094,56 @@ class RetailCRM extends Module
         return true;
     }
 
+    public function validateStoredSettings()
+    {
+        $output = array();
+        $checkApiMethods = array(
+            'delivery' => 'getApiDeliveryTypes',
+            'statuses' => 'getApiStatuses',
+            'payment' => 'getApiPaymentTypes',
+        );
+
+        foreach (self::TABS_TO_VALIDATE as $tabName => $settingName) {
+            $storedValues = Tools::getIsset($settingName)
+                ? Tools::getValue($settingName)
+                : json_decode(Configuration::get($settingName), true);
+
+            if ($storedValues !== false && $storedValues !== null) {
+                if (!$this->validateMappingSelected($storedValues)) {
+                    $output[] = $tabName;
+                } else {
+                    if (array_key_exists($tabName, $checkApiMethods)) {
+                        $crmValues = call_user_func(array($this->reference, $checkApiMethods[$tabName]));
+                        $crmCodes = array_column($crmValues, 'id_option');
+
+                        if (!empty(array_diff($storedValues, $crmCodes))) {
+                            $output[] = $tabName;
+                        };
+                    }
+                }
+            }
+        }
+
+        return $output;
+    }
+
+    private function validateMappingSelected($values)
+    {
+        if (is_array($values)) {
+            foreach ($values as $item) {
+                if (empty($item)) {
+                    return false;
+                }
+            }
+        } else {
+            if (empty($values)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     /**
      * Settings form validator
      *
@@ -1122,6 +1180,21 @@ class RetailCRM extends Module
             $output .= $this->displayError(
                 $this->l('Payment types should not repeat in payment matrix')
             );
+        }
+
+        $errorTabs = $this->validateStoredSettings();
+
+        if (in_array('delivery', $errorTabs)) {
+            $this->displayWarning($this->l('Select values for all delivery types'));
+        }
+        if (in_array('statuses', $errorTabs)) {
+            $this->displayWarning($this->l('Select values for all order statuses'));
+        }
+        if (in_array('payment', $errorTabs)) {
+            $this->displayWarning($this->l('Select values for all payment types'));
+        }
+        if (in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)) {
+            $this->displayWarning($this->l('Select values for all default parameters'));
         }
 
         return $output;
