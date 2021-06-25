@@ -1104,18 +1104,17 @@ class RetailCRM extends Module
         );
 
         foreach (self::TABS_TO_VALIDATE as $tabName => $settingName) {
-            $setting = !empty(Tools::getValue($settingName))
-                ? json_encode(Tools::getValue($settingName))
-                : Configuration::get($settingName);
- 
-            if (json_decode($setting, true) !== false) {
-                if (!$this->validateMappingSelected($setting)) {
+            $storedValues = Tools::getIsset($settingName)
+                ? Tools::getValue($settingName)
+                : json_decode(Configuration::get($settingName), true);
+
+            if ($storedValues !== false && $storedValues !== null) {
+                if (!$this->validateMappingSelected($storedValues)) {
                     $output[] = $tabName;
                 } else {
                     if (array_key_exists($tabName, $checkApiMethods)) {
                         $crmValues = call_user_func(array($this->reference, $checkApiMethods[$tabName]));
                         $crmCodes = array_column($crmValues, 'id_option');
-                        $storedValues = json_decode($setting, true);
 
                         if (!empty(array_diff($storedValues, $crmCodes))) {
                             $output[] = $tabName;
@@ -1123,24 +1122,21 @@ class RetailCRM extends Module
                     }
                 }
             }
-            
         }
 
         return $output;
     }
 
-    private function validateMappingSelected ($values)
+    private function validateMappingSelected($values)
     {
-        $data = json_decode($values, true);
-        
-        if (is_array($data)) {
-            foreach ($data as $item) {
+        if (is_array($values)) {
+            foreach ($values as $item) {
                 if (empty($item)) {
                     return false;
                 }
             }
         } else {
-            if (empty($data)) {
+            if (empty($values)) {
                 return false;
             }
         }
