@@ -42,18 +42,18 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
         switch ($this->getCurrentLanguageISO()) {
             case 'ru':
                 $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://retailcrm.ru/signup?utm_source=prestashop&utm_medium=modul&utm_campaign=button-in-modul';
-                $supportEmail = 'support@retailcrm.ru';
+                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
+                $supportEmail = 'help@simla.com';
                 break;
             case 'es':
                 $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://calendly.com/retailcrm_es/15min';
-                $supportEmail = 'support@retailcrm.es';
+                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
+                $supportEmail = 'help@simla.com';
                 break;
             default:
                 $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://calendly.com/retailcrm_es/15min';
-                $supportEmail = 'support@retailcrm.pro';
+                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
+                $supportEmail = 'help@simla.com';
                 break;
         }
 

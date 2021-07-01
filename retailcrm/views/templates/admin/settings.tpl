@@ -42,7 +42,7 @@
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-upload.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-export.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/styles.min.css">
-<title>RetailCRM</title>
+<title>Simla.com</title>
 <div class="retail retail-wrap hidden">
     {include file='./module_messages.tpl'}
     <div class="retail-container retail-column">
@@ -61,14 +61,14 @@
             </div>
         </aside>
         <article class="retail-column__content">
-            <h1 class="retail-title retail-title_content">RetailCRM</h1>
+            <h1 class="retail-title retail-title_content">Simla.com</h1>
             <div class="retail-form retail-form_main">
                 <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post" id="submitretailcrm-form">
                     <input type="hidden" name="submitretailcrm" value="1" />
                     <div id="rcrm_tab_connection">
                         <div class="retail-form__title">{l s='Connection Settings' mod='retailcrm'}</div>
                         <div class="retail-form__row">
-                            <input required type="text" name="{$urlName|escape:'htmlall':'UTF-8'}" value="{$url|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='RetailCRM URL' mod='retailcrm'}">
+                            <input required type="text" name="{$urlName|escape:'htmlall':'UTF-8'}" value="{$url|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='Simla.com URL' mod='retailcrm'}">
                         </div>
                         <div class="retail-form__row">
                             <input required type="text" name="{$apiKeyName|escape:'htmlall':'UTF-8'}" value="{$apiKey|escape:'htmlall':'UTF-8'}" class="retail-form__area" placeholder="{l s='API key' mod='retailcrm'}">
@@ -82,7 +82,7 @@
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
-                                <label for="receivebalances-active">{l s='Receive stocks from RetailCRM' mod='retailcrm'}</label>
+                                <label for="receivebalances-active">{l s='Receive stocks from Simla.com' mod='retailcrm'}</label>
                             </div>
                         </div>
                         <div class="retail-form__row">
@@ -92,7 +92,7 @@
                             </div>
                         </div><div class="retail-form__row">
                             <div class="retail-form__message-warning">
-                                <span>{l s='Activate only in case if you have enabled the option “Corporate customers” in RetailCRM' mod='retailcrm'}</span>
+                                <span>{l s='Activate only in case if you have enabled the option “Corporate customers” in Simla.com' mod='retailcrm'}</span>
                             </div>
                         </div>
                     </div>
@@ -190,7 +190,7 @@
                     </div>
                     <div id="rcrm_tab_orders_upload">
                         <div class="retail-form__title">{l s='Upload orders' mod='retailcrm'}</div>
-                        <div class="retail-form__label">{l s='Enter order IDs to upload to RetailCRM, divided by a comma. You can also specify ranges, like "1-10". It\'s allowed to upload to 10 orders at a time.' mod='retailcrm'}</div>
+                        <div class="retail-form__label">{l s='Enter order IDs to upload to Simla.com, divided by a comma. You can also specify ranges, like "1-10". It\'s allowed to upload to 10 orders at a time.' mod='retailcrm'}</div>
                         <div class="retail-form__row">
                             <input type="text" name="{$uploadOrders|escape:'htmlall':'UTF-8'}" value=""
                                    class="retail-form__area" placeholder="{l s='Orders IDs' mod='retailcrm'}">
@@ -201,7 +201,7 @@
                         </div>
                         <div class="retail-form__title"
                              style="margin-top: 40px;">{l s='Export orders & customers' mod='retailcrm'}</div>
-                        <div class="retail-form__label">{l s='You can export all the orders and customers from CMS to RetailCRM by pressing "Export" button. This process can take a long time, and it\'s required that you keep the tab opened until it\'s done.' mod='retailcrm'}</div>
+                        <div class="retail-form__label">{l s='You can export all the orders and customers from CMS to Simla.com by pressing "Export" button. This process can take a long time, and it\'s required that you keep the tab opened until it\'s done.' mod='retailcrm'}</div>
                         <div class="retail-form__row">
                             <div class="retail-circle">
                                 <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
