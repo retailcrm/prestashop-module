@@ -53,8 +53,13 @@ function upgrade_module_3_3_2($module)
         return false;
     }
 
-    $shops = Shop::getShops();
     $isMultiStoreActive = Shop::isFeatureActive();
+
+    if ($isMultiStoreActive) {
+        $shops = Shop::getShops();
+    } else {
+        $shops[] = Shop::getContext();
+    }
 
     foreach ($shops as $shop) {
         RetailcrmTools::setShopContext(intval($shop['id_shop']));
@@ -69,7 +74,7 @@ function upgrade_module_3_3_2($module)
             $oldFile = _PS_ROOT_DIR_ . '/' . 'retailcrm_' . $shop['id_shop'] . '.xml';
             $newFile = _PS_ROOT_DIR_ . '/' . 'simla_' . $shop['id_shop'] . '.xml';
         } else {
-            $odlFile = _PS_ROOT_DIR_ . '/' . 'retailcrm.xml';
+            $oldFile = _PS_ROOT_DIR_ . '/' . 'retailcrm.xml';
             $newFile = _PS_ROOT_DIR_ . '/' . 'simla.xml';
         }
 
