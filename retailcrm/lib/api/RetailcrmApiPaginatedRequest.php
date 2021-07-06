@@ -63,6 +63,11 @@ class RetailcrmApiPaginatedRequest
     private $limit;
 
     /**
+     * @var int|null
+     */
+    private $pageLimit;
+
+    /**
      * @var array
      */
     private $data;
@@ -141,6 +146,19 @@ class RetailcrmApiPaginatedRequest
     }
 
     /**
+     * Sets page limit per call
+     *
+     * @param int $pageLimit
+     *
+     * @return RetailcrmApiPaginatedRequest
+     */
+    public function setPageLimit($pageLimit)
+    {
+        $this->pageLimit = $pageLimit;
+        return $this;
+    }
+
+    /**
      * Executes request
      *
      * @return $this
@@ -160,6 +178,10 @@ class RetailcrmApiPaginatedRequest
             if ($response instanceof RetailcrmApiResponse && $response->offsetExists($this->dataKey)) {
                 $this->data = array_merge($this->data, $response[$this->dataKey]);
                 $page = $response['pagination']['currentPage'] + 1;
+            }
+
+            if($this->pageLimit !== null && $page > $this->pageLimit) {
+                break;
             }
 
             time_nanosleep(0, 300000000);
@@ -188,6 +210,7 @@ class RetailcrmApiPaginatedRequest
     {
         $this->method = '';
         $this->limit = 100;
+        $this->pageLimit = null;
         $this->data = array();
 
         return $this;

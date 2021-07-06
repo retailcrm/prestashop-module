@@ -65,6 +65,7 @@ class RetailcrmHistory
             ->setParams(array($filter, '{{page}}'))
             ->setDataKey('history')
             ->setLimit(100)
+            ->setPageLimit(50)
             ->execute()
             ->getData();
 
@@ -204,6 +205,7 @@ class RetailcrmHistory
             ->setParams(array($filter, '{{page}}'))
             ->setDataKey('history')
             ->setLimit(100)
+            ->setPageLimit(50)
             ->execute()
             ->getData();
 
