@@ -256,14 +256,16 @@ class RetailcrmOrderBuilder
             $customer = $this->createdCustomer;
         } else {
             $crmCustomer = RetailcrmTools::mergeCustomerAddress($customer, $this->buildRegularAddress());
-            if (isset($crmCustomer['tags'])) {
-                unset($crmCustomer['tags']);
-            }
+            if (!RetailcrmTools::isEqualCustomerAddress($customer, $crmCustomer)) {
+                if (isset($crmCustomer['tags'])) {
+                    unset($crmCustomer['tags']);
+                }
 
-            $response = $this->api->customersEdit($crmCustomer);
+                $response = $this->api->customersEdit($crmCustomer);
 
-            if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
-                $customer = $crmCustomer;
+                if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
+                    $customer = $crmCustomer;
+                }
             }
         }
 
@@ -901,16 +903,14 @@ class RetailcrmOrderBuilder
         }
 
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
-            $order_payment = array(
-                'externalId' => $order->id . '#' . $order->reference,
-                'amount' => round($order->total_paid_real, 2),
-                'status' => ((round($order->total_paid_real, 2) > 0) ? 'paid' : null),
-                'type' => $payment[$paymentType]
+            $crmOrder['payments'] = array(
+                array(
+                    'externalId' => $order->id . '#' . $order->reference,
+                    'amount' => round($order->total_paid_real, 2),
+                    'status' => ((round($order->total_paid_real, 2) > 0) ? 'paid' : null),
+                    'type' => $payment[$paymentType]
+                )
             );
-        }
-
-        if (isset($order_payment)) {
-            $crmOrder['payments'][] = $order_payment;
         } else {
             $crmOrder['payments'] = array();
         }

@@ -84,7 +84,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals(true, RetailcrmHistory::customersHistory());
     }
 
-    public function orderCreate($apiMock)
+    private function orderCreate($apiMock)
     {
         RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $apiMock;
@@ -100,7 +100,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertInstanceOf('Order', $order);
     }
 
-    public function switchCustomer()
+    private function switchCustomer()
     {
         RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
@@ -276,6 +276,116 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         RetailcrmHistory::ordersHistory();
     }
 
+
+    public function testOrderAddressUpdate()
+    {
+        $orderId = RetailcrmTestHelper::getMaxOrderId();
+        $crmOrder = $this->getApiOrderAddressUpdate($orderId);
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryAddressUpdated($orderId)
+                    )
+                )
+            );
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        array(
+                            'order' => $crmOrder
+                        )
+                    )
+                )
+            );
+
+        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$api = $this->apiMock;
+
+        $order = new Order($orderId);
+        $idAddress = $order->id_address_delivery;
+
+        RetailcrmHistory::ordersHistory();
+
+        $orderAfter = new Order($orderId);
+        $idAddressAfter = $orderAfter->id_address_delivery;
+
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
+
+        $builder = new RetailcrmAddressBuilder();
+        $result = $builder
+            ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
+            ->setAddressId($idAddressAfter)
+            ->build()
+            ->getDataArray();
+
+        $this->assertEquals($crmOrder['delivery']['address']['countryIso'], $result['countryIso']);
+        unset($crmOrder['delivery']['address']['countryIso']);
+
+        $this->assertEquals($crmOrder['delivery']['address'], $result['delivery']['address']);
+    }
+
+
+    public function testOrderNameUpdate()
+    {
+        $orderId = RetailcrmTestHelper::getMaxOrderId();
+        $crmOrder = $this->getApiOrderNameAndPhoneUpdate($orderId);
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryNameAndPhoneUpdated($orderId)
+                    )
+                )
+            );
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        array(
+                            'order' => $crmOrder
+                        )
+                    )
+                )
+            );
+
+        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$api = $this->apiMock;
+
+        $order = new Order($orderId);
+        $idAddress = $order->id_address_delivery;
+
+        RetailcrmHistory::ordersHistory();
+
+        $orderAfter = new Order($orderId);
+        $idAddressAfter = $orderAfter->id_address_delivery;
+        $addressAfter = new Address($idAddressAfter);
+
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
+
+        $this->assertEquals($crmOrder['firstName'], $addressAfter->firstname);
+        $this->assertEquals($crmOrder['lastName'], $addressAfter->lastname);
+        $this->assertEquals($crmOrder['phone'], $addressAfter->phone);
+    }
+
+
     private function getHistoryExistOrder()
     {
         return array(
@@ -394,7 +504,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
-                    'region' => 'Test region',
+                    'region' => 'Moscow',
                     'city' => 'Test',
                     'text' => 'Test text address'
                 ),
@@ -426,7 +536,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
-                    'region' => 'Test region',
+                    'region' => 'Moscow',
                     'city' => 'Test',
                     'text' => 'Test text address'
                 )
@@ -513,7 +623,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
-                    'region' => 'Test region',
+                    'region' => 'Moscow',
                     'city' => 'Test',
                     'text' => 'Test text address'
                 ),
@@ -554,7 +664,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
-                    'region' => 'Test region',
+                    'region' => 'Moscow',
                     'city' => 'Test',
                     'text' => 'Test text address'
                 )
@@ -570,7 +680,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
-                    'region' => 'Test region',
+                    'region' => 'Moscow',
                     'city' => 'Test',
                     'text' => 'Test text address'
                 )
@@ -760,6 +870,122 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 'number' => '+79999999999'
             )
         );
+    }
+
+    private function getHistoryAddressUpdated($orderId)
+    {
+        return array(
+            'success' => true,
+            'history'  => array(
+                array(
+                    'id' => 19752,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'source' => 'api',
+                    'field' => 'delivery_address.city',
+                    'apiKey' => array('current' => false),
+                    'oldValue' => 'Order City old',
+                    'newValue' => 'Order City new',
+                    'order' => array(
+                        'id' => 6025,
+                        'externalId' => (string)$orderId,
+                        'site' => '127.0.0.1:8000',
+                        'status' => 'new'
+                    )
+                ),
+                array(
+                    'id' => 19753,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'source' => 'api',
+                    'field' => 'delivery_address.index',
+                    'apiKey' => array('current' => false),
+                    'oldValue' => '111',
+                    'newValue' => '222',
+                    'order' => array(
+                        'id' => 6025,
+                        'externalId' => (string)$orderId,
+                        'site' => '127.0.0.1:8000',
+                        'status' => 'new'
+                    )
+                )
+            ),
+            'pagination' => array(
+                'limit' => 20,
+                'totalCount' => 2,
+                'currentPage' => 1,
+                'totalPageCount' => 1
+            )
+        );
+    }
+
+
+    private function getHistoryNameAndPhoneUpdated($orderId)
+    {
+        return array(
+            'success' => true,
+            'history'  => array(
+                array(
+                    'id' => 19752,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'source' => 'api',
+                    'field' => 'first_name',
+                    'apiKey' => array('current' => false),
+                    'oldValue' => 'name old',
+                    'newValue' => 'name new',
+                    'order' => array(
+                        'id' => 6025,
+                        'externalId' => (string)$orderId,
+                        'site' => '127.0.0.1:8000',
+                        'status' => 'new'
+                    )
+                ),
+                array(
+                    'id' => 19753,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'source' => 'api',
+                    'field' => 'phone',
+                    'apiKey' => array('current' => false),
+                    'oldValue' => '111',
+                    'newValue' => '222222',
+                    'order' => array(
+                        'id' => 6025,
+                        'externalId' => (string)$orderId,
+                        'site' => '127.0.0.1:8000',
+                        'status' => 'new'
+                    )
+                )
+            ),
+            'pagination' => array(
+                'limit' => 20,
+                'totalCount' => 2,
+                'currentPage' => 1,
+                'totalPageCount' => 1
+            )
+        );
+    }
+
+    private function getApiOrderAddressUpdate($orderId)
+    {
+        $order = $this->getApiOrder();
+
+        $order['externalId'] = (string)$orderId;
+        $order['delivery']['address']['region'] = 'Buenos Aires'; // todo to get real state id
+        $order['delivery']['address']['city'] = 'Order City new';
+        $order['delivery']['address']['index'] = '222';
+        unset($order['delivery']['address']['id_customer']);
+
+        return $order;
+    }
+
+
+    private function getApiOrderNameAndPhoneUpdate($orderId)
+    {
+        $order = $this->getApiOrder();
+
+        $order['externalId'] = (string)$orderId;
+        $order['firstName'] = 'name new';
+        $order['phone'] = '222222';
+
+        return $order;
     }
 }
 

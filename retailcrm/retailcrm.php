@@ -656,21 +656,6 @@ class RetailCRM extends Module
     public function hookActionOrderEdited($params)
     {
         if ($this->api) {
-            $order = array(
-                'externalId' => $params['order']->id,
-                'firstName' => $params['customer']->firstname,
-                'lastName' => $params['customer']->lastname,
-                'email' => $params['customer']->email,
-                'createdAt' => RetailcrmTools::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
-                    ? $params['order']->date_add : date('Y-m-d H:i:s'),
-                'delivery' => array('cost' => $params['order']->total_shipping),
-                'discountManualAmount' => round($params['order']->total_discounts, 2)
-            );
-
-            if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
-                $order['discountManualAmount'] = $params['order']->total_paid;
-            }
-
             try {
                 $orderdb = new Order($params['order']->id);
             } catch (PrestaShopDatabaseException $exception) {
@@ -681,7 +666,7 @@ class RetailCRM extends Module
                 RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
             }
 
-            $orderCrm = $this->api->ordersGet($order['externalId']);
+            $orderCrm = $this->api->ordersGet($params['order']->id);
 
             if (!($orderCrm instanceof RetailcrmApiResponse) || !$orderCrm->isSuccessful()) {
                 /** @var Order|\OrderCore $order */
@@ -696,6 +681,21 @@ class RetailCRM extends Module
                 ));
 
                 return false;
+            }
+
+            $order = array(
+                'externalId' => $params['order']->id,
+                'firstName' => $params['customer']->firstname,
+                'lastName' => $params['customer']->lastname,
+                'email' => $params['customer']->email,
+                'createdAt' => RetailcrmTools::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
+                    ? $params['order']->date_add : date('Y-m-d H:i:s'),
+                'delivery' => array('cost' => $params['order']->total_shipping),
+                'discountManualAmount' => round($params['order']->total_discounts, 2)
+            );
+
+            if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
+                $order['discountManualAmount'] = $params['order']->total_paid;
             }
 
             $comment = $orderdb->getFirstMessage();

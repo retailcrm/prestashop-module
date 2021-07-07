@@ -234,6 +234,7 @@ class RetailcrmHistory
                 if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
                     continue;
                 }
+                $infoOrder = null;
 
                 if (!array_key_exists('externalId', $order_history)) {
 
@@ -324,7 +325,6 @@ class RetailcrmHistory
                         }
                     }
 
-                    $address = new Address();
                     $customer = null;
                     $customerId = null;
 
@@ -380,10 +380,7 @@ class RetailcrmHistory
                             ->build();
 
                         $customer = $customerBuilder->getData()->getCustomer();
-
-                        if (!empty($address)) {
-                            $address = $customerBuilder->getData()->getCustomerAddress();
-                        }
+                        $address = $customerBuilder->getData()->getCustomerAddress();
                     }
 
                     if (empty($customer->id) && !empty($customer->email)) {
@@ -764,33 +761,56 @@ class RetailcrmHistory
                     /*
                      * check delivery changes
                      */
-                    if (isset($order['status']) && isset($order['delivery'])) {
-                        if ($order['status'] == 'new') {
-                            $customerData = self::$api->customersGet($orderToUpdate->id_customer, 'externalId');
-                            $customerForAddress = $customerData['customer'];
+                    if (isset($order['delivery'])
+                        || isset($order['firstName'])
+                        || isset($order['lastName'])
+                        || isset($order['phone'])
+                    ) {
+                        $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
-                            $customerBuilder = new RetailcrmCustomerBuilder();
-
-                            if (isset($customerData['customer']['address'])) {
-                                $customerForAddress['address'] = array_replace(
-                                    $customerData['customer']['address'],
-                                    $order['delivery']['address']
-                                );
-                            } else {
-                                $customerForAddress['address'] = $order['delivery']['address'];
+                        $orderAddressCrm = [];
+                        // TODO: check changed fields and skip getCRMOrder() if it's possible
+                        //  It is possible if there are valid address in the database
+                        //  and if there's no address1 & address2 changed (text, street, building, etc...)
+                        if (isset($order['delivery']['address'])) {
+                            $orderAddressCrm = $order['delivery']['address'];
+                            // get full order address
+                            $infoOrder = self::getCRMOrder($order['externalId']);
+                            if (isset($infoOrder['delivery']['address'])) {
+                                $orderAddressCrm = $infoOrder['delivery']['address'];
                             }
+                        }
 
-                            $customerBuilder
-                                ->setDataCrm($customerForAddress)
-                                ->build();
+                        $address = $addressBuilder
+                            ->setCustomerAddress(new Address($orderToUpdate->id_address_delivery))
+                            ->setIdCustomer($orderToUpdate->id_customer)
+                            ->setDataCrm($orderAddressCrm)
+                            ->setFirstName(isset($order['firstName']) ? $order['firstName'] : null)
+                            ->setLastName(isset($order['lastName']) ? $order['lastName'] : null)
+                            ->setPhone(isset($order['phone']) ? $order['phone'] : null)
+                            ->build()
+                            ->getData();
 
-                            $address = $customerBuilder->getData()->getCustomerAddress();
-                            if (!is_null($address)) {
-                                $address->id = $orderToUpdate->id_address_delivery;
-
-                                $address->update();
+                        $validate = $address->validateFields(false, true);
+                        if ($validate === true) {
+                            // Modifying an address in order creates another address
+                            // instead of changing the original one. This issue has been fixed in PS 1.7.7
+                            if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                                $address->id = null;
+                                $address->add();
+                                $orderToUpdate->id_address_delivery = $address->id;
                                 $orderToUpdate->update();
+                            } else {
+                                $address->id = $orderToUpdate->id_address_delivery;
+                                $address->update();
                             }
+                        } else {
+                            RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+                                    'Error validating address for order %s: %s',
+                                    $orderToUpdate->id,
+                                    $validate
+                                )
+                            );
                         }
                     }
 
@@ -900,7 +920,9 @@ class RetailcrmHistory
                     if (isset($order['items']) || isset($order['delivery']['cost'])) {
 
                         // get full order
-                        $infoOrder = self::getCRMOrder($order['externalId']);
+                        if (empty($infoOrder)) {
+                            $infoOrder = self::getCRMOrder($order['externalId']);
+                        }
 
                         // items
                         if (isset($order['items']) && is_array($order['items'])) {
@@ -1304,11 +1326,11 @@ class RetailcrmHistory
             }
         }
 
-        if (!empty($crmOrder) && !empty($crmOrder['delivery']) && !empty($crmOrder['delivery']['address'])) {
-            $data->setCrmOrderShippingAddress($crmOrder['delivery']['address']);
-        }
-
         if ($data->feasible()) {
+            if (!empty($crmOrder) && !empty($crmOrder['delivery']) && !empty($crmOrder['delivery']['address'])) {
+                $data->setCrmOrderShippingAddress($crmOrder['delivery']['address']);
+            }
+
             try {
                 $result = $switcher->setData($data)
                     ->build()

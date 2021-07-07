@@ -100,6 +100,32 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     }
 
     /**
+     * @dataProvider getAddressLines
+     */
+    public function testAddressLineConcatenation($addressLine1, $addressLine2, $addressText)
+    {
+        $address = $this->address;
+        $address->address1 = $addressLine1;
+        $address->address2 = $addressLine2;
+
+        $builder = new RetailcrmAddressBuilder();
+        $result = $builder
+            ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
+            ->setAddress($this->address)
+            ->setIsMain(true)
+            ->setWithExternalId(true)
+            ->setExternalIdSuffix('suffix')
+            ->build()
+            ->getDataArray();
+
+        $this->assertNotEmpty($result);
+        $this->assertArrayHasKey('delivery', $result);
+        $this->assertArrayHasKey('address', $result['delivery']);
+        $this->assertArrayHasKey('text', $result['delivery']['address']);
+        $this->assertEquals($result['delivery']['address']['text'], $addressText);
+    }
+
+    /**
      * Asserts address fields
      *
      * @param array $address
@@ -110,6 +136,27 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             $this->assertArrayHasKey($field, $address);
             $this->assertNotEmpty($address[$field]);
         }
+    }
+
+    public function getAddressLines()
+    {
+        return array(
+            array(
+                'addressline 1',
+                'addressline 2',
+                'addressline 1' . RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2'
+            ),
+            array(
+                'addressline 1',
+                '',
+                'addressline 1'
+            ),
+            array(
+                '',
+                'addressline 2',
+                RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2'
+            ),
+        );
     }
 
     /**

@@ -52,6 +52,12 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
      */
     const MODE_ORDER_DELIVERY = 2;
 
+
+    /**
+     * Divider for order delivery addressline1 and addressline 2
+     */
+    const ADDRESS_LINE_DIVIDER = '||';
+
     /**
      * @var Address|\AddressCore
      */
@@ -243,7 +249,11 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             'index' => $this->address->postcode,
             'city' => $this->address->city,
             'countryIso' => Country::getIsoById($this->address->id_country),
-            'text' => sprintf("%s %s", $this->address->address1, $this->address->address2),
+            'text' => (empty($this->address->address2) ? $this->address->address1 :
+                implode(self::ADDRESS_LINE_DIVIDER, [
+                    $this->address->address1,
+                    $this->address->address2,
+                ])),
             'region' => $state
         ));
     }

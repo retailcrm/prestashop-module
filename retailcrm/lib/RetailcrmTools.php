@@ -485,6 +485,49 @@ class RetailcrmTools
     }
 
     /**
+     * Compare 'address' and 'phones' fields from crm customer info arrays
+     * @param $customer1
+     * @param $customer2
+     * @return bool <b>true</b> if addresses are equal, <b>false</b> otherwise
+     */
+    public static function isEqualCustomerAddress($customer1, $customer2)
+    {
+        $customer1Phones = isset($customer1['phones']) ? $customer1['phones'] : array();
+        $customer2Phones = isset($customer2['phones']) ? $customer2['phones'] : array();
+
+        $squashedCustomer1Phones = array_filter(array_map(function ($val) {
+            return isset($val['number']) ? $val['number'] : null;
+        }, $customer1Phones));
+        $squashedCustomer2Phones = array_filter(array_map(function ($val) {
+            return isset($val['number']) ? $val['number'] : null;
+        }, $customer2Phones));
+
+        if (count($squashedCustomer1Phones) !== count($squashedCustomer2Phones)
+            || !empty(array_diff_assoc($squashedCustomer1Phones, $squashedCustomer2Phones))
+        ) {
+            return false;
+        }
+
+        $customer1Address = isset($customer1['address']) ? $customer1['address'] : array();
+        $customer2Address = isset($customer2['address']) ? $customer2['address'] : array();
+
+        if (isset($customer1Address['id'])) {
+            unset($customer1Address['id']);
+        }
+        if (isset($customer2Address['id'])) {
+            unset($customer2Address['id']);
+        }
+
+        if (count($customer1Address) !== count($customer2Address)
+            || !empty(array_diff_assoc($customer2Address, $customer1Address))
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * http_response_code polyfill
      *
      * @param null $code

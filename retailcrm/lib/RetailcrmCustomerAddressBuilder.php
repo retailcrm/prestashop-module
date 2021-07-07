@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MIT License
  *
@@ -169,14 +170,24 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         }
 
         $this->customerAddress->id_customer = $this->idCustomer;
-        $this->customerAddress->alias = !empty($this->alias) ? $this->alias : 'default';
-        $this->customerAddress->lastname = $this->lastName;
-        $this->customerAddress->firstname = $this->firstName;
-        $this->customerAddress->address1 = isset($this->dataCrm['text']) ? $this->dataCrm['text'] : '--';
 
-        $this->customerAddress->id_country = isset($this->dataCrm['countryIso'])
-            ? Country::getByIso($this->dataCrm['countryIso'])
-            : Configuration::get('PS_COUNTRY_DEFAULT');
+        $this->setAddressField('alias', $this->alias, 'default');
+        $this->setAddressField('lastname', $this->lastName, '');
+        $this->setAddressField('firstname', $this->firstName, '');
+
+        $addressLine = $this->buildAddressLine();
+        $this->setAddressField('address1', $addressLine[0], '--');
+        $this->setAddressField('address2', $addressLine[1], '');
+
+        $countryIso = isset($this->dataCrm['countryIso']) ? Country::getByIso($this->dataCrm['countryIso']) : null;
+        $this->setAddressField('id_country', $countryIso, Configuration::get('PS_COUNTRY_DEFAULT'));
+
+        if (isset($this->dataCrm['city'])) {
+            $this->setAddressField('city', $this->dataCrm['city'], '--');
+        }
+        if (isset($this->dataCrm['index'])) {
+            $this->setAddressField('postcode', $this->dataCrm['index'], '');
+        }
 
         if (isset($this->dataCrm['region'])) {
             $state = State::getIdByName($this->dataCrm['region']);
@@ -186,9 +197,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             }
         }
 
-        $this->customerAddress->city = isset($this->dataCrm['city']) ? $this->dataCrm['city'] : '--';
-        $this->customerAddress->postcode = isset($this->dataCrm['index']) ? $this->dataCrm['index'] : '';
-        $this->customerAddress->phone = !empty($this->phone) ? $this->phone : '';
+        $this->setAddressField('phone', $this->phone, '');
 
         $this->customerAddress = RetailcrmTools::filter(
             'RetailcrmFilterSaveCustomerAddress',
@@ -198,6 +207,36 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             ));
 
         return $this;
+    }
+
+    private function setAddressField($field, $value, $default = null)
+    {
+        if (!property_exists($this->customerAddress, $field)) {
+            throw new InvalidArgumentException("Property $field not exist in the object");
+        }
+
+        if ($value !== null) {
+            $this->customerAddress->$field = $value;
+        } elseif (empty($this->customerAddress->$field)) {
+            $this->customerAddress->$field = $default;
+        }
+    }
+
+    private function buildAddressLine()
+    {
+        $addressLine = [
+            null,
+            null
+        ];
+
+        if (isset($this->dataCrm['text'])) {
+            $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $this->dataCrm['text'], 2);
+            if (count($addressLine) == 1) {
+                $addressLine[] = null;
+            }
+        }
+
+        return $addressLine;
     }
 }
 
