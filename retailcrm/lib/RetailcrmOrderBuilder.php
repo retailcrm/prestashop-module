@@ -903,14 +903,16 @@ class RetailcrmOrderBuilder
         }
 
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
-            $crmOrder['payments'] = array(
-                array(
-                    'externalId' => $order->id . '#' . $order->reference,
-                    'amount' => round($order->total_paid_real, 2),
-                    'status' => ((round($order->total_paid_real, 2) > 0) ? 'paid' : null),
-                    'type' => $payment[$paymentType]
-                )
+            $order_payment = array(
+                'externalId' => $order->id . '#' . $order->reference,
+                'type' => $payment[$paymentType]
             );
+
+            if (round($order->total_paid_real, 2) > 0) {
+                $order_payment['amount'] = round($order->total_paid_real, 2);
+                $order_payment['status'] = 'paid';
+            }
+            $crmOrder['payments'][] = $order_payment;
         } else {
             $crmOrder['payments'] = array();
         }
