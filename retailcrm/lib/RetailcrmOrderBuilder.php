@@ -903,14 +903,16 @@ class RetailcrmOrderBuilder
         }
 
         if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
-            $crmOrder['payments'] = array(
-                array(
-                    'externalId' => $order->id . '#' . $order->reference,
-                    'amount' => round($order->total_paid_real, 2),
-                    'status' => ((round($order->total_paid_real, 2) > 0) ? 'paid' : null),
-                    'type' => $payment[$paymentType]
-                )
+            $order_payment = array(
+                'externalId' => $order->id . '#' . $order->reference,
+                'type' => $payment[$paymentType]
             );
+
+            if (round($order->total_paid_real, 2) > 0) {
+                $order_payment['amount'] = round($order->total_paid_real, 2);
+                $order_payment['status'] = 'paid';
+            }
+            $crmOrder['payments'][] = $order_payment;
         } else {
             $crmOrder['payments'] = array();
         }
@@ -1010,6 +1012,14 @@ class RetailcrmOrderBuilder
                     $arItem = explode(":", $valAttr);
 
                     if ($arItem[0] && $arItem[1]) {
+                        // Product property code should start with a letter, digit or underscore
+                        // and only contain letters, digits, underscores, hyphens and colons
+                        $propertyCode = preg_replace('/(^[^\w]+)|([^\w\-:])/', '', $arItem[0]);
+                        if (empty($propertyCode)) {
+                            $propertyCode = 'prop_' . $count;
+                        }
+
+                        $arProp[$count]['code'] = $propertyCode;
                         $arProp[$count]['name'] = trim($arItem[0]);
                         $arProp[$count]['value'] = trim($arItem[1]);
                     }
