@@ -1012,6 +1012,14 @@ class RetailcrmOrderBuilder
                     $arItem = explode(":", $valAttr);
 
                     if ($arItem[0] && $arItem[1]) {
+                        // Product property code should start with a letter, digit or underscore
+                        // and only contain letters, digits, underscores, hyphens and colons
+                        $propertyCode = preg_replace('/(^[^\w]+)|([^\w\-:])/', '', $arItem[0]);
+                        if (empty($propertyCode)) {
+                            $propertyCode = 'prop_' . $count;
+                        }
+
+                        $arProp[$count]['code'] = $propertyCode;
                         $arProp[$count]['name'] = trim($arItem[0]);
                         $arProp[$count]['value'] = trim($arItem[1]);
                     }
