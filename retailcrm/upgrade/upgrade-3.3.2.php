@@ -62,7 +62,7 @@ function upgrade_module_3_3_2($module)
     }
 
     foreach ($shops as $shop) {
-        RetailcrmTools::setShopContext(intval($shop['id_shop']));
+        RetailcrmTools::setShopContext((int) $shop['id_shop']);
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
@@ -101,7 +101,7 @@ function upgrade_module_3_3_2($module)
                 );
             }
         }
-    
+
         try {
             $response = $api->credentials();
         } catch (\RetailCrm\Exception\CurlException $e) {
@@ -113,7 +113,7 @@ function upgrade_module_3_3_2($module)
                 )
             );
         }
-    
+
         if (!$response->isSuccessful()
             || $response['siteAccess'] !== 'access_selective'
             || count($response['sitesAvailable']) !== 1
@@ -129,7 +129,7 @@ function upgrade_module_3_3_2($module)
             );
             continue;
         }
-    
+
         try {
             $response = $api->sitesList();
         } catch (\RetailCrm\Exception\CurlException $e) {
@@ -141,13 +141,13 @@ function upgrade_module_3_3_2($module)
                 )
             );
         }
-        
+
         if ($response->isSuccessful() && $response['sites']) {
             $crmSite = current($response['sites']);
             $site = $crmSite['code'];
             $oldYmlUrl = $crmSite['ymlUrl'];
             $newYmlUrl = str_replace('/retailcrm', '/simla', $oldYmlUrl);
-    
+
             try {
                 $response = $api->sitesEdit([
                     'code' => $site,
