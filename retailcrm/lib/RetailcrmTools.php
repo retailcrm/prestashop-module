@@ -315,7 +315,7 @@ class RetailcrmTools
      */
     public static function validateCrmAddress($address)
     {
-        if (preg_match("/https:\/\/(.*).retailcrm.(pro|ru|es)/", $address) === 1) {
+        if (preg_match("/https:\/\/(.*).(retailcrm.(pro|ru|es)|simla.com)/", $address)) {
             return true;
         }
 

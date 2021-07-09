@@ -61,10 +61,11 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
             $job = new RetailcrmCatalog();
             $data = $job->getData();
 
-            if ($isMultiStoreActive)
-                $icmlFileName = 'retailcrm_' . $shop['id_shop'] . '.xml';
-            else
-                $icmlFileName = 'retailcrm.xml';
+            if ($isMultiStoreActive) {
+                $icmlFileName = 'simla_' . $shop['id_shop'] . '.xml';
+            } else {
+                $icmlFileName = 'simla.xml';
+            }
 
             $icml = new RetailcrmIcml($shop['name'], _PS_ROOT_DIR_ . '/' . $icmlFileName);
             $icml->generate($data[0], $data[1]);

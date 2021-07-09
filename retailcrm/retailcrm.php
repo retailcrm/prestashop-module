@@ -138,10 +138,10 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.3.1';
+        $this->version = '3.3.2';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
-        $this->displayName = $this->l('retailCRM');
-        $this->description = $this->l('Integration module for retailCRM');
+        $this->displayName = $this->l('Simla.com');
+        $this->description = $this->l('Integration module for Simla.com');
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
         $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $this->default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
