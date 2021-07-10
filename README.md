@@ -38,7 +38,10 @@ There are list of available filters:
 * *RetailcrmFilterProcessOffer* - offer array, which will be sent to CRM (saved into Icml file)
   
 * *RetailcrmFilterCustomersHistory* - array with assembled history for customer, loaded from CRM
+* *RetailcrmFilterCustomersHistoryUpdate* - array with customer info, loaded from CRM  
 * *RetailcrmFilterOrdersHistory* - array with assembled history for order, loaded from CRM
+* *RetailcrmFilterOrdersHistoryCreate* - array with order info, loaded from CRM
+* *RetailcrmFilterOrdersHistoryUpdate* - array with assembled history for order, loaded from CRM
   
 * *RetailcrmFilterSaveCustomer* - built customer object, which will be saved to CMS
 * *RetailcrmFilterSaveCustomerAddress* - built customer address object, which will be saved to CMS

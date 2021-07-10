@@ -90,44 +90,53 @@ class RetailcrmHistory
                 }
 
                 $customerBuilder = new RetailcrmCustomerBuilder();
-                $customerBuilder->setDataCrm($customerHistory);
 
                 if (isset($customerHistory['externalId'])) {
+                    $crmCustomerResponse = self::$api->customersGet($customerHistory['externalId'], 'externalId');
 
-                    $customerData = self::$api->customersGet($customerHistory['externalId'], 'externalId');
-                    if (isset($customerData['customer']) && $customerData['customer']) {
-
-                        $foundCustomer = new Customer($customerHistory['externalId']);
-                        $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
-                        $addressBuilder = new RetailcrmCustomerAddressBuilder();
-
-                        $addressBuilder
-                            ->setCustomerAddress($customerAddress);
-
-                        $customerBuilder
-                            ->setCustomer($foundCustomer)
-                            ->setAddressBuilder($addressBuilder)
-                            ->setDataCrm($customerData['customer'])
-                            ->build();
-
-                        $customer = $customerBuilder->getData()->getCustomer();
-                        $address = $customerBuilder->getData()->getCustomerAddress();
-
-                        if (self::loadInCMS($customer, 'update') === false) {
-                            continue;
-                        }
-
-                        if (!empty($address)) {
-                            RetailcrmTools::assignAddressIdsByFields($customer, $address);
-
-                            if (self::loadInCMS($address, 'update') === false) {
-                                continue;
-                            }
-                        }
+                    if (empty($crmCustomerResponse)
+                        || !$crmCustomerResponse->isSuccessful()
+                        || !$crmCustomerResponse->offsetExists('customer')
+                    ) {
+                        continue;
                     }
 
+                    $customerData = RetailcrmTools::filter(
+                        'RetailcrmFilterCustomersHistoryUpdate',
+                        $crmCustomerResponse['customer']
+                    );
+
+                    $foundCustomer = new Customer($customerHistory['externalId']);
+                    $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
+                    $addressBuilder = new RetailcrmCustomerAddressBuilder();
+
+                    $addressBuilder
+                        ->setCustomerAddress($customerAddress);
+
+                    $customerBuilder
+                        ->setCustomer($foundCustomer)
+                        ->setAddressBuilder($addressBuilder)
+                        ->setDataCrm($customerData)
+                        ->build();
+
+                    $customer = $customerBuilder->getData()->getCustomer();
+                    $address = $customerBuilder->getData()->getCustomerAddress();
+
+                    if (self::loadInCMS($customer, 'update') === false) {
+                        continue;
+                    }
+
+                    if (!empty($address)) {
+                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
+
+                        if (self::loadInCMS($address, 'update') === false) {
+                            continue;
+                        }
+                    }
                 } else {
-                    $customerBuilder->build();
+                    $customerBuilder
+                        ->setDataCrm($customerHistory)
+                        ->build();
 
                     $customer = $customerBuilder->getData()->getCustomer();
 
@@ -248,6 +257,11 @@ class RetailcrmHistory
                     if ($order['status'] == $cartStatus) {
                         continue;
                     }
+
+                    $order = RetailcrmTools::filter(
+                        'RetailcrmFilterOrdersHistoryCreate',
+                        $order
+                    );
 
                     // status
                     $state = $order['status'];
@@ -758,6 +772,15 @@ class RetailcrmHistory
                     if(!Validate::isLoadedObject($orderToUpdate)) {
                         continue;
                     }
+
+                    $order = RetailcrmTools::filter(
+                        'RetailcrmFilterOrdersHistoryUpdate',
+                        $order,
+                        array(
+                            'orderToUpdate' => $orderToUpdate
+                        )
+                    );
+
                     self::handleCustomerDataChange($orderToUpdate, $order);
 
                     /*

@@ -188,10 +188,10 @@ class RetailcrmTools
      */
     public static function dumpEntity($object)
     {
-        if (empty($object)) {
+        if (!is_object($object)) {
             ob_start();
             var_dump($object);
-            return (string) ob_get_clean();
+            return (string)ob_get_clean();
         }
 
         $data = array();
@@ -747,18 +747,30 @@ class RetailcrmTools
      */
     public static function filter($filter, $object, $parameters = array())
     {
-        if (class_exists($filter) && method_exists($filter, 'filter')) {
-            try {
-                $result = call_user_func_array(
-                    array($filter, 'filter'),
-                    array($object, $parameters)
-                );
+        if (!class_exists($filter)) {
+            return $object;
+        }
+        if (!in_array(RetailcrmFilterInterface::class, class_implements($filter))) {
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf('Filter class %s must implements %s interface',
+                $filter,
+                RetailcrmFilterInterface::class
+            ));
 
-                return (null === $result || false === $result) ? $object : $result;
-            } catch (Exception $e) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
-                RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
-            }
+            return $object;
+        }
+
+        try {
+            RetailcrmLogger::writeDebug($filter . '::before', print_r(self::dumpEntity($object), true));
+            $result = call_user_func_array(
+                array($filter, 'filter'),
+                array($object, $parameters)
+            );
+            RetailcrmLogger::writeDebug($filter . '::after', print_r(self::dumpEntity($result), true));
+
+            return (null === $result || false === $result) ? $object : $result;
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
+            RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
         }
 
         return $object;
