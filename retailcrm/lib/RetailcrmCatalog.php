@@ -198,7 +198,7 @@ class RetailcrmCatalog
                     $depth = round($product['depth'], 3);
 
                     if ($width !== 0.0 && $height !== 0.0) {
-                        $dimensions = implode('/', array($width, $height, $depth));
+                        $dimensions = implode('/', array($depth, $width, $height));
                     } else {
                         $dimensions = null;
                     }
