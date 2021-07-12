@@ -692,7 +692,6 @@ class RetailcrmTools
      */
     protected static function isAddressesEqualByFields($first, $second)
     {
-        $equal = true;
         $checkMapping = array(
             'alias',
             'id_country',
@@ -708,21 +707,22 @@ class RetailcrmTools
 
         foreach ($checkMapping as $field) {
             if ($first->$field != $second->$field) {
-                $equal = false;
-                RetailcrmLogger::writeDebugArray(__METHOD__, array(
-                    'first' => self::dumpEntity($first),
-                    'second' => self::dumpEntity($second),
-                    'field' => array(
-                        'name' => $field,
-                        'firstValue' => $first->$field,
-                        'secondValue' => $second->$field
-                    )
-                ));
-                break;
+                RetailcrmLogger::writeDebug(__METHOD__, print_r(array(
+                    'first' => array(
+                        'id' => $first->id,
+                        $field => $first->$field
+                    ),
+                    'second' => array(
+                        'id' => $second->id,
+                        $field => $second->$field
+                    ),
+                ), true));
+
+                return false;
             }
         }
 
-        return $equal;
+        return true;
     }
 
     /**

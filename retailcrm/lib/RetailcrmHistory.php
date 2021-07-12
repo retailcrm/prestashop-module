@@ -754,15 +754,18 @@ class RetailcrmHistory
                         $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
                         $orderAddressCrm = [];
-                        // TODO: check changed fields and skip getCRMOrder() if it's possible
-                        //  It is possible if there are valid address in the database
-                        //  and if there's no address1 & address2 changed (text, street, building, etc...)
                         if (isset($order['delivery']['address'])) {
                             $orderAddressCrm = $order['delivery']['address'];
-                            // get full order address
+                        }
+
+                        if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)) {
                             $infoOrder = self::getCRMOrder($order['externalId']);
                             if (isset($infoOrder['delivery']['address'])) {
-                                $orderAddressCrm = $infoOrder['delivery']['address'];
+                                // array_replace used to save changes, made by custom filters
+                                $orderAddressCrm = array_replace(
+                                    $infoOrder['delivery']['address'],
+                                    $orderAddressCrm
+                                );
                             }
                         }
 

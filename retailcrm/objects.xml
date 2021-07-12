@@ -108,6 +108,7 @@
         <field id="delivery_address.street" group="orderAddress">street</field>
         <field id="delivery_address.building" group="orderAddress">building</field>
         <field id="delivery_address.house" group="orderAddress">house</field>
+        <field id="delivery_address.housing" group="orderAddress">housing</field>
         <field id="delivery_address.block" group="orderAddress">block</field>
         <field id="delivery_address.flat" group="orderAddress">flat</field>
         <field id="delivery_address.floor" group="orderAddress">floor</field>
