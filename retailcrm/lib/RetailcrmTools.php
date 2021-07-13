@@ -180,6 +180,39 @@ class RetailcrmTools
     }
 
     /**
+     * @param ObjectModel $object
+     * @param ObjectModel|null $relatedObject
+     * @return bool
+     * @throws PrestaShopException
+     */
+    public static function validateEntity($object, $relatedObject = null)
+    {
+        $validate = $object->validateFields(false, true);
+        if ($validate === true) {
+            return true;
+        }
+
+        $msg = '';
+        if ($relatedObject !== null) {
+            $msg = sprintf('for %s with id %s',
+                get_class($relatedObject),
+                $relatedObject->id
+            );
+        }
+
+        RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+                'Error validating %s with id %s%s: %s',
+                get_class($object),
+                $object->id,
+                $msg,
+                $validate
+            )
+        );
+
+        return false;
+    }
+
+    /**
      * Dumps entity using it's definition mapping.
      *
      * @param \ObjectModel $object

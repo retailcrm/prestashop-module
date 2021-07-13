@@ -404,7 +404,7 @@ class RetailcrmHistory
                         continue;
                     }
 
-                    if (!empty($addressInvoice)) {
+                    if (RetailcrmTools::validateEntity($addressInvoice)) {
                         $addressInvoice->id_customer = $customer->id;
                         RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
 
@@ -438,12 +438,14 @@ class RetailcrmHistory
                         ->build()
                         ->getData();
 
-                    RetailcrmTools::assignAddressIdsByFields($customer, $addressDelivery);
+                    if (RetailcrmTools::validateEntity($addressDelivery)) {
+                        RetailcrmTools::assignAddressIdsByFields($customer, $addressDelivery);
 
-                    if (empty($addressDelivery->id)) {
-                        self::loadInCMS($addressDelivery, 'add');
-                    } else {
-                        self::loadInCMS($addressDelivery, 'save');
+                        if (empty($addressDelivery->id)) {
+                            self::loadInCMS($addressDelivery, 'add');
+                        } else {
+                            self::loadInCMS($addressDelivery, 'save');
+                        }
                     }
 
                     // cart
@@ -779,8 +781,7 @@ class RetailcrmHistory
                             ->build()
                             ->getData();
 
-                        $validate = $address->validateFields(false, true);
-                        if ($validate === true) {
+                        if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
                             // Modifying an address in order creates another address
                             // instead of changing the original one. This issue has been fixed in PS 1.7.7
                             if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
@@ -793,13 +794,6 @@ class RetailcrmHistory
                                 $address->id = $orderToUpdate->id_address_delivery;
                                 self::loadInCMS($address, 'update');
                             }
-                        } else {
-                            RetailcrmLogger::writeCaller(__METHOD__, sprintf(
-                                    'Error validating address for order %s: %s',
-                                    $orderToUpdate->id,
-                                    $validate
-                                )
-                            );
                         }
                     }
 
