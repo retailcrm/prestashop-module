@@ -180,6 +180,39 @@ class RetailcrmTools
     }
 
     /**
+     * @param ObjectModel $object
+     * @param ObjectModel|null $relatedObject
+     * @return bool
+     * @throws PrestaShopException
+     */
+    public static function validateEntity($object, $relatedObject = null)
+    {
+        $validate = $object->validateFields(false, true);
+        if ($validate === true) {
+            return true;
+        }
+
+        $msg = '';
+        if ($relatedObject !== null) {
+            $msg = sprintf('for %s with id %s',
+                get_class($relatedObject),
+                $relatedObject->id
+            );
+        }
+
+        RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+                'Error validating %s with id %s%s: %s',
+                get_class($object),
+                $object->id,
+                $msg,
+                $validate
+            )
+        );
+
+        return false;
+    }
+
+    /**
      * Dumps entity using it's definition mapping.
      *
      * @param \ObjectModel $object
@@ -188,10 +221,10 @@ class RetailcrmTools
      */
     public static function dumpEntity($object)
     {
-        if (empty($object)) {
+        if (!is_object($object)) {
             ob_start();
             var_dump($object);
-            return (string) ob_get_clean();
+            return (string)ob_get_clean();
         }
 
         $data = array();
@@ -692,7 +725,6 @@ class RetailcrmTools
      */
     protected static function isAddressesEqualByFields($first, $second)
     {
-        $equal = true;
         $checkMapping = array(
             'alias',
             'id_country',
@@ -708,21 +740,22 @@ class RetailcrmTools
 
         foreach ($checkMapping as $field) {
             if ($first->$field != $second->$field) {
-                $equal = false;
-                RetailcrmLogger::writeDebugArray(__METHOD__, array(
-                    'first' => self::dumpEntity($first),
-                    'second' => self::dumpEntity($second),
-                    'field' => array(
-                        'name' => $field,
-                        'firstValue' => $first->$field,
-                        'secondValue' => $second->$field
-                    )
-                ));
-                break;
+                RetailcrmLogger::writeDebug(__METHOD__, print_r(array(
+                    'first' => array(
+                        'id' => $first->id,
+                        $field => $first->$field
+                    ),
+                    'second' => array(
+                        'id' => $second->id,
+                        $field => $second->$field
+                    ),
+                ), true));
+
+                return false;
             }
         }
 
-        return $equal;
+        return true;
     }
 
     /**
@@ -747,18 +780,30 @@ class RetailcrmTools
      */
     public static function filter($filter, $object, $parameters = array())
     {
-        if (class_exists($filter) && method_exists($filter, 'filter')) {
-            try {
-                $result = call_user_func_array(
-                    array($filter, 'filter'),
-                    array($object, $parameters)
-                );
+        if (!class_exists($filter)) {
+            return $object;
+        }
+        if (!in_array(RetailcrmFilterInterface::class, class_implements($filter))) {
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf('Filter class %s must implements %s interface',
+                $filter,
+                RetailcrmFilterInterface::class
+            ));
 
-                return (null === $result || false === $result) ? $object : $result;
-            } catch (Exception $e) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
-                RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
-            }
+            return $object;
+        }
+
+        try {
+            RetailcrmLogger::writeDebug($filter . '::before', print_r(self::dumpEntity($object), true));
+            $result = call_user_func_array(
+                array($filter, 'filter'),
+                array($object, $parameters)
+            );
+            RetailcrmLogger::writeDebug($filter . '::after', print_r(self::dumpEntity($result), true));
+
+            return (null === $result || false === $result) ? $object : $result;
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
+            RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
         }
 
         return $object;

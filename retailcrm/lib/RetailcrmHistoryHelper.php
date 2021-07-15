@@ -307,4 +307,33 @@ class RetailcrmHistoryHelper {
 
         return $outputArray;
     }
+
+    /**
+     * @param array $address Crm Order address changes
+     *
+     * @return bool <b>true</b> if changed address field, which is used to generate
+     * <b>address1</b> and <b>address2</b> fields in CMS. <b>false</b> otherwise
+     */
+    public static function isAddressLineChanged($address)
+    {
+        $keys = [
+            'street',
+            'building',
+            'flat',
+            'floor',
+            'block',
+            'house',
+            'housing',
+            'metro',
+            'notes',
+        ];
+
+        foreach ($address as $key => $value) {
+            if (in_array($key, $keys)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
