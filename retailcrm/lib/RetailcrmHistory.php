@@ -489,13 +489,15 @@ class RetailcrmHistory
                     $newOrder = new Order();
                     $newOrder->id_shop = Context::getContext()->shop->id;
                     $newOrder->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
-                    $newOrder->reference = $newOrder->generateReference();
                     $newOrder->id_address_delivery = isset($addressDelivery->id) ? (int)$addressDelivery->id : 0;
                     $newOrder->id_address_invoice = isset($addressInvoice->id) ? (int)$addressInvoice->id : 0;
                     $newOrder->id_cart = (int)$cart->id;
                     $newOrder->id_currency = $default_currency;
                     $newOrder->id_lang = self::$default_lang;
                     $newOrder->id_customer = (int)$customer->id;
+                    $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+                    $orderNumber = $receiveOrderNumber ? $order_history['number'] : $newOrder->generateReference();
+                    $newOrder->reference = $orderNumber;
 
                     if (isset($deliveryType)) {
                         $newOrder->id_carrier = (int)$deliveryType;

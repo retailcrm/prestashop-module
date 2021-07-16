@@ -91,6 +91,22 @@
                                 <label for="receivebalances-active">{l s='Receive stocks from Simla.com' mod='retailcrm'}</label>
                             </div>
                         </div>
+                        <div class="retail-form__title"
+                             style="margin-top: 40px;">{l s='Order number' mod='retailcrm'}</div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableOrderNumberSendingName|escape:'htmlall':'UTF-8'}" value="{$enableOrderNumberSending|escape:'htmlall':'UTF-8'}" {if $enableOrderNumberSending}checked="checked"{/if} id="sendnumbers-active">
+                                <label for="sendnumbers-active">{l s='Send order number to Simla.com' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableOrderNumberReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableOrderNumberReceiving|escape:'htmlall':'UTF-8'}" {if $enableOrderNumberReceiving}checked="checked"{/if} id="receivenumbers-active">
+                                <label for="receivenumbers-active">{l s='Receive order number from Simla.com' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        <div class="retail-form__title"
+                             style="margin-top: 40px;">{l s='Corporate clients' mod='retailcrm'}</div>
                         <div class="retail-form__row">
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableCorporateName|escape:'htmlall':'UTF-8'}" value="{$enableCorporate|escape:'htmlall':'UTF-8'}" {if $enableCorporate}checked="checked"{/if} id="corpclients-active">
