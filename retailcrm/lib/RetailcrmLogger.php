@@ -123,6 +123,22 @@ class RetailcrmLogger
     }
 
     /**
+     * Output error info to stdout
+     *
+     * @param $exception
+     * @param string $header
+     */
+    public static function printException($exception, $header = 'Error while executing a job: ', $toOutput = true)
+    {
+        $method = $toOutput ? 'output' : 'writeNoCaller';
+
+        self::$method(sprintf('%s%s', $header, $exception->getMessage()));
+        self::$method(sprintf('%s:%d', $exception->getFile(), $exception->getLine()));
+        self::$method('');
+        self::$method($exception->getTraceAsString());
+    }
+
+    /**
      * Write debug log record
      *
      * @param string $caller
@@ -209,6 +225,34 @@ class RetailcrmLogger
      */
     public static function clearObsoleteLogs()
     {
+        $logFiles = self::getLogFiles();
+
+        foreach ($logFiles as $logFile) {
+            if (filemtime($logFile) < strtotime('-30 days')) {
+                unlink($logFile);
+            }
+        }
+    }
+
+    public static function getLogFilesInfo()
+    {
+        $fileNames = [];
+        $logFiles = self::getLogFiles();
+
+        foreach ($logFiles as $logFile) {
+                $fileNames[] = [
+                    'name' => basename($logFile),
+                    'path' => $logFile,
+                    'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
+                    'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
+                ];
+            }
+
+        return $fileNames;
+    }
+
+    private static function getLogFiles()
+    {
         $logDir = self::getLogDir();
 
         if (!is_dir($logDir)) {
@@ -218,38 +262,9 @@ class RetailcrmLogger
         $handle = opendir($logDir);
         while (($file = readdir($handle)) !== false) {
             if (self::checkFileName($file) !== false) {
-                $path = "$logDir/$file";
-                if (filemtime($path) < strtotime('-30 days')) {
-                    unlink($path);
-                }
+                yield "$logDir/$file";
             }
         }
-    }
-
-    public static function getLogFilesInfo()
-    {
-        $fileNames = [];
-        $logDir = self::getLogDir();
-
-        if (!is_dir($logDir)) {
-            return;
-        }
-
-        $handle = opendir($logDir);
-        while ($file = readdir($handle) !== false) {
-            if (self::checkFileName($file) !== false) {
-                $path = "$logDir/$file";
-                $fileNames[] = [
-                    'name' => $file,
-                    'path' => $path,
-                    'size' => number_format(filesize($path), 0, '.', ' ') . ' bytes',
-                    'modified' => date('Y-m-d H:i:s', filemtime($path)),
-                ];
-            }
-        }
-        closedir($handle);
-
-        return $fileNames;
     }
 
     public static function checkFileName($file)

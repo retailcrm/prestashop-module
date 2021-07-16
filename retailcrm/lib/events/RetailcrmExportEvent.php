@@ -59,8 +59,6 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
             $api = RetailcrmTools::getApiClient();
 
             if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
                 continue;
             }
 

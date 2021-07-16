@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -38,14 +38,13 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
+class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
      */
     public function execute()
     {
-//        throw new Exception('test error right here');
         if ($this->isRunning()) {
             return false;
         }
@@ -57,11 +56,28 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
         foreach ($shops as $shop) {
             RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
-            $job = new RetailcrmCatalog();
-            $data = $job->getData();
+            if(!file_exists(RetailcrmCatalog::getIcmlFilePath())) {
+                continue;
+            }
 
-            $icml = new RetailcrmIcml($shop['name'], $data[2]);
-            $icml->generate($data[0], $data[1]);
+            $api = RetailcrmTools::getApiClient();
+            if (empty($api)) {
+                continue;
+            }
+
+            $reference = new RetailcrmReferences($api);
+            $site = $reference->getSite();
+            if (empty($site)) {
+                continue;
+            }
+
+            $newYmlUrl = RetailcrmCatalog::getIcmlLink();
+            $siteCode = $site['code'];
+
+            $api->sitesEdit([
+                'code' => $siteCode,
+                'ymlUrl' => $newYmlUrl,
+            ]);
         }
 
         return true;
@@ -72,6 +88,6 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
      */
     public function getName()
     {
-        return 'RetailcrmIcmlEvent';
+        return 'RetailcrmIcmlUpdateUrlEvent';
     }
 }

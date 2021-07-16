@@ -42,7 +42,12 @@
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-upload.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-export.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/styles.min.css">
-<title>Simla.com</title>
+
+{assign var="systemName" value="Simla.com"}
+{capture name="catalogTitleName"}{l s='Icml catalog' mod='retailcrm'}{/capture}
+{assign var="catalogTitleName" value=$smarty.capture.catalogTitleName}
+
+<title>{$systemName}</title>
 <div class="retail retail-wrap hidden">
     {include file='./module_messages.tpl'}
     <div class="retail-container retail-column">
@@ -55,13 +60,14 @@
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_default_types" class="retail-menu__btn retail-menu__btn_big{if in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Default' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_orders_upload" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Upload orders' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_catalog" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{$catalogTitleName}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_daemon_collector" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Daemon Collector' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant" data-tab-trigger="rcrm_tab_consultant" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Online consultant' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_advanced" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive retail-menu__btn_hidden"><span>{l s='Advanced' mod='retailcrm'}<span/></a>
             </div>
         </aside>
         <article class="retail-column__content">
-            <h1 class="retail-title retail-title_content">Simla.com</h1>
+            <h1 class="retail-title retail-title_content">{$systemName}</h1>
             <div class="retail-form retail-form_main">
                 <form class="rcrm-form-submit-trigger" action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" method="post" id="submitretailcrm-form">
                     <input type="hidden" name="submitretailcrm" value="1" />
@@ -120,6 +126,78 @@
                                 {/foreach}
                             </select>
                         </div>
+                    </div>
+                    <div id="rcrm_tab_catalog">
+                        <div class="retail-form__title">{$catalogTitleName}</div>
+                        {if $icmlInfo}
+                            {if  $icmlInfo.lastGeneratedDiff.hours > 4  or $icmlInfo.lastGeneratedDiff.days > 0}
+                                <div class="retail-alert retail-alert-danger">
+                                    <div class="retail-alert-text">
+                                        {$catalogTitleName} {l s='is outdated' mod='retailcrm'}
+                                    </div>
+                            {elseif !$icmlLinkEqual}
+                                <div class="retail-alert retail-alert-warning">
+                                    <button id="update-icml-submit" class="btn btn_invert btn_submit btn_warning"
+                                            style="outline: none; float: right;">{l s='Update URL' mod='retailcrm'}</button>
+                                    <div class="retail-alert-text">
+                                        {l s='URL for Icml catalog file in Prestashop and in %s do not match' mod='retailcrm' sprintf=[$systemName]}
+                                    </div>
+                            {else}
+                                <div class="retail-alert retail-alert-success">
+                                    <div class="retail-alert-text">
+                                        {$catalogTitleName} {l s='connected' mod='retailcrm'}
+                                    </div>
+                            {/if}
+                                    <div class="retail-alert-note">
+                                        {$icmlInfo.lastGenerated|date_format:"%Y-%m-%d %H:%M:%S"}
+                                    </div>
+                                </div>
+                                <div class="retail-form__row">
+                                    <div class="retail-form__label">
+                                    <span style="font-weight: bold; font-size: 1.3em;">
+                                    {if $icmlInfo.lastGeneratedDiff.days > 7}
+                                        {l s='More than 7 days' mod='retailcrm'}
+                                    {else}
+                                        {if $icmlInfo.lastGeneratedDiff.days > 0}
+                                            {$icmlInfo.lastGeneratedDiff.days}  {l s='d' mod='retailcrm'}.
+                                        {/if}
+                                        {if $icmlInfo.lastGeneratedDiff.hours > 0}
+                                            {$icmlInfo.lastGeneratedDiff.hours}  {l s='h' mod='retailcrm'}.
+                                        {/if}
+                                        {$icmlInfo.lastGeneratedDiff.minutes} {l s='min' mod='retailcrm'}.
+                                    {/if}
+                                    </span>
+                                        {l s='passed since last run' mod='retailcrm'}
+                                    </div>
+                                </div>
+                                <div class="retail-form__row">
+                                    <div class="retail-circle">
+                                        <div class="retail-circle__title">{l s='Products' mod='retailcrm'}</div>
+                                        <input class="retail-circle__content" readonly="readonly"
+                                               value="{$icmlInfo.productsCount|default:'---'|escape:'htmlall':'UTF-8'}"/>
+                                    </div>
+                                    <div class="retail-circle">
+                                        <div class="retail-circle__title">{l s='Offers' mod='retailcrm'}</div>
+                                        <input class="retail-circle__content" readonly="readonly"
+                                               value="{$icmlInfo.offersCount|default:'---'|escape:'htmlall':'UTF-8'}"/>
+                                    </div>
+                                </div>
+                        {else}
+                                <div class="retail-alert retail-alert-warning">
+                                    <div class="retail-alert-text">
+                                        {$catalogTitleName} {l s='was not generated yet' mod='retailcrm'}
+                                    </div>
+                                    <div class="retail-alert-note">
+                                        {l s='Press the below button to generate the %s' mod='retailcrm' sprintf=[$catalogTitleName]}
+                                    </div>
+                                </div>
+                        {/if}
+                                <input type="hidden" name="{$runJobName|escape:'htmlall':'UTF-8'}" value="">
+                                <div class="retail-form__row retail-form__row_submit"
+                                     style="text-align: center; height: 60px; margin-bottom: 20px; clear:both;">
+                                    <button id="generate-icml-submit" class="btn btn_invert btn_submit"
+                                            style="outline: none;">{l s='Generate now' mod='retailcrm'}</button>
+                                </div>
                     </div>
                     <div id="rcrm_tab_delivery_types">
                         <div class="retail-form__title">
@@ -415,5 +493,6 @@
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/vendor/jquery.sumoselect.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-tabs.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-upload.min.js"></script>
+<script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-icml.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-export.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm.min.js"></script>

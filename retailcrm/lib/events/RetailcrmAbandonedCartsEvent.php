@@ -71,8 +71,6 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
             $api = RetailcrmTools::getApiClient();
 
             if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
                 continue;
             }
 

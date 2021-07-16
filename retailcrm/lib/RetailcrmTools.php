@@ -479,6 +479,7 @@ class RetailcrmTools
         if (!empty($apiUrl) && !empty($apiKey)) {
             return new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
         }
+        RetailcrmLogger::writeCaller(__METHOD__, 'Set api key & url first');
 
         return null;
     }

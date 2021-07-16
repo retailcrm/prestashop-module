@@ -59,8 +59,6 @@ class RetailcrmUpdateSinceIdEvent extends RetailcrmAbstractEvent implements Reta
             $api = RetailcrmTools::getApiClient();
 
             if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set api key & url first');
-
                 continue;
             }
 

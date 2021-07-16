@@ -372,6 +372,7 @@ class RetailcrmCli
         return array(
             'RetailcrmAbandonedCartsEvent',
             'RetailcrmIcmlEvent',
+            'RetailcrmIcmlUpdateUrlEvent',
             'RetailcrmSyncEvent',
             'RetailcrmInventoriesEvent',
             'RetailcrmExportEvent',

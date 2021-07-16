@@ -43,6 +43,9 @@ class RetailcrmReferences
     public $carriers;
     public $payment_modules = array();
 
+    /**
+     * @var bool|RetailcrmApiClientV5|RetailcrmProxy $api
+     */
     private $api;
 
     public function __construct($client)
@@ -338,6 +341,54 @@ class RetailcrmReferences
         }
 
         return $crmPaymentTypes;
+    }
+
+    public function getSite()
+    {
+        try {
+            $response = $this->api->credentials();
+
+            if (!$response->isSuccessful()
+                || $response['siteAccess'] !== 'access_selective'
+                || count($response['sitesAvailable']) !== 1
+                || !in_array('/api/reference/sites', $response['credentials'])
+                || !in_array('/api/reference/sites/{code}/edit', $response['credentials'])
+            ) {
+                RetailcrmLogger::writeCaller(
+                    __METHOD__,
+                    sprintf(
+                        'ShopID=%s: Error with CRM credentials: need an valid apiKey assigned to one certain site',
+                        Shop::getContextShopID()
+                    )
+                );
+
+                return null;
+            }
+
+            $response = $this->api->sitesList();
+
+            if ($response->isSuccessful() && $response->offsetExists('sites') && $response['sites']) {
+
+                return current($response['sites']);
+            }
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller(
+                __METHOD__,
+                sprintf(
+                    'Error: %s',
+                    $e->getMessage()
+                )
+            );
+        }
+
+        return null;
+    }
+
+    public function checkYmlLink()
+    {
+        $site = $this->getSite();
+
+        return $site['ymlUrl'] === RetailcrmCatalog::getIcmlLink();
     }
 
     public function getStores()

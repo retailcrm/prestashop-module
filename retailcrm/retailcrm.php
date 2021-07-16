@@ -63,6 +63,7 @@ class RetailCRM extends Module
     const SYNC_CARTS_STATUS = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
     const SYNC_CARTS_DELAY = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
+    const RUN_JOB = 'RETAILCRM_RUN_JOB';
     const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
     const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
     const UPDATE_SINCE_ID = 'RETAILCRM_UPDATE_SINCE_ID';
@@ -81,6 +82,7 @@ class RetailCRM extends Module
     const JOBS_NAMES = [
         'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
         'RetailcrmIcmlEvent' => 'Icml generation',
+        'RetailcrmIcmlUpdateUrlEvent' => 'Icml update URL',
         'RetailcrmSyncEvent' => 'History synchronization',
         'RetailcrmInventoriesEvent' => 'Inventories uploads',
         'RetailcrmClearLogsEvent' => 'Clearing logs'
@@ -276,6 +278,8 @@ class RetailCRM extends Module
         $token = Configuration::get(static::API_KEY);
 
         if (Tools::isSubmit('submit' . $this->name)) {
+            // todo all those vars & ifs to one $command var and check in switch
+            $jobName = (string)(Tools::getValue(static::RUN_JOB));
             $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
             $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
             $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
@@ -285,6 +289,8 @@ class RetailCRM extends Module
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
+            } elseif (!empty($jobName)) {
+                $output .= $this->runJob($jobName);
             } elseif (!empty($exportOrders)) {
                 return $this->export($exportOrders);
             } elseif (!empty($exportCustomers)) {
@@ -402,6 +408,32 @@ class RetailCRM extends Module
     }
 
     /**
+     * @param string $jobName
+     * @return string
+     */
+    public function runJob($jobName)
+    {
+        $jobNameFront = (empty(static::JOBS_NAMES[$jobName]) ? $jobName : static::JOBS_NAMES[$jobName]);
+
+        try {
+            if (RetailcrmJobManager::execManualJob($jobName)) {
+                return $this->displayConfirmation(sprintf('%s %s',
+                    $this->l($jobNameFront),
+                    $this->l('was completed successfully')));
+            } else {
+                return $this->displayWarning(sprintf('%s %s',
+                    $this->l($jobNameFront),
+                    $this->l('execution is set to the queue')));
+            }
+        } catch (Exception $e) {
+            return $this->displayError(sprintf('%s %s: %s',
+                $this->l($jobNameFront),
+                $this->l('was completed with errors'),
+                $e->getMessage()));
+        }
+    }
+
+    /**
      * @param int $step
      * @param string $entity
      * @return bool
@@ -420,7 +452,6 @@ class RetailCRM extends Module
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
             return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
         }
 
@@ -453,7 +484,6 @@ class RetailCRM extends Module
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
             return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
         }
 
@@ -1298,6 +1328,7 @@ class RetailCRM extends Module
             'synchronizedCartStatusName' => static::SYNC_CARTS_STATUS,
             'synchronizedCartDelayName' => static::SYNC_CARTS_DELAY,
             'uploadOrders' => static::UPLOAD_ORDERS,
+            'runJobName' => static::RUN_JOB,
             'consultantScriptName' => static::CONSULTANT_SCRIPT,
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,

@@ -38,6 +38,8 @@
  */
 class RetailcrmCatalog
 {
+    const ICML_INFO_NAME = 'RETAILCRM_ICML_INFO';
+
     public $default_lang;
     public $default_currency;
     public $default_country;
@@ -60,7 +62,7 @@ class RetailcrmCatalog
 
     public function getData()
     {
-        return array($this->getCategories(), $this->getOffers());
+        return array($this->getCategories(), $this->getOffers(), self::getIcmlFilePath());
     }
 
     public function getCategories()
@@ -105,6 +107,9 @@ class RetailcrmCatalog
 
     public function getOffers()
     {
+        $productsCount = 0;
+        $offersCount = 0;
+
         $id_lang = $this->default_lang;
         $homeCategory = $this->home_category;
 
@@ -156,6 +161,7 @@ class RetailcrmCatalog
                     if (empty($categoriesLeft)) {
                         continue;
                     }
+                    $productsCount++;
 
                     if ($this->version == "1.3") {
                         $available_for_order = $product['active'] && $product['quantity'];
@@ -206,6 +212,7 @@ class RetailcrmCatalog
                     $offers = Product::getProductAttributesIds($product['id_product']);
 
                     if (!empty($offers)) {
+                        $offersCount+= count($offers);
                         $productForCombination = new Product($product['id_product']);
 
                         foreach ($offers as $offer) {
@@ -298,6 +305,7 @@ class RetailcrmCatalog
                             );
                         }
                     } else {
+                        $offersCount++;
 
                         $pictures = array();
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
@@ -343,6 +351,12 @@ class RetailcrmCatalog
 
                 $start += $limit;
             } while ($start < $count && count($products) > 0);
+
+            $icmlInfo = array(
+                'productsCount' => $productsCount,
+                'offersCount' => $offersCount
+            );
+            Configuration::updateValue(self::ICML_INFO_NAME, (string)json_encode($icmlInfo));
     }
 
     private static function getProductsCount(
@@ -429,5 +443,79 @@ class RetailcrmCatalog
         }
 
         return $parentId;
+    }
+    public static function getIcmlFileName()
+    {
+        $isMultiStoreActive = Shop::isFeatureActive();
+        $shop = Context::getContext()->shop;
+
+        if ($isMultiStoreActive) {
+            $icmlFileName = 'simla_' . $shop->id . '.xml';
+        } else {
+            $icmlFileName = 'simla.xml';
+        }
+
+        return $icmlFileName;
+    }
+
+    public static function getIcmlFilePath()
+    {
+        return _PS_ROOT_DIR_ . '/' . self::getIcmlFileName();
+    }
+
+    public static function getIcmlDate()
+    {
+        $date = null;
+        $filePath = self::getIcmlFilePath();
+        if(!file_exists($filePath) || ($fileHandler = fopen($filePath, 'rb')) === false) {
+            return null;
+        }
+
+        while ($line = fgets($fileHandler))
+        {
+            if (strpos($line, 'yml_catalog date=') !== false) {
+                preg_match_all('/date="([\d\- :]+)"/', $line, $matches);
+                if (count($matches) == 2) {
+                    $date = $matches[1][0];
+                }
+                break;
+            }
+        }
+
+        fclose($fileHandler);
+
+        return $date;
+    }
+
+    public static function getIcmlLink()
+    {
+        return _PS_BASE_URL_  . '/' . self::getIcmlFilename();
+    }
+
+    public static function getIcmlInfo()
+    {
+        $icmlInfo = json_decode((string)Configuration::get(self::ICML_INFO_NAME), true);
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            return array();
+        }
+        $lastGenerated = DateTime::createFromFormat('Y-m-d H:i:s', self::getIcmlDate());
+
+        if ($lastGenerated instanceof DateTime) {
+            $icmlInfo['lastGenerated'] = $lastGenerated;
+            $now = new DateTime();
+            /** @var DateInterval $diff */
+            $diff = $lastGenerated->diff($now);
+
+            $icmlInfo['lastGeneratedDiff'] = array(
+                'days' => ($diff->y * 365) + ($diff->m * 30) + $diff->d,
+                'hours' => $diff->h,
+                'minutes' => $diff->i
+            );
+        } else {
+            return null;
+        }
+
+        return (array)$icmlInfo;
     }
 }
