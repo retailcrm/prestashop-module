@@ -42,6 +42,9 @@
 <div class="retail retail-wrap">
     {include file='./module_messages.tpl'}
     <div class="retail-container">
+        <div class="retail-video">
+            <img src="{$assets|escape:'htmlall':'UTF-8'}/img/simla.png" width="220" height="220" alt="Simla" />
+        </div>
         <h1 class="retail-title">Simla.com</h1>
         <div class="retail-txt retail-descript">
             {l s='Simla.com is a service for online stores that can prevent you from losing orders and increase the income at all stages of the funnel.' mod='retailcrm'}
