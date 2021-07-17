@@ -256,7 +256,7 @@ class RetailcrmJobManager
     public static function execManualJob($jobName)
     {
         try {
-            $result = static::runJob($jobName, true, false, Shop::getContextShopID());
+            $result = static::runJob($jobName, true, false, true, Shop::getContextShopID());
 
             if ($result) {
                 static::updateLastRunDetail($jobName, [
@@ -264,9 +264,6 @@ class RetailcrmJobManager
                     'lastRun' =>  new \DateTime('now'),
                     'error' => null,
                 ]);
-                static::clearCurrentJob($jobName);
-            } else {
-                self::updateLastRun($jobName, \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00'));
             }
 
             return $result;
@@ -286,8 +283,6 @@ class RetailcrmJobManager
                     'trace' => $exception->getTraceAsString(),
                 ],
             ]);
-
-            static::clearCurrentJob($jobName);
 
             throw $exception;
         }
@@ -433,11 +428,13 @@ class RetailcrmJobManager
      * @param string $job
      * @param bool   $once
      * @param bool   $cliMode
+     * @param bool   $force
+     * @param int   $shopId
      *
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false, $cliMode = false, $shopId = null)
+    public static function runJob($job, $once = false, $cliMode = false, $force = false, $shopId = null)
     {
         $jobName = self::escapeJobName($job);
         $jobFile = implode(
@@ -457,7 +454,7 @@ class RetailcrmJobManager
         }
 
         try {
-            return static::execHere($jobName, $jobFile, $once, $cliMode, $shopId);
+            return static::execHere($jobName, $jobFile, $once, $cliMode, $force, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
@@ -657,11 +654,13 @@ class RetailcrmJobManager
      * @param string $phpScript
      * @param bool   $once
      * @param bool   $cliMode
+     * @param bool   $force
+     * @param int   $shopId
      *
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $shopId = null)
+    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $force = false, $shopId = null)
     {
         set_time_limit(static::getTimeLimit());
 
@@ -704,6 +703,7 @@ class RetailcrmJobManager
         }
 
         $job->setCliMode($cliMode);
+        $job->setForce($force);
         $job->setShopId($shopId);
 
         self::registerShutdownHandler();

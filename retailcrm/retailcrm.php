@@ -421,9 +421,9 @@ class RetailCRM extends Module
                     $this->l($jobNameFront),
                     $this->l('was completed successfully')));
             } else {
-                return $this->displayWarning(sprintf('%s %s',
+                return $this->displayError(sprintf('%s %s',
                     $this->l($jobNameFront),
-                    $this->l('execution is set to the queue')));
+                    $this->l('was not executed')));
             }
         } catch (Exception $e) {
             return $this->displayError(sprintf('%s %s: %s',

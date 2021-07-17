@@ -45,7 +45,6 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
      */
     public function execute()
     {
-//        throw new Exception('test error right here');
         if ($this->isRunning()) {
             return false;
         }

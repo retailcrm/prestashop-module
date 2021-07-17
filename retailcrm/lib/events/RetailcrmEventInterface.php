@@ -61,6 +61,13 @@ interface RetailcrmEventInterface
     public function setCliMode($mode);
 
     /**
+     * Sets force mode to true. Force mode here stands for any execution outside of JobManager & CLI context.
+     *
+     * @param bool $force
+     */
+    public function setForce($force);
+
+    /**
      * Sets context shop id.
      *
      * @param $shopId

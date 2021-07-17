@@ -348,7 +348,7 @@ class RetailcrmReferences
         try {
             $response = $this->api->credentials();
 
-            if (!$response->isSuccessful()
+            if (!($response instanceof RetailcrmApiResponse) || !$response->isSuccessful()
                 || $response['siteAccess'] !== 'access_selective'
                 || count($response['sitesAvailable']) !== 1
                 || !in_array('/api/reference/sites', $response['credentials'])
@@ -367,7 +367,8 @@ class RetailcrmReferences
 
             $response = $this->api->sitesList();
 
-            if ($response->isSuccessful() && $response->offsetExists('sites') && $response['sites']) {
+            if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()
+                && $response->offsetExists('sites') && $response['sites']) {
 
                 return current($response['sites']);
             }

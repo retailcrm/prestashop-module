@@ -159,7 +159,7 @@ class RetailcrmCli
     private function runJob($jobName, $shopId)
     {
         try {
-            $result = RetailcrmJobManager::runJob($jobName, true, true, $shopId);
+            $result = RetailcrmJobManager::runJob($jobName, true, true, false, $shopId);
             RetailcrmLogger::output(sprintf(
                 'Job %s was executed, result: %s',
                 $jobName,

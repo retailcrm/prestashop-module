@@ -380,7 +380,7 @@
                             </thead>
                             <tbody>
                             {foreach from=$lastRunDetails key=key item=item}
-                                <tr class="retail-table__row-top">
+                                <tr class="{if $key === $currentJob || $key === $currentJobCli} retail-table__row-bold{/if}">
                                     <td>
                                         {if isset($jobsNames[$key]) }
                                             <span title="{$key|escape:'htmlall':'UTF-8'}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
