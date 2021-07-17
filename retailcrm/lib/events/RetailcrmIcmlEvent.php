@@ -59,7 +59,7 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
             $job = new RetailcrmCatalog();
             $data = $job->getData();
 
-            $icml = new RetailcrmIcml($shop['name'], $data[2]);
+            $icml = new RetailcrmIcml($shop['name'], RetailcrmCatalogHelper::getIcmlFilePath());
             $icml->generate($data[0], $data[1]);
         }
 

@@ -389,7 +389,7 @@ class RetailcrmReferences
     {
         $site = $this->getSite();
 
-        return $site['ymlUrl'] === RetailcrmCatalog::getIcmlLink();
+        return $site['ymlUrl'] === RetailcrmCatalogHelper::getIcmlFileLink();
     }
 
     public function getStores()

@@ -56,7 +56,7 @@ class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements Reta
         foreach ($shops as $shop) {
             RetailcrmTools::setShopContext(intval($shop['id_shop']));
 
-            if(!file_exists(RetailcrmCatalog::getIcmlFilePath())) {
+            if (!file_exists(RetailcrmCatalogHelper::getIcmlFilePath())) {
                 continue;
             }
 
@@ -71,13 +71,15 @@ class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements Reta
                 continue;
             }
 
-            $newYmlUrl = RetailcrmCatalog::getIcmlLink();
+            $newYmlUrl = RetailcrmCatalogHelper::getIcmlFileLink();
             $siteCode = $site['code'];
 
-            $api->sitesEdit([
-                'code' => $siteCode,
-                'ymlUrl' => $newYmlUrl,
-            ]);
+            if ($newYmlUrl !== $site['ymlUrl']) {
+                $api->sitesEdit([
+                    'code' => $siteCode,
+                    'ymlUrl' => $newYmlUrl,
+                ]);
+            }
         }
 
         return true;

@@ -74,8 +74,7 @@ class RetailcrmJobManager
      *  RetailcrmJobManager::startJobs(
      *      array(
      *          'jobName' => DateInterval::createFromDateString('1 hour')
-     *      ),
-     *      true
+     *      )
      *  );
      *
      * File `jobName.php` must exist in retailcrm/job and must contain everything to run job.
@@ -84,27 +83,24 @@ class RetailcrmJobManager
      * any delay - in other words, jobs without interval will be executed every time.
      *
      * @param array $jobs             Jobs list
-     * @param bool  $runOnceInContext Use require_once instead of require
      *
      * @throws \Exception
      */
     public static function startJobs(
-        $jobs = array(),
-        $runOnceInContext = true
+        $jobs = array()
     ) {
         RetailcrmLogger::writeDebug(__METHOD__,'starting JobManager');
-        static::execJobs($jobs, $runOnceInContext);
+        static::execJobs($jobs);
     }
 
     /**
      * Run scheduled jobs with request
      *
      * @param array $jobs
-     * @param bool  $runOnceInContext
      *
      * @throws \Exception
      */
-    public static function execJobs($jobs = array(), $runOnceInContext = false)
+    public static function execJobs($jobs = array())
     {
         $current = date_create('now');
         $lastRuns = array();
@@ -185,7 +181,7 @@ class RetailcrmJobManager
 
                 if (isset($shouldRunAt) && $shouldRunAt <= $current) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf('Executing job %s', $job));
-                    $result = RetailcrmJobManager::runJob($job, $runOnceInContext);
+                    $result = RetailcrmJobManager::runJob($job);
                     RetailcrmLogger::writeDebug(
                         __METHOD__,
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
@@ -249,6 +245,8 @@ class RetailcrmJobManager
 
 
     /**
+     * Run job in the force mode so it will run even if there's another job running
+     *
      * @param $jobName
      * @return bool
      * @throws Exception
@@ -256,7 +254,7 @@ class RetailcrmJobManager
     public static function execManualJob($jobName)
     {
         try {
-            $result = static::runJob($jobName, true, false, true, Shop::getContextShopID());
+            $result = static::runJob($jobName, false, true, Shop::getContextShopID());
 
             if ($result) {
                 static::updateLastRunDetail($jobName, [
@@ -434,27 +432,12 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false, $cliMode = false, $force = false, $shopId = null)
+    public static function runJob($job, $cliMode = false, $force = false, $shopId = null)
     {
         $jobName = self::escapeJobName($job);
-        $jobFile = implode(
-            DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm_custom','classes', 'lib', 'events', $jobName . '.php')
-        );
-
-        if (!file_exists($jobFile)) {
-            $jobFile = implode(
-                DIRECTORY_SEPARATOR,
-                array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $jobName . '.php')
-            );
-
-            if (!file_exists($jobFile)) {
-                throw new \RetailcrmJobManagerException('Cannot find job', $job);
-            }
-        }
 
         try {
-            return static::execHere($jobName, $jobFile, $once, $cliMode, $force, $shopId);
+            return static::execHere($jobName, $cliMode, $force, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
@@ -660,7 +643,7 @@ class RetailcrmJobManager
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $force = false, $shopId = null)
+    private static function execHere($jobName, $cliMode = false, $force = false, $shopId = null)
     {
         set_time_limit(static::getTimeLimit());
 
@@ -679,16 +662,9 @@ class RetailcrmJobManager
             }
         }
 
-        if ($once) {
-            require_once($phpScript);
-        } else {
-            require($phpScript);
-        }
-
         if (!class_exists($jobName)) {
             throw new \RetailcrmJobManagerException(sprintf(
-                'The job file "%s" has been found, but job class "%s" was not present in there.',
-                $phpScript,
+                'The job class "%s" was not found.',
                 $jobName
             ));
         }
