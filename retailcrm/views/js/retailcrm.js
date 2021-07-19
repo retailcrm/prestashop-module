@@ -259,11 +259,13 @@ $(function(){
             },
             advancedTab: function () {
                 let tabElement = document.getElementsByClassName('retail-title_content')[0];
-                tabElement.addEventListener('click', function (evt) {
-                    if (evt.detail === 3) {
-                        $('.retail-menu__btn[data-tab-trigger="rcrm_tab_advanced"]').click();
-                    }
-                });
+                if (tabElement !== undefined) {
+                    tabElement.addEventListener('click', function (evt) {
+                        if (evt.detail === 3) {
+                            $('.retail-menu__btn[data-tab-trigger="rcrm_tab_advanced"]').click();
+                        }
+                    });
+                }
             }
         },
         popup: {

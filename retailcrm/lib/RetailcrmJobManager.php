@@ -441,7 +441,7 @@ class RetailcrmJobManager
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $jobFile, array(), 0, $exception);
+            throw new RetailcrmJobManagerException($exception->getMessage(), $job, array(), 0, $exception);
         }
     }
 
@@ -647,7 +647,7 @@ class RetailcrmJobManager
     {
         set_time_limit(static::getTimeLimit());
 
-        if (!$cliMode) {
+        if (!$cliMode && !$force) {
             ignore_user_abort(true);
 
             if (version_compare(phpversion(), '7.0.16', '>=') &&

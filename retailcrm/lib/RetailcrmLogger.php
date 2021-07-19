@@ -195,6 +195,11 @@ class RetailcrmLogger
         return self::getLogDir() . '/retailcrm_' . self::getLogFilePrefix() . '_' . date('Y_m_d') . '.log';
     }
 
+    /**
+     * Returns log files directory based on current Prestashop version
+     *
+     * @return string
+     */
     public static function getLogDir()
     {
         $logDir = version_compare(_PS_VERSION_, '1.7', '<') ? '/log' : '/var/logs';
@@ -221,7 +226,7 @@ class RetailcrmLogger
     }
 
     /**
-     * Removes module log files from var/logs which is older than 30 days
+     * Removes module log files that are older than 30 days
      */
     public static function clearObsoleteLogs()
     {
@@ -234,6 +239,11 @@ class RetailcrmLogger
         }
     }
 
+    /**
+     * Retrieves log files basic info for advanced tab
+     *
+     * @return array
+     */
     public static function getLogFilesInfo()
     {
         $fileNames = [];
@@ -251,6 +261,11 @@ class RetailcrmLogger
         return $fileNames;
     }
 
+    /**
+     * Retrieves log files paths
+     *
+     * @return Generator|void
+     */
     private static function getLogFiles()
     {
         $logDir = self::getLogDir();
@@ -265,8 +280,16 @@ class RetailcrmLogger
                 yield "$logDir/$file";
             }
         }
+
+        closedir($handle);
     }
 
+    /**
+     * Checks if given logs filename relates to the module
+     *
+     * @param string $file
+     * @return false|string
+     */
     public static function checkFileName($file)
     {
         $logDir = self::getLogDir();
