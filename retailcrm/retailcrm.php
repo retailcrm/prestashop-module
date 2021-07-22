@@ -338,6 +338,7 @@ class RetailCRM extends Module
 
         $apiUrl = Configuration::get(static::API_URL);
         $apiKey = Configuration::get(static::API_KEY);
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
         $isSuccessful = true;
 
         if (!empty($apiUrl) && !empty($apiKey)) {
@@ -380,6 +381,12 @@ class RetailCRM extends Module
 
                 if (empty($existingOrder)) {
                     $response = $this->api->ordersCreate($crmOrder);
+
+                    if ($response->isSuccessful() && $receiveOrderNumber) {
+                        $crmOrder = $response->order;
+                        $object->reference = $crmOrder['number'];
+                        $object->update();
+                    }
                 } else {
                     $response = $this->api->ordersEdit($crmOrder);
                 }
@@ -785,6 +792,7 @@ class RetailCRM extends Module
     public function hookActionOrderStatusPostUpdate($params)
     {
         $status = json_decode(Configuration::get(static::STATUS), true);
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         if (isset($params['orderStatus'])) {
             $cmsOrder = $params['order'];
@@ -823,7 +831,13 @@ class RetailCRM extends Module
                     $this->api->ordersPaymentCreate($payment);
                 }
             } else {
-                $this->api->ordersCreate($order);
+                $response = $this->api->ordersCreate($order);
+
+                if ($response->isSuccessful() && $receiveOrderNumber) {
+                    $crmOrder = $response->order;
+                    $cmsOrder->reference = $crmOrder['number'];
+                    $cmsOrder->update();
+                }
             }
 
             return true;
