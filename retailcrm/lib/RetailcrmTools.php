@@ -760,17 +760,6 @@ class RetailcrmTools
     }
 
     /**
-     * Change shop in the context
-     *
-     * @param $id_shop
-     */
-    public static function setShopContext($id_shop)
-    {
-        Shop::setContext(Shop::CONTEXT_SHOP, $id_shop);
-        Context::getContext()->shop = new Shop($id_shop);
-    }
-
-    /**
      * Call custom filters for the object
      *
      * @param string $filter
@@ -808,5 +797,49 @@ class RetailcrmTools
         }
 
         return $object;
+    }
+
+    /**
+     * @param $name
+     * @return array|false|mixed
+     */
+    public static function getConfigurationByName($name)
+    {
+        $idShop = Shop::getContextShopID(true);
+        $idShopGroup = Shop::getContextShopGroupID(true);
+
+        $sql = 'SELECT *
+            FROM ' . _DB_PREFIX_ . 'configuration c
+            WHERE NAME = \'' . pSQL($name) . '\'
+                AND ( ' .
+            ($idShop ? 'c.id_shop = \'' . pSQL($idShop) . '\' OR ' : '') .
+            ($idShopGroup ? '( c.id_shop IS NULL AND c.id_shop_group = \'' . pSQL($idShopGroup) . '\') OR ' : '') . '
+                    (c.id_shop IS NULL AND c.id_shop_group IS NULL)
+                )
+            ORDER BY c.id_shop DESC, c.id_shop_group DESC
+            LIMIT 1
+            ';
+
+        try {
+            return current(Db::getInstance()->executeS($sql));
+        } catch (PrestaShopDatabaseException $e) {
+            return array();
+        }
+    }
+
+    /**
+     * @param $name
+     * @return DateTime|false
+     */
+    public static function getConfigurationCreatedAtByName($name)
+    {
+        $config = self::getConfigurationByName($name);
+        if(!$config) {
+            return false;
+        }
+
+        $urlConfiguredAt = DateTime::createFromFormat('Y-m-d H:i:s', $config['date_add']);
+
+        return $urlConfiguredAt;
     }
 }

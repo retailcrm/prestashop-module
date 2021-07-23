@@ -62,7 +62,7 @@ function upgrade_module_3_3_2($module)
     }
 
     foreach ($shops as $shop) {
-        RetailcrmTools::setShopContext((int) $shop['id_shop']);
+        RetailcrmContextSwitcher::setShopContext((int) $shop['id_shop']);
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {

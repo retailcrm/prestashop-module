@@ -290,7 +290,7 @@ class RetailCRM extends Module
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
             } elseif (!empty($jobName)) {
-                $output .= $this->runJob($jobName);
+                $this->runJobMultistore($jobName);
             } elseif (!empty($exportOrders)) {
                 return $this->export($exportOrders);
             } elseif (!empty($exportCustomers)) {
@@ -417,20 +417,31 @@ class RetailCRM extends Module
 
         try {
             if (RetailcrmJobManager::execManualJob($jobName)) {
-                return $this->displayConfirmation(sprintf('%s %s',
+                return $this->displayConfirmation(sprintf(
+                    '%s %s',
                     $this->l($jobNameFront),
-                    $this->l('was completed successfully')));
+                    $this->l('was completed successfully')
+                ));
             } else {
-                return $this->displayError(sprintf('%s %s',
+                return $this->displayError(sprintf(
+                    '%s %s',
                     $this->l($jobNameFront),
-                    $this->l('was not executed')));
+                    $this->l('was not executed')
+                ));
             }
         } catch (Exception $e) {
-            return $this->displayError(sprintf('%s %s: %s',
+            return $this->displayError(sprintf(
+                '%s %s: %s',
                 $this->l($jobNameFront),
                 $this->l('was completed with errors'),
-                $e->getMessage()));
+                $e->getMessage()
+            ));
         }
+    }
+
+    public function runJobMultistore($jobName)
+    {
+        RetailcrmContextSwitcher::runInContext(array($this, 'runJob'), array($jobName));
     }
 
     /**
@@ -1154,6 +1165,10 @@ class RetailCRM extends Module
             }
         }
 
+        if (!$this->validateCatalogMultistore()) {
+            $output[] = 'catalog';
+        }
+
         return $output;
     }
 
@@ -1172,6 +1187,55 @@ class RetailCRM extends Module
         }
 
         return true;
+    }
+
+    /**
+     * Catalog info validator
+     *
+     * @return bool
+     */
+    public function validateCatalog()
+    {
+        $icmlInfo = RetailcrmCatalogHelper::getIcmlFileInfo();
+
+        if (!$icmlInfo) {
+            try {
+                $urlConfiguredAt = RetailcrmTools::getConfigurationCreatedAtByName(self::API_KEY);
+            } catch (PrestaShopDatabaseException $e) {
+                return true;
+            }
+
+            if (!($urlConfiguredAt instanceof DateTime)) {
+                return true;
+            }
+
+            $now = new DateTime();
+            /** @var DateInterval $diff */
+            $diff = $urlConfiguredAt->diff($now);
+
+            if (($diff->days * 24 + $diff->h) > 4) {
+                return false;
+            }
+        } elseif ($icmlInfo['isOutdated'] || !$icmlInfo['isUrlActual']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Catalog info validator for multistore
+     *
+     * @return bool
+     */
+    private function validateCatalogMultistore()
+    {
+        $results = RetailcrmContextSwitcher::runInContext(array($this, 'validateCatalog'));
+        $results = array_filter($results, function ($item) {
+            return !$item;
+        });
+
+        return empty($results);
     }
 
     /**

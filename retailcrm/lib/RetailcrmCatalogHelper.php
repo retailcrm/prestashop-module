@@ -92,7 +92,7 @@ class RetailcrmCatalogHelper
         $icmlInfo = json_decode((string)Configuration::get(self::ICML_INFO_NAME), true);
 
         if (json_last_error() != JSON_ERROR_NONE) {
-            return array();
+            $icmlInfo = array();
         }
         $lastGenerated = DateTime::createFromFormat('Y-m-d H:i:s', self::getIcmlFileDate());
 
@@ -103,15 +103,32 @@ class RetailcrmCatalogHelper
             $diff = $lastGenerated->diff($now);
 
             $icmlInfo['lastGeneratedDiff'] = array(
-                'days' => ($diff->y * 365) + ($diff->m * 30) + $diff->d,
+                'days' => $diff->days,
                 'hours' => $diff->h,
                 'minutes' => $diff->i
             );
-        } else {
-            return null;
+
+            $icmlInfo['isOutdated'] = (
+                $icmlInfo['lastGeneratedDiff']['days'] > 0
+                || $icmlInfo['lastGeneratedDiff']['hours'] > 4
+            );
+        }
+
+        $api = RetailcrmTools::getApiClient();
+        $reference = new RetailcrmReferences($api);
+
+        $site = $reference->getSite();
+        $icmlInfo['isUrlActual'] = !empty($site['ymlUrl']) && $site['ymlUrl'] === self::getIcmlFileLink();
+        if (!empty($site['catalogId'])) {
+            $icmlInfo['siteId'] = $site['catalogId'];
         }
 
         return (array)$icmlInfo;
+    }
+
+    public static function getIcmlFileInfoMultistore()
+    {
+        return RetailcrmContextSwitcher::runInContext(array(self::class, 'getIcmlFileInfo'));
     }
 
     /**

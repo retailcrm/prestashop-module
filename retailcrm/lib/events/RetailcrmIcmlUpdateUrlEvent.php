@@ -54,7 +54,7 @@ class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements Reta
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmTools::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
 
             if (!file_exists(RetailcrmCatalogHelper::getIcmlFilePath())) {
                 continue;

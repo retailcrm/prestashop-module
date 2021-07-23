@@ -385,13 +385,6 @@ class RetailcrmReferences
         return null;
     }
 
-    public function checkYmlLink()
-    {
-        $site = $this->getSite();
-
-        return $site['ymlUrl'] === RetailcrmCatalogHelper::getIcmlFileLink();
-    }
-
     public function getStores()
     {
         $storesShop = $this->getShopStores();
