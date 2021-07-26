@@ -115,12 +115,15 @@ class RetailcrmCatalogHelper
         }
 
         $api = RetailcrmTools::getApiClient();
-        $reference = new RetailcrmReferences($api);
 
-        $site = $reference->getSite();
-        $icmlInfo['isUrlActual'] = !empty($site['ymlUrl']) && $site['ymlUrl'] === self::getIcmlFileLink();
-        if (!empty($site['catalogId'])) {
-            $icmlInfo['siteId'] = $site['catalogId'];
+        if ($api !== null) {
+            $reference = new RetailcrmReferences($api);
+
+            $site = $reference->getSite();
+            $icmlInfo['isUrlActual'] = !empty($site['ymlUrl']) && $site['ymlUrl'] === self::getIcmlFileLink();
+            if (!empty($site['catalogId'])) {
+                $icmlInfo['siteId'] = $site['catalogId'];
+            }
         }
 
         return (array)$icmlInfo;

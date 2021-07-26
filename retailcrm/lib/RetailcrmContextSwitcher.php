@@ -57,20 +57,14 @@ class RetailcrmContextSwitcher
     public static function runInContext($callback, $arguments = array())
     {
         $result = array();
-        $idShop = Shop::getContextShopID();
+        self::storeContext();
 
-        if (Shop::isFeatureActive() && $idShop === null) {
-            self::storeContext();
-
-            foreach (self::getShops() as $shop) {
-                self::setShopContext(intval($shop['id_shop']));
-                $result[intval($shop['id_shop'])] = call_user_func_array($callback, $arguments);
-            }
-
-            self::restoreContext();
-        } else {
-            $result[$idShop] = call_user_func_array($callback, $arguments);
+        foreach (self::getShops() as $shop) {
+            self::setShopContext(intval($shop['id_shop']));
+            $result[intval($shop['id_shop'])] = call_user_func_array($callback, $arguments);
         }
+
+        self::restoreContext();
 
         return $result;
     }
@@ -124,6 +118,12 @@ class RetailcrmContextSwitcher
      */
     public static function getShops()
     {
-        return Shop::getShops(true, Shop::getContextShopGroupID(true));
+        $idShop = Shop::getContextShopID();
+
+        if (Shop::isFeatureActive() && $idShop === null) {
+            return Shop::getShops(true, Shop::getContextShopGroupID(true));
+        } else {
+            return array(Shop::getShop($idShop));
+        }
     }
 }

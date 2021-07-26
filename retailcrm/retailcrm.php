@@ -247,6 +247,7 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
             Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
+            Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
             Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
@@ -1198,23 +1199,17 @@ class RetailCRM extends Module
     {
         $icmlInfo = RetailcrmCatalogHelper::getIcmlFileInfo();
 
-        if (!$icmlInfo) {
-            try {
-                $urlConfiguredAt = RetailcrmTools::getConfigurationCreatedAtByName(self::API_KEY);
-            } catch (PrestaShopDatabaseException $e) {
-                return true;
-            }
+        if (!$icmlInfo || !isset($icmlInfo['lastGenerated'])) {
+            $urlConfiguredAt = RetailcrmTools::getConfigurationCreatedAtByName(self::API_KEY);
 
-            if (!($urlConfiguredAt instanceof DateTime)) {
-                return true;
-            }
+            if ($urlConfiguredAt instanceof DateTime) {
+                $now = new DateTime();
+                /** @var DateInterval $diff */
+                $diff = $urlConfiguredAt->diff($now);
 
-            $now = new DateTime();
-            /** @var DateInterval $diff */
-            $diff = $urlConfiguredAt->diff($now);
-
-            if (($diff->days * 24 + $diff->h) > 4) {
-                return false;
+                if (($diff->days * 24 + $diff->h) > 4) {
+                    return false;
+                }
             }
         } elseif ($icmlInfo['isOutdated'] || !$icmlInfo['isUrlActual']) {
             return false;

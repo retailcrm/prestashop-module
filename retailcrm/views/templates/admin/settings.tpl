@@ -128,11 +128,23 @@
                         </div>
                     </div>
                     <div id="rcrm_tab_catalog">
-                        <div class="retail-form__title">{$catalogTitleName|escape:'htmlall':'UTF-8'} </div>
+                        <div class="retail-form__title">
+                            {$catalogTitleName|escape:'htmlall':'UTF-8'}
+                            {if $catalogInfoMultistore|count == 1}
+                                {assign var='catalogInfo' value=$catalogInfoMultistore[$catalogInfoMultistore|@key] }
+                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
+                                   target="_blank"
+                                   class="retail-form__title_link">{l s='Manage site settings' mod='retailcrm'}</a>
+                            {/if}
+                        </div>
                         {foreach from=$catalogInfoMultistore key=catalogShopId item=catalogInfo}
                         <div class="retail-form__title" style="margin-top: 50px;">
-                        <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&rcrmtab=rcrm_tab_catalog&setShopContext=s-{$catalogShopId|escape:'htmlall':'UTF-8'}">{$shopsInfo[$catalogShopId].name|escape:'htmlall':'UTF-8'}</a>
-                        <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}" target="_blank" class="retail-form__title_link">{l s='Manage site settings' mod='retailcrm'}</a>
+                            {if $catalogInfoMultistore|count > 1}
+                                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&rcrmtab=rcrm_tab_catalog&setShopContext=s-{$catalogShopId|escape:'htmlall':'UTF-8'}">{$shopsInfo[$catalogShopId].name|escape:'htmlall':'UTF-8'}</a>
+                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
+                                   target="_blank"
+                                   class="retail-form__title_link">{l s='Manage site settings' mod='retailcrm'}</a>
+                            {/if}
                         </div>
                         {if $catalogInfo and $catalogInfo.lastGenerated}
                             {if  $catalogInfo.isOutdated }

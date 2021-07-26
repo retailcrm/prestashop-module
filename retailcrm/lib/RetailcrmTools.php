@@ -834,12 +834,11 @@ class RetailcrmTools
     public static function getConfigurationCreatedAtByName($name)
     {
         $config = self::getConfigurationByName($name);
-        if(!$config) {
+
+        if (empty($config)) {
             return false;
         }
 
-        $urlConfiguredAt = DateTime::createFromFormat('Y-m-d H:i:s', $config['date_add']);
-
-        return $urlConfiguredAt;
+        return DateTime::createFromFormat('Y-m-d H:i:s', $config['date_add']);
     }
 }
