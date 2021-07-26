@@ -385,16 +385,25 @@
                     <div class="retail-form__title">{l s='Advanced' mod='retailcrm'}</div>
                     <div class="retail-form__row">
                         <div class="retail-form__checkbox">
-                            <input form="submitretailcrm-form" type="checkbox" name="{$debugModeName|escape:'htmlall':'UTF-8'}"
+                            <input form="submitretailcrm-form" type="checkbox"
+                                   name="{$debugModeName|escape:'htmlall':'UTF-8'}"
                                    value="{$debugMode|escape:'htmlall':'UTF-8'}"
                                    {if $debugMode}checked="checked"{/if} id="debugmode-active">
                             <label for="debugmode-active"
                                    class="retail-form__label">{l s='Debug mode' mod='retailcrm'}</label>
                         </div>
-
-                        <div class="retail-form__row retail-form__row_submit">
-                            <input form="submitretailcrm-form" type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
+                        <div class="retail-form__checkbox">
+                            <input form="submitretailcrm-form" type="checkbox"
+                                   name="{$webJobsName|escape:'htmlall':'UTF-8'}"
+                                   value="{$webJobs|escape:'htmlall':'UTF-8'}"
+                                   {if $webJobs}checked="checked"{/if} id="webjobs-active">
+                            <label for="webjobs-active"
+                                   class="retail-form__label">{l s='Web Jobs' mod='retailcrm'}</label>
                         </div>
+                    </div>
+
+                    <div class="retail-form__row">
+                        <input form="submitretailcrm-form" type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
                     </div>
 
                     <div class="retail-form__row">
@@ -457,6 +466,15 @@
                             {/foreach}
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="retail-form__row retail-form__row_submit">
+                        <form class="rcrm-form-submit-trigger"
+                              action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                              method="post">
+                            <input type="submit" id="reset-jobs-submit" class="btn"
+                                   value="{l s='Reset jobs' mod='retailcrm'}"/>
+                        </form>
                     </div>
 
                     <div class="retail-form__row">
@@ -533,4 +551,5 @@
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-upload.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-icml.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-export.min.js"></script>
+<script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-advanced.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm.min.js"></script>

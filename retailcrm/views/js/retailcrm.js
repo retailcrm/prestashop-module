@@ -43,6 +43,7 @@ $(function(){
             this.player.init();
             this.tabs.init();
             this.eventForm.init(this.settingsTabs.init());
+            this.advancedSettings.init();
             this.popup.init();
             this.toggleBox();
             this.trimConsultant();
@@ -239,6 +240,13 @@ $(function(){
                     new RetailcrmExportForm();
                 }
             },
+        },
+        advancedSettings: {
+            init: function () {
+                if (!(typeof RetailcrmAdvancedSettings === 'undefined')) {
+                    new RetailcrmAdvancedSettings();
+                }
+            }
         },
         tabs: {
             init: function () {

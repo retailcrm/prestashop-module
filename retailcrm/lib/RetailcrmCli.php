@@ -118,11 +118,11 @@ class RetailcrmCli
         } elseif (isset($options['reset-all'])) {
             $this->resetAll();
         } elseif (isset($options['query-web-jobs'])) {
-            $this->queryWebJobs();
+            $this->queryWebJobs($shopId);
         } elseif (isset($options['run-jobs'])) {
             RetailcrmTools::startJobManager();
         } elseif (isset($options['set-web-jobs'])) {
-            $this->setWebJobs(self::getBool($options['set-web-jobs']));
+            $this->setWebJobs(self::getBool($options['set-web-jobs']), $shopId);
         } elseif (empty($jobName)) {
             $this->help();
         } else {
@@ -245,21 +245,36 @@ class RetailcrmCli
      * Sets new web jobs state
      *
      * @param bool $state
+     * @param      $shopId
      */
-    private function setWebJobs($state)
+    private function setWebJobs($state, $shopId = null)
     {
+        if ($shopId === null) {
+            RetailcrmLogger::output('You must specify shop id');
+            return;
+        }
+
+        RetailcrmTools::setShopContext($shopId);
         $this->loadConfiguration();
 
-        Configuration::updateGlobalValue(RetailCRM::ENABLE_WEB_JOBS, $state ? '1' : '0');
+        Configuration::updateValue(RetailCRM::ENABLE_WEB_JOBS, $state ? '1' : '0');
         RetailcrmLogger::output('Updated web jobs state.');
-        $this->queryWebJobs();
+        $this->queryWebJobs($shopId);
     }
 
     /**
      * Prints web jobs status
+     *
+     * @param $shopId
      */
-    private function queryWebJobs()
+    private function queryWebJobs($shopId = null)
     {
+        if ($shopId === null) {
+            RetailcrmLogger::output('You must specify shop id');
+            return;
+        }
+
+        RetailcrmTools::setShopContext($shopId);
         $this->loadConfiguration();
 
         RetailcrmLogger::output(sprintf(

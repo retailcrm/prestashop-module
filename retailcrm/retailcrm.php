@@ -81,6 +81,7 @@ class RetailCRM extends Module
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
+    const RESET_JOBS = 'RETAILCRM_RESET_JOBS';
     const JOBS_NAMES = [
         'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
         'RetailcrmIcmlEvent' => 'Icml generation',
@@ -289,8 +290,8 @@ class RetailCRM extends Module
             $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
             $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
             $updateSinceId = (bool)(Tools::getValue(static::UPDATE_SINCE_ID));
-            $logNames = (string)(Tools::getValue(static::DOWNLOAD_LOGS_NAME));
             $downloadLogs = (bool)(Tools::getValue(static::DOWNLOAD_LOGS));
+            $resetJobs = (bool)(Tools::getValue(static::RESET_JOBS));
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
@@ -303,7 +304,9 @@ class RetailCRM extends Module
             } elseif ($updateSinceId) {
                 return $this->updateSinceId();
             } elseif ($downloadLogs) {
-                return $this->downloadLogs($logNames);
+                return $this->downloadLogs();
+            } elseif ($resetJobs) {
+                return $this->resetJobs();
             } else {
                 $output .= $this->saveSettings();
             }
@@ -517,12 +520,13 @@ class RetailCRM extends Module
         return RetailcrmJsonResponse::successfullResponse();
     }
 
-    public function downloadLogs($name = '')
+    public function downloadLogs()
     {
         if (!Tools::getValue('ajax')) {
             return false;
         }
 
+        $name = (string)(Tools::getValue(static::DOWNLOAD_LOGS_NAME));
         if (!empty($name)) {
             if (false === ($filePath = RetailcrmLogger::checkFileName($name))) {
                 return false;
@@ -556,6 +560,30 @@ class RetailCRM extends Module
         }
 
         return true;
+    }
+
+    /**
+     * Resets JobManager and cli internal lock
+     */
+    public function resetJobs()
+    {
+        $errors = array();
+        try {
+            if (!RetailcrmJobManager::reset()) {
+                $errors[] = 'Job manager internal state was NOT cleared.';
+            }
+            if (!RetailcrmCli::clearCurrentJob(null)) {
+                $errors[] = 'CLI job was NOT cleared';
+            }
+
+            if (!empty($errors)) {
+                return RetailcrmJsonResponse::invalidResponse(implode(' ', $errors));
+            }
+
+            return RetailcrmJsonResponse::successfullResponse();
+        } catch (\Exception $exception) {
+            return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
+        }
     }
 
     public function hookActionCustomerAccountAdd($params)
@@ -962,25 +990,26 @@ class RetailCRM extends Module
             $settings  = array(
                 'url' => rtrim($url, '/'),
                 'apiKey' => $apiKey,
-                'address' => (string)(Tools::getValue(static::API_URL)),
+                'address' => (string) (Tools::getValue(static::API_URL)),
                 'delivery' => json_encode(Tools::getValue(static::DELIVERY)),
                 'status' => json_encode(Tools::getValue(static::STATUS)),
                 'payment' => json_encode(Tools::getValue(static::PAYMENT)),
                 'deliveryDefault' => json_encode(Tools::getValue(static::DELIVERY_DEFAULT)),
                 'paymentDefault' => json_encode(Tools::getValue(static::PAYMENT_DEFAULT)),
-                'statusExport' => (string)(Tools::getValue(static::STATUS_EXPORT)),
+                'statusExport' => (string) (Tools::getValue(static::STATUS_EXPORT)),
                 'enableCorporate' => (Tools::getValue(static::ENABLE_CORPORATE_CLIENTS) !== false),
                 'enableHistoryUploads' => (Tools::getValue(static::ENABLE_HISTORY_UPLOADS) !== false),
                 'enableBalancesReceiving' => (Tools::getValue(static::ENABLE_BALANCES_RECEIVING) !== false),
                 'enableOrderNumberSending' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_SENDING) !== false),
                 'enableOrderNumberReceiving' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_RECEIVING) !== false),
                 'debugMode' => (Tools::getValue(static::ENABLE_DEBUG_MODE) !== false),
+                'webJobs' => (Tools::getValue(static::ENABLE_WEB_JOBS) !== false ? '1' : '0'),
                 'collectorActive' => (Tools::getValue(static::COLLECTOR_ACTIVE) !== false),
-                'collectorKey' => (string)(Tools::getValue(static::COLLECTOR_KEY)),
+                'collectorKey' => (string) (Tools::getValue(static::COLLECTOR_KEY)),
                 'clientId' => Configuration::get(static::CLIENT_ID),
                 'synchronizeCartsActive' => (Tools::getValue(static::SYNC_CARTS_ACTIVE) !== false),
-                'synchronizedCartStatus' => (string)(Tools::getValue(static::SYNC_CARTS_STATUS)),
-                'synchronizedCartDelay' => (string)(Tools::getValue(static::SYNC_CARTS_DELAY))
+                'synchronizedCartStatus' => (string) (Tools::getValue(static::SYNC_CARTS_STATUS)),
+                'synchronizedCartDelay' => (string) (Tools::getValue(static::SYNC_CARTS_DELAY))
             );
 
             $output .= $this->validateForm($settings, $output);
@@ -1005,6 +1034,7 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::SYNC_CARTS_STATUS, $settings['synchronizedCartStatus']);
                 Configuration::updateValue(static::SYNC_CARTS_DELAY, $settings['synchronizedCartDelay']);
                 Configuration::updateValue(static::ENABLE_DEBUG_MODE, $settings['debugMode']);
+                Configuration::updateValue(static::ENABLE_WEB_JOBS, $settings['webJobs']);
 
                 $this->apiUrl = $settings['url'];
                 $this->apiKey = $settings['apiKey'];
@@ -1384,7 +1414,8 @@ class RetailCRM extends Module
             'enableBalancesReceiving' => (bool)(Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
             'enableOrderNumberSending' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_SENDING)),
             'enableOrderNumberReceiving' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_RECEIVING)),
-            'debugMode' => (bool)(Configuration::get(static::ENABLE_DEBUG_MODE)),
+            'debugMode' => RetailcrmTools::isDebug(),
+            'webJobs' => RetailcrmTools::isWebJobsEnabled()
         );
     }
 
@@ -1419,6 +1450,7 @@ class RetailCRM extends Module
             'enableOrderNumberSendingName' => static::ENABLE_ORDER_NUMBER_SENDING,
             'enableOrderNumberReceivingName' => static::ENABLE_ORDER_NUMBER_RECEIVING,
             'debugModeName' => static::ENABLE_DEBUG_MODE,
+            'webJobsName' => static::ENABLE_WEB_JOBS,
             'jobsNames' => static::JOBS_NAMES
         );
     }
