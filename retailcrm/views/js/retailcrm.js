@@ -42,8 +42,7 @@ $(function(){
             this.tableSort.init();
             this.player.init();
             this.tabs.init();
-            this.uploadForm.init(this.settingsTabs.init());
-            this.exportForm.init()
+            this.eventForm.init(this.settingsTabs.init());
             this.popup.init();
             this.toggleBox();
             this.trimConsultant();
@@ -220,6 +219,7 @@ $(function(){
                     'rcrm_tab_payment_types': selectsUpdate,
                     'rcrm_tab_consultant': mainSubmitHide,
                     'rcrm_tab_advanced': mainSubmitHide,
+                    'rcrm_tab_catalog': mainSubmitHide,
                     'rcrm_tab_orders_upload': mainSubmitHide
                 });
                 tabs.initializeTabs();
@@ -227,23 +227,23 @@ $(function(){
                 return tabs;
             }
         },
-        uploadForm: {
+        eventForm: {
             init: function (tabController) {
                 if (!(typeof RetailcrmUploadForm === 'undefined')) {
                     new RetailcrmUploadForm(tabController);
                 }
-            }
-        },
-        exportForm: {
-            init: function () {
+                if (!(typeof RetailcrmIcmlForm === 'undefined')) {
+                    new RetailcrmIcmlForm(tabController);
+                }
                 if (!(typeof RetailcrmExportForm === 'undefined')) {
                     new RetailcrmExportForm();
                 }
-            }
+            },
         },
         tabs: {
             init: function () {
                 $('.retail-tabs__btn').on('click', this.swithTab);
+                this.advancedTab();
             },
             swithTab: function (e) {
                 e.preventDefault();
@@ -256,6 +256,16 @@ $(function(){
                             .fadeIn(150);
                     });
                 $(this).addClass('retail-tabs__btn_active');
+            },
+            advancedTab: function () {
+                let tabElement = document.getElementsByClassName('retail-title_content')[0];
+                if (tabElement !== undefined) {
+                    tabElement.addEventListener('click', function (evt) {
+                        if (evt.detail === 3) {
+                            $('.retail-menu__btn[data-tab-trigger="rcrm_tab_advanced"]').click();
+                        }
+                    });
+                }
             }
         },
         popup: {

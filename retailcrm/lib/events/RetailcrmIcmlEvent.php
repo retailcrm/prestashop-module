@@ -53,21 +53,13 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
 
         $shops = $this->getShops();
 
-        $isMultiStoreActive = Shop::isFeatureActive();
-
         foreach ($shops as $shop) {
-            RetailcrmTools::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
 
             $job = new RetailcrmCatalog();
             $data = $job->getData();
 
-            if ($isMultiStoreActive) {
-                $icmlFileName = 'simla_' . $shop['id_shop'] . '.xml';
-            } else {
-                $icmlFileName = 'simla.xml';
-            }
-
-            $icml = new RetailcrmIcml($shop['name'], _PS_ROOT_DIR_ . '/' . $icmlFileName);
+            $icml = new RetailcrmIcml($shop['name'], RetailcrmCatalogHelper::getIcmlFilePath());
             $icml->generate($data[0], $data[1]);
         }
 

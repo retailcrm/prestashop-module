@@ -58,7 +58,7 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
         }
 
         foreach ($shops as $shop) {
-            RetailcrmTools::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
 
             $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
 
@@ -71,8 +71,6 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
             $api = RetailcrmTools::getApiClient();
 
             if (empty($api)) {
-                RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
-
                 continue;
             }
 

@@ -12,6 +12,8 @@
 @grayBtnHover: rgba(122, 122, 122, 0.15);
 @grayBtnActive: fadein(@grayBtnHover, 10%);
 @darkGray: #363A41;
+@yellow: #fcc94f;
+@yellowActive: #edbe4c;
 @lightYellow: #fcf3b5;
 @shadowGray: #fdd0d0;
 @bord: #DFDFDF;
@@ -578,6 +580,13 @@ body, html {
     &_submit {
       min-width: 218px;
     }
+    &_warning {
+      min-width: 218px;
+      background: @yellow;
+      &:hover {
+        background: @yellowActive;
+      }
+    }
   }
   .toggle-box {
     display: none;
@@ -606,6 +615,11 @@ body, html {
       padding: 4px 4px 4px 6px;
       max-width: 300px;
       vertical-align: middle;
+    }
+    &__row {
+      &-bold {
+        font-weight: bold;
+      }
     }
     &-no-wrap {
       white-space: nowrap;
@@ -674,6 +688,7 @@ body, html {
       background: #fff;
       border: 1px solid rgba(122,122,122,0.15);
       position: absolute;
+      z-index: 5;
       top: 20px;
       left: 0;
       padding: 18px;
@@ -694,6 +709,43 @@ body, html {
   &-error-msg {
     &, &:after, &:before {
       color: #dd2e44;
+    }
+  }
+  &-alert {
+    position: relative;
+    height: 60px;
+    padding: 0 50px;
+    line-height: 30px;
+    &-text {
+      font-size: 1.5em;
+    }
+    &-note {
+      color: @gray;
+      font-size: 1.2em;
+    }
+    &:before {
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      padding: 10px 5px;
+      font: normal normal normal 40px/1 FontAwesome;
+    }
+    &-success:before {
+      content: "\F058";
+      color: @green;
+    }
+    &-warning:before {
+      content: "\F06A";
+      color: @yellow;
+    }
+    &-danger:before {
+      content: "\F071";
+      color: @red;
+    }
+    &-info:before {
+      content: "\F059";
+      color: @blue;
     }
   }
 }

@@ -123,6 +123,22 @@ class RetailcrmLogger
     }
 
     /**
+     * Output error info to stdout
+     *
+     * @param $exception
+     * @param string $header
+     */
+    public static function printException($exception, $header = 'Error while executing a job: ', $toOutput = true)
+    {
+        $method = $toOutput ? 'output' : 'writeNoCaller';
+
+        self::$method(sprintf('%s%s', $header, $exception->getMessage()));
+        self::$method(sprintf('%s:%d', $exception->getFile(), $exception->getLine()));
+        self::$method('');
+        self::$method($exception->getTraceAsString());
+    }
+
+    /**
      * Write debug log record
      *
      * @param string $caller
@@ -179,6 +195,11 @@ class RetailcrmLogger
         return self::getLogDir() . '/retailcrm_' . self::getLogFilePrefix() . '_' . date('Y_m_d') . '.log';
     }
 
+    /**
+     * Returns log files directory based on current Prestashop version
+     *
+     * @return string
+     */
     public static function getLogDir()
     {
         $logDir = version_compare(_PS_VERSION_, '1.7', '<') ? '/log' : '/var/logs';
@@ -205,9 +226,47 @@ class RetailcrmLogger
     }
 
     /**
-     * Removes module log files from var/logs which is older than 30 days
+     * Removes module log files that are older than 30 days
      */
     public static function clearObsoleteLogs()
+    {
+        $logFiles = self::getLogFiles();
+
+        foreach ($logFiles as $logFile) {
+            if (filemtime($logFile) < strtotime('-30 days')) {
+                unlink($logFile);
+            }
+        }
+    }
+
+    /**
+     * Retrieves log files basic info for advanced tab
+     *
+     * @return array
+     */
+    public static function getLogFilesInfo()
+    {
+        $fileNames = [];
+        $logFiles = self::getLogFiles();
+
+        foreach ($logFiles as $logFile) {
+                $fileNames[] = [
+                    'name' => basename($logFile),
+                    'path' => $logFile,
+                    'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
+                    'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
+                ];
+            }
+
+        return $fileNames;
+    }
+
+    /**
+     * Retrieves log files paths
+     *
+     * @return Generator|void
+     */
+    private static function getLogFiles()
     {
         $logDir = self::getLogDir();
 
@@ -218,40 +277,19 @@ class RetailcrmLogger
         $handle = opendir($logDir);
         while (($file = readdir($handle)) !== false) {
             if (self::checkFileName($file) !== false) {
-                $path = "$logDir/$file";
-                if (filemtime($path) < strtotime('-30 days')) {
-                    unlink($path);
-                }
+                yield "$logDir/$file";
             }
         }
-    }
 
-    public static function getLogFilesInfo()
-    {
-        $fileNames = [];
-        $logDir = self::getLogDir();
-
-        if (!is_dir($logDir)) {
-            return;
-        }
-
-        $handle = opendir($logDir);
-        while ($file = readdir($handle) !== false) {
-            if (self::checkFileName($file) !== false) {
-                $path = "$logDir/$file";
-                $fileNames[] = [
-                    'name' => $file,
-                    'path' => $path,
-                    'size' => number_format(filesize($path), 0, '.', ' ') . ' bytes',
-                    'modified' => date('Y-m-d H:i:s', filemtime($path)),
-                ];
-            }
-        }
         closedir($handle);
-
-        return $fileNames;
     }
 
+    /**
+     * Checks if given logs filename relates to the module
+     *
+     * @param string $file
+     * @return false|string
+     */
     public static function checkFileName($file)
     {
         $logDir = self::getLogDir();

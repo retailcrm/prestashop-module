@@ -61,7 +61,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         }
 
         $orderInstance = new Order($options['o']);
-        RetailcrmTools::setShopContext($orderInstance->id_shop);
+        RetailcrmContextSwitcher::setShopContext($orderInstance->id_shop);
 
         $apiUrl = Configuration::get(RetailCRM::API_URL);
         $apiKey = Configuration::get(RetailCRM::API_KEY);

@@ -41,6 +41,7 @@ require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     private $cliMode;
+    private $force;
     private $shopId;
 
     /**
@@ -67,6 +68,14 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
     }
 
     /**
+     * @param mixed $force
+     */
+    public function setForce($force)
+    {
+        $this->force = (bool)$force;
+    }
+
+    /**
      * Sets context shop id.
      *
      * @param string|int|null $shopId
@@ -84,8 +93,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function isRunning()
     {
-        return (strcmp(RetailcrmJobManager::getCurrentJob(), $this->getName() === 0))
-            || (strcmp(RetailcrmCli::getCurrentJob(), $this->getName() === 0));
+        return !$this->force && (RetailcrmJobManager::getCurrentJob() !== '' || RetailcrmCli::getCurrentJob() !== '');
     }
 
     /**
@@ -95,6 +103,10 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function setRunning()
     {
+        if($this->force) {
+            return true;
+        }
+
         if ($this->cliMode) {
             return RetailcrmCli::setCurrentJob($this->getName());
         }
