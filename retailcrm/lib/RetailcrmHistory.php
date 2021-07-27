@@ -227,16 +227,6 @@ class RetailcrmHistory
             Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $end['id']);
         }
 
-        //update order number in PS if changed in CRM
-        foreach ($history as $currentHistory) {
-            if ($currentHistory['field'] == 'number' && $receiveOrderNumber) {
-                $currentOrder = $currentHistory['order'];
-                $orderToUpdate = new Order((int)$currentOrder['externalId']);
-                $orderToUpdate->reference = $currentHistory['newValue'];
-                $orderToUpdate->update();
-            }
-        }
-
         if (count($historyChanges)) {
 
             $statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
@@ -1119,7 +1109,7 @@ class RetailcrmHistory
                     // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
                     if (isset($order['number']) && $receiveOrderNumber) {
                         $orderToUpdate->reference = $order['number'];
-                        $orderToUpdate-update();
+                        $orderToUpdate->update();
                     }
 
                     // collect orders id and reference if option sendOrderNumber enabled
@@ -1361,7 +1351,7 @@ class RetailcrmHistory
      *
      * @return boolean
      */
-    public static function loadInCMS($object, $action)
+    private static function loadInCMS($object, $action)
     {
         try {
             $prefix = $object->id;
