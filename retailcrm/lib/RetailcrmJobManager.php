@@ -74,8 +74,7 @@ class RetailcrmJobManager
      *  RetailcrmJobManager::startJobs(
      *      array(
      *          'jobName' => DateInterval::createFromDateString('1 hour')
-     *      ),
-     *      true
+     *      )
      *  );
      *
      * File `jobName.php` must exist in retailcrm/job and must contain everything to run job.
@@ -84,27 +83,24 @@ class RetailcrmJobManager
      * any delay - in other words, jobs without interval will be executed every time.
      *
      * @param array $jobs             Jobs list
-     * @param bool  $runOnceInContext Use require_once instead of require
      *
      * @throws \Exception
      */
     public static function startJobs(
-        $jobs = array(),
-        $runOnceInContext = true
+        $jobs = array()
     ) {
         RetailcrmLogger::writeDebug(__METHOD__,'starting JobManager');
-        static::execJobs($jobs, $runOnceInContext);
+        static::execJobs($jobs);
     }
 
     /**
      * Run scheduled jobs with request
      *
      * @param array $jobs
-     * @param bool  $runOnceInContext
      *
      * @throws \Exception
      */
-    public static function execJobs($jobs = array(), $runOnceInContext = false)
+    public static function execJobs($jobs = array())
     {
         $current = date_create('now');
         $lastRuns = array();
@@ -185,7 +181,7 @@ class RetailcrmJobManager
 
                 if (isset($shouldRunAt) && $shouldRunAt <= $current) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf('Executing job %s', $job));
-                    $result = RetailcrmJobManager::runJob($job, $runOnceInContext);
+                    $result = RetailcrmJobManager::runJob($job);
                     RetailcrmLogger::writeDebug(
                         __METHOD__,
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
@@ -198,38 +194,24 @@ class RetailcrmJobManager
                 if ($exception instanceof RetailcrmJobManagerException
                     && $exception->getPrevious() instanceof \Exception
                 ) {
-                    $lastRunsDetails[$job] = [
-                        'success' => false,
-                        'lastRun' => new \DateTime('now'),
-                        'error' => [
-                            'message' => $exception->getPrevious()->getMessage(),
-                            'trace' => $exception->getPrevious()->getTraceAsString(),
-                        ],
-                    ];
-
-                    static::handleError(
-                        $exception->getPrevious()->getFile(),
-                        $exception->getPrevious()->getMessage(),
-                        $exception->getPrevious()->getTraceAsString(),
-                        $job
-                    );
-                } else {
-                    $lastRunsDetails[$job] = [
-                        'success' => false,
-                        'lastRun' => new \DateTime('now'),
-                        'error' => [
-                            'message' => $exception->getMessage(),
-                            'trace' => $exception->getTraceAsString(),
-                        ],
-                    ];
-
-                    static::handleError(
-                        $exception->getFile(),
-                        $exception->getMessage(),
-                        $exception->getTraceAsString(),
-                        $job
-                    );
+                    $exception = $exception->getPrevious();
                 }
+
+                $lastRunsDetails[$job] = [
+                    'success' => false,
+                    'lastRun' => new \DateTime('now'),
+                    'error' => [
+                        'message' => $exception->getMessage(),
+                        'trace' => $exception->getTraceAsString(),
+                    ],
+                ];
+
+                static::handleError(
+                    $exception->getFile(),
+                    $exception->getMessage(),
+                    $exception->getTraceAsString(),
+                    $job
+                );
 
                 self::clearCurrentJob($job);
             }
@@ -260,6 +242,50 @@ class RetailcrmJobManager
 
         static::unlock();
     }
+
+
+    /**
+     * Run job in the force mode so it will run even if there's another job running
+     *
+     * @param $jobName
+     * @return bool
+     * @throws Exception
+     */
+    public static function execManualJob($jobName)
+    {
+        try {
+            $result = static::runJob($jobName, false, true, Shop::getContextShopID());
+
+            if ($result) {
+                static::updateLastRunDetail($jobName, [
+                    'success' => true,
+                    'lastRun' =>  new \DateTime('now'),
+                    'error' => null,
+                ]);
+            }
+
+            return $result;
+        } catch (\Exception $exception) {
+            if ($exception instanceof RetailcrmJobManagerException
+                && $exception->getPrevious() instanceof \Exception
+            ) {
+                $exception = $exception->getPrevious();
+            }
+
+            RetailcrmLogger::printException($exception, '', false);
+            self::updateLastRunDetail($jobName, [
+                'success' => false,
+                'lastRun' => new \DateTime('now'),
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'trace' => $exception->getTraceAsString(),
+                ],
+            ]);
+
+            throw $exception;
+        }
+    }
+
 
     /**
      * Extracts jobs last runs from db
@@ -319,6 +345,17 @@ class RetailcrmJobManager
         Configuration::updateGlobalValue(self::LAST_RUN_NAME, (string)json_encode($lastRuns));
     }
 
+    /**
+     * @param string $jobName
+     * @param Datetime|null $data
+     * @throws Exception
+     */
+    public static function updateLastRun($jobName, $data)
+    {
+        $lastRuns = static::getLastRuns();
+        $lastRuns[$jobName] = $data;
+        static::setLastRuns($lastRuns);
+    }
 
     /**
      * Extracts jobs last runs from db
@@ -361,7 +398,7 @@ class RetailcrmJobManager
         }
 
         foreach ($lastRuns as $job => $details) {
-            if ($details['lastRun'] instanceof DateTime) {
+            if (isset($details['lastRun']) && $details['lastRun'] instanceof DateTime) {
                 $lastRuns[$job]['lastRun'] = $details['lastRun']->format(DATE_RFC3339);
             } else {
                 $lastRuns[$job]['lastRun'] = null;
@@ -372,40 +409,39 @@ class RetailcrmJobManager
     }
 
     /**
+     * @param string $jobName
+     * @param array $data
+     * @throws Exception
+     */
+    public static function updateLastRunDetail($jobName, $data)
+    {
+        $lastRunsDetails = static::getLastRunDetails();
+        $lastRunsDetails[$jobName] = $data;
+        static::setLastRunDetails($lastRunsDetails);
+    }
+
+    /**
      * Runs job
      *
      * @param string $job
      * @param bool   $once
      * @param bool   $cliMode
+     * @param bool   $force
+     * @param int   $shopId
      *
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    public static function runJob($job, $once = false, $cliMode = false, $shopId = null)
+    public static function runJob($job, $cliMode = false, $force = false, $shopId = null)
     {
         $jobName = self::escapeJobName($job);
-        $jobFile = implode(
-            DIRECTORY_SEPARATOR,
-            array(_PS_ROOT_DIR_, 'modules', 'retailcrm_custom','classes', 'lib', 'events', $jobName . '.php')
-        );
-
-        if (!file_exists($jobFile)) {
-            $jobFile = implode(
-                DIRECTORY_SEPARATOR,
-                array(_PS_ROOT_DIR_, 'modules', 'retailcrm', 'lib', 'events', $jobName . '.php')
-            );
-
-            if (!file_exists($jobFile)) {
-                throw new \RetailcrmJobManagerException('Cannot find job', $job);
-            }
-        }
 
         try {
-            return static::execHere($jobName, $jobFile, $once, $cliMode, $shopId);
+            return static::execHere($jobName, $cliMode, $force, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $jobFile, array(), 0, $exception);
+            throw new RetailcrmJobManagerException($exception->getMessage(), $job, array(), 0, $exception);
         }
     }
 
@@ -601,15 +637,17 @@ class RetailcrmJobManager
      * @param string $phpScript
      * @param bool   $once
      * @param bool   $cliMode
+     * @param bool   $force
+     * @param int   $shopId
      *
      * @return bool
      * @throws \RetailcrmJobManagerException
      */
-    private static function execHere($jobName, $phpScript, $once = false, $cliMode = false, $shopId = null)
+    private static function execHere($jobName, $cliMode = false, $force = false, $shopId = null)
     {
         set_time_limit(static::getTimeLimit());
 
-        if (!$cliMode) {
+        if (!$cliMode && !$force) {
             ignore_user_abort(true);
 
             if (version_compare(phpversion(), '7.0.16', '>=') &&
@@ -624,16 +662,9 @@ class RetailcrmJobManager
             }
         }
 
-        if ($once) {
-            require_once($phpScript);
-        } else {
-            require($phpScript);
-        }
-
         if (!class_exists($jobName)) {
             throw new \RetailcrmJobManagerException(sprintf(
-                'The job file "%s" has been found, but job class "%s" was not present in there.',
-                $phpScript,
+                'The job class "%s" was not found.',
                 $jobName
             ));
         }
@@ -648,6 +679,7 @@ class RetailcrmJobManager
         }
 
         $job->setCliMode($cliMode);
+        $job->setForce($force);
         $job->setShopId($shopId);
 
         self::registerShutdownHandler();

@@ -134,7 +134,7 @@ $(function () {
 
     RetailcrmExportForm.prototype.confirmLeave = function (event) {
         event.preventDefault();
-        e.returnValue = 'Export process has been started';
+        event.returnValue = 'Export process has been started';
     }
 
     RetailcrmExportForm.prototype.exportDone = function () {

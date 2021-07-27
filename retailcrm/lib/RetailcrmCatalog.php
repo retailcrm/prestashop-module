@@ -38,6 +38,7 @@
  */
 class RetailcrmCatalog
 {
+
     public $default_lang;
     public $default_currency;
     public $default_country;
@@ -105,6 +106,9 @@ class RetailcrmCatalog
 
     public function getOffers()
     {
+        $productsCount = 0;
+        $offersCount = 0;
+
         $id_lang = $this->default_lang;
         $homeCategory = $this->home_category;
 
@@ -156,6 +160,7 @@ class RetailcrmCatalog
                     if (empty($categoriesLeft)) {
                         continue;
                     }
+                    $productsCount++;
 
                     if ($this->version == "1.3") {
                         $available_for_order = $product['active'] && $product['quantity'];
@@ -206,6 +211,7 @@ class RetailcrmCatalog
                     $offers = Product::getProductAttributesIds($product['id_product']);
 
                     if (!empty($offers)) {
+                        $offersCount+= count($offers);
                         $productForCombination = new Product($product['id_product']);
 
                         foreach ($offers as $offer) {
@@ -298,6 +304,7 @@ class RetailcrmCatalog
                             );
                         }
                     } else {
+                        $offersCount++;
 
                         $pictures = array();
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
@@ -343,6 +350,8 @@ class RetailcrmCatalog
 
                 $start += $limit;
             } while ($start < $count && count($products) > 0);
+
+        RetailcrmCatalogHelper::setIcmlFileInfo($productsCount, $offersCount);
     }
 
     private static function getProductsCount(
@@ -430,4 +439,5 @@ class RetailcrmCatalog
 
         return $parentId;
     }
+
 }

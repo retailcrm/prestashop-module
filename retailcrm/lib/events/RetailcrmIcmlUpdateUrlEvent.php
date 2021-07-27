@@ -28,9 +28,9 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
@@ -38,7 +38,7 @@
 
 require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
 
-class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
+class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
      * @inheritDoc
@@ -56,27 +56,30 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
         foreach ($shops as $shop) {
             RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
 
-            if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
-                RetailcrmLogger::writeDebug(
-                    'RetailcrmInventoriesEvent',
-                    'Balances receiving is not enabled, skipping...'
-                );
-
+            if (!file_exists(RetailcrmCatalogHelper::getIcmlFilePath())) {
                 continue;
             }
 
-            $apiUrl = Configuration::get(RetailCRM::API_URL);
-            $apiKey = Configuration::get(RetailCRM::API_KEY);
-
-            if (!empty($apiUrl) && !empty($apiKey)) {
-                RetailcrmInventories::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
-            } else {
-                RetailcrmLogger::writeCaller('inventories', 'set api key & url first');
-
+            $api = RetailcrmTools::getApiClient();
+            if (empty($api)) {
                 continue;
             }
 
-            RetailcrmInventories::loadStocks();
+            $reference = new RetailcrmReferences($api);
+            $site = $reference->getSite();
+            if (empty($site)) {
+                continue;
+            }
+
+            $newYmlUrl = RetailcrmCatalogHelper::getIcmlFileLink();
+            $siteCode = $site['code'];
+
+            if ($newYmlUrl !== $site['ymlUrl']) {
+                $api->sitesEdit([
+                    'code' => $siteCode,
+                    'ymlUrl' => $newYmlUrl,
+                ]);
+            }
         }
 
         return true;
@@ -87,6 +90,6 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
      */
     public function getName()
     {
-        return 'RetailcrmInventoriesEvent';
+        return 'RetailcrmIcmlUpdateUrlEvent';
     }
 }

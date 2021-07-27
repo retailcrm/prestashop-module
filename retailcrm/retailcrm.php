@@ -63,6 +63,7 @@ class RetailCRM extends Module
     const SYNC_CARTS_STATUS = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
     const SYNC_CARTS_DELAY = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
+    const RUN_JOB = 'RETAILCRM_RUN_JOB';
     const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
     const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
     const UPDATE_SINCE_ID = 'RETAILCRM_UPDATE_SINCE_ID';
@@ -81,6 +82,7 @@ class RetailCRM extends Module
     const JOBS_NAMES = [
         'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
         'RetailcrmIcmlEvent' => 'Icml generation',
+        'RetailcrmIcmlUpdateUrlEvent' => 'Icml update URL',
         'RetailcrmSyncEvent' => 'History synchronization',
         'RetailcrmInventoriesEvent' => 'Inventories uploads',
         'RetailcrmClearLogsEvent' => 'Clearing logs'
@@ -245,6 +247,7 @@ class RetailCRM extends Module
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
             Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
+            Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
             Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
             Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
@@ -276,6 +279,8 @@ class RetailCRM extends Module
         $token = Configuration::get(static::API_KEY);
 
         if (Tools::isSubmit('submit' . $this->name)) {
+            // todo all those vars & ifs to one $command var and check in switch
+            $jobName = (string)(Tools::getValue(static::RUN_JOB));
             $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
             $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
             $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
@@ -285,6 +290,8 @@ class RetailCRM extends Module
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
+            } elseif (!empty($jobName)) {
+                $this->runJobMultistore($jobName);
             } elseif (!empty($exportOrders)) {
                 return $this->export($exportOrders);
             } elseif (!empty($exportCustomers)) {
@@ -402,6 +409,43 @@ class RetailCRM extends Module
     }
 
     /**
+     * @param string $jobName
+     * @return string
+     */
+    public function runJob($jobName)
+    {
+        $jobNameFront = (empty(static::JOBS_NAMES[$jobName]) ? $jobName : static::JOBS_NAMES[$jobName]);
+
+        try {
+            if (RetailcrmJobManager::execManualJob($jobName)) {
+                return $this->displayConfirmation(sprintf(
+                    '%s %s',
+                    $this->l($jobNameFront),
+                    $this->l('was completed successfully')
+                ));
+            } else {
+                return $this->displayError(sprintf(
+                    '%s %s',
+                    $this->l($jobNameFront),
+                    $this->l('was not executed')
+                ));
+            }
+        } catch (Exception $e) {
+            return $this->displayError(sprintf(
+                '%s %s: %s',
+                $this->l($jobNameFront),
+                $this->l('was completed with errors'),
+                $e->getMessage()
+            ));
+        }
+    }
+
+    public function runJobMultistore($jobName)
+    {
+        RetailcrmContextSwitcher::runInContext(array($this, 'runJob'), array($jobName));
+    }
+
+    /**
      * @param int $step
      * @param string $entity
      * @return bool
@@ -420,7 +464,6 @@ class RetailCRM extends Module
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
             return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
         }
 
@@ -453,7 +496,6 @@ class RetailCRM extends Module
         $api = RetailcrmTools::getApiClient();
 
         if (empty($api)) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
             return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
         }
 
@@ -1124,6 +1166,10 @@ class RetailCRM extends Module
             }
         }
 
+        if (!$this->validateCatalogMultistore()) {
+            $output[] = 'catalog';
+        }
+
         return $output;
     }
 
@@ -1142,6 +1188,49 @@ class RetailCRM extends Module
         }
 
         return true;
+    }
+
+    /**
+     * Catalog info validator
+     *
+     * @return bool
+     */
+    public function validateCatalog()
+    {
+        $icmlInfo = RetailcrmCatalogHelper::getIcmlFileInfo();
+
+        if (!$icmlInfo || !isset($icmlInfo['lastGenerated'])) {
+            $urlConfiguredAt = RetailcrmTools::getConfigurationCreatedAtByName(self::API_KEY);
+
+            if ($urlConfiguredAt instanceof DateTime) {
+                $now = new DateTime();
+                /** @var DateInterval $diff */
+                $diff = $urlConfiguredAt->diff($now);
+
+                if (($diff->days * 24 + $diff->h) > 4) {
+                    return false;
+                }
+            }
+        } elseif ($icmlInfo['isOutdated'] || !$icmlInfo['isUrlActual']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Catalog info validator for multistore
+     *
+     * @return bool
+     */
+    private function validateCatalogMultistore()
+    {
+        $results = RetailcrmContextSwitcher::runInContext(array($this, 'validateCatalog'));
+        $results = array_filter($results, function ($item) {
+            return !$item;
+        });
+
+        return empty($results);
     }
 
     /**
@@ -1298,6 +1387,7 @@ class RetailCRM extends Module
             'synchronizedCartStatusName' => static::SYNC_CARTS_STATUS,
             'synchronizedCartDelayName' => static::SYNC_CARTS_DELAY,
             'uploadOrders' => static::UPLOAD_ORDERS,
+            'runJobName' => static::RUN_JOB,
             'consultantScriptName' => static::CONSULTANT_SCRIPT,
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
