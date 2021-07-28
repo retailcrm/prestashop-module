@@ -108,8 +108,8 @@ class RetailcrmCatalog
         $id_lang = $this->default_lang;
         $homeCategory = $this->home_category;
 
-        $inactiveCategories = array();
-        $categoriesIds = array();
+        $inactiveCategories = [];
+        $categoriesIds = [];
 
         $types = Category::getCategories($id_lang, true, false);
 
@@ -213,22 +213,17 @@ class RetailcrmCatalog
 
                             if (!empty($combinations)) {
                                 foreach ($combinations as $combination) {
-                                    $arSet = array(
+                                    $arSet = [
                                         'group_name' => $combination['group_name'],
                                         'attribute' => $combination['attribute_name'],
-                                    );
+                                    ];
 
                                     $arComb[] = $arSet;
                                 }
                             }
 
-                            $pictures = array();
                             $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-
-                            foreach ($covers as $cover) {
-                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-                                $pictures[] = $picture;
-                            }
+                            $pictures = $this->getPicturesArray($covers, $product);
 
                             if (!$pictures) {
                                 $image = Image::getCover($product['id_product']);
@@ -263,7 +258,7 @@ class RetailcrmCatalog
                                 $offerArticle = $article;
                             }
 
-                            $item = array(
+                            $item = [
                                 'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
                                 'productId' => $product['id_product'],
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
@@ -280,7 +275,7 @@ class RetailcrmCatalog
                                 'weight' => $weight,
                                 'dimensions' => $dimensions,
                                 'vatRate' => $product['rate'],
-                            );
+                            ];
 
                             if (!empty($combinations)) {
                                 foreach ($arComb as $itemComb) {
@@ -291,20 +286,16 @@ class RetailcrmCatalog
                             yield RetailcrmTools::filter(
                                 'RetailcrmFilterProcessOffer',
                                 $item,
-                                array(
+                                [
                                     'product' => $product,
                                     'offer' => $offer
-                                )
+                                ]
                             );
                         }
                     } else {
 
-                        $pictures = array();
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
-                        foreach ($covers as $cover) {
-                            $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-                            $pictures[] = $picture;
-                        }
+                        $pictures = $this->getPicturesArray($covers, $product);
 
                         if ($this->version == "1.3") {
                             $quantity = $product['quantity'];
@@ -312,7 +303,7 @@ class RetailcrmCatalog
                             $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product']);
                         }
 
-                        $item = array(
+                        $item = [
                             'id' => $product['id_product'],
                             'productId' => $product['id_product'],
                             'productActivity' => ($available_for_order) ? 'Y' : 'N',
@@ -329,20 +320,35 @@ class RetailcrmCatalog
                             'weight' => $weight,
                             'dimensions' => $dimensions,
                             'vatRate' => $product['rate'],
-                        );
+                        ];
 
                         yield RetailcrmTools::filter(
                             'RetailcrmFilterProcessOffer',
                             $item,
-                            array(
+                            [
                                 'product' => $product
-                            )
+                            ]
                         );
                     }
                 }
 
                 $start += $limit;
             } while ($start < $count && count($products) > 0);
+    }
+
+    private function getPicturesArray(array $covers, array $product)
+    {
+        $pictures = [];
+        foreach ($covers as $cover) {
+            $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+
+            if ($cover['cover']) {
+                array_unshift($pictures, $picture);
+            } else {
+                $pictures[] = $picture;
+            }
+        }
+        return $pictures;
     }
 
     private static function getProductsCount(
