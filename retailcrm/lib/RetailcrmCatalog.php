@@ -223,7 +223,7 @@ class RetailcrmCatalog
                             }
 
                             $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-                            $pictures = $this->getPicturesArray($covers, $product);
+                            $pictures = $this->getPictures($covers, $product);
 
                             if (!$pictures) {
                                 $image = Image::getCover($product['id_product']);
@@ -295,7 +295,7 @@ class RetailcrmCatalog
                     } else {
 
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
-                        $pictures = $this->getPicturesArray($covers, $product);
+                        $pictures = $this->getPictures($covers, $product);
 
                         if ($this->version == "1.3") {
                             $quantity = $product['quantity'];
@@ -336,7 +336,7 @@ class RetailcrmCatalog
             } while ($start < $count && count($products) > 0);
     }
 
-    private function getPicturesArray(array $covers, array $product)
+    private function getPictures(array $covers, array $product)
     {
         $pictures = [];
         foreach ($covers as $cover) {
