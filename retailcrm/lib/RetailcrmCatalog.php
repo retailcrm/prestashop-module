@@ -223,11 +223,7 @@ class RetailcrmCatalog
                             }
 
                             $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-
-                            foreach ($covers as $cover) {
-                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
-                                $pictures[] = $picture;
-                            }
+                            $pictures = $this->getPictures($covers, $product, true);
 
                             if (!$pictures) {
                                 $image = Image::getCover($product['id_product']);
@@ -340,17 +336,18 @@ class RetailcrmCatalog
             } while ($start < $count && count($products) > 0);
     }
 
-    private function getPictures(array $covers, array $product)
+    private function getPictures(array $covers, array $product, $offers = false)
     {
         $pictures = [];
         foreach ($covers as $cover) {
             $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
 
-            if ($cover['cover']) {
+            if ($offers === false && $cover['cover']) {
                 array_unshift($pictures, $picture);
             } else {
                 $pictures[] = $picture;
             }
+
         }
         return $pictures;
     }
