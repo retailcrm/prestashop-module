@@ -247,6 +247,7 @@ class RetailCRM extends Module
             Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING) &&
             Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING) &&
             Configuration::deleteByName(static::ENABLE_DEBUG_MODE) &&
+            Configuration::deleteByName(static::ENABLE_WEB_JOBS) &&
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
