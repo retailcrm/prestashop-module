@@ -223,7 +223,11 @@ class RetailcrmCatalog
                             }
 
                             $covers = Image::getImages($id_lang, $product['id_product'], $offer['id_product_attribute']);
-                            $pictures = $this->getPictures($covers, $product);
+
+                            foreach ($covers as $cover) {
+                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
+                                $pictures[] = $picture;
+                            }
 
                             if (!$pictures) {
                                 $image = Image::getCover($product['id_product']);
