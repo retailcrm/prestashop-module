@@ -29,8 +29,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $data = $catalog->getData();
         $this->product = $data[1]->current();
 
-        Configuration::updateValue('RETAILCRM_API_DELIVERY_DEFAULT', 2);
-        Configuration::updateValue('RETAILCRM_API_PAYMENT_DEFAULT', 'bankwire');
+        Configuration::updateValue(RetailCRM::DELIVERY_DEFAULT, 2);
+        Configuration::updateValue(RetailCRM::PAYMENT_DEFAULT, 'bankwire');
 
         $this->setConfig();
     }
@@ -82,6 +82,74 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         }
 
         $this->assertEquals(true, RetailcrmHistory::customersHistory());
+    }
+
+    public function testOrdersHistory()
+    {
+        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$api = $this->apiMock;
+
+        $order = new Order(1);
+        $reference = $order->reference;
+        $updReference = 'test';
+        $crmOrder = $this->getApiOrder();
+        $crmOrder['number'] = $updReference;
+        $checkArgs = array(
+            'externalId' => 1, 
+            'number' => $reference,
+        );
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryExistOrder($crmOrder)
+                    )
+                )
+            );
+
+        $this->apiMock->expects($this->any())
+            ->method('ordersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        array(
+                            'order' => $crmOrder,
+                        )
+                    )
+                )
+            );
+
+        $this->apiMock->expects($this->once())
+            ->method('ordersEdit')
+            ->with($checkArgs)
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        array(
+                            'order' => array(),
+                        )
+                    )
+                )
+            );
+
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, false);
+        RetailcrmHistory::ordersHistory();
+        $firstUpdOrder = new Order(1);
+
+        $this->assertEquals($reference, $firstUpdOrder->reference);
+
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, true);
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, true);
+        RetailcrmHistory::ordersHistory();
+        $secondUpdOrder = new Order(1);
+
+        $this->assertEquals($updReference, $secondUpdOrder->reference);
     }
 
     private function orderCreate($apiMock, $orderData)

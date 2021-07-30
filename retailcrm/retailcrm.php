@@ -73,6 +73,8 @@ class RetailCRM extends Module
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
     const ENABLE_BALANCES_RECEIVING = 'RETAILCRM_ENABLE_BALANCES_RECEIVING';
+    const ENABLE_ORDER_NUMBER_SENDING = 'RETAILCRM_ENABLE_ORDER_NUMBER_SENDING';
+    const ENABLE_ORDER_NUMBER_RECEIVING = 'RETAILCRM_ENABLE_ORDER_NUMBER_RECEIVING';
     const ENABLE_DEBUG_MODE = 'RETAILCRM_ENABLE_DEBUG_MODE';
 
     const LATEST_API_VERSION = '5';
@@ -241,6 +243,8 @@ class RetailCRM extends Module
             Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS) &&
             Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS) &&
             Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING) &&
+            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING) &&
+            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING) &&
             Configuration::deleteByName(static::ENABLE_DEBUG_MODE) &&
             Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
             Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
@@ -334,6 +338,7 @@ class RetailCRM extends Module
 
         $apiUrl = Configuration::get(static::API_URL);
         $apiKey = Configuration::get(static::API_KEY);
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
         $isSuccessful = true;
 
         if (!empty($apiUrl) && !empty($apiKey)) {
@@ -376,6 +381,12 @@ class RetailCRM extends Module
 
                 if (empty($existingOrder)) {
                     $response = $this->api->ordersCreate($crmOrder);
+
+                    if ($response->isSuccessful() && $receiveOrderNumber) {
+                        $crmOrder = $response->order;
+                        $object->reference = $crmOrder['number'];
+                        $object->update();
+                    }
                 } else {
                     $response = $this->api->ordersEdit($crmOrder);
                 }
@@ -781,6 +792,7 @@ class RetailCRM extends Module
     public function hookActionOrderStatusPostUpdate($params)
     {
         $status = json_decode(Configuration::get(static::STATUS), true);
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         if (isset($params['orderStatus'])) {
             $cmsOrder = $params['order'];
@@ -819,7 +831,13 @@ class RetailCRM extends Module
                     $this->api->ordersPaymentCreate($payment);
                 }
             } else {
-                $this->api->ordersCreate($order);
+                $response = $this->api->ordersCreate($order);
+
+                if ($response->isSuccessful() && $receiveOrderNumber) {
+                    $crmOrder = $response->order;
+                    $cmsOrder->reference = $crmOrder['number'];
+                    $cmsOrder->update();
+                }
             }
 
             return true;
@@ -954,6 +972,8 @@ class RetailCRM extends Module
                 'enableCorporate' => (Tools::getValue(static::ENABLE_CORPORATE_CLIENTS) !== false),
                 'enableHistoryUploads' => (Tools::getValue(static::ENABLE_HISTORY_UPLOADS) !== false),
                 'enableBalancesReceiving' => (Tools::getValue(static::ENABLE_BALANCES_RECEIVING) !== false),
+                'enableOrderNumberSending' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_SENDING) !== false),
+                'enableOrderNumberReceiving' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_RECEIVING) !== false),
                 'debugMode' => (Tools::getValue(static::ENABLE_DEBUG_MODE) !== false),
                 'collectorActive' => (Tools::getValue(static::COLLECTOR_ACTIVE) !== false),
                 'collectorKey' => (string)(Tools::getValue(static::COLLECTOR_KEY)),
@@ -977,6 +997,8 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::ENABLE_CORPORATE_CLIENTS, $settings['enableCorporate']);
                 Configuration::updateValue(static::ENABLE_HISTORY_UPLOADS, $settings['enableHistoryUploads']);
                 Configuration::updateValue(static::ENABLE_BALANCES_RECEIVING, $settings['enableBalancesReceiving']);
+                Configuration::updateValue(static::ENABLE_ORDER_NUMBER_SENDING, $settings['enableOrderNumberSending']);
+                Configuration::updateValue(static::ENABLE_ORDER_NUMBER_RECEIVING, $settings['enableOrderNumberReceiving']);
                 Configuration::updateValue(static::COLLECTOR_ACTIVE, $settings['collectorActive']);
                 Configuration::updateValue(static::COLLECTOR_KEY, $settings['collectorKey']);
                 Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);
@@ -1360,6 +1382,8 @@ class RetailCRM extends Module
             'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
             'enableHistoryUploads' => (bool)(Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
             'enableBalancesReceiving' => (bool)(Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
+            'enableOrderNumberSending' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_SENDING)),
+            'enableOrderNumberReceiving' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_RECEIVING)),
             'debugMode' => (bool)(Configuration::get(static::ENABLE_DEBUG_MODE)),
         );
     }
@@ -1392,6 +1416,8 @@ class RetailCRM extends Module
             'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
             'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
             'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING,
+            'enableOrderNumberSendingName' => static::ENABLE_ORDER_NUMBER_SENDING,
+            'enableOrderNumberReceivingName' => static::ENABLE_ORDER_NUMBER_RECEIVING,
             'debugModeName' => static::ENABLE_DEBUG_MODE,
             'jobsNames' => static::JOBS_NAMES
         );

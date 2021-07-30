@@ -16,6 +16,24 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
         $this->assertEquals(0, $resultItem['initialPrice']);
     }
 
+    public function testBuildCrmOrder()
+    {
+        $order = new Order(1);
+        $order->reference = 'test_n';
+        $order->current_state = 0;
+        Configuration::updateValue('RETAILCRM_API_DELIVERY', '{"1":"test_delivery"}');
+        Configuration::updateValue('RETAILCRM_API_STATUS', '{"1":"test_status"}');
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, false);
+        $crmOrder = RetailcrmOrderBuilder::buildCrmOrder($order);
+
+        $this->assertArrayNotHasKey('number', $crmOrder);
+
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, true);
+        $crmOrder = RetailcrmOrderBuilder::buildCrmOrder($order);
+
+        $this->assertEquals($order->reference, $crmOrder['number']);
+    }
+
     /**
      * @return array
      */

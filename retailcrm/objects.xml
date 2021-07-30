@@ -54,6 +54,7 @@
         <field id="contragent.bank_account" group="customerContragent">bankAccount</field>
 
         <field id="id" group="order">id</field>
+        <field id="number" group="order">number</field>
         <field id="created_at" group="order">createdAt</field>
         <field id="order_type" group="order">orderType</field>
         <field id="order_method" group="order">orderMethod</field>
