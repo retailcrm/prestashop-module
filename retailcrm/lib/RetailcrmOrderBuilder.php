@@ -828,6 +828,8 @@ class RetailcrmOrderBuilder
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
         $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
         $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
+        $sendOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
+        $orderNumber = $sendOrderNumber ? $order->reference : null;
 
         if (Module::getInstanceByName('advancedcheckout') === false) {
             $paymentType = $order->module;
@@ -861,7 +863,7 @@ class RetailcrmOrderBuilder
 
         $crmOrder = array_filter(array(
             'externalId' => $order->id,
-            'number' => $order->id,
+            'number' => $orderNumber,
             'createdAt' => RetailcrmTools::verifyDate($order->date_add, 'Y-m-d H:i:s')
                 ? $order->date_add : date('Y-m-d H:i:s'),
             'status' => $order_status,
