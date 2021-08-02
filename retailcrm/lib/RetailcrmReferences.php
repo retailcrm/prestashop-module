@@ -214,9 +214,17 @@ class RetailcrmReferences
          * Get all modules then select only payment ones
          */
         $modules = RetailCRM::getCachedCmsModulesList();
+        $allPaymentModules = PaymentModule::getInstalledPaymentModules();
+        $paymentModulesIds = array();
+
+        foreach ($allPaymentModules as $module) {
+                $paymentModulesIds[] = $module['id_module'];
+        }
 
         foreach ($modules as $module) {
-            if (!empty($module->parent_class) && $module->parent_class == 'PaymentModule') {
+            if ((!empty($module->parent_class) && $module->parent_class == 'PaymentModule') 
+                || in_array($module->id, $paymentModulesIds)
+            ) {
                 if ($module->id) {
                     $module_id = (int) $module->id;
 
