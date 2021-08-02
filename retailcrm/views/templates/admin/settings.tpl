@@ -144,11 +144,12 @@
                         </div>
                     </div>
                     <div id="rcrm_tab_catalog">
+                        {assign var="showUpdateButton" value=false}
                         <div class="retail-form__title">
                             {$catalogTitleName|escape:'htmlall':'UTF-8'}
                             {if $catalogInfoMultistore|count == 1}
                                 {assign var='catalogInfo' value=$catalogInfoMultistore[$catalogInfoMultistore|@key] }
-                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
+                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if isset($catalogInfo.siteId) and $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
                                    target="_blank"
                                    class="retail-form__title_link">{l s='Manage site settings' mod='retailcrm'}</a>
                             {/if}
@@ -157,12 +158,12 @@
                         <div class="retail-form__title" style="margin-top: 50px;">
                             {if $catalogInfoMultistore|count > 1}
                                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&rcrmtab=rcrm_tab_catalog&setShopContext=s-{$catalogShopId|escape:'htmlall':'UTF-8'}">{$shopsInfo[$catalogShopId].name|escape:'htmlall':'UTF-8'}</a>
-                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
+                                <a href="{$url|cat:'/admin/sites/'|escape:'htmlall':'UTF-8'}{if isset($catalogInfo.siteId) and $catalogInfo.siteId}{$catalogInfo.siteId|cat:'/edit#t-catalog'|escape:'htmlall':'UTF-8'}{/if}"
                                    target="_blank"
                                    class="retail-form__title_link">{l s='Manage site settings' mod='retailcrm'}</a>
                             {/if}
                         </div>
-                        {if $catalogInfo and $catalogInfo.lastGenerated}
+                        {if $catalogInfo and isset($catalogInfo.lastGenerated) and $catalogInfo.lastGenerated}
                             {if  $catalogInfo.isOutdated }
                                 <div class="retail-alert retail-alert-danger">
                                     <div class="retail-alert-text">
@@ -201,16 +202,18 @@
                                     </span>
                                         {l s='passed since last run' mod='retailcrm'}
                                     </div>
-                                    <div class="retail-form__label">
-                                    <span style="font-weight: bold; font-size: 1.3em;">
-                                        {$catalogInfo.productsCount|default:'---'|escape:'htmlall':'UTF-8'}
-                                    </span>
-                                        {l s='Products' mod='retailcrm'}
-                                    <span style="font-weight: bold; font-size: 1.3em;">
-                                        {$catalogInfo.offersCount|default:'---'|escape:'htmlall':'UTF-8'}
-                                    </span>
-                                        {l s='Offers' mod='retailcrm'}
-                                    </div>
+                                    {if isset($catalogInfo.productsCount) and isset($catalogInfo.offersCount)}
+                                        <div class="retail-form__label">
+                                            <span style="font-weight: bold; font-size: 1.3em;">
+                                                {$catalogInfo.productsCount|escape:'htmlall':'UTF-8'}
+                                            </span>
+                                            {l s='Products' mod='retailcrm'}
+                                            <span style="font-weight: bold; font-size: 1.3em;">
+                                                {$catalogInfo.offersCount|escape:'htmlall':'UTF-8'}
+                                            </span>
+                                            {l s='Offers' mod='retailcrm'}
+                                        </div>
+                                    {/if}
                                 </div>
                         {else}
                                 <div class="retail-alert retail-alert-warning">
