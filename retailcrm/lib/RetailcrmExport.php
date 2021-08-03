@@ -102,19 +102,20 @@ class RetailcrmExport
         }
 
         if ($count > 0) {
-            $predefinedSql = 'SELECT o.`id_order`
-                FROM `' . _DB_PREFIX_ . 'orders` o 
-                WHERE 1
-                ' . Shop::addSqlRestriction(false, 'o') . '
-                ORDER BY o.`id_order` ASC';
+            $sql = 'SELECT o.`id_order`';
+            $sql .= 'FROM `' . _DB_PREFIX_ . 'orders` o ';
+            $sql .= 'WHERE ';
+            $sql .= '1' . Shop::addSqlRestriction(false, 'o') . ' AND ';
+
 
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
+
                 if ($offset <= 0)
                     break;
 
-                $sql = $predefinedSql . '
-                    LIMIT ' . (int)$start . ', ' . (int)$offset;
+                $sql .= ' o.`id_order` >= ' . (int)$start . ' AND o.`id_order` <= ' . (int)$offset;
+                $sql.= ' ORDER BY o.`id_order` ASC';
 
                 $orders = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
@@ -127,6 +128,7 @@ class RetailcrmExport
 
                 $start += $offset;
             }
+
         }
     }
 
