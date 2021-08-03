@@ -611,10 +611,16 @@ body, html {
     td, th {
       color: #333;
       font-size: 14px;
-      line-height: 60px;
-      padding: 4px 4px 4px 6px;
+      line-height: 40px;
+      padding: 4px 6px;
       max-width: 300px;
       vertical-align: middle;
+    }
+    &-wrapper {
+      width: 100%;
+      max-height: 500px;
+      overflow-y: scroll;
+      overflow-x: hidden;
     }
     &__row {
       &-bold {
@@ -627,6 +633,9 @@ body, html {
     &-center {
       text-align: center;
     }
+    &-right {
+      text-align: right;
+    }
     &-sort {
       &__btn, &__switch {
         cursor: pointer;
@@ -637,7 +646,7 @@ body, html {
       &__btn {
         float: left;
         clear: both;
-        line-height: 15px;
+        line-height: 20px;
         font-size: 20px;
         padding-left: 10px;
         padding-right: 10px;
@@ -648,12 +657,10 @@ body, html {
         }
       }
       &__asc {
-        padding-top: 15px;
-        padding-bottom: 0;
+        //padding-bottom: 0;
       }
       &__desc {
-        padding-top: 0;
-        padding-bottom: 15px;
+        //padding-top: 0;
       }
       & thead th:hover &__btn, & thead td:hover &__btn {
         opacity: 1;
@@ -746,6 +753,19 @@ body, html {
     &-info:before {
       content: "\F059";
       color: @blue;
+    }
+  }
+  &-btn-svg {
+    width: 15px;
+    cursor: pointer;
+    //transition: transform .3s ease-out;
+    &_wrapper {
+      cursor: pointer;
+      &:hover {
+        //transform: scale(1.1);
+        fill: @gray;
+        color: @gray;
+      }
     }
   }
 }

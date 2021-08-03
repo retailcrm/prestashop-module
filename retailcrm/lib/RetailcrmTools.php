@@ -486,7 +486,7 @@ class RetailcrmTools
 
     public static function isWebJobsEnabled()
     {
-        return '0' !== Configuration::getGlobalValue(RetailCRM::ENABLE_WEB_JOBS);
+        return '0' !== Configuration::get(RetailCRM::ENABLE_WEB_JOBS);
     }
 
     /**

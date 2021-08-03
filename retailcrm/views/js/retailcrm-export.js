@@ -35,7 +35,8 @@
  * to avoid any conflicts with others containers.
  */
 $(function () {
-    function RetailcrmExportForm() {
+    function RetailcrmExportForm()
+    {
         this.form = $('input[name=RETAILCRM_EXPORT_ORDERS_COUNT]').closest('form').get(0);
 
         if (typeof this.form === 'undefined') {
@@ -96,8 +97,8 @@ $(function () {
             data: data
         })
             .done(function (response) {
-                if(_this.isDone) {
-                   return _this.exportDone();
+                if (_this.isDone) {
+                    return _this.exportDone();
                 }
 
                 _this.updateProgressBar();
@@ -116,12 +117,14 @@ $(function () {
 
     RetailcrmExportForm.prototype.updateProgressBar = function () {
         let processedOrders = this.ordersStep * this.ordersStepSize;
-        if (processedOrders > this.ordersCount)
+        if (processedOrders > this.ordersCount) {
             processedOrders = this.ordersCount;
+        }
 
         let processedCustomers = this.customersStep * this.customersStepSize;
-        if (processedCustomers > this.customersCount)
+        if (processedCustomers > this.customersCount) {
             processedCustomers = this.customersCount;
+        }
 
         const processed = processedOrders + processedCustomers;
         const total = this.ordersCount + this.customersCount;

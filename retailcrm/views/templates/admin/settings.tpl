@@ -228,7 +228,7 @@
                                     {/foreach}
                                 <input type="hidden" name="{$runJobName|escape:'htmlall':'UTF-8'}" value="">
                                 <div class="retail-form__row retail-form__row_submit"
-                                     style="text-align: center; height: 60px; margin-bottom: 20px; margin-top: 50px; clear:both;">
+                                     style="height: 60px; margin-bottom: 20px; margin-top: 50px; clear:both;">
                                     <button id="update-icml-submit"
                                             class="btn btn_invert btn_warning"
                                             style="outline: none;{if !$showUpdateButton} display: none;{/if}">{l s='Update URL' mod='retailcrm'}</button>
@@ -385,138 +385,186 @@
                     <div class="retail-form__title">{l s='Advanced' mod='retailcrm'}</div>
                     <div class="retail-form__row">
                         <div class="retail-form__checkbox">
-                            <input form="submitretailcrm-form" type="checkbox" name="{$debugModeName|escape:'htmlall':'UTF-8'}"
+                            <input form="submitretailcrm-form" type="checkbox"
+                                   name="{$debugModeName|escape:'htmlall':'UTF-8'}"
                                    value="{$debugMode|escape:'htmlall':'UTF-8'}"
                                    {if $debugMode}checked="checked"{/if} id="debugmode-active">
                             <label for="debugmode-active"
                                    class="retail-form__label">{l s='Debug mode' mod='retailcrm'}</label>
                         </div>
-
-                        <div class="retail-form__row retail-form__row_submit">
-                            <input form="submitretailcrm-form" type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
+                        <div class="retail-form__checkbox">
+                            <input form="submitretailcrm-form" type="checkbox"
+                                   name="{$webJobsName|escape:'htmlall':'UTF-8'}"
+                                   value="{$webJobs|escape:'htmlall':'UTF-8'}"
+                                   {if $webJobs}checked="checked"{/if} id="webjobs-active">
+                            <label for="webjobs-active"
+                                   class="retail-form__label">{l s='Web Jobs' mod='retailcrm'}</label>
                         </div>
                     </div>
 
                     <div class="retail-form__row">
+                        <input form="submitretailcrm-form" type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
+                    </div>
+
+                    <div class="retail-form__row">
                         <label class="retail-form__label">{l s='Job Manager' mod='retailcrm'}</label>
-                        <table class="retail-table retail-table-sort">
-                            <thead>
-                            <tr>
-                                <th>
-                                    <span>{l s='Job name' mod='retailcrm'}</span></th>
-                                <th>
-                                    <div class="retail-table-sort__btn-wrap">
-                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
-                                        <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
-                                    </div>
-                                    <span class="retail-table-sort__switch">{l s='Last Run' mod='retailcrm'}</span></th>
-                                <th>
-                                    <span>{l s='Status' mod='retailcrm'}</span></th>
-                                <th>
-                                    <span>{l s='Comment' mod='retailcrm'}</span></th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {foreach from=$lastRunDetails key=key item=item}
-                                <tr class="{if $key === $currentJob || $key === $currentJobCli} retail-table__row-bold{/if}">
-                                    <td>
-                                        {if isset($jobsNames[$key]) }
-                                            <span title="{$key|escape:'htmlall':'UTF-8'}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
-                                        {else}
-                                            {$key|escape:'htmlall':'UTF-8'}
-                                        {/if}
-                                    </td>
-                                    <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'|escape:'htmlall':'UTF-8'}{/if}</td>
-                                    <td class="retail-table-center">
-                                        {if $key === $currentJob || $key === $currentJobCli}
-                                            <span>&#8987;</span>
-                                        {else}
-                                            {if isset($item['success'])}
-                                                {if $item['success'] === true}
-                                                    <span style="color: #2e8b57;">&#10004;</span>
-                                                {else}
-                                                    <span style="color: #dd2e44;">&#10060;</span>
+                        <div class="retail-table-wrapper">
+                            <table class="retail-table retail-table-sort">
+                                <thead>
+                                <tr>
+                                    <th>
+                                        <span>{l s='Job name' mod='retailcrm'}</span></th>
+                                    <th>
+                                        <div class="retail-table-sort__btn-wrap">
+                                            <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                            <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
+                                        </div>
+                                        <span class="retail-table-sort__switch">{l s='Last Run' mod='retailcrm'}</span>
+                                    </th>
+                                    <th>
+                                        <span>{l s='Status' mod='retailcrm'}</span></th>
+                                    <th>
+                                        <span>{l s='Comment' mod='retailcrm'}</span></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {foreach from=$lastRunDetails key=key item=item}
+                                    <tr class="{if $key === $currentJob || $key === $currentJobCli} retail-table__row-bold{/if}">
+                                        <td>
+                                            {if isset($jobsNames[$key]) }
+                                                <span title="{$key|escape:'htmlall':'UTF-8'}">{l s=$jobsNames[$key] mod='retailcrm'}</span>
+                                            {else}
+                                                {$key|escape:'htmlall':'UTF-8'}
+                                            {/if}
+                                        </td>
+                                        <td class="retail-table-center retail-table-no-wrap">{if isset($item['lastRun'])}{$item['lastRun']|date_format:'Y-m-d H:i:s'|escape:'htmlall':'UTF-8'}{/if}</td>
+                                        <td class="retail-table-center">
+                                            {if $key === $currentJob || $key === $currentJobCli}
+                                                <span>&#8987;</span>
+                                            {else}
+                                                {if isset($item['success'])}
+                                                    {if $item['success'] === true}
+                                                        <span style="color: #2e8b57;">&#10004;</span>
+                                                    {else}
+                                                        <span style="color: #dd2e44;">&#10060;</span>
+                                                    {/if}
                                                 {/if}
                                             {/if}
-                                        {/if}
-                                    </td>
-                                    <td class="retail-collapsible">
-                                        {if isset($item['error']['message'])}
-                                            <input type="checkbox" class="retail-collapsible__input" id="error_{$key|escape:'htmlall':'UTF-8'}">
-                                            <label for="error_{$key|escape:'htmlall':'UTF-8'}"
-                                                   class="retail-collapsible__title retail-error-msg">
-                                                <span class="retail-error-msg">{$item['error']['message']|escape:'htmlall':'UTF-8'}</span>
-                                                <p class="retail-collapsible__content">
-                                                    <b>{l s='StackTrace' mod='retailcrm'}
-                                                        :</b><br>{$item['error']['trace']|escape:'htmlall':'UTF-8'}
-                                                </p>
-                                            </label>
-                                        {/if}
-                                    </td>
-                                </tr>
-                            {/foreach}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="retail-collapsible">
+                                            {if isset($item['error']['message'])}
+                                                <input type="checkbox" class="retail-collapsible__input"
+                                                       id="error_{$key|escape:'htmlall':'UTF-8'}">
+                                                <label for="error_{$key|escape:'htmlall':'UTF-8'}"
+                                                       class="retail-collapsible__title retail-error-msg">
+                                                    <span class="retail-error-msg">{$item['error']['message']|escape:'htmlall':'UTF-8'}</span>
+                                                    <p class="retail-collapsible__content">
+                                                        <b>{l s='StackTrace' mod='retailcrm'}
+                                                            :</b><br>{$item['error']['trace']|escape:'htmlall':'UTF-8'}
+                                                    </p>
+                                                </label>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="retail-form__row retail-form__row_submit">
+                        <form class="rcrm-form-submit-trigger"
+                              action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                              method="post">
+                            <input type="submit" id="reset-jobs-submit" class="btn btn_submit"
+                                   value="{l s='Reset jobs' mod='retailcrm'}"/>
+                        </form>
                     </div>
 
                     <div class="retail-form__row">
                         <label class="retail-form__label">{l s='Logs' mod='retailcrm'}</label>
-                        <table class="retail-table retail-table-sort">
-                            <thead>
-                            <tr>
-                                <th><span>{l s='File name' mod='retailcrm'}</span></th>
-                                <th>
-                                    <div class="retail-table-sort__btn-wrap">
-                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
-                                        <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
-                                    </div>
-                                    <span class="retail-table-sort__switch">{l s='Modified date' mod='retailcrm'}</span>
-                                </th>
-                                <th>
-                                    <div class="retail-table-sort__btn-wrap">
-                                        <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
-                                        <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
-                                    </div>
-                                    <span class="retail-table-sort__switch">{l s='Size' mod='retailcrm'}</span>
-                                </th>
-                                <th><span>{l s='Actions' mod='retailcrm'}</span></th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {foreach from=$retailcrmLogsInfo key=key item=logItem}
-                                <tr class="retail-table__row-top">
-                                    <td>{$logItem.name|escape:'htmlall':'UTF-8'}</td>
-                                    <td class="retail-table-center">{$logItem.modified|escape:'htmlall':'UTF-8'}</td>
-                                    <td class="retail-table-center">{$logItem.size|escape:'htmlall':'UTF-8'}</td>
-                                    <td class="retail-table-center">
-                                        <form class="rcrm-form-submit-trigger"
-                                              action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
-                                              method="post">
-                                            <input type="hidden" name="submitretailcrm" value="1"/>
-                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
-                                            <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS_NAME"
-                                                   value="{$logItem.name|escape:'htmlall':'UTF-8'}"/>
-                                            <input type="submit"
-                                                   value="{l s='Download' mod='retailcrm'}"/>
-                                        </form>
-                                    </td>
+                        <div class="retail-table-wrapper">
+                            <table class="retail-table retail-table-sort">
+                                <thead>
+                                <tr>
+                                    <th><span>{l s='File name' mod='retailcrm'}</span></th>
+                                    <th>
+                                        <div class="retail-table-sort__btn-wrap">
+                                            <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                            <span class="retail-table-sort__desc retail-table-sort__btn retail-table-sort__initial">&#x25BC</span>
+                                        </div>
+                                        <span class="retail-table-sort__switch">{l s='Modified date' mod='retailcrm'}</span>
+                                    </th>
+                                    <th>
+                                        <div class="retail-table-sort__btn-wrap">
+                                            <span class="retail-table-sort__asc retail-table-sort__btn">&#x25B2</span>
+                                            <span class="retail-table-sort__desc retail-table-sort__btn">&#x25BC</span>
+                                        </div>
+                                        <span class="retail-table-sort__switch">{l s='Size' mod='retailcrm'}</span>
+                                    </th>
+                                    <th><span>{l s='Actions' mod='retailcrm'}</span></th>
                                 </tr>
-                            {/foreach}
-                            <tr>
-                                <td colspan="3"></td>
-                                <td class="retail-table-center">
-                                    <form class="rcrm-form-submit-trigger"
-                                          action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
-                                          method="post">
-                                        <input type="hidden" name="submitretailcrm" value="1"/>
-                                        <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
-                                        <input type="submit" value="{l s='Download All' mod='retailcrm'}">
-                                    </form>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-
+                                </thead>
+                                <tbody>
+                                {foreach from=$retailcrmLogsInfo key=key item=logItem}
+                                    <tr class="retail-table__row-top">
+                                        <td>{$logItem.name|escape:'htmlall':'UTF-8'}</td>
+                                        <td class="retail-table-center">{$logItem.modified|escape:'htmlall':'UTF-8'}</td>
+                                        <td class="retail-table-center">{$logItem.size|escape:'htmlall':'UTF-8'}</td>
+                                        <td class="retail-table-center">
+                                            <form class="rcrm-form-submit-trigger"
+                                                  action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                                                  method="post">
+                                                <input type="hidden" name="submitretailcrm" value="1"/>
+                                                <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
+                                                <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS_NAME"
+                                                       value="{$logItem.name|escape:'htmlall':'UTF-8'}"/>
+                                                <input type="submit" id="download-log-{$key}" style="display: none;"/>
+                                                <label for="download-log-{$key}"
+                                                       style="width: 100%; text-align: center;"
+                                                       class="retail-btn-svg_wrapper"
+                                                       title=" {l s='Download' mod='retailcrm'}"
+                                                >
+                                                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+                                                         xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+                                                         y="0px" viewBox="0 0 29.978 29.978"
+                                                         xml:space="preserve"
+                                                         class="retail-btn-svg"
+                                                    >
+                                                    <g>
+                                                        <path d="M25.462,19.105v6.848H4.515v-6.848H0.489v8.861c0,1.111,0.9,2.012,2.016,2.012h24.967c1.115,0,2.016-0.9,2.016-2.012   v-8.861H25.462z"/>
+                                                        <path d="M14.62,18.426l-5.764-6.965c0,0-0.877-0.828,0.074-0.828s3.248,0,3.248,0s0-0.557,0-1.416c0-2.449,0-6.906,0-8.723   c0,0-0.129-0.494,0.615-0.494c0.75,0,4.035,0,4.572,0c0.536,0,0.524,0.416,0.524,0.416c0,1.762,0,6.373,0,8.742   c0,0.768,0,1.266,0,1.266s1.842,0,2.998,0c1.154,0,0.285,0.867,0.285,0.867s-4.904,6.51-5.588,7.193   C15.092,18.979,14.62,18.426,14.62,18.426z"/>
+                                                    </g>
+                                                    </svg>
+                                                    {l s='Download' mod='retailcrm'}
+                                                </label>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="retail-form__row retail-form__row_submit">
+                            <form class="rcrm-form-submit-trigger"
+                                  action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&amp;ajax=1"
+                                  method="post">
+                                <input type="hidden" name="submitretailcrm" value="1"/>
+                                <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
+                                <button type="submit" id="download-log-all"  class="btn btn_submit">
+                                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+                                         xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+                                         y="0px" viewBox="0 0 29.978 29.978"
+                                         style="width: 20px; fill: #0068FF;" xml:space="preserve">
+                                        <g>
+                                            <path d="M25.462,19.105v6.848H4.515v-6.848H0.489v8.861c0,1.111,0.9,2.012,2.016,2.012h24.967c1.115,0,2.016-0.9,2.016-2.012   v-8.861H25.462z"/>
+                                            <path d="M14.62,18.426l-5.764-6.965c0,0-0.877-0.828,0.074-0.828s3.248,0,3.248,0s0-0.557,0-1.416c0-2.449,0-6.906,0-8.723   c0,0-0.129-0.494,0.615-0.494c0.75,0,4.035,0,4.572,0c0.536,0,0.524,0.416,0.524,0.416c0,1.762,0,6.373,0,8.742   c0,0.768,0,1.266,0,1.266s1.842,0,2.998,0c1.154,0,0.285,0.867,0.285,0.867s-4.904,6.51-5.588,7.193   C15.092,18.979,14.62,18.426,14.62,18.426z"/>
+                                        </g>
+                                    </svg>
+                                    {l s='Download All' mod='retailcrm'}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
@@ -533,4 +581,5 @@
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-upload.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-icml.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-export.min.js"></script>
+<script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-advanced.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm.min.js"></script>
