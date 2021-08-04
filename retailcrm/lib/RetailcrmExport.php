@@ -107,7 +107,6 @@ class RetailcrmExport
             $sql .= 'WHERE ';
             $sql .= '1' . Shop::addSqlRestriction(false, 'o') . ' AND ';
 
-
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
 
@@ -115,9 +114,8 @@ class RetailcrmExport
                     break;
 
                 $sql .= ' o.`id_order` >= ' . (int)$start . ' AND o.`id_order` <= ' . (int)$offset;
-                $sql.= ' ORDER BY o.`id_order` ASC';
 
-                $orders = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+                $orders = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql . ' ORDER BY o.`id_order` ASC');
 
                 if (empty($orders))
                     break;
