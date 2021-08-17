@@ -88,6 +88,13 @@ class RetailcrmOrderBuilder
      */
     protected $apiSite;
 
+    private $initMiddleware;
+
+    public function __construct($apiMiddleware)
+    {
+        $this->initMiddleware = $apiMiddleware;
+    }
+
     /**
      * @return RetailcrmOrderBuilder
      */
@@ -244,7 +251,12 @@ class RetailcrmOrderBuilder
 
         if (empty($customer)) {
             $crmCustomer = static::buildCrmCustomer($this->cmsCustomer, $this->buildRegularAddress());
-            $createResponse = $this->api->customersCreate($crmCustomer);
+            $createResponse = $this->initMiddleware->handle([
+                'data' => [
+                    'customer' => $crmCustomer
+                ],
+                'method' => 'customersCreate'
+            ]);
 
             if (!$createResponse || !$createResponse->isSuccessful()) {
                 $this->createdCustomer = array();
@@ -575,7 +587,12 @@ class RetailcrmOrderBuilder
                 }
             }
         } else {
-            $customer = $this->api->customersGet($this->cmsCustomer->id);
+//            $customer = $this->api->customersGet($this->cmsCustomer->id);
+            $customer = $this->initMiddleware->handle([
+                'id' => $this->cmsCustomer->id,
+                'api' => $this->api,
+                'method' => 'customersGet'
+            ]);
 
             if ($customer && $customer->isSuccessful() && $customer->offsetExists('customer')) {
                 return $customer['customer'];
