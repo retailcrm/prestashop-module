@@ -66,46 +66,45 @@ class RetailcrmProxy
         return $reduced;
     }
 
-    public function __call($method, $arguments)
-    {   
-        $date = date('Y-m-d H:i:s');
-        try {
-            RetailcrmLogger::writeDebug($method, print_r($arguments, true));
-            $response = call_user_func_array(array($this->api, $method), $arguments);
-
-            if (!($response instanceof RetailcrmApiResponse)) {
-                RetailcrmLogger::writeDebug($method, $response);
-                return $response;
-            }
-
-            if (!$response->isSuccessful()) {
-                RetailcrmLogger::writeCaller($method, $response->getErrorMsg());
-
-                if (isset($response['errors'])) {
-                    RetailcrmApiErrors::set($response['errors'], $response->getStatusCode());
-                    $error = static::reduceErrors($response['errors']);
-                    RetailcrmLogger::writeNoCaller($error);
-                }
-
-                $response = false;
-            } else {
-                // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
-                if (in_array($method, array('statusesList', 'paymentTypesList', 'deliveryTypesList'))) {
-                    RetailcrmLogger::writeDebug($method, '[request was successful, but response is omitted]');
-                } else {
-                    RetailcrmLogger::writeDebug($method, $response->getRawResponse());
-                }
-            }
-
-            return $response;
-        } catch (CurlException $e) {
-            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-            return false;
-        } catch (InvalidJsonException $e) {
-            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-            return false;
-        }
-    }
+//    public function __call($method, $arguments)
+//    {
+//        try {
+//            RetailcrmLogger::writeDebug($method, print_r($arguments, true));
+//            $response = call_user_func_array([$this->api, $method], $arguments);
+//
+//            if (!($response instanceof RetailcrmApiResponse)) {
+//                RetailcrmLogger::writeDebug($method, $response);
+//                return $response;
+//            }
+//
+//            if (!$response->isSuccessful()) {
+//                RetailcrmLogger::writeCaller($method, $response->getErrorMsg());
+//
+//                if (isset($response['errors'])) {
+//                    RetailcrmApiErrors::set($response['errors'], $response->getStatusCode());
+//                    $error = static::reduceErrors($response['errors']);
+//                    RetailcrmLogger::writeNoCaller($error);
+//                }
+//
+//                $response = false;
+//            } else {
+//                // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
+//                if (in_array($method, ['statusesList', 'paymentTypesList', 'deliveryTypesList'])) {
+//                    RetailcrmLogger::writeDebug($method, '[request was successful, but response is omitted]');
+//                } else {
+//                    RetailcrmLogger::writeDebug($method, $response->getRawResponse());
+//                }
+//            }
+//
+//            return $response;
+//        } catch (CurlException $e) {
+//            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
+//            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+//            return false;
+//        } catch (InvalidJsonException $e) {
+//            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
+//            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+//            return false;
+//        }
+//    }
 }
