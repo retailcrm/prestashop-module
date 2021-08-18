@@ -119,6 +119,8 @@ class RetailCRM extends Module
     public $default_lang;
     public $default_currency;
     public $default_country;
+    public $apiUrl;
+    public $apiKey;
     public $psVersion;
     public $log;
     public $confirmUninstall;
@@ -132,8 +134,6 @@ class RetailCRM extends Module
 
     private $use_new_hooks = true;
 
-    private $initMiddleware;
-
     public function __construct()
     {
         $this->name = 'retailcrm';
@@ -146,7 +146,9 @@ class RetailCRM extends Module
         $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $this->default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
         $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
-        $this->ps_versions_compliancy = ['min' => '1.6.1.0', 'max' => _PS_VERSION_];
+        $this->apiUrl = Configuration::get(static::API_URL);
+        $this->apiKey = Configuration::get(static::API_KEY);
+        $this->ps_versions_compliancy = array('min' => '1.6.1.0', 'max' => _PS_VERSION_);
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = RetailcrmLogger::getLogFile();
         $this->module_key = 'dff3095326546f5fe8995d9e86288491';
@@ -162,14 +164,10 @@ class RetailCRM extends Module
             $this->use_new_hooks = false;
         }
 
-
-        $this->initMiddleware = new RetailcrmProxyInitMiddleware();
-        $this->initMiddleware->handle();
-
-        $this->api = $this->initMiddleware->api;
-
-        $this->reference = new RetailcrmReferences($this->api);
-
+        if ($this->apiUrl && $this->apiKey) {
+            $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, $this->log);
+            $this->reference = new RetailcrmReferences($this->api);
+        }
 
         parent::__construct();
     }
@@ -207,11 +205,18 @@ class RetailCRM extends Module
 
     public function uninstall()
     {
+        $apiUrl = Configuration::get(static::API_URL);
+        $apiKey = Configuration::get(static::API_KEY);
 
         if (!empty($apiUrl) && !empty($apiKey)) {
+            $api = new RetailcrmProxy(
+                $apiUrl,
+                $apiKey,
+                RetailcrmLogger::getLogFile()
+            );
 
             $clientId = Configuration::get(static::CLIENT_ID);
-            $this->integrationModule($this->api, $clientId, false);
+            $this->integrationModule($api, $clientId, false);
         }
 
         return parent::uninstall() &&
@@ -267,6 +272,8 @@ class RetailCRM extends Module
     public function getContent()
     {
         $output = null;
+        $address = Configuration::get(static::API_URL);
+        $token = Configuration::get(static::API_KEY);
 
         if (Tools::isSubmit('submit' . $this->name)) {
             $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
@@ -291,6 +298,10 @@ class RetailCRM extends Module
             }
         }
 
+        if ($address && $token) {
+            $this->api = new RetailcrmProxy($address, $token, $this->log);
+            $this->reference = new RetailcrmReferences($this->api);
+        }
 
         $templateFactory = new RetailcrmTemplateFactory($this->context->smarty, $this->assetsBase);
 
@@ -314,22 +325,25 @@ class RetailCRM extends Module
             return $this->displayError($this->l("At least one order ID should be specified"));
         }
 
+        $apiUrl = Configuration::get(static::API_URL);
+        $apiKey = Configuration::get(static::API_KEY);
         $isSuccessful = true;
 
+        if (!empty($apiUrl) && !empty($apiKey)) {
+            if (!($this->api instanceof RetailcrmProxy)) {
+                $this->api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+            }
+        } else {
+            return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
+        }
+
         $result = '';
-        $skippedOrders = [];
+        $skippedOrders = array();
 
         foreach ($orderIds as $orderId) {
             $object = new Order($orderId);
             $customer = new Customer($object->id_customer);
-
-            $requestMiddleware = new RetailcrmRequestMiddleware($this->api);
-            $this->initMiddleware->setNext($requestMiddleware);
-            $apiResponse = $this->initMiddleware->handle([
-                'data' => ['id' => $object->id],
-                'method' => 'ordersGet'
-            ]);
-
+            $apiResponse = $this->api->ordersGet($object->id);
             $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : array();
 
             if (!Validate::isLoadedObject($object)) {
@@ -338,7 +352,7 @@ class RetailCRM extends Module
             }
 
             try {
-                $orderBuilder = new RetailcrmOrderBuilder($this->initMiddleware);
+                $orderBuilder = new RetailcrmOrderBuilder();
                 $crmOrder = $orderBuilder
                     ->defaultLangFromConfiguration()
                     ->setApi($this->api)
@@ -351,20 +365,15 @@ class RetailCRM extends Module
             }
 
             if (!empty($crmOrder)) {
-                $data = [
-                    'data' =>  $crmOrder,
-                    'api' => $this->api,
+                $response = false;
 
-                ];
                 if (empty($existingOrder)) {
-                    $data = array_merge($data, ['method' => 'ordersCreate']);
+                    $response = $this->api->ordersCreate($crmOrder);
                 } else {
-                    $data = array_merge($data, ['method' => 'ordersEdit']);
+                    $response = $this->api->ordersEdit($crmOrder);
                 }
 
-                $response = $this->initMiddleware->handle($data);
-
-//                $isSuccessful = $isSuccessful ? (is_bool($response) ? $response : $response->isSuccessful()) : false;
+                $isSuccessful = $isSuccessful ? (is_bool($response) ? $response : $response->isSuccessful()) : false;
 
                 time_nanosleep(0, 50000000);
             }
@@ -441,7 +450,14 @@ class RetailCRM extends Module
             return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
         }
 
-        RetailcrmHistory::$api = $this->api;
+        $api = RetailcrmTools::getApiClient();
+
+        if (empty($api)) {
+            RetailcrmLogger::writeCaller(__METHOD__, 'Set API key & URL first');
+            return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
+        }
+
+        RetailcrmHistory::$api = $api;
         RetailcrmHistory::updateSinceId('customers');
         RetailcrmHistory::updateSinceId('orders');
 
@@ -712,7 +728,6 @@ class RetailCRM extends Module
             }
 
             $order['customer']['externalId'] = $params['order']->id_customer;
-
             $this->api->ordersEdit($order);
 
             return true;
@@ -753,7 +768,6 @@ class RetailCRM extends Module
 
             if (!empty($crmOrder)) {
                 $order['id'] = $crmOrder['id'];
-                dump($order);die;
                 $this->api->ordersEdit($order, 'id');
 
                 if (empty($crmOrder['payments']) && !empty($order['payments'])) {
@@ -775,7 +789,6 @@ class RetailCRM extends Module
             }
 
             if (isset($orderStatus)) {
-                dump($order);die;
                 $this->api->ordersEdit(
                     array(
                         'externalId' => $params['id_order'],
@@ -929,6 +942,9 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::SYNC_CARTS_DELAY, $settings['synchronizedCartDelay']);
                 Configuration::updateValue(static::ENABLE_DEBUG_MODE, $settings['debugMode']);
 
+                $this->apiUrl = $settings['url'];
+                $this->apiKey = $settings['apiKey'];
+                $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, $this->log);
                 $this->reference = new RetailcrmReferences($this->api);
 
                 if ($this->isRegisteredInHook('actionPaymentCCAdd') == 0) {
@@ -1002,8 +1018,14 @@ class RetailCRM extends Module
      */
     private function validateApiVersion($settings)
     {
+        /** @var \RetailcrmProxy|\RetailcrmApiClientV5 $api */
+        $api = new RetailcrmProxy(
+            $settings['url'],
+            $settings['apiKey'],
+            $this->log
+        );
 
-        $response = $this->api->apiVersions();
+        $response = $api->apiVersions();
 
         if ($response !== false && isset($response['versions']) && !empty($response['versions'])) {
             foreach ($response['versions'] as $version) {

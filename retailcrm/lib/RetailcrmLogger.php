@@ -264,4 +264,24 @@ class RetailcrmLogger
 
         return false;
     }
+
+    /**
+     * Reduces error array into string
+     *
+     * @param $errors
+     *
+     * @return string
+     */
+    public static function reduceErrors($errors)
+    {
+        $reduced = '';
+
+        if (is_array($errors)) {
+            foreach ($errors as $key => $error) {
+                $reduced .= sprintf('%s => %s\n', $key, $error);
+            }
+        }
+
+        return $reduced;
+    }
 }
