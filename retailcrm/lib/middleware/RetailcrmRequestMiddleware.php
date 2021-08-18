@@ -12,17 +12,8 @@ class RetailcrmRequestMiddleware extends RetailcrmAbstractProxyMiddleware
 
     public function handle($request = null)
     {
-        if ($request['method']) {
-            $loggerHandler = new RetailcrmLogMiddleware;
-            $this->setNext($loggerHandler);
-
-            if (isset($request['data']['id'])) {
-                $response = $this->client->{$request['method']}($request['data']['id']);
-                return $response;
-            } elseif (isset($request['data'])){
-                $response = $this->client->{$request['method']}($request['data']);
-                return $response;
-            }
+        if ($request->getMethod()) {
+            return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
         }
         return parent::handle($request);
     }
