@@ -2,10 +2,29 @@
 
 class RetailcrmApiRequest
 {
+    protected $api;
 
     protected $data;
 
     protected $method;
+
+    /**
+     * @return mixed
+     */
+    public function getApi()
+    {
+        return $this->api;
+    }
+
+    /**
+     * @param mixed $api
+     * @return RetailcrmApiRequest
+     */
+    public function setApi($api)
+    {
+        $this->api = $api;
+        return $this;
+    }
 
     /**
      * @return mixed

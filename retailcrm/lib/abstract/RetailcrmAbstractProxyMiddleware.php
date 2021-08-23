@@ -2,20 +2,27 @@
 
 class RetailcrmAbstractProxyMiddleware implements RetailcrmProxyMiddlewareInterface
 {
-    private $nextHandler;
+    protected $nextMiddleware;
 
-    public function setNext($handler)
+    public function handle(
+        RetailcrmApiRequest $request = null,
+        RetailcrmApiResponse $response = null,
+        RetailcrmProxyMiddlewareInterface $next = null
+    )
     {
-        $this->nextHandler = $handler;
-        return $handler;
+        return $response;
     }
 
-    public function handle($request = null)
+    public function getNext()
     {
-        if ($this->nextHandler) {
-            return $this->nextHandler->handle($request);
-        }
-
-        return null;
+        return $this->nextMiddleware;
     }
+
+    public function setNext(RetailcrmAbstractProxyMiddleware $nextMiddleware = null)
+    {
+        $this->nextMiddleware = $nextMiddleware;
+        return $this;
+    }
+
+
 }

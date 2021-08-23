@@ -2,12 +2,15 @@
 
 class RetailcrmLoggerMiddleware extends RetailcrmAbstractProxyMiddleware
 {
-    public function handle($request = null)
+    public function handle(
+        RetailcrmApiRequest $request = null,
+        RetailcrmApiResponse $response = null,
+        RetailcrmProxyMiddlewareInterface $next = null
+    )
     {
-        if (array_key_exists('response', $request)) {
-            $response = $request['response'];
-            $method = $request['request']->getMethod();
 
+        if (!is_null($response)) {
+            $method = $request->getMethod();
             RetailcrmLogger::writeCaller($method, print_r($response->success, true));
 
             if (!$response->isSuccessful()) {
@@ -28,6 +31,6 @@ class RetailcrmLoggerMiddleware extends RetailcrmAbstractProxyMiddleware
             }
         }
 
-        return parent::handle($request);
+        return $response;
     }
 }
