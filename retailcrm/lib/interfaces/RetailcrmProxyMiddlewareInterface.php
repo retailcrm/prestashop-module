@@ -2,7 +2,17 @@
 
 interface RetailcrmProxyMiddlewareInterface
 {
-    public function setNext($handler);
+    /**
+     * @param RetailcrmApiRequest|null $request
+     * @param RetailcrmApiResponse|null $response
+     * @param RetailcrmProxyMiddlewareInterface|null $next
+     * @return RetailcrmApiResponse
+     */
+    public function handle(
+        RetailcrmApiRequest $request = null,
+        RetailcrmApiResponse $response = null,
+        RetailcrmProxyMiddlewareInterface $next = null
+    );
 
-    public function handle($request = null);
+    public function setNext(RetailcrmAbstractProxyMiddleware $nextMiddleware);
 }
