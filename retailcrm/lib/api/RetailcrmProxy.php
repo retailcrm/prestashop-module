@@ -39,32 +39,28 @@ class RetailcrmProxy
 {
     private $api;
 
-    private $initMiddleware;
-
     public function __construct($url, $key, $log)
     {
-        $this->initMiddleware = new RetailcrmProxyInitMiddleware();
-        $this->initMiddleware->handle();
-        $this->api = $this->initMiddleware->api;
+        $this->api = new RetailcrmApiClientV5($url, $key);
+
+        $requestMiddleware = new RetailcrmRequestMiddleware();
+        $loggerMiddleware = new RetailcrmLoggerMiddleware;
+
+        $this->builder = new RetailcrmProxyBuilder();
+        $this->builder->addMiddleware($loggerMiddleware);
+        $this->builder->addMiddleware($requestMiddleware);
+
     }
 
     public function __call($method, $arguments)
     {
-        $requestMiddleware = new RetailcrmRequestMiddleware($this->api);
-        $loggerHandler = new RetailcrmLoggerMiddleware;
-        $this->initMiddleware->setNext($requestMiddleware);
-
         $request = new RetailcrmApiRequest();
+
+        $request->setApi($this->api);
         $request->setMethod($method);
         $request->setData($arguments);
 
-        $response = $this->initMiddleware->handle($request);
-
-        $this->initMiddleware->setNext($loggerHandler);
-        $this->initMiddleware->handle([
-            'request' => $request,
-            'response' => $response
-        ]);
+        $response = $this->builder->run($request);
 
         return $response;
     }
