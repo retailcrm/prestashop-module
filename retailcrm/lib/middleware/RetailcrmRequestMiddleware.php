@@ -15,16 +15,13 @@ class RetailcrmRequestMiddleware extends RetailcrmAbstractProxyMiddleware
         $this->client = new RetailcrmApiClientV5($url, $key);
     }
 
-    public function handle(
-        RetailcrmApiRequest $request = null,
-        RetailcrmApiResponse $response = null,
-        RetailcrmProxyMiddlewareInterface $next = null
-    )
+    public function process(RetailcrmApiRequest $request, RetailcrmApiResponse $response)
     {
+
         if ($request->getMethod()) {
             $response = call_user_func_array([$this->client, $request->getMethod()], $request->getData());
         }
 
-        return $next->handle($request, $response, $next->getNext());
+        return $response;
     }
 }

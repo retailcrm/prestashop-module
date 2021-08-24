@@ -4,11 +4,7 @@ class RetailcrmAbstractProxyMiddleware implements RetailcrmProxyMiddlewareInterf
 {
     protected $nextMiddleware;
 
-    public function handle(
-        RetailcrmApiRequest $request = null,
-        RetailcrmApiResponse $response = null,
-        RetailcrmProxyMiddlewareInterface $next = null
-    )
+    public function process(RetailcrmApiRequest $request, RetailcrmApiResponse $response)
     {
         return $response;
     }
@@ -18,7 +14,7 @@ class RetailcrmAbstractProxyMiddleware implements RetailcrmProxyMiddlewareInterf
         return $this->nextMiddleware;
     }
 
-    public function setNext(RetailcrmAbstractProxyMiddleware $nextMiddleware = null)
+    public function setNext(RetailcrmAbstractProxyMiddleware $nextMiddleware)
     {
         $this->nextMiddleware = $nextMiddleware;
         return $this;
