@@ -174,13 +174,20 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         $this->setAddressField('alias', $this->alias, 'default');
         $this->setAddressField('lastname', $this->lastName, '');
         $this->setAddressField('firstname', $this->firstName, '');
+        $this->setAddressField('phone', $this->phone, '');
 
         $addressLine = $this->buildAddressLine();
         $this->setAddressField('address1', $addressLine[0], '--');
         $this->setAddressField('address2', $addressLine[1], '');
 
-        $countryIso = isset($this->dataCrm['countryIso']) ? Country::getByIso($this->dataCrm['countryIso']) : null;
-        $this->setAddressField('id_country', $countryIso, Configuration::get('PS_COUNTRY_DEFAULT'));
+        if (isset($this->dataCrm['countryIso'])) {
+            $countryIso = null;
+            if (Validate::isLanguageIsoCode($this->dataCrm['countryIso'])) {
+                $countryIso = Country::getByIso($this->dataCrm['countryIso']);
+            }
+
+            $this->setAddressField('id_country', $countryIso, Configuration::get('PS_COUNTRY_DEFAULT'));
+        }
 
         if (isset($this->dataCrm['city'])) {
             $this->setAddressField('city', $this->dataCrm['city'], '--');
@@ -188,16 +195,9 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         if (isset($this->dataCrm['index'])) {
             $this->setAddressField('postcode', $this->dataCrm['index'], '');
         }
-
         if (isset($this->dataCrm['region'])) {
-            $state = State::getIdByName($this->dataCrm['region']);
-
-            if (!empty($state)) {
-                $this->customerAddress->id_state = $state;
-            }
+            $this->setAddressField('id_state', (int) State::getIdByName($this->dataCrm['region']));
         }
-
-        $this->setAddressField('phone', $this->phone, '');
 
         $this->customerAddress = RetailcrmTools::filter(
             'RetailcrmFilterSaveCustomerAddress',
