@@ -169,7 +169,7 @@
                                     <div class="retail-alert-text">
                                         {$catalogTitleName|escape:'htmlall':'UTF-8'} {l s='is outdated' mod='retailcrm'}
                                     </div>
-                            {elseif !$catalogInfo.isUrlActual}
+                            {elseif !isset($catalogInfo.isUrlActual) or !$catalogInfo.isUrlActual}
                                     {assign var="showUpdateButton" value=true}
                                 <div class="retail-alert retail-alert-warning">
                                     <div class="retail-alert-text">
