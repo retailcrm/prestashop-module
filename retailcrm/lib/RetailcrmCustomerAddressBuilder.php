@@ -176,9 +176,11 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         $this->setAddressField('firstname', $this->firstName, '');
         $this->setAddressField('phone', $this->phone, '');
 
-        $addressLine = $this->buildAddressLine();
-        $this->setAddressField('address1', $addressLine[0], '--');
-        $this->setAddressField('address2', $addressLine[1], '');
+        $this->buildAddressLine();
+
+        if (isset($this->dataCrm['notes'])) {
+            $this->setAddressField('other', $this->dataCrm['notes'], '');
+        }
 
         if (isset($this->dataCrm['countryIso'])) {
             $countryIso = null;
@@ -224,19 +226,21 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     private function buildAddressLine()
     {
-        $addressLine = [
-            null,
-            null
-        ];
-
         if (isset($this->dataCrm['text'])) {
-            $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $this->dataCrm['text'], 2);
+            $text = $this->dataCrm['text'];
+            if (isset($this->dataCrm['notes'])) {
+                $text = str_replace($this->dataCrm['notes'], '', $text);
+            }
+
+            $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $text, 2);
+
+            $this->setAddressField('address1', $addressLine[0], '--');
             if (count($addressLine) == 1) {
-                $addressLine[] = null;
+                $this->setAddressField('address2', '');
+            } else {
+                $this->setAddressField('address2', $addressLine[1], '');
             }
         }
-
-        return $addressLine;
     }
 }
 

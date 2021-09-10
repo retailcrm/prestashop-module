@@ -678,14 +678,18 @@ class RetailcrmTools
 
     /**
      * Assign address ID and customer ID from customer addresses.
-     * Customer ID in the address isn't checked (it will be set to id from provided customer, even if it doesn't have ID yet).
+     * Customer ID in the address isn't checked
+     * (it will be set to id from provided customer, even if it doesn't have ID yet).
      *
      * @param Customer|CustomerCore $customer
      * @param Address|\AddressCore  $address
      */
     public static function assignAddressIdsByFields($customer, $address)
     {
-        RetailcrmLogger::writeDebugArray(__METHOD__, array('Called with customer', $customer->id, 'and address', self::dumpEntity($address)));
+        RetailcrmLogger::writeDebugArray(
+            __METHOD__,
+            array('Called with customer', $customer->id, 'and address', self::dumpEntity($address))
+        );
 
         foreach ($customer->getAddresses(self::defaultLang()) as $customerInnerAddress) {
             $customerAddress = new Address($customerInnerAddress['id_address']);
@@ -739,6 +743,8 @@ class RetailcrmTools
             'postcode',
             'city',
             'address1',
+            'address2',
+            'other',
             'phone',
             'company',
             'vat_number'
@@ -779,7 +785,8 @@ class RetailcrmTools
             return $object;
         }
         if (!in_array(RetailcrmFilterInterface::class, class_implements($filter))) {
-            RetailcrmLogger::writeDebug(__METHOD__, sprintf('Filter class %s must implements %s interface',
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                'Filter class %s must implements %s interface',
                 $filter,
                 RetailcrmFilterInterface::class
             ));

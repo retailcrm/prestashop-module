@@ -254,6 +254,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                     $this->address->address1,
                     $this->address->address2,
                 ])),
+            'notes' => $this->address->other,
             'region' => $state
         ));
     }
