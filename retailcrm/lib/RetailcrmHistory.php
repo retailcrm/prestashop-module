@@ -804,17 +804,29 @@ class RetailcrmHistory
                             ->getData();
 
                         if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
-                            // Modifying an address in order creates another address
-                            // instead of changing the original one. This issue has been fixed in PS 1.7.7
-                            if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-                                $address->id = null;
-                                self::loadInCMS($address, 'add');
+                            $address->id = null;
+                            RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
+
+                            if ($address->id === null) {
+                                // Modifying an address in order creates another address
+                                // instead of changing the original one. This issue has been fixed in PS 1.7.7
+                                if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                                    self::loadInCMS($address, 'add');
+
+                                    $orderToUpdate->id_address_delivery = $address->id;
+                                    self::loadInCMS($orderToUpdate, 'update');
+                                } else {
+                                    $address->id = $orderToUpdate->id_address_delivery;
+                                    self::loadInCMS($address, 'update');
+                                }
+                            } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
+                                RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                                    'Binding to existing address [%d]',
+                                    $address->id
+                                ));
 
                                 $orderToUpdate->id_address_delivery = $address->id;
                                 self::loadInCMS($orderToUpdate, 'update');
-                            } else {
-                                $address->id = $orderToUpdate->id_address_delivery;
-                                self::loadInCMS($address, 'update');
                             }
                         }
                     }
@@ -1138,7 +1150,7 @@ class RetailcrmHistory
             if (!empty($orderFix)) {
                 self::$api->ordersFixExternalIds($orderFix);
             }
-            
+
             // update orders number in CRM
             if (!empty($updateOrderIds)) {
                 foreach ($updateOrderIds as $upOrder) {

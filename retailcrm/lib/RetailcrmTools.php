@@ -742,6 +742,7 @@ class RetailcrmTools
             'firstname',
             'postcode',
             'city',
+            'id_state',
             'address1',
             'address2',
             'other',
