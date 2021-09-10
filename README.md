@@ -1,7 +1,7 @@
 [![Build Status](https://github.com/retailcrm/prestashop-module/workflows/presta/badge.svg)](https://github.com/retailcrm/prestashop-module/actions)
 [![Coverage](https://img.shields.io/codecov/c/gh/retailcrm/prestashop-module/master.svg?logo=github)](https://codecov.io/gh/retailcrm/prestashop-module)
 [![GitHub release](https://img.shields.io/github/release/retailcrm/prestashop-module.svg?logo=codecov)](https://github.com/retailcrm/prestashop-module/releases)
-[![PHP version](https://img.shields.io/badge/PHP->=5.4-blue.svg?logo=php)](https://php.net/)
+[![PHP version](https://img.shields.io/badge/PHP->=5.6-blue.svg?logo=php)](https://php.net/)
 
 Prestashop module.
 =================
