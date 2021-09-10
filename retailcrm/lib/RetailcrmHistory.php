@@ -759,7 +759,9 @@ class RetailcrmHistory
                         $orderLastName = $orderAddress->lastname;
                         $orderPhone = $orderAddress->phone;
 
-                        if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)) {
+                        if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
+                            || !Validate::isLoadedObject($orderAddress)
+                        ) {
                             $infoOrder = self::getCRMOrder($order['externalId']);
                             if (isset($infoOrder['delivery']['address'])) {
                                 // array_replace used to save changes, made by custom filters
