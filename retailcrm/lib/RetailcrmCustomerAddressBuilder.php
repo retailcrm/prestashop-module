@@ -88,12 +88,14 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setCustomerAddress($customerAddress)
     {
         $this->customerAddress = $customerAddress;
+
         return $this;
     }
 
     public function setDataCrm($dataCrm)
     {
         $this->dataCrm = $dataCrm;
+
         return $this;
     }
 
@@ -104,6 +106,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setIdCustomer($idCustomer)
     {
         $this->idCustomer = $idCustomer;
+
         return $this;
     }
 
@@ -114,6 +117,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setAlias($alias)
     {
         $this->alias = $alias;
+
         return $this;
     }
 
@@ -124,6 +128,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setFirstName($firstName)
     {
         $this->firstName = $firstName;
+
         return $this;
     }
 
@@ -134,6 +139,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setLastName($lastName)
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 
@@ -144,6 +150,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function setPhone($phone)
     {
         $this->phone = $phone;
+
         return $this;
     }
 
@@ -206,7 +213,8 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             $this->customerAddress,
             array(
                 'dataCrm' => $this->dataCrm
-            ));
+            )
+        );
 
         return $this;
     }
@@ -219,7 +227,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
         if ($value !== null) {
             $this->customerAddress->$field = $value;
-        } elseif (empty($this->customerAddress->$field)) {
+        } else {
             $this->customerAddress->$field = $default;
         }
     }
@@ -243,4 +251,3 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         }
     }
 }
-
