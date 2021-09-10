@@ -600,7 +600,8 @@ class RetailcrmHistory
                     // payment
                     if (isset($order['payments']) && !empty($order['payments'])) {
                         foreach ($order['payments'] as $payment) {
-                            if (!isset($payment['externalId'])
+                            if (
+                                !isset($payment['externalId'])
                                 && isset($payment['status'])
                                 && $payment['status'] === 'paid'
                             ) {
@@ -714,6 +715,13 @@ class RetailcrmHistory
                             $orderDetail->unit_price_tax_incl = $productPrice;
 
                             $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
+
+                            StockAvailable::updateQuantity(
+                                $product_id,
+                                $product_attribute_id,
+                                -1 * $orderDetail->product_quantity,
+                                Context::getContext()->shop->id
+                            );
 
                             if (self::loadInCMS($orderDetail, 'save')) {
                                 $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
@@ -970,7 +978,21 @@ class RetailcrmHistory
                                     $id_order_detail = !empty($parsedExtId['id_order_detail'])
                                         ? $parsedExtId['id_order_detail'] : 0;
 
-                                    self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail);
+                                    if (isset($item['quantity'])) {
+                                        StockAvailable::updateQuantity(
+                                            $product_id,
+                                            $product_attribute_id,
+                                            $item['quantity'],
+                                            Context::getContext()->shop->id
+                                        );
+                                    }
+
+                                    self::deleteOrderDetailByProduct(
+                                        $orderToUpdate->id,
+                                        $product_id,
+                                        $product_attribute_id,
+                                        $id_order_detail
+                                    );
                                     unset($order['items'][$key]);
                                 }
                             }
@@ -1006,9 +1028,20 @@ class RetailcrmHistory
                                         }
 
                                         // quantity
-                                        if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
+                                        if (
+                                            isset($item['quantity'])
+                                            && $item['quantity'] != $orderItem['product_quantity']
+                                        ) {
+                                            $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
                                             $orderDetail->product_quantity = $item['quantity'];
                                             $orderDetail->product_quantity_in_stock = $item['quantity'];
+
+                                            StockAvailable::updateQuantity(
+                                                $product_id,
+                                                $product_attribute_id,
+                                                $deltaQuantity,
+                                                Context::getContext()->shop->id
+                                            );
                                         }
 
                                         $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
@@ -1077,6 +1110,13 @@ class RetailcrmHistory
                                     ? $orderToUpdate->id_warehouse : 0;
                                 $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
                                     ? $parsedExtId['id_order_detail'] : null;
+
+                                StockAvailable::updateQuantity(
+                                    $product_id,
+                                    $product_attribute_id,
+                                    -1 * $orderDetail->product_quantity,
+                                    Context::getContext()->shop->id
+                                );
 
                                 if (self::loadInCMS($orderDetail, 'save')) {
                                     $newItemsIds[Db::getInstance()->Insert_ID()] = $newItem['id'];
@@ -1486,7 +1526,8 @@ class RetailcrmHistory
                 $notOurChanges[$externalId] = array();
             }
 
-            if ($entry['source'] == 'api'
+            if (
+                $entry['source'] == 'api'
                 && isset($entry['apiKey']['current'])
                 && $entry['apiKey']['current'] == true
             ) {
