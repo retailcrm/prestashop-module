@@ -1,10 +1,10 @@
 # Custom filters
 
-## Usage 
+## Usage
 
 If you want to modify data, sent between CRM and CMS you can use custom filters.
 To use filters you should define a new class in `<prestashop-root>/modules/retailcrm/custom/hooks`. Filename and classname must match the filter name.
-Filter class should implement interface *RetailcrmFilterInterface*. In filter class you must define *filter()* function, which will take initial `$object` and return customized `$object`. 
+Filter class should implement interface *RetailcrmFilterInterface*. In filter class you must define *filter()* function, which will take initial `$object` and return customized `$object`.
 
 ## Example
 
@@ -25,7 +25,7 @@ class RetailcrmFilterSaveCustomerAddress implements RetailcrmFilterInterface
          * @var array $dataCrm CRM address data
          * @var Address $object  CMS Address object
          */
-         
+
         $dataCrm = $parameters['dataCrm'];
 
         if (isset($dataCrm['dni'])) {
@@ -57,3 +57,5 @@ There are list of available filters:
 * *RetailcrmFilterSaveCustomerAddress* - built customer address object, which will be saved to CMS
 * *RetailcrmFilterSaveCorporateCustomer* - built corporate customer object, which will be saved to CMS
 * *RetailcrmFilterSaveCorporateCustomerAddress* - built corporate customer address object, which will be saved to CMS
+
+* *RetailcrmFilterJobManagerIntervals* - array with jobs as keys and intervals as values

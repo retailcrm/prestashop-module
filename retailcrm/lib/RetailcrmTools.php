@@ -707,12 +707,17 @@ class RetailcrmTools
      */
     public static function startJobManager()
     {
-        RetailcrmJobManager::startJobs(array(
+        $intervals = array(
             'RetailcrmClearLogsEvent' => new \DateInterval('P1D'),
             'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M'),
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
             'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M')
+        );
+
+        RetailcrmJobManager::startJobs(self::filter(
+            'RetailcrmFilterJobManagerIntervals',
+            $intervals
         ));
     }
 
