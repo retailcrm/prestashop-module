@@ -1028,7 +1028,10 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::ENABLE_HISTORY_UPLOADS, $settings['enableHistoryUploads']);
                 Configuration::updateValue(static::ENABLE_BALANCES_RECEIVING, $settings['enableBalancesReceiving']);
                 Configuration::updateValue(static::ENABLE_ORDER_NUMBER_SENDING, $settings['enableOrderNumberSending']);
-                Configuration::updateValue(static::ENABLE_ORDER_NUMBER_RECEIVING, $settings['enableOrderNumberReceiving']);
+                Configuration::updateValue(
+                    static::ENABLE_ORDER_NUMBER_RECEIVING,
+                    $settings['enableOrderNumberReceiving']
+                );
                 Configuration::updateValue(static::COLLECTOR_ACTIVE, $settings['collectorActive']);
                 Configuration::updateValue(static::COLLECTOR_KEY, $settings['collectorKey']);
                 Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);
