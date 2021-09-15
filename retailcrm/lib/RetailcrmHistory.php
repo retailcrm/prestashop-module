@@ -1465,7 +1465,7 @@ class RetailcrmHistory
                 && isset($entry['apiKey']['current'])
                 && $entry['apiKey']['current'] == true
             ) {
-                if (isset($notOurChanges[$externalId][$field]) || $entry['field'] == 'externalId') {
+                if (isset($notOurChanges[$externalId][$field]) || $field == 'externalId' || $field == 'status') {
                     $organizedHistory[$externalId][] = $entry;
                 } else {
                     continue;
