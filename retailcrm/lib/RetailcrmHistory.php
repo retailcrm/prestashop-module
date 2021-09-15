@@ -800,6 +800,7 @@ class RetailcrmHistory
                             ->setFirstName($orderFirstName)
                             ->setLastName($orderLastName)
                             ->setPhone($orderPhone)
+                            ->setAlias($orderAddress->alias)
                             ->build()
                             ->getData();
 
