@@ -185,6 +185,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                 case static::MODE_ORDER_DELIVERY:
                     $this->buildOrderAddress();
                     $this->buildOrderPhones();
+                    $this->buildOrderNames();
                     break;
                 default:
                     throw new \InvalidArgumentException("Incorrect builder mode");
@@ -254,6 +255,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                     $this->address->address1,
                     $this->address->address2,
                 ])),
+            'notes' => $this->address->other,
             'region' => $state
         ));
     }
@@ -287,6 +289,20 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             } else {
                 $this->data['order']['additionalPhone'] = $this->address->phone;
             }
+        }
+    }
+
+    /**
+     * Extract order first and last names from address
+     */
+    private function buildOrderNames()
+    {
+        if (!empty($this->address->firstname)) {
+            $this->data['order']['firstName'] = $this->address->firstname;
+        }
+
+        if (!empty($this->address->lastname)) {
+            $this->data['order']['lastName'] = $this->address->lastname;
         }
     }
 

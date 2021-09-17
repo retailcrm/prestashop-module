@@ -102,7 +102,7 @@
         <field id="delivery_cost" group="delivery">cost</field>
         <field id="delivery_net_cost" group="delivery">netCost</field>
 
-        <field id="delivery_address.country" group="orderAddress">country</field>
+        <field id="country" group="orderAddress">countryIso</field>
         <field id="delivery_address.index" group="orderAddress">index</field>
         <field id="delivery_address.region" group="orderAddress">region</field>
         <field id="delivery_address.city" group="orderAddress">city</field>

@@ -169,7 +169,7 @@
                                     <div class="retail-alert-text">
                                         {$catalogTitleName|escape:'htmlall':'UTF-8'} {l s='is outdated' mod='retailcrm'}
                                     </div>
-                            {elseif !$catalogInfo.isUrlActual}
+                            {elseif !isset($catalogInfo.isUrlActual) or !$catalogInfo.isUrlActual}
                                     {assign var="showUpdateButton" value=true}
                                 <div class="retail-alert retail-alert-warning">
                                     <div class="retail-alert-text">
@@ -519,8 +519,8 @@
                                                 <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS" value="1"/>
                                                 <input type="hidden" name="RETAILCRM_DOWNLOAD_LOGS_NAME"
                                                        value="{$logItem.name|escape:'htmlall':'UTF-8'}"/>
-                                                <input type="submit" id="download-log-{$key}" style="display: none;"/>
-                                                <label for="download-log-{$key}"
+                                                <input type="submit" id="download-log-{$key|escape:'htmlall':'UTF-8'}" style="display: none;"/>
+                                                <label for="download-log-{$key|escape:'htmlall':'UTF-8'}"
                                                        style="width: 100%; text-align: center;"
                                                        class="retail-btn-svg_wrapper"
                                                        title=" {l s='Download' mod='retailcrm'}"

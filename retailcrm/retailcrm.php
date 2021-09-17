@@ -1004,7 +1004,7 @@ class RetailCRM extends Module
                 'enableOrderNumberSending' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_SENDING) !== false),
                 'enableOrderNumberReceiving' => (Tools::getValue(static::ENABLE_ORDER_NUMBER_RECEIVING) !== false),
                 'debugMode' => (Tools::getValue(static::ENABLE_DEBUG_MODE) !== false),
-                'webJobs' => (Tools::getValue(static::ENABLE_WEB_JOBS) !== false ? '1' : '0'),
+                'webJobs' => (Tools::getValue(static::ENABLE_WEB_JOBS, true) !== false ? '1' : '0'),
                 'collectorActive' => (Tools::getValue(static::COLLECTOR_ACTIVE) !== false),
                 'collectorKey' => (string) (Tools::getValue(static::COLLECTOR_KEY)),
                 'clientId' => Configuration::get(static::CLIENT_ID),
@@ -1028,7 +1028,10 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::ENABLE_HISTORY_UPLOADS, $settings['enableHistoryUploads']);
                 Configuration::updateValue(static::ENABLE_BALANCES_RECEIVING, $settings['enableBalancesReceiving']);
                 Configuration::updateValue(static::ENABLE_ORDER_NUMBER_SENDING, $settings['enableOrderNumberSending']);
-                Configuration::updateValue(static::ENABLE_ORDER_NUMBER_RECEIVING, $settings['enableOrderNumberReceiving']);
+                Configuration::updateValue(
+                    static::ENABLE_ORDER_NUMBER_RECEIVING,
+                    $settings['enableOrderNumberReceiving']
+                );
                 Configuration::updateValue(static::COLLECTOR_ACTIVE, $settings['collectorActive']);
                 Configuration::updateValue(static::COLLECTOR_KEY, $settings['collectorKey']);
                 Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);

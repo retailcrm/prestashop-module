@@ -316,7 +316,13 @@ class RetailcrmHistoryHelper {
      */
     public static function isAddressLineChanged($address)
     {
+        // TODO countryIso, city, index and region added because module can't get changes of [text] field with api.
+        //  Should be removed when the api logic is updated
         $keys = [
+            'countryIso',
+            'city',
+            'index',
+            'region',
             'street',
             'building',
             'flat',
