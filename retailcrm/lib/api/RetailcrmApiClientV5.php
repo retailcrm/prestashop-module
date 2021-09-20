@@ -858,6 +858,7 @@ class RetailcrmApiClientV5
      */
     public function customersCreate(array $customer, $site = null)
     {
+
         if (! count($customer)) {
             throw new \InvalidArgumentException(
                 'Parameter `customer` must contains a data'
