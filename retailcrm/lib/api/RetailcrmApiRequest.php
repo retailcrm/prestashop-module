@@ -2,11 +2,11 @@
 
 class RetailcrmApiRequest
 {
-    protected $api;
+    private $api;
 
-    protected $data;
+    private $data;
 
-    protected $method;
+    private $method;
 
     /**
      * @return mixed

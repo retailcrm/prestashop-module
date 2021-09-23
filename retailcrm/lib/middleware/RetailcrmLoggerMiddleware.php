@@ -2,13 +2,14 @@
 
 class RetailcrmLoggerMiddleware extends RetailcrmAbstractProxyMiddleware
 {
-    public function __invoke(RetailcrmApiRequest $request, RetailcrmApiResponse $response)
+    public function __invoke(RetailcrmApiRequest $request, Closure $next = null)
     {
         $method = $request->getMethod();
 
         if (!is_null($request->getMethod())) {
             RetailcrmLogger::writeCaller($method, print_r($request->getData(), true));
         }
+        $response = $next($request);
 
         if ($response->isSuccessful()) {
             // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
@@ -26,5 +27,8 @@ class RetailcrmLoggerMiddleware extends RetailcrmAbstractProxyMiddleware
                 RetailcrmLogger::writeNoCaller($error);
             }
         }
+
+        return $response;
+
     }
 }

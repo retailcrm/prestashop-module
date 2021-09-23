@@ -2,9 +2,9 @@
 
 class RetailcrmAbstractProxyMiddleware implements RetailcrmProxyMiddlewareInterface
 {
-    public function __invoke(RetailcrmApiRequest $request, RetailcrmApiResponse $response)
+    public function __invoke(RetailcrmApiRequest $request, Closure $next = null)
     {
-        return $response;
+        return $this($request, $next);
     }
 
 }
