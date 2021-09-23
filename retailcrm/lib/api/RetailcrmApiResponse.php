@@ -38,13 +38,11 @@
 class RetailcrmApiResponse implements \ArrayAccess
 {
     // HTTP response status code
-    protected $statusCode;
+    private $statusCode;
 
-    // response assoc array
-    protected $response;
+    private $response;
 
-    // raw response
-    protected $rawResponse;
+    private $rawResponse;
 
     /**
      * ApiResponse constructor.
