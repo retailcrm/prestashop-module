@@ -1,8 +1,13 @@
 <?php
 
-class RetailcrmLoggerMiddleware extends RetailcrmAbstractProxyMiddleware
+class RetailcrmLoggerMiddleware extends RetailcrmAbstractMiddleware
 {
-    public function __invoke(RetailcrmApiRequest $request, Closure $next = null)
+    /**
+     * @param RetailcrmApiRequest $request
+     * @param callable|null $next
+     * @return RetailcrmApiResponse
+     */
+    public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
         $method = $request->getMethod();
 
