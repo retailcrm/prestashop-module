@@ -37,7 +37,14 @@
  */
 class RetailcrmProxy
 {
+    /**
+     * @var RetailcrmApiClientV5
+     */
     private $client;
+
+    /**
+     * @var RetailcrmPipeline
+     */
     private $pipeline;
 
     public function __construct($url, $key, $log)
@@ -45,23 +52,25 @@ class RetailcrmProxy
         $this->client = new RetailcrmApiClientV5($url, $key);
 
         $this->pipeline = new RetailcrmPipeline();
-
-        $this->pipeline->middlewares = [
-            RetailcrmLoggerMiddleware::class,
-        ];
+        $this->pipeline
+            ->setMiddlewares([
+                RetailcrmLoggerMiddleware::class,
+            ])
+            ->setAction(function ($request) {
+                return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
+            })
+            ->build()
+        ;
     }
 
     public function __call($method, $arguments)
     {
         $request = new RetailcrmApiRequest();
-
         $request->setApi($this->client);
         $request->setMethod($method);
         $request->setData($arguments);
 
-        $response = $this->pipeline->run($request, function () use ($request) {
-            return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
-        });
+        $response = $this->pipeline->run($request);
 
         return $response;
     }
