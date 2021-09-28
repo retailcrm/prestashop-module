@@ -1,6 +1,6 @@
 <?php
 
-class RetailcrmLoggerMiddleware extends RetailcrmAbstractMiddleware
+class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
      * @param RetailcrmApiRequest $request
