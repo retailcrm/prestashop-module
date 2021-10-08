@@ -753,7 +753,7 @@ class RetailcrmTools
 
         foreach ($checkMapping as $field) {
             if ($first->$field != $second->$field) {
-                RetailcrmLogger::writeDebug(__METHOD__, print_r(array(
+                RetailcrmLogger::writeDebug(__METHOD__, json_encode(array(
                     'first' => array(
                         'id' => $first->id,
                         $field => $first->$field
@@ -762,7 +762,7 @@ class RetailcrmTools
                         'id' => $second->id,
                         $field => $second->$field
                     ),
-                ), true));
+                )));
 
                 return false;
             }
