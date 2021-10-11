@@ -386,7 +386,7 @@ class RetailCRM extends Module
                 if (empty($existingOrder)) {
                     $response = $this->api->ordersCreate($crmOrder);
 
-                    if ($response->isSuccessful() && $receiveOrderNumber) {
+                    if ($response instanceof RetailcrmApiResponse && $response->isSuccessful() && $receiveOrderNumber) {
                         $crmOrder = $response->order;
                         $object->reference = $crmOrder['number'];
                         $object->update();
@@ -862,7 +862,7 @@ class RetailCRM extends Module
             } else {
                 $response = $this->api->ordersCreate($order);
 
-                if ($response->isSuccessful() && $receiveOrderNumber) {
+                if ($response instanceof RetailcrmApiResponse && $response->isSuccessful() && $receiveOrderNumber) {
                     $crmOrder = $response->order;
                     $cmsOrder->reference = $crmOrder['number'];
                     $cmsOrder->update();
@@ -894,28 +894,22 @@ class RetailCRM extends Module
 
     public function hookActionPaymentCCAdd($params)
     {
-        $payments = $this->reference->getSystemPaymentModules();
-        $paymentCRM = json_decode(Configuration::get(static::PAYMENT), true);
-        $payment = "";
-        $payCode = "";
+        $payments = array_filter(json_decode(Configuration::get(static::PAYMENT), true));
+        $paymentType = false;
+        $externalId = false;
 
-        foreach ($payments as $valPay) {
-            if ($valPay['name'] == $params['paymentCC']->payment_method) {
-                $payCode = $valPay['code'];
+        foreach ($this->reference->getSystemPaymentModules() as $paymentCMS) {
+            if (
+                $paymentCMS['name'] === $params['paymentCC']->payment_method
+                && array_key_exists($paymentCMS['code'], $payments)
+                && !empty($payments[$paymentCMS['code']])
+            ) {
+                $paymentType = $payments[$paymentCMS['code']];
+                break;
             }
         }
 
-        if (!empty($payCode) && array_key_exists($payCode, $paymentCRM) && !empty($paymentCRM[$payCode])) {
-            $payment = $paymentCRM[$payCode];
-        }
-
-        if (empty($payment)) {
-            return false;
-        }
-
-        $externalId = false;
-
-        if (empty($params['cart']) || empty((int) $params['cart']->id)) {
+        if (!$paymentType || empty($params['cart']) || empty((int) $params['cart']->id)) {
             return false;
         }
 
@@ -934,7 +928,7 @@ class RetailCRM extends Module
                 // do not update payment if the order in Cart and OrderPayment aren't the same
                 if ($params['paymentCC']->order_reference) {
                     $order = Order::getByReference($params['paymentCC']->order_reference)->getFirst();
-                    if (!$order ||  $order->id !== $id_order) {
+                    if (!$order || $order->id !== $id_order) {
                         return false;
                     }
                 }
@@ -955,7 +949,7 @@ class RetailCRM extends Module
 
         if ($orderCRM && $orderCRM['payments']) {
             foreach ($orderCRM['payments'] as $orderPayment) {
-                if ($orderPayment['type'] === $payment) {
+                if ($orderPayment['type'] === $paymentType) {
                     $updatePayment = $orderPayment;
                     $updatePayment['amount'] = $params['paymentCC']->amount;
                     $updatePayment['paidAt'] = $params['paymentCC']->date_add;
@@ -969,11 +963,11 @@ class RetailCRM extends Module
         } else {
             $createPayment = array(
                 'externalId' => $params['paymentCC']->id,
-                'amount' => $params['paymentCC']->amount,
-                'paidAt' => $params['paymentCC']->date_add,
-                'type' => $payment,
-                'status' => $status,
-                'order' => array(
+                'amount'     => $params['paymentCC']->amount,
+                'paidAt'     => $params['paymentCC']->date_add,
+                'type'       => $paymentType,
+                'status'     => $status,
+                'order'      => array(
                     'externalId' => $externalId,
                 ),
             );
