@@ -37,75 +37,45 @@
  */
 class RetailcrmProxy
 {
-    private $api;
-    private $log;
-
-    public function __construct($url, $key, $log)
-    {
-        $this->api = new RetailcrmApiClientV5($url, $key);
-        $this->log = $log;
-    }
+    /**
+     * @var RetailcrmApiClientV5
+     */
+    private $client;
 
     /**
-     * Reduces error array into string
-     *
-     * @param $errors
-     *
-     * @return false|string
+     * @var RetailcrmPipeline
      */
-    private static function reduceErrors($errors)
+    private $pipeline;
+
+    public function __construct($url, $key)
     {
-        $reduced = '';
+        $this->client = new RetailcrmApiClientV5($url, $key);
 
-        if (is_array($errors)) {
-            foreach ($errors as $key => $error) {
-                $reduced .= sprintf('%s => %s\n', $key, $error);
-            }
-        }
-
-        return $reduced;
+        $this->pipeline = new RetailcrmPipeline();
+        $this->pipeline
+            ->setMiddlewares(
+                RetailcrmTools::filter(
+                'RetailcrmFilterMiddlewares',
+                [
+                    RetailcrmLoggerMiddleware::class,
+                ])
+            )
+            ->setAction(function ($request) {
+                return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
+            })
+            ->build()
+        ;
     }
 
     public function __call($method, $arguments)
-    {   
-        $date = date('Y-m-d H:i:s');
-        try {
-            RetailcrmLogger::writeDebug($method, print_r($arguments, true));
-            $response = call_user_func_array(array($this->api, $method), $arguments);
+    {
+        $request = new RetailcrmApiRequest();
+        $request->setApi($this->client);
+        $request->setMethod($method);
+        $request->setData($arguments);
 
-            if (!($response instanceof RetailcrmApiResponse)) {
-                RetailcrmLogger::writeDebug($method, $response);
-                return $response;
-            }
+        $response = $this->pipeline->run($request);
 
-            if (!$response->isSuccessful()) {
-                RetailcrmLogger::writeCaller($method, $response->getErrorMsg());
-
-                if (isset($response['errors'])) {
-                    RetailcrmApiErrors::set($response['errors'], $response->getStatusCode());
-                    $error = static::reduceErrors($response['errors']);
-                    RetailcrmLogger::writeNoCaller($error);
-                }
-
-                $response = false;
-            } else {
-                // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
-                if (in_array($method, array('statusesList', 'paymentTypesList', 'deliveryTypesList'))) {
-                    RetailcrmLogger::writeDebug($method, '[request was successful, but response is omitted]');
-                } else {
-                    RetailcrmLogger::writeDebug($method, $response->getRawResponse());
-                }
-            }
-
-            return $response;
-        } catch (CurlException $e) {
-            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-            return false;
-        } catch (InvalidJsonException $e) {
-            RetailcrmLogger::writeCaller(get_class($this->api).'::'.$method, $e->getMessage());
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-            return false;
-        }
+        return $response;
     }
 }
