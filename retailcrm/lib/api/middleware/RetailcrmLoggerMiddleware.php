@@ -34,6 +34,5 @@ class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
         }
 
         return $response;
-
     }
 }
