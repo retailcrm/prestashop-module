@@ -1148,7 +1148,7 @@ class RetailcrmHistory
                                         $statuses
                                     );
 
-                                    if ($newStatus || $newStatus === 0) {
+                                    if ($newStatus) {
                                         $orderToUpdate->current_state = $newStatus;
                                         $updateOrderStatuses[] = [
                                             'externalId' => $orderToUpdate->id,
