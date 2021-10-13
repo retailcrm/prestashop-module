@@ -70,9 +70,18 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['statusesDefaultExport'] = $this->module->reference->getStatuseDefaultExport();
             $params['deliveryTypes'] = $this->module->reference->getDeliveryTypes();
             $params['orderStatuses'] = $this->module->reference->getStatuses();
+            $params['outOfStockStatuses'] = $this->module->reference->getOutOfStockStatuses(
+                [
+                    'out_of_stock_paid' => $this->module->translate('If order paid'),
+                    'out_of_stock_not_paid' => $this->module->translate('If order not paid'),
+                ]
+            );
             $params['paymentTypes'] = $this->module->reference->getPaymentTypes();
             $params['methodsForDefault'] = $this->module->reference->getPaymentAndDeliveryForDefault(
-                array($this->module->translate('Delivery method'), $this->module->translate('Payment type'))
+                [
+                    $this->module->translate('Delivery method'),
+                    $this->module->translate('Payment type'),
+                ]
             );
             $params['ordersCount'] = RetailcrmExport::getOrdersCount();
             $params['customersCount'] = RetailcrmExport::getCustomersCount();

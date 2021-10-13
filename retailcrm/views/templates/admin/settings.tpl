@@ -58,6 +58,7 @@
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_order_statuses" class="retail-menu__btn retail-menu__btn_big{if in_array('statuses', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Order statuses' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_payment_types" class="retail-menu__btn retail-menu__btn_big{if in_array('payment', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Payment types' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_default_types" class="retail-menu__btn retail-menu__btn_big{if in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Default' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_stock" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_active"><span>{l s='Stock' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_orders_upload" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Upload orders' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_carts_sync" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive"><span>{l s='Abandoned carts' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_catalog" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_inactive{if in_array('catalog', $errorTabs)} retail-menu__btn_error{/if}"><span>{$catalogTitleName|escape:'htmlall':'UTF-8'}<span/></a>
@@ -83,12 +84,6 @@
                             <div class="retail-form__checkbox">
                                 <input type="checkbox" name="{$enableHistoryUploadsName|escape:'htmlall':'UTF-8'}" value="{$enableHistoryUploads|escape:'htmlall':'UTF-8'}" {if $enableHistoryUploads}checked="checked"{/if} id="historyuploads-active">
                                 <label for="historyuploads-active">{l s='Enable history uploads' mod='retailcrm'}</label>
-                            </div>
-                        </div>
-                        <div class="retail-form__row">
-                            <div class="retail-form__checkbox">
-                                <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
-                                <label for="receivebalances-active">{l s='Receive stocks from Simla.com' mod='retailcrm'}</label>
                             </div>
                         </div>
                         <div class="retail-form__title"
@@ -303,6 +298,42 @@
                                 {/foreach}
                             </select>
                         </div>
+                    </div>
+                    <div id="rcrm_tab_stock">
+                        <div class="retail-form__title">
+                            {l s='Stock settings' mod='retailcrm'}
+                        </div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$enableBalancesReceivingName|escape:'htmlall':'UTF-8'}" value="{$enableBalancesReceiving|escape:'htmlall':'UTF-8'}" {if $enableBalancesReceiving}checked="checked"{/if} id="receivebalances-active">
+                                <label for="receivebalances-active">{l s='Receive stocks from Simla.com' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        <div class="retail-form__title" style="margin-top: 40px;">
+                            {l s='Out of stock' mod='retailcrm'}
+                        </div>
+                        <div class="retail-form__label">
+                            {l s='Option for changing status of orders containing items that out of stock at Prestashop.' mod='retailcrm'}
+                        </div>
+                        <div class="retail-form__label">
+                            {l s='Usable if Prestashop "Allow ordering of out-of-stock products" option is set to "Deny".' mod='retailcrm'}
+                        </div>
+                        <div class="retail-form__row">
+                            <div class="retail-form__checkbox">
+                                <input type="checkbox" name="{$outOfStockName|escape:'htmlall':'UTF-8'}" value="{$outOfStock|escape:'htmlall':'UTF-8'}" {if $outOfStock}checked="checked"{/if} id="outofstock-active">
+                                <label for="outofstock-active">{l s='Change status' mod='retailcrm'}</label>
+                            </div>
+                        </div>
+                        {foreach from=$outOfStockStatuses item=item}
+                            <div class="retail-form__row">
+                                <label class="retail-form__label" for="{$item.name|escape:'htmlall':'UTF-8'}">{l s=$item.label mod='retailcrm'}</label>
+                                <select placeholder="{l s='Choose status' mod='retailcrm'}" class="jq-select" name="{$item.name|escape:'htmlall':'UTF-8'}" id="{$item.name|escape:'htmlall':'UTF-8'}">
+                                    {foreach from=$item.options.query item=option}
+                                        <option value="{$option.id_option|escape:'htmlall':'UTF-8'}"{if isset($outOfStockStatus[$item.subname]) && $outOfStockStatus[$item.subname] == $option.id_option} selected{/if}>{$option.name|escape:'htmlall':'UTF-8'}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        {/foreach}
                     </div>
                     <div id="rcrm_tab_orders_upload">
                         <div class="retail-form__title">{l s='Upload orders' mod='retailcrm'}</div>

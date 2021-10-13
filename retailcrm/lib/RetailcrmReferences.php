@@ -42,6 +42,7 @@ class RetailcrmReferences
     public $default_lang;
     public $carriers;
     public $payment_modules = array();
+    public $apiStatuses;
 
     /**
      * @var bool|RetailcrmApiClientV5|RetailcrmProxy $api
@@ -91,7 +92,7 @@ class RetailcrmReferences
     {
         $statusTypes = array();
         $states = OrderState::getOrderStates($this->default_lang, true);
-        $apiStatuses = $this->getApiStatuses();
+        $this->apiStatuses = $this->getApiStatuses();
 
         if (!empty($states)) {
             foreach ($states as $state) {
@@ -104,13 +105,35 @@ class RetailcrmReferences
                         'subname' => $key,
                         'required' => false,
                         'options' => array(
-                            'query' => $apiStatuses,
+                            'query' => $this->apiStatuses,
                             'id' => 'id_option',
                             'name' => 'name'
                         )
                     );
                 }
             }
+        }
+
+        return $statusTypes;
+    }
+
+    public function getOutOfStockStatuses($arParams)
+    {
+        $statusTypes = array();
+
+        foreach ($arParams as $key => $state) {
+            $statusTypes[] = array(
+                'type' => 'select',
+                'label' => $state,
+                'name' => "RETAILCRM_API_OUT_OF_STOCK_STATUS[$key]",
+                'subname' => $key,
+                'required' => false,
+                'options' => array(
+                    'query' => $this->apiStatuses,
+                    'id' => 'id_option',
+                    'name' => 'name'
+                )
+            );
         }
 
         return $statusTypes;
@@ -222,7 +245,7 @@ class RetailcrmReferences
         }
 
         foreach ($modules as $module) {
-            if ((!empty($module->parent_class) && $module->parent_class == 'PaymentModule') 
+            if ((!empty($module->parent_class) && $module->parent_class == 'PaymentModule')
                 || in_array($module->id, $paymentModulesIds)
             ) {
                 if ($module->id) {
