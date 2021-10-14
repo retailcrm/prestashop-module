@@ -286,13 +286,14 @@ class RetailcrmCatalog
 
                             if (!empty($combinations)) {
                                 foreach ($arComb as $itemComb) {
-                                    $item['combination'] = [
+                                    $item['combination'][$itemComb['id_attribute_group']] = [
                                         'group_name' => mb_strtolower($itemComb['group_name']),
-                                        'id_attribute_group' => $itemComb['id_attribute_group'],
                                         'attribute_name' => htmlspecialchars($itemComb['attribute_name']),
                                     ];
                                 }
                             }
+
+                            unset($arComb);
 
                             yield RetailcrmTools::filter(
                                 'RetailcrmFilterProcessOffer',

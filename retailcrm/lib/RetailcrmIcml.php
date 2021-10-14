@@ -184,13 +184,15 @@ class RetailcrmIcml
             }
 
             if (isset($offer['combination'])) {
-                $param = $this->dd->createElement('param');
-                $param->setAttribute('code', $offer['combination']['id_attribute_group']);
-                $param->setAttribute('name', $offer['combination']['group_name']);
-                $param->appendChild(
-                    $this->dd->createTextNode($offer['combination']['attribute_name'])
-                );
-                $e->appendChild($param);
+                foreach ($offer['combination'] as $id => $comb) {
+                    $param = $this->dd->createElement('param');
+                    $param->setAttribute('code', $id);
+                    $param->setAttribute('name', $comb['group_name']);
+                    $param->appendChild(
+                        $this->dd->createTextNode($comb['attribute_name'])
+                    );
+                    $e->appendChild($param);
+                }
             }
         }
     }
