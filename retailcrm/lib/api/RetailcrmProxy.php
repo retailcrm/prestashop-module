@@ -1,4 +1,6 @@
 <?php
+
+
 /**
  * MIT License
  *
@@ -55,27 +57,27 @@ class RetailcrmProxy
         $this->pipeline
             ->setMiddlewares(
                 RetailcrmTools::filter(
-                'RetailcrmFilterMiddlewares',
-                [
-                    RetailcrmLoggerMiddleware::class,
-                ])
+                    'RetailcrmFilterMiddlewares',
+                    [
+                        RetailcrmExceptionMiddleware::class,
+                        RetailcrmLoggerMiddleware::class,
+                    ]
+                )
             )
             ->setAction(function ($request) {
                 return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
             })
-            ->build()
-        ;
+            ->build();
     }
 
     public function __call($method, $arguments)
     {
         $request = new RetailcrmApiRequest();
-        $request->setApi($this->client);
-        $request->setMethod($method);
-        $request->setData($arguments);
 
-        $response = $this->pipeline->run($request);
+        $request->setApi($this->client)
+            ->setMethod($method)
+            ->setData($arguments);
 
-        return $response;
+        return $this->pipeline->run($request);
     }
 }

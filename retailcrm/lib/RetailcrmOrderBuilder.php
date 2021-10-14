@@ -190,10 +190,22 @@ class RetailcrmOrderBuilder
     protected function getApiSite()
     {
         if (empty($this->apiSite)) {
-            $this->apiSite = $this->api->getSingleSiteForKey();
+            $response = $this->api->credentials();
+
+            if (
+                $response->isSuccessful()
+                && $response->offsetExists('sitesAvailable')
+                && is_array($response['sitesAvailable'])
+                && !empty($response['sitesAvailable'])
+                && !empty($response['sitesAvailable'][0])
+            ) {
+                $this->apiSite = $response['sitesAvailable'][0];
+            } else {
+                $this->apiSite = null;
+            }
         }
 
-        return (empty($this->apiSite) || is_bool($this->apiSite)) ? null : $this->apiSite;
+        return $this->apiSite;
     }
 
     /**

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * MIT License
  *
@@ -38,39 +37,23 @@
  */
 
 
-class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
+class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
      * @inheritDoc
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
-        $method = $request->getMethod();
+        try {
+            $response = $next($request);
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller($request->getMethod(), $e->getMessage());
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
-        if (!is_null($method)) {
-            RetailcrmLogger::writeDebug($method, print_r($request->getData(), true));
-        }
-
-        /** @var RetailcrmApiResponse $response */
-        $response = $next($request);
-
-        if ($response->isSuccessful()) {
-            // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
-            if (in_array($method, ['statusesList', 'paymentTypesList', 'deliveryTypesList'])) {
-                RetailcrmLogger::writeDebug($method, '[request was successful, but response is omitted]');
-            } else {
-                RetailcrmLogger::writeDebug($method, $response->getRawResponse());
-            }
-        } else {
-            if ($response->offsetExists('errorMsg')) {
-                RetailcrmLogger::writeCaller($method, $response['errorMsg']);
-            }
-
-            if ($response->offsetExists('errors')) {
-                RetailcrmApiErrors::set($response['errors'], $response->getStatusCode());
-                $error = RetailcrmLogger::reduceErrors($response['errors']);
-                RetailcrmLogger::writeNoCaller($error);
-            }
+            $response = new RetailcrmApiResponse(500, json_encode([
+                'success' => false,
+                'errorMsg' => sprintf('Internal error: %s', $e->getMessage())
+            ]));
         }
 
         return $response;
