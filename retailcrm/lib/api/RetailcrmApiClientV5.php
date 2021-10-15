@@ -80,42 +80,13 @@ class RetailcrmApiClientV5
     }
 
     /**
-     * getSingleSiteForKey
-     *
-     * @return string|bool
-     */
-    public function getSingleSiteForKey()
-    {
-        $response = $this->credentials();
-
-        if ($response instanceof RetailcrmApiResponse
-            && isset($response['sitesAvailable'])
-            && is_array($response['sitesAvailable'])
-            && !empty($response['sitesAvailable'])
-        ) {
-            return $response['sitesAvailable'][0];
-        }
-
-        return false;
-    }
-
-    /**
      * /api/credentials response
      *
-     * @return RetailcrmApiResponse|bool
+     * @return RetailcrmApiResponse
      */
     public function credentials()
     {
-        $response = $this->unversionedClient->makeRequest(
-            '/credentials',
-            RetailcrmHttpClient::METHOD_GET
-        );
-
-        if ($response instanceof RetailcrmApiResponse) {
-            return $response;
-        }
-
-        return false;
+        return $this->unversionedClient->makeRequest('/credentials', RetailcrmHttpClient::METHOD_GET);
     }
 
     /**
@@ -3001,28 +2972,6 @@ class RetailcrmApiClientV5
             RetailcrmHttpClient::METHOD_POST,
             array('integrationModule' => json_encode($configuration))
         );
-    }
-
-    /**
-     * Return current site
-     *
-     * @return string
-     */
-    public function getSite()
-    {
-        return $this->siteCode;
-    }
-
-    /**
-     * Set site
-     *
-     * @param string $site site code
-     *
-     * @return void
-     */
-    public function setSite($site)
-    {
-        $this->siteCode = $site;
     }
 
     /**
