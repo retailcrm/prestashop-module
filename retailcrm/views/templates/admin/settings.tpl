@@ -313,16 +313,13 @@
                             {l s='Out of stock' mod='retailcrm'}
                         </div>
                         <div class="retail-form__label">
-                            {l s='Option for changing status of orders containing items that out of stock at Prestashop.' mod='retailcrm'}
+                            {l s='Change status of orders containing items that out of stock at Prestashop.' mod='retailcrm'}
                         </div>
                         <div class="retail-form__label">
-                            {l s='Usable if Prestashop "Allow ordering of out-of-stock products" option is set to "Deny".' mod='retailcrm'}
+                            {l s='Usable if Prestashop "Allow ordering of out-of-stock products" option is disabled.' mod='retailcrm'}
                         </div>
-                        <div class="retail-form__row">
-                            <div class="retail-form__checkbox">
-                                <input type="checkbox" name="{$outOfStockName|escape:'htmlall':'UTF-8'}" value="{$outOfStock|escape:'htmlall':'UTF-8'}" {if $outOfStock}checked="checked"{/if} id="outofstock-active">
-                                <label for="outofstock-active">{l s='Change status' mod='retailcrm'}</label>
-                            </div>
+                        <div class="retail-form__label">
+                            {l s='Select statuses below to activate option.' mod='retailcrm'}
                         </div>
                         {foreach from=$outOfStockStatuses item=item}
                             <div class="retail-form__row">

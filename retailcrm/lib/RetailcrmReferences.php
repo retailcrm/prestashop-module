@@ -92,7 +92,7 @@ class RetailcrmReferences
     {
         $statusTypes = array();
         $states = OrderState::getOrderStates($this->default_lang, true);
-        $this->apiStatuses = $this->getApiStatuses();
+        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
 
         if (!empty($states)) {
             foreach ($states as $state) {
@@ -120,6 +120,7 @@ class RetailcrmReferences
     public function getOutOfStockStatuses($arParams)
     {
         $statusTypes = array();
+        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
 
         foreach ($arParams as $key => $state) {
             $statusTypes[] = array(
