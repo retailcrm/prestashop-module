@@ -313,13 +313,7 @@
                             {l s='Out of stock' mod='retailcrm'}
                         </div>
                         <div class="retail-form__label">
-                            {l s='Change status of orders containing items that out of stock at Prestashop.' mod='retailcrm'}
-                        </div>
-                        <div class="retail-form__label">
-                            {l s='Usable if Prestashop "Allow ordering of out-of-stock products" option is disabled.' mod='retailcrm'}
-                        </div>
-                        <div class="retail-form__label">
-                            {l s='Select statuses below to activate option.' mod='retailcrm'}
+                            {l s='Changing of order status if the product is out of stock and its ordering with zero stock is denied.' mod='retailcrm'}
                         </div>
                         {foreach from=$outOfStockStatuses item=item}
                             <div class="retail-form__row">

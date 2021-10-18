@@ -1058,7 +1058,7 @@ class RetailcrmHistory
                                                 );
 
                                                 if ($newStatus) {
-                                                    $updateOrderStatuses[] = $orderToUpdate->id;
+                                                    $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
                                                     $orderToUpdate->current_state = $statuses[$newStatus];
                                                 }
                                             }
@@ -1146,7 +1146,7 @@ class RetailcrmHistory
                                     );
 
                                     if ($newStatus) {
-                                        $updateOrderStatuses[] = $orderToUpdate->id;
+                                        $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
                                         $orderToUpdate->current_state = $statuses[$newStatus];
                                     }
                                 }
@@ -1206,13 +1206,11 @@ class RetailcrmHistory
                     /**
                      * check status
                      */
-                    if (!empty($order['status']) && !in_array($orderToUpdate->id, $updateOrderStatuses)) {
+                    if (!empty($order['status']) && !array_key_exists($orderToUpdate->id, $updateOrderStatuses)) {
                         $stype = $order['status'];
 
                         if (isset($statuses[$stype]) && !empty($statuses[$stype])) {
                             if ($statuses[$stype] != $orderToUpdate->current_state) {
-                                $orderToUpdate->current_state = $statuses[$stype];
-
                                 $orderHistory = new OrderHistory();
                                 $orderHistory->id_employee = 0;
                                 $orderHistory->id_order = $orderToUpdate->id;
@@ -1327,13 +1325,13 @@ class RetailcrmHistory
     }
 
     /**
-     * Sets order status to 'outOfStock' and returns CRM status or nothing if status will not change
+     * Sets order status to 'outOfStock' and returns CRM status or false if status will not change
      *
      * @param array $crmOrder
-     * @param \OrderDetail $orderDetail
+     * @param \Order $cmsOrder
      * @param array $statuses
      *
-     * @return string
+     * @return string|false
      */
     private static function setOutOfStockStatus($crmOrder, $cmsOrder, $statuses)
     {
