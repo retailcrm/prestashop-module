@@ -182,6 +182,18 @@ class RetailcrmIcml
                     $e->appendChild($param);
                 }
             }
+
+            if (isset($offer['combination'])) {
+                foreach ($offer['combination'] as $id => $comb) {
+                    $param = $this->dd->createElement('param');
+                    $param->setAttribute('code', $id);
+                    $param->setAttribute('name', $comb['group_name']);
+                    $param->appendChild(
+                        $this->dd->createTextNode($comb['attribute_name'])
+                    );
+                    $e->appendChild($param);
+                }
+            }
         }
     }
 }

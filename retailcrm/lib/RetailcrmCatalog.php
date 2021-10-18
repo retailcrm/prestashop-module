@@ -221,7 +221,8 @@ class RetailcrmCatalog
                                 foreach ($combinations as $combination) {
                                     $arSet = [
                                         'group_name' => $combination['group_name'],
-                                        'attribute' => $combination['attribute_name'],
+                                        'id_attribute_group' => $combination['id_attribute_group'],
+                                        'attribute_name' => $combination['attribute_name'],
                                     ];
 
                                     $arComb[] = $arSet;
@@ -285,9 +286,14 @@ class RetailcrmCatalog
 
                             if (!empty($combinations)) {
                                 foreach ($arComb as $itemComb) {
-                                    $item[mb_strtolower($itemComb['group_name'])] = htmlspecialchars($itemComb['attribute']);
+                                    $item['combination'][$itemComb['id_attribute_group']] = [
+                                        'group_name' => mb_strtolower($itemComb['group_name']),
+                                        'attribute_name' => htmlspecialchars($itemComb['attribute_name']),
+                                    ];
                                 }
                             }
+
+                            unset($arComb);
 
                             yield RetailcrmTools::filter(
                                 'RetailcrmFilterProcessOffer',
