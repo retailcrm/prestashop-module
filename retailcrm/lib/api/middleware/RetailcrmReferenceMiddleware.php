@@ -29,57 +29,47 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-class RetailcrmProxy
+
+
+class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @var RetailcrmApiClientV5
+     * @inheritDoc
      */
-    private $client;
-
-    /**
-     * @var RetailcrmPipeline
-     */
-    private $pipeline;
-
-    public function __construct($url, $key)
+    public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
-        $this->client = new RetailcrmApiClientV5($url, $key);
+        /** @var RetailcrmApiResponse $response */
+        $response = $next($request);
 
-        $this->pipeline = new RetailcrmPipeline();
-        $this->pipeline
-            ->setMiddlewares(
-                RetailcrmTools::filter(
-                    'RetailcrmFilterMiddlewares',
-                    [
-                        RetailcrmExceptionMiddleware::class,
-                        RetailcrmLoggerMiddleware::class,
-                        RetailcrmReferenceMiddleware::class,
-                    ]
-                )
+        if (
+            $response->isSuccessful()
+            && (
+                $request->getMethod() === 'ordersCreate'
+                || $request->getMethod() === 'ordersEdit'
             )
-            ->setAction(function ($request) {
-                return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
-            })
-            ->build()
-        ;
-    }
+        ) {
+            $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
-    public function __call($method, $arguments)
-    {
-        $request = new RetailcrmApiRequest();
+            if (
+                $receiveOrderNumber
+                && isset($crmOrder['externalId'])
+                && isset($crmOrder['number'])
+            ) {
+                $crmOrder = $response->order;
 
-        $request->setApi($this->client)
-            ->setMethod($method)
-            ->setData($arguments)
-        ;
+                $object = new Order($crmOrder['externalId']);
+                $object->reference = $crmOrder['number'];
+                $object->update();
+            }
+        }
 
-        return $this->pipeline->run($request);
+        return $response;
     }
 }
