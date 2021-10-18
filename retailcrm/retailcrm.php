@@ -356,13 +356,12 @@ class RetailCRM extends Module
         $isSuccessful = true;
         $skippedOrders = [];
         RetailcrmExport::$api = $this->api;
-        $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         foreach ($orderIds as $orderId) {
             $response = false;
 
             try {
-                $response = RetailcrmExport::exportOrder($orderId, $receiveOrderNumber);
+                $response = RetailcrmExport::exportOrder($orderId);
             } catch (PrestaShopObjectNotFoundExceptionCore $e) {
                 $skippedOrders[] = $orderId;
             } catch (Exception $e) {
@@ -736,13 +735,12 @@ class RetailCRM extends Module
         }
 
         $status = json_decode(Configuration::get(static::STATUS), true);
-        $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         if (isset($params['orderStatus'])) {
             try {
                 RetailcrmExport::$api = $this->api;
 
-                return RetailcrmExport::exportOrder($params['order']->id, $receiveOrderNumber);
+                return RetailcrmExport::exportOrder($params['order']->id);
             } catch (Exception $e) {
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
                 RetailcrmLogger::writeNoCaller($e->getTraceAsString());

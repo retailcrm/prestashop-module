@@ -135,7 +135,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     '200',
                     json_encode(
                         [
-                            'order' => [],
+                            'success' => true,
+                            'order' => [
+                                'externalId' => $order->id,
+                                'number' => $updReference,
+                            ],
                         ]
                     )
                 )
