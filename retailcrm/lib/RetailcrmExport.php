@@ -360,6 +360,66 @@ class RetailcrmExport
     }
 
     /**
+     * @param int   $id
+     * @param false $receiveOrderNumber
+     * @return bool
+     * @throws PrestaShopObjectNotFoundExceptionCore
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    public static function exportOrder($id, $receiveOrderNumber = false)
+    {
+        if (!static::$api) {
+            return false;
+        }
+
+        $object = new Order($id);
+        $customer = new Customer($object->id_customer);
+        $apiResponse = static::$api->ordersGet($object->id);
+        $existingOrder = [];
+
+        if ($apiResponse->isSuccessful() && $apiResponse->offsetExists('order')) {
+            $existingOrder = $apiResponse['order'];
+        }
+
+        if (!Validate::isLoadedObject($object)) {
+            throw new PrestaShopObjectNotFoundExceptionCore('Order not found');
+        }
+
+        $orderBuilder = new RetailcrmOrderBuilder();
+        $crmOrder = $orderBuilder
+            ->defaultLangFromConfiguration()
+            ->setApi(static::$api)
+            ->setCmsOrder($object)
+            ->setCmsCustomer($customer)
+            ->buildOrderWithPreparedCustomer();
+
+        if (empty($crmOrder)) {
+            return false;
+        }
+        if (empty($existingOrder)) {
+            $response = static::$api->ordersCreate($crmOrder);
+
+            if ($receiveOrderNumber && $response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
+                $crmOrder = $response->order;
+                $object->reference = $crmOrder['number'];
+                $object->update();
+            }
+        } else {
+            $response = static::$api->ordersEdit($crmOrder);
+
+            if (empty($existingOrder['payments']) && !empty($crmOrder['payments'])) {
+                $payment = array_merge(reset($crmOrder['payments']), array(
+                    'order' => array('externalId' => $crmOrder['externalId'])
+                ));
+                static::$api->ordersPaymentCreate($payment);
+            }
+        }
+
+        return $response->isSuccessful();
+    }
+
+    /**
      * Returns false if inner state is not correct
      *
      * @return bool
