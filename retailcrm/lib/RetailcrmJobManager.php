@@ -298,7 +298,7 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (json_last_error() != JSON_ERROR_NONE) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $ran) {
@@ -370,7 +370,7 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (json_last_error() != JSON_ERROR_NONE) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $details) {
@@ -542,7 +542,7 @@ class RetailcrmJobManager
     {
         $error = error_get_last();
 
-        if (null !== $error && E_ERROR === $error['type']) {
+        if ($error !== null && $error['type'] === E_ERROR) {
             self::defaultShutdownHandler($error);
         }
     }
@@ -568,7 +568,7 @@ class RetailcrmJobManager
         if (is_callable(self::$customShutdownHandler)) {
             call_user_func_array(self::$customShutdownHandler, [$error]);
         } else {
-            if (null !== $error) {
+            if ($error !== null) {
                 $job = self::getCurrentJob();
                 if (!empty($job)) {
                     $lastRunsDetails = self::getLastRunDetails();

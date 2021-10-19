@@ -95,7 +95,7 @@ class RetailcrmReferences
 
         if (!empty($states)) {
             foreach ($states as $state) {
-                if (' ' != $state['name']) {
+                if ($state['name'] != ' ') {
                     $key = $state['id_order_state'];
                     $statusTypes[] = [
                         'type' => 'select',
@@ -220,27 +220,27 @@ class RetailcrmReferences
         }
 
         foreach ($modules as $module) {
-            if ((!empty($module->parent_class) && 'PaymentModule' == $module->parent_class)
+            if ((!empty($module->parent_class) && $module->parent_class == 'PaymentModule')
                 || in_array($module->id, $paymentModulesIds)
             ) {
                 if ($module->id) {
                     $module_id = (int) $module->id;
 
-                    if ('SimpleXMLElement' == !get_class($module)) {
+                    if (!get_class($module) == 'SimpleXMLElement') {
                         $module->country = [];
                     }
                     $countries = DB::getInstance()->executeS('SELECT id_country FROM ' . _DB_PREFIX_ . 'module_country WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
                     foreach ($countries as $country) {
                         $module->country[] = $country['id_country'];
                     }
-                    if ('SimpleXMLElement' == !get_class($module)) {
+                    if (!get_class($module) == 'SimpleXMLElement') {
                         $module->currency = [];
                     }
                     $currencies = DB::getInstance()->executeS('SELECT id_currency FROM ' . _DB_PREFIX_ . 'module_currency WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
                     foreach ($currencies as $currency) {
                         $module->currency[] = $currency['id_currency'];
                     }
-                    if ('SimpleXMLElement' == !get_class($module)) {
+                    if (!get_class($module) == 'SimpleXMLElement') {
                         $module->group = [];
                     }
                     $groups = DB::getInstance()->executeS('SELECT id_group FROM ' . _DB_PREFIX_ . 'module_group WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
@@ -253,7 +253,7 @@ class RetailcrmReferences
                     $module->group = null;
                 }
 
-                if (0 != $module->active || false === $active) {
+                if ($module->active != 0 || $active === false) {
                     $this->payment_modules[] = [
                         'id' => $module->id,
                         'code' => $module->name,
@@ -361,8 +361,8 @@ class RetailcrmReferences
             $response = $this->api->credentials();
 
             if (!($response instanceof RetailcrmApiResponse) || !$response->isSuccessful()
-                || 'access_selective' !== $response['siteAccess']
-                || 1 !== count($response['sitesAvailable'])
+                || $response['siteAccess'] !== 'access_selective'
+                || count($response['sitesAvailable']) !== 1
                 || !in_array('/api/reference/sites', $response['credentials'])
                 || !in_array('/api/reference/sites/{code}/edit', $response['credentials'])
             ) {

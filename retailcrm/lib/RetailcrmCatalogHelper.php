@@ -49,9 +49,9 @@ class RetailcrmCatalogHelper
         }
 
         while ($line = fgets($fileHandler)) {
-            if (false !== strpos($line, 'yml_catalog date=')) {
+            if (strpos($line, 'yml_catalog date=') !== false) {
                 preg_match_all('/date="([\d\- :]+)"/', $line, $matches);
-                if (2 == count($matches)) {
+                if (count($matches) == 2) {
                     $date = $matches[1][0];
                 }
                 break;
@@ -91,7 +91,7 @@ class RetailcrmCatalogHelper
     {
         $icmlInfo = json_decode((string) Configuration::get(self::ICML_INFO_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (json_last_error() != JSON_ERROR_NONE) {
             $icmlInfo = [];
         }
         $lastGenerated = DateTime::createFromFormat('Y-m-d H:i:s', self::getIcmlFileDate());
@@ -116,7 +116,7 @@ class RetailcrmCatalogHelper
 
         $api = RetailcrmTools::getApiClient();
 
-        if (null !== $api) {
+        if ($api !== null) {
             $reference = new RetailcrmReferences($api);
 
             $site = $reference->getSite();

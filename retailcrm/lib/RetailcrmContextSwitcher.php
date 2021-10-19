@@ -120,7 +120,7 @@ class RetailcrmContextSwitcher
     {
         $idShop = Shop::getContextShopID();
 
-        if (Shop::isFeatureActive() && null === $idShop) {
+        if (Shop::isFeatureActive() && $idShop === null) {
             return Shop::getShops(true, Shop::getContextShopGroupID(true));
         } else {
             return [Shop::getShop($idShop)];

@@ -35,7 +35,11 @@ return (new PhpCsFixer\Config())
         ],
         'phpdoc_summary' => false,
         'psr_autoloading' => false,
-        'yoda_style' => false,
+        'yoda_style' => [
+            'equal' => false,
+            'identical' => false,
+            'less_and_greater' => false
+        ],
         'protected_to_private' => false,
         'self_accessor' => false,
         'single_line_throw' => false,

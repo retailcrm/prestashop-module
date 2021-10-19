@@ -59,7 +59,7 @@ function retailcrmCliInterruptHandler($signo)
     exit(1);
 }
 
-if ('cli' == php_sapi_name()) {
+if (php_sapi_name() == 'cli') {
     $cli = new RetailcrmCli(__FILE__);
     $cli->execute('retailcrmCliInterruptHandler');
 } else {

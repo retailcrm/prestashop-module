@@ -231,7 +231,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             throw new InvalidArgumentException("Property $field not exist in the object");
         }
 
-        if (null !== $value) {
+        if ($value !== null) {
             $this->customerAddress->$field = $value;
         } else {
             $this->customerAddress->$field = $default;
@@ -249,7 +249,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $text, 2);
 
             $this->setAddressField('address1', $addressLine[0], '--');
-            if (1 == count($addressLine)) {
+            if (count($addressLine) == 1) {
                 $this->setAddressField('address2', '');
             } else {
                 $this->setAddressField('address2', $addressLine[1], '');

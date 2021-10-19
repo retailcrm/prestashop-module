@@ -435,7 +435,7 @@ class RetailcrmOrderBuilder
                 return $crmCorporate;
             }
 
-            if (0 == count($contactList['contacts'])) {
+            if (count($contactList['contacts']) == 0) {
                 $contactData = [
                     'isMain' => false,
                     'customer' => [
@@ -790,7 +790,7 @@ class RetailcrmOrderBuilder
             if ($contacts
                 && $contacts->isSuccessful()
                 && $contacts->offsetExists('contacts')
-                && 1 == count($contacts['contacts'])
+                && count($contacts['contacts']) == 1
             ) {
                 $contactPersonExternalId = $this->cmsCustomer->id;
             }
@@ -848,13 +848,13 @@ class RetailcrmOrderBuilder
         $sendOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
         $orderNumber = $sendOrderNumber ? $order->reference : null;
 
-        if (false === Module::getInstanceByName('advancedcheckout')) {
+        if (Module::getInstanceByName('advancedcheckout') === false) {
             $paymentType = $order->module;
         } else {
             $paymentType = $order->payment;
         }
 
-        if (0 == $order->current_state) {
+        if ($order->current_state == 0) {
             $order_status = $statusExport;
 
             if (!$isStatusExport) {
@@ -893,7 +893,7 @@ class RetailcrmOrderBuilder
         $addressDelivery = new Address($order->id_address_delivery);
         $addressInvoice = new Address($order->id_address_invoice);
 
-        if (is_null($addressDelivery->id) || true === $preferCustomerAddress) {
+        if (is_null($addressDelivery->id) || $preferCustomerAddress === true) {
             $addressDelivery = array_filter(
                 $addressCollection,
                 function ($v) use ($customer) {
@@ -901,7 +901,7 @@ class RetailcrmOrderBuilder
                 }
             );
 
-            if (is_array($addressDelivery) && 1 == count($addressDelivery)) {
+            if (is_array($addressDelivery) && count($addressDelivery) == 1) {
                 $addressDelivery = reset($addressDelivery);
             }
         }
@@ -945,7 +945,7 @@ class RetailcrmOrderBuilder
         } else {
             $totalShipping = $dataFromCart ? $cart->getCarrierCost($idCarrier) : $order->total_shipping;
 
-            if (!empty($totalShipping) && 0 != $totalShipping) {
+            if (!empty($totalShipping) && $totalShipping != 0) {
                 $totalShippingWithoutTax = $dataFromCart
                     ? $totalShipping - $cart->getCarrierCost($idCarrier, false)
                     : $order->total_shipping_tax_excl;
@@ -980,7 +980,7 @@ class RetailcrmOrderBuilder
 
         $comment = $order->getFirstMessage();
 
-        if (false !== $comment) {
+        if ($comment !== false) {
             $crmOrder['customerComment'] = $comment;
         }
 
@@ -1064,7 +1064,7 @@ class RetailcrmOrderBuilder
                 'purchasePrice' => round($product['purchase_supplier_price'], 2),
             ];
 
-            if (true == Configuration::get('PS_TAX') && isset($product['product_price_wt'])) {
+            if (Configuration::get('PS_TAX') == true && isset($product['product_price_wt'])) {
                 $item['initialPrice'] = round($product['product_price_wt'], 2);
             }
 
@@ -1194,11 +1194,11 @@ class RetailcrmOrderBuilder
                     ? $object->date_add : date('Y-m-d H:i:s'),
                 'birthday' => RetailcrmTools::verifyDate($object->birthday, 'Y-m-d')
                     ? $object->birthday : '',
-                'sex' => '1' == $object->id_gender ? 'male' : ('2' == $object->id_gender ? 'female' : ''),
+                'sex' => $object->id_gender == '1' ? 'male' : ($object->id_gender == '2' ? 'female' : ''),
             ],
             $address
         ), function ($value) {
-            return !('' === $value || null === $value || (is_array($value) ? 0 == count($value) : false));
+            return !($value === '' || $value === null || (is_array($value) ? count($value) == 0 : false));
         });
 
         return RetailcrmTools::filter(
@@ -1306,15 +1306,15 @@ class RetailcrmOrderBuilder
     public static function isGiftItem($item)
     {
         if (isset($item['offer'], $item['offer']['externalId'])
-            && RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID == $item['offer']['externalId']
+            && $item['offer']['externalId'] == RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID
         ) {
             return true;
         }
 
         if (isset($item['externalIds'])) {
             foreach ($item['externalIds'] as $externalId) {
-                if ('prestashop' == $externalId['code']
-                    && RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID == $externalId['value']
+                if ($externalId['code'] == 'prestashop'
+                    && $externalId['value'] == RetailcrmReferences::GIFT_WRAPPING_ITEM_EXTERNAL_ID
                 ) {
                     return true;
                 }

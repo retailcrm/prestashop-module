@@ -160,7 +160,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (false !== static::$api->ordersCreate($order)) {
+                if (static::$api->ordersCreate($order) !== false) {
                     $cart->date_upd = date('Y-m-d H:i:s');
                     $cart->save();
                 }
@@ -175,7 +175,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (false !== static::$api->ordersEdit($order)) {
+                if (static::$api->ordersEdit($order) !== false) {
                     static::registerAbandonedCartSync($cart->id);
                 }
             }
@@ -219,7 +219,7 @@ class RetailcrmCartUploader
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
-            if (0 == $currentCartTotal) {
+            if ($currentCartTotal == 0) {
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
@@ -236,7 +236,7 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
+            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {

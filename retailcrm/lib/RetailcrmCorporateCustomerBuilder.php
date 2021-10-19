@@ -200,14 +200,14 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
         $this->buildCustomer();
 
         if (!empty($this->corporateAddress)) {
-            if (empty($this->corporateAddress->alias) || 'default' == $this->corporateAddress->alias) {
+            if (empty($this->corporateAddress->alias) || $this->corporateAddress->alias == 'default') {
                 $this->corporateAddress->alias = '--';
             }
 
             $this->corporateAddress->vat_number = !empty($this->companyInn) ? $this->companyInn : '';
             $this->corporateAddress->company = !empty($this->companyName) ? $this->companyName : '';
 
-            if (!empty($this->companyName) && (empty($this->corporateCustomer->firstname) || '--' == $this->corporateCustomer->firstname)) {
+            if (!empty($this->companyName) && (empty($this->corporateCustomer->firstname) || $this->corporateCustomer->firstname == '--')) {
                 $this->corporateCustomer->firstname = $this->companyName;
             }
         }

@@ -48,7 +48,7 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_3_3_2($module)
 {
-    if ('retailcrm' != $module->name) {
+    if ($module->name != 'retailcrm') {
         return false;
     }
 
@@ -113,8 +113,8 @@ function upgrade_module_3_3_2($module)
         }
 
         if (!$response->isSuccessful()
-            || 'access_selective' !== $response['siteAccess']
-            || 1 !== count($response['sitesAvailable'])
+            || $response['siteAccess'] !== 'access_selective'
+            || count($response['sitesAvailable']) !== 1
             || !in_array('/api/reference/sites', $response['credentials'])
             || !in_array('/api/reference/sites/{code}/edit', $response['credentials'])
         ) {

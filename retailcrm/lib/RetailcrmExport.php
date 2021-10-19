@@ -183,7 +183,7 @@ class RetailcrmExport
 
             time_nanosleep(0, 250000000);
 
-            if (50 == count($orders)) {
+            if (count($orders) == 50) {
                 static::$api->ordersUpload($orders);
                 $orders = [];
             }
@@ -351,7 +351,7 @@ class RetailcrmExport
                     RetailcrmLogger::output($exception->getMessage());
                 }
 
-                if (50 == count($customers)) {
+                if (count($customers) == 50) {
                     static::$api->customersUpload($customers);
                     $customers = [];
 

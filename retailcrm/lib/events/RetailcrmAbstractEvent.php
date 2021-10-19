@@ -93,7 +93,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function isRunning()
     {
-        return !$this->force && ('' !== RetailcrmJobManager::getCurrentJob() || '' !== RetailcrmCli::getCurrentJob());
+        return !$this->force && (RetailcrmJobManager::getCurrentJob() !== '' || RetailcrmCli::getCurrentJob() !== '');
     }
 
     /**
