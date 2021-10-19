@@ -397,6 +397,7 @@ class RetailcrmExport
         if (empty($crmOrder)) {
             return false;
         }
+
         if (empty($existingOrder)) {
             $response = static::$api->ordersCreate($crmOrder);
 

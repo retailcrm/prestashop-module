@@ -93,6 +93,9 @@ class RetailCRMTest extends RetailcrmTestCase
         $order = new Order(1);
         $customer = new Customer($order->id_customer);
         $params = array('order' => $order, 'customer' => $customer);
+        $reference = $order->reference;
+        $updReference = 'test';
+
         $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
             200,
             json_encode(array(
@@ -101,7 +104,26 @@ class RetailCRMTest extends RetailcrmTestCase
             ))
         ));
 
+        $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode(array(
+                'success' => true,
+                'order' => array(
+                    'number' => $updReference,
+                ),
+            ))
+        ));
+
+
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
+
         $this->assertTrue($this->retailcrmModule->hookActionOrderEdited($params));
+        $this->assertEquals($reference, $order->reference);
+
+        Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, true);
+
+        $this->assertTrue($this->retailcrmModule->hookActionOrderEdited($params));
+        $this->assertEquals($updReference, $order->reference);
     }
 
     /**
@@ -135,6 +157,14 @@ class RetailCRMTest extends RetailcrmTestCase
                 'order' => $order,
                 'cart' => $cart,
             );
+
+            $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
+                200,
+                json_encode(array(
+                    'success' => true,
+                    'order' => array()
+                ))
+            ));
         }
 
         $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
