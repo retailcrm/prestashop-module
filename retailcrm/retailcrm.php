@@ -35,6 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
+
 if (function_exists('date_default_timezone_set') && function_exists('date_default_timezone_get')) {
     date_default_timezone_set(@date_default_timezone_get());
 }
@@ -43,7 +44,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once __DIR__ . '/bootstrap.php';
+require_once(dirname(__FILE__) . '/bootstrap.php');
 
 class RetailCRM extends Module
 {
@@ -51,6 +52,7 @@ class RetailCRM extends Module
     const API_KEY = 'RETAILCRM_API_TOKEN';
     const DELIVERY = 'RETAILCRM_API_DELIVERY';
     const STATUS = 'RETAILCRM_API_STATUS';
+    const OUT_OF_STOCK_STATUS = 'RETAILCRM_API_OUT_OF_STOCK_STATUS';
     const PAYMENT = 'RETAILCRM_API_PAYMENT';
     const DELIVERY_DEFAULT = 'RETAILCRM_API_DELIVERY_DEFAULT';
     const PAYMENT_DEFAULT = 'RETAILCRM_API_PAYMENT_DEFAULT';
@@ -87,7 +89,7 @@ class RetailCRM extends Module
         'RetailcrmIcmlUpdateUrlEvent' => 'Icml update URL',
         'RetailcrmSyncEvent' => 'History synchronization',
         'RetailcrmInventoriesEvent' => 'Inventories uploads',
-        'RetailcrmClearLogsEvent' => 'Clearing logs',
+        'RetailcrmClearLogsEvent' => 'Clearing logs'
     ];
 
     const TABS_TO_VALIDATE = [
@@ -99,22 +101,22 @@ class RetailCRM extends Module
     ];
 
     /**
-     * @var array
+     * @var array $templateErrors
      */
     private $templateErrors;
 
     /**
-     * @var array
+     * @var array $templateWarnings
      */
     private $templateWarnings;
 
     /**
-     * @var array
+     * @var array $templateConfirms
      */
     private $templateConfirms;
 
     /**
-     * @var array
+     * @var array $templateInfos
      */
     private $templateInfos;
 
@@ -152,7 +154,7 @@ class RetailCRM extends Module
         $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
         $this->apiUrl = Configuration::get(static::API_URL);
         $this->apiKey = Configuration::get(static::API_KEY);
-        $this->ps_versions_compliancy = ['min' => '1.6.1.0', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = array('min' => '1.6.1.0', 'max' => _PS_VERSION_);
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = RetailcrmLogger::getLogFile();
         $this->module_key = 'dff3095326546f5fe8995d9e86288491';
@@ -182,19 +184,19 @@ class RetailCRM extends Module
             Shop::setContext(Shop::CONTEXT_ALL);
         }
 
-        return
-            parent::install()
-            && $this->registerHook('newOrder')
-            && $this->registerHook('actionOrderStatusPostUpdate')
-            && $this->registerHook('actionPaymentConfirmation')
-            && $this->registerHook('actionCustomerAccountAdd')
-            && $this->registerHook('actionOrderEdited')
-            && $this->registerHook('actionCarrierUpdate')
-            && $this->registerHook('header')
-            && ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
-            && ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
-            && $this->installDB()
-        ;
+        return (
+            parent::install() &&
+            $this->registerHook('newOrder') &&
+            $this->registerHook('actionOrderStatusPostUpdate') &&
+            $this->registerHook('actionPaymentConfirmation') &&
+            $this->registerHook('actionCustomerAccountAdd') &&
+            $this->registerHook('actionOrderEdited') &&
+            $this->registerHook('actionCarrierUpdate') &&
+            $this->registerHook('header') &&
+            ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true) &&
+            ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true) &&
+            $this->installDB()
+        );
     }
 
     public function hookHeader()
@@ -223,49 +225,50 @@ class RetailCRM extends Module
             $this->integrationModule($api, $clientId, false);
         }
 
-        return parent::uninstall()
-            && Configuration::deleteByName(static::API_URL)
-            && Configuration::deleteByName(static::API_KEY)
-            && Configuration::deleteByName(static::DELIVERY)
-            && Configuration::deleteByName(static::STATUS)
-            && Configuration::deleteByName(static::PAYMENT)
-            && Configuration::deleteByName(static::DELIVERY_DEFAULT)
-            && Configuration::deleteByName(static::PAYMENT_DEFAULT)
-            && Configuration::deleteByName(static::STATUS_EXPORT)
-            && Configuration::deleteByName(static::CLIENT_ID)
-            && Configuration::deleteByName(static::COLLECTOR_ACTIVE)
-            && Configuration::deleteByName(static::COLLECTOR_KEY)
-            && Configuration::deleteByName(static::SYNC_CARTS_ACTIVE)
-            && Configuration::deleteByName(static::SYNC_CARTS_STATUS)
-            && Configuration::deleteByName(static::SYNC_CARTS_DELAY)
-            && Configuration::deleteByName(static::UPLOAD_ORDERS)
-            && Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM)
-            && Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS)
-            && Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS)
-            && Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING)
-            && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING)
-            && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING)
-            && Configuration::deleteByName(static::ENABLE_DEBUG_MODE)
-            && Configuration::deleteByName(static::ENABLE_WEB_JOBS)
-            && Configuration::deleteByName('RETAILCRM_LAST_SYNC')
-            && Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC')
-            && Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC')
-            && Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME)
-            && Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME)
-            && Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME)
-            && Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME)
-            && Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK)
-            && Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI)
-            && $this->uninstallDB();
+        return parent::uninstall() &&
+            Configuration::deleteByName(static::API_URL) &&
+            Configuration::deleteByName(static::API_KEY) &&
+            Configuration::deleteByName(static::DELIVERY) &&
+            Configuration::deleteByName(static::STATUS) &&
+            Configuration::deleteByName(static::OUT_OF_STOCK_STATUS) &&
+            Configuration::deleteByName(static::PAYMENT) &&
+            Configuration::deleteByName(static::DELIVERY_DEFAULT) &&
+            Configuration::deleteByName(static::PAYMENT_DEFAULT) &&
+            Configuration::deleteByName(static::STATUS_EXPORT) &&
+            Configuration::deleteByName(static::CLIENT_ID) &&
+            Configuration::deleteByName(static::COLLECTOR_ACTIVE) &&
+            Configuration::deleteByName(static::COLLECTOR_KEY) &&
+            Configuration::deleteByName(static::SYNC_CARTS_ACTIVE) &&
+            Configuration::deleteByName(static::SYNC_CARTS_STATUS) &&
+            Configuration::deleteByName(static::SYNC_CARTS_DELAY) &&
+            Configuration::deleteByName(static::UPLOAD_ORDERS) &&
+            Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM) &&
+            Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS) &&
+            Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS) &&
+            Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING) &&
+            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING) &&
+            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING) &&
+            Configuration::deleteByName(static::ENABLE_DEBUG_MODE) &&
+            Configuration::deleteByName(static::ENABLE_WEB_JOBS) &&
+            Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
+            Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
+            Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
+            Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
+            Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
+            $this->uninstallDB();
     }
 
     public function installDB()
     {
         return Db::getInstance()->execute(
-            'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts` (
+            'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'retailcrm_abandonedcarts` (
                     `id_cart` INT UNSIGNED UNIQUE NOT NULL,
                     `last_uploaded` DATETIME,
-                    FOREIGN KEY (id_cart) REFERENCES ' . _DB_PREFIX_ . 'cart (id_cart)
+                    FOREIGN KEY (id_cart) REFERENCES '._DB_PREFIX_.'cart (id_cart)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'
@@ -274,7 +277,7 @@ class RetailCRM extends Module
 
     public function uninstallDB()
     {
-        return Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`;');
+        return Db::getInstance()->execute('DROP TABLE IF EXISTS `'._DB_PREFIX_.'retailcrm_abandonedcarts`;');
     }
 
     public function getContent()
@@ -285,13 +288,13 @@ class RetailCRM extends Module
 
         if (Tools::isSubmit('submit' . $this->name)) {
             // todo all those vars & ifs to one $command var and check in switch
-            $jobName = (string) (Tools::getValue(static::RUN_JOB));
-            $ordersIds = (string) (Tools::getValue(static::UPLOAD_ORDERS));
-            $exportOrders = (int) (Tools::getValue(static::EXPORT_ORDERS));
-            $exportCustomers = (int) (Tools::getValue(static::EXPORT_CUSTOMERS));
-            $updateSinceId = (bool) (Tools::getValue(static::UPDATE_SINCE_ID));
-            $downloadLogs = (bool) (Tools::getValue(static::DOWNLOAD_LOGS));
-            $resetJobs = (bool) (Tools::getValue(static::RESET_JOBS));
+            $jobName = (string)(Tools::getValue(static::RUN_JOB));
+            $ordersIds = (string)(Tools::getValue(static::UPLOAD_ORDERS));
+            $exportOrders = (int)(Tools::getValue(static::EXPORT_ORDERS));
+            $exportCustomers = (int)(Tools::getValue(static::EXPORT_CUSTOMERS));
+            $updateSinceId = (bool)(Tools::getValue(static::UPDATE_SINCE_ID));
+            $downloadLogs = (bool)(Tools::getValue(static::DOWNLOAD_LOGS));
+            $resetJobs = (bool)(Tools::getValue(static::RESET_JOBS));
 
             if (!empty($ordersIds)) {
                 $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
@@ -326,8 +329,7 @@ class RetailCRM extends Module
             ->setWarnings($this->getWarningMessage())
             ->setInformations($this->getInformationMessages())
             ->setConfirmations($this->getConfirmationMessages())
-            ->render(__FILE__)
-        ;
+            ->render(__FILE__);
     }
 
     public function uploadOrders($orderIds)
@@ -337,12 +339,12 @@ class RetailCRM extends Module
         }
 
         if (count($orderIds) < 1) {
-            return $this->displayError($this->l('At least one order ID should be specified'));
+            return $this->displayError($this->l("At least one order ID should be specified"));
         }
 
         $apiUrl = Configuration::get(static::API_URL);
         $apiKey = Configuration::get(static::API_KEY);
-        $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
         $isSuccessful = true;
 
         if (!empty($apiUrl) && !empty($apiKey)) {
@@ -354,16 +356,16 @@ class RetailCRM extends Module
         }
 
         $result = '';
-        $skippedOrders = [];
+        $skippedOrders = array();
 
         foreach ($orderIds as $orderId) {
             $object = new Order($orderId);
             $customer = new Customer($object->id_customer);
             $apiResponse = $this->api->ordersGet($object->id);
-            $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : [];
+            $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : array();
 
             if (!Validate::isLoadedObject($object)) {
-                $skippedOrders[] = $orderId;
+                array_push($skippedOrders, $orderId);
                 continue;
             }
 
@@ -374,8 +376,7 @@ class RetailCRM extends Module
                     ->setApi($this->api)
                     ->setCmsOrder($object)
                     ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer()
-                ;
+                    ->buildOrderWithPreparedCustomer();
             } catch (\InvalidArgumentException $exception) {
                 $result .= $this->displayError($exception->getMessage());
                 RetailcrmLogger::writeCaller(__METHOD__, $exception->getTraceAsString());
@@ -426,7 +427,6 @@ class RetailCRM extends Module
 
     /**
      * @param string $jobName
-     *
      * @return string
      */
     public function runJob($jobName)
@@ -459,13 +459,12 @@ class RetailCRM extends Module
 
     public function runJobMultistore($jobName)
     {
-        RetailcrmContextSwitcher::runInContext([$this, 'runJob'], [$jobName]);
+        RetailcrmContextSwitcher::runInContext(array($this, 'runJob'), array($jobName));
     }
 
     /**
      * @param int $step
      * @param string $entity
-     *
      * @return bool
      */
     public function export($step, $entity = 'order')
@@ -474,7 +473,7 @@ class RetailCRM extends Module
             return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
         }
 
-        --$step;
+        $step--;
         if ($step < 0) {
             return RetailcrmJsonResponse::invalidResponse('Invalid request data');
         }
@@ -493,7 +492,7 @@ class RetailCRM extends Module
 
             RetailcrmExport::$ordersOffset = $stepSize;
             RetailcrmExport::exportOrders($step * $stepSize, $stepSize);
-        // todo maybe save current step to database
+            // todo maybe save current step to database
         } elseif ($entity === 'customer') {
             $stepSize = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
 
@@ -530,7 +529,7 @@ class RetailCRM extends Module
             return false;
         }
 
-        $name = (string) (Tools::getValue(static::DOWNLOAD_LOGS_NAME));
+        $name = (string)(Tools::getValue(static::DOWNLOAD_LOGS_NAME));
         if (!empty($name)) {
             if (false === ($filePath = RetailcrmLogger::checkFileName($name))) {
                 return false;
@@ -571,7 +570,7 @@ class RetailCRM extends Module
      */
     public function resetJobs()
     {
-        $errors = [];
+        $errors = array();
         try {
             if (!RetailcrmJobManager::reset()) {
                 $errors[] = 'Job manager internal state was NOT cleared.';
@@ -625,7 +624,7 @@ class RetailCRM extends Module
             $addressBuilder = new RetailcrmAddressBuilder();
 
             /** @var Address|\AddressCore|array $address */
-            $address = [];
+            $address = array();
 
             if (isset($customerSend['externalId'])) {
                 $customerData = $this->api->customersGet($customerSend['externalId']);
@@ -670,8 +669,7 @@ class RetailCRM extends Module
                     $addressBuilder
                         ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
                         ->setAddressId($cart->id_address_invoice)
-                        ->build()
-                    ;
+                        ->build();
                 }
 
                 $customerSend = RetailcrmTools::mergeCustomerAddress($customerSend, $addressBuilder->getDataArray());
@@ -689,7 +687,7 @@ class RetailCRM extends Module
     public function hookActionValidateCustomerAddressForm($params)
     {
         $customer = new Customer($params['cart']->id_customer);
-        $customerAddress = ['customer' => $customer, 'cart' => $params['cart']];
+        $customerAddress = array('customer' => $customer, 'cart' => $params['cart']);
 
         return $this->hookActionCustomerAccountUpdate($customerAddress);
     }
@@ -758,27 +756,27 @@ class RetailCRM extends Module
                 /** @var Order|\OrderCore $order */
                 $order = $params['order'];
 
-                $this->hookNewOrder([
+                $this->hookNewOrder(array(
                     'orderStatus' => $order->current_state,
                     'id_order' => (int) $order->id,
                     'order' => $order,
                     'cart' => new Cart($order->id_cart),
-                    'customer' => new Customer($order->id_customer),
-                ]);
+                    'customer' => new Customer($order->id_customer)
+                ));
 
                 return false;
             }
 
-            $order = [
+            $order = array(
                 'externalId' => $params['order']->id,
                 'firstName' => $params['customer']->firstname,
                 'lastName' => $params['customer']->lastname,
                 'email' => $params['customer']->email,
                 'createdAt' => RetailcrmTools::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
                     ? $params['order']->date_add : date('Y-m-d H:i:s'),
-                'delivery' => ['cost' => $params['order']->total_shipping],
-                'discountManualAmount' => round($params['order']->total_discounts, 2),
-            ];
+                'delivery' => array('cost' => $params['order']->total_shipping),
+                'discountManualAmount' => round($params['order']->total_discounts, 2)
+            );
 
             if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
                 $order['discountManualAmount'] = $params['order']->total_paid;
@@ -799,18 +797,18 @@ class RetailCRM extends Module
                     $productId = $item['product_id'];
                 }
 
-                $order['items'][] = [
-                    'externalIds' => [
-                        [
-                            'code' => 'prestashop',
-                            'value' => $productId . '_' . $item['id_order_detail'],
-                        ],
-                    ],
+                $order['items'][] = array(
+                    "externalIds" => array(
+                        array(
+                            'code' =>'prestashop',
+                            'value' => $productId."_".$item['id_order_detail'],
+                        )
+                    ),
                     'initialPrice' => $item['unit_price_tax_incl'],
                     'quantity' => $item['product_quantity'],
-                    'offer' => ['externalId' => $productId],
+                    'offer' => array('externalId' => $productId),
                     'productName' => $item['product_name'],
-                ];
+                );
             }
 
             $order['customer']['externalId'] = $params['order']->id_customer;
@@ -825,14 +823,14 @@ class RetailCRM extends Module
     public function hookActionOrderStatusPostUpdate($params)
     {
         $status = json_decode(Configuration::get(static::STATUS), true);
-        $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         if (isset($params['orderStatus'])) {
             $cmsOrder = $params['order'];
             $cart = $params['cart'];
             $customer = $params['customer'];
             $response = $this->api->ordersGet(RetailcrmTools::getCartOrderExternalId($cart));
-            $crmOrder = isset($response['order']) ? $response['order'] : [];
+            $crmOrder = isset($response['order']) ? $response['order'] : array();
             $orderBuilder = new RetailcrmOrderBuilder();
 
             try {
@@ -842,8 +840,7 @@ class RetailCRM extends Module
                     ->setCmsOrder($cmsOrder)
                     ->setCmsCart($cart)
                     ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer()
-                ;
+                    ->buildOrderWithPreparedCustomer();
             } catch (\InvalidArgumentException $exception) {
                 RetailcrmLogger::writeCaller(
                     'hookActionOrderStatusPostUpdate',
@@ -859,9 +856,9 @@ class RetailCRM extends Module
                 $this->api->ordersEdit($order, 'id');
 
                 if (empty($crmOrder['payments']) && !empty($order['payments'])) {
-                    $payment = array_merge(reset($order['payments']), [
-                        'order' => ['externalId' => $order['externalId']],
-                    ]);
+                    $payment = array_merge(reset($order['payments']), array(
+                        'order' => array('externalId' => $order['externalId'])
+                    ));
                     $this->api->ordersPaymentCreate($payment);
                 }
             } else {
@@ -884,10 +881,10 @@ class RetailCRM extends Module
 
             if (isset($orderStatus)) {
                 $this->api->ordersEdit(
-                    [
+                    array(
                         'externalId' => $params['id_order'],
-                        'status' => $orderStatus,
-                    ]
+                        'status' => $orderStatus
+                    )
                 );
 
                 return true;
@@ -966,16 +963,16 @@ class RetailCRM extends Module
         if (isset($updatePayment)) {
             $this->api->ordersPaymentEdit($updatePayment, 'id');
         } else {
-            $createPayment = [
+            $createPayment = array(
                 'externalId' => $params['paymentCC']->id,
-                'amount' => $params['paymentCC']->amount,
-                'paidAt' => $params['paymentCC']->date_add,
-                'type' => $paymentType,
-                'status' => $status,
-                'order' => [
+                'amount'     => $params['paymentCC']->amount,
+                'paidAt'     => $params['paymentCC']->date_add,
+                'type'       => $paymentType,
+                'status'     => $status,
+                'order'      => array(
                     'externalId' => $externalId,
-                ],
-            ];
+                ),
+            );
 
             $this->api->ordersPaymentCreate($createPayment);
         }
@@ -996,12 +993,13 @@ class RetailCRM extends Module
         $consultantCode = (string) Tools::getValue(static::CONSULTANT_SCRIPT);
 
         if (!empty($url) && !empty($apiKey)) {
-            $settings = [
+            $settings  = array(
                 'url' => rtrim($url, '/'),
                 'apiKey' => $apiKey,
                 'address' => (string) (Tools::getValue(static::API_URL)),
                 'delivery' => json_encode(Tools::getValue(static::DELIVERY)),
                 'status' => json_encode(Tools::getValue(static::STATUS)),
+                'outOfStockStatus' => json_encode(Tools::getValue(static::OUT_OF_STOCK_STATUS)),
                 'payment' => json_encode(Tools::getValue(static::PAYMENT)),
                 'deliveryDefault' => json_encode(Tools::getValue(static::DELIVERY_DEFAULT)),
                 'paymentDefault' => json_encode(Tools::getValue(static::PAYMENT_DEFAULT)),
@@ -1018,8 +1016,8 @@ class RetailCRM extends Module
                 'clientId' => Configuration::get(static::CLIENT_ID),
                 'synchronizeCartsActive' => (Tools::getValue(static::SYNC_CARTS_ACTIVE) !== false),
                 'synchronizedCartStatus' => (string) (Tools::getValue(static::SYNC_CARTS_STATUS)),
-                'synchronizedCartDelay' => (string) (Tools::getValue(static::SYNC_CARTS_DELAY)),
-            ];
+                'synchronizedCartDelay' => (string) (Tools::getValue(static::SYNC_CARTS_DELAY))
+            );
 
             $output .= $this->validateForm($settings, $output);
 
@@ -1028,6 +1026,7 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::API_KEY, $settings['apiKey']);
                 Configuration::updateValue(static::DELIVERY, $settings['delivery']);
                 Configuration::updateValue(static::STATUS, $settings['status']);
+                Configuration::updateValue(static::OUT_OF_STOCK_STATUS, $settings['outOfStockStatus']);
                 Configuration::updateValue(static::PAYMENT, $settings['payment']);
                 Configuration::updateValue(static::DELIVERY_DEFAULT, $settings['deliveryDefault']);
                 Configuration::updateValue(static::PAYMENT_DEFAULT, $settings['paymentDefault']);
@@ -1082,9 +1081,9 @@ class RetailCRM extends Module
      *
      * @param \RetailcrmProxy $apiClient
      * @param string $clientId
-     * @param bool $active
+     * @param boolean $active
      *
-     * @return bool
+     * @return boolean
      */
     private function integrationModule($apiClient, $clientId, $active = true)
     {
@@ -1093,15 +1092,15 @@ class RetailCRM extends Module
         $integrationCode = 'prestashop';
         $name = 'PrestaShop';
         $accountUrl = $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-        $configuration = [
+        $configuration = array(
             'clientId' => $clientId,
             'code' => $integrationCode . '-' . $clientId,
             'integrationCode' => $integrationCode,
             'active' => $active,
             'name' => $name,
             'logo' => $logo,
-            'accountUrl' => $accountUrl,
-        ];
+            'accountUrl' => $accountUrl
+        );
         $response = $apiClient->integrationModulesEdit($configuration);
 
         if (!$response) {
@@ -1202,12 +1201,12 @@ class RetailCRM extends Module
 
     public function validateStoredSettings()
     {
-        $output = [];
-        $checkApiMethods = [
+        $output = array();
+        $checkApiMethods = array(
             'delivery' => 'getApiDeliveryTypes',
             'statuses' => 'getApiStatuses',
             'payment' => 'getApiPaymentTypes',
-        ];
+        );
 
         foreach (self::TABS_TO_VALIDATE as $tabName => $settingName) {
             $storedValues = Tools::getIsset($settingName)
@@ -1219,12 +1218,12 @@ class RetailCRM extends Module
                     $output[] = $tabName;
                 } else {
                     if (array_key_exists($tabName, $checkApiMethods)) {
-                        $crmValues = call_user_func([$this->reference, $checkApiMethods[$tabName]]);
+                        $crmValues = call_user_func(array($this->reference, $checkApiMethods[$tabName]));
                         $crmCodes = array_column($crmValues, 'id_option');
 
                         if (!empty(array_diff($storedValues, $crmCodes))) {
                             $output[] = $tabName;
-                        }
+                        };
                     }
                 }
             }
@@ -1289,7 +1288,7 @@ class RetailCRM extends Module
      */
     private function validateCatalogMultistore()
     {
-        $results = RetailcrmContextSwitcher::runInContext([$this, 'validateCatalog']);
+        $results = RetailcrmContextSwitcher::runInContext(array($this, 'validateCatalog'));
         $results = array_filter($results, function ($item) {
             return !$item;
         });
@@ -1361,7 +1360,7 @@ class RetailCRM extends Module
     private static function requireModulesCache()
     {
         if (file_exists(static::getModulesCache())) {
-            return require_once static::getModulesCache();
+            return require_once(static::getModulesCache());
         }
 
         return false;
@@ -1401,34 +1400,35 @@ class RetailCRM extends Module
         $syncCartsDelay = (string) (Configuration::get(static::SYNC_CARTS_DELAY));
 
         // Use 15 minutes as default interval but don't change immediate interval to it if user already made decision
-        if (empty($syncCartsDelay) && $syncCartsDelay !== '0') {
-            $syncCartsDelay = '900';
+        if (empty($syncCartsDelay) && $syncCartsDelay !== "0") {
+            $syncCartsDelay = "900";
         }
 
-        return [
-            'url' => (string) (Configuration::get(static::API_URL)),
-            'apiKey' => (string) (Configuration::get(static::API_KEY)),
+        return array(
+            'url' => (string)(Configuration::get(static::API_URL)),
+            'apiKey' => (string)(Configuration::get(static::API_KEY)),
             'delivery' => json_decode(Configuration::get(static::DELIVERY), true),
             'status' => json_decode(Configuration::get(static::STATUS), true),
+            'outOfStockStatus' => json_decode(Configuration::get(static::OUT_OF_STOCK_STATUS), true),
             'payment' => json_decode(Configuration::get(static::PAYMENT), true),
             'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
             'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
-            'statusExport' => (string) (Configuration::get(static::STATUS_EXPORT)),
+            'statusExport' => (string)(Configuration::get(static::STATUS_EXPORT)),
             'collectorActive' => (Configuration::get(static::COLLECTOR_ACTIVE)),
-            'collectorKey' => (string) (Configuration::get(static::COLLECTOR_KEY)),
+            'collectorKey' => (string)(Configuration::get(static::COLLECTOR_KEY)),
             'clientId' => Configuration::get(static::CLIENT_ID),
             'synchronizeCartsActive' => (Configuration::get(static::SYNC_CARTS_ACTIVE)),
-            'synchronizedCartStatus' => (string) (Configuration::get(static::SYNC_CARTS_STATUS)),
+            'synchronizedCartStatus' => (string)(Configuration::get(static::SYNC_CARTS_STATUS)),
             'synchronizedCartDelay' => $syncCartsDelay,
-            'consultantScript' => (string) (Configuration::get(static::CONSULTANT_SCRIPT)),
-            'enableCorporate' => (bool) (Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
-            'enableHistoryUploads' => (bool) (Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
-            'enableBalancesReceiving' => (bool) (Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
-            'enableOrderNumberSending' => (bool) (Configuration::get(static::ENABLE_ORDER_NUMBER_SENDING)),
-            'enableOrderNumberReceiving' => (bool) (Configuration::get(static::ENABLE_ORDER_NUMBER_RECEIVING)),
+            'consultantScript' => (string)(Configuration::get(static::CONSULTANT_SCRIPT)),
+            'enableCorporate' => (bool)(Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
+            'enableHistoryUploads' => (bool)(Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
+            'enableBalancesReceiving' => (bool)(Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
+            'enableOrderNumberSending' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_SENDING)),
+            'enableOrderNumberReceiving' => (bool)(Configuration::get(static::ENABLE_ORDER_NUMBER_RECEIVING)),
             'debugMode' => RetailcrmTools::isDebug(),
-            'webJobs' => RetailcrmTools::isWebJobsEnabled(),
-        ];
+            'webJobs' => RetailcrmTools::isWebJobsEnabled()
+        );
     }
 
     /**
@@ -1438,11 +1438,12 @@ class RetailCRM extends Module
      */
     public static function getSettingsNames()
     {
-        return [
+        return array(
             'urlName' => static::API_URL,
             'apiKeyName' => static::API_KEY,
             'deliveryName' => static::DELIVERY,
             'statusName' => static::STATUS,
+            'outOfStockStatusName' => static::OUT_OF_STOCK_STATUS,
             'paymentName' => static::PAYMENT,
             'deliveryDefaultName' => static::DELIVERY_DEFAULT,
             'paymentDefaultName' => static::PAYMENT_DEFAULT,
@@ -1463,8 +1464,8 @@ class RetailCRM extends Module
             'enableOrderNumberReceivingName' => static::ENABLE_ORDER_NUMBER_RECEIVING,
             'debugModeName' => static::ENABLE_DEBUG_MODE,
             'webJobsName' => static::ENABLE_WEB_JOBS,
-            'jobsNames' => static::JOBS_NAMES,
-        ];
+            'jobsNames' => static::JOBS_NAMES
+        );
     }
 
     /**
@@ -1479,7 +1480,7 @@ class RetailCRM extends Module
         $calculatedHash = md5(implode('#', Module::getModulesDirOnDisk(true)));
 
         if ($storedHash != $calculatedHash) {
-            $serializedModules = [];
+            $serializedModules = array();
             static::$moduleListCache = Module::getModulesOnDisk(true);
 
             foreach (static::$moduleListCache as $module) {
@@ -1504,7 +1505,7 @@ class RetailCRM extends Module
                     return static::getCachedCmsModulesList();
                 }
 
-                static::$moduleListCache = [];
+                static::$moduleListCache = array();
 
                 foreach ($modulesList as $serializedModule) {
                     $deserialized = json_decode($serializedModule);
@@ -1558,24 +1559,24 @@ class RetailCRM extends Module
      */
     public function getSynchronizedCartsTimeSelect()
     {
-        return [
-            [
+        return array(
+            array(
                 'id_option' => '900',
-                'name' => $this->l('After 15 minutes'),
-            ],
-            [
+                'name' => $this->l('After 15 minutes')
+            ),
+            array(
                 'id_option' => '1800',
-                'name' => $this->l('After 30 minutes'),
-            ],
-            [
+                'name' => $this->l('After 30 minutes')
+            ),
+            array(
                 'id_option' => '2700',
-                'name' => $this->l('After 45 minute'),
-            ],
-            [
+                'name' => $this->l('After 45 minute')
+            ),
+            array(
                 'id_option' => '3600',
-                'name' => $this->l('After 1 hour'),
-            ],
-        ];
+                'name' => $this->l('After 1 hour')
+            ),
+        );
     }
 
     /**
@@ -1583,20 +1584,20 @@ class RetailCRM extends Module
      */
     private function initializeTemplateMessages()
     {
-        if ($this->templateErrors === null) {
-            $this->templateErrors = [];
+        if (is_null($this->templateErrors)) {
+            $this->templateErrors = array();
         }
 
-        if ($this->templateWarnings === null) {
-            $this->templateWarnings = [];
+        if (is_null($this->templateWarnings)) {
+            $this->templateWarnings = array();
         }
 
-        if ($this->templateConfirms === null) {
-            $this->templateConfirms = [];
+        if (is_null($this->templateConfirms)) {
+            $this->templateConfirms = array();
         }
 
-        if ($this->templateErrors === null) {
-            $this->templateInfos = [];
+        if (is_null($this->templateErrors)) {
+            $this->templateInfos = array();
         }
     }
 
@@ -1608,7 +1609,7 @@ class RetailCRM extends Module
     protected function getErrorMessages()
     {
         if (empty($this->templateErrors)) {
-            return [];
+            return array();
         }
 
         return $this->templateErrors;
@@ -1622,7 +1623,7 @@ class RetailCRM extends Module
     protected function getWarningMessage()
     {
         if (empty($this->templateWarnings)) {
-            return [];
+            return array();
         }
 
         return $this->templateWarnings;
@@ -1636,7 +1637,7 @@ class RetailCRM extends Module
     protected function getInformationMessages()
     {
         if (empty($this->templateInfos)) {
-            return [];
+            return array();
         }
 
         return $this->templateInfos;
@@ -1650,7 +1651,7 @@ class RetailCRM extends Module
     protected function getConfirmationMessages()
     {
         if (empty($this->templateConfirms)) {
-            return [];
+            return array();
         }
 
         return $this->templateConfirms;

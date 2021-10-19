@@ -41,10 +41,11 @@ class RetailcrmReferences
 
     public $default_lang;
     public $carriers;
-    public $payment_modules = [];
+    public $payment_modules = array();
+    public $apiStatuses;
 
     /**
-     * @var bool|RetailcrmApiClientV5|RetailcrmProxy
+     * @var bool|RetailcrmApiClientV5|RetailcrmProxy $api
      */
     private $api;
 
@@ -64,23 +65,23 @@ class RetailcrmReferences
 
     public function getDeliveryTypes()
     {
-        $deliveryTypes = [];
+        $deliveryTypes = array();
         $apiDeliveryTypes = $this->getApiDeliveryTypes();
 
         if (!empty($this->carriers)) {
             foreach ($this->carriers as $carrier) {
-                $deliveryTypes[] = [
+                $deliveryTypes[] = array(
                     'type' => 'select',
                     'label' => $carrier['name'],
                     'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
                     'subname' => $carrier['id_carrier'],
                     'required' => false,
-                    'options' => [
+                    'options' => array(
                         'query' => $apiDeliveryTypes,
                         'id' => 'id_option',
-                        'name' => 'name',
-                    ],
-                ];
+                        'name' => 'name'
+                    )
+                );
             }
         }
 
@@ -89,28 +90,51 @@ class RetailcrmReferences
 
     public function getStatuses()
     {
-        $statusTypes = [];
+        $statusTypes = array();
         $states = OrderState::getOrderStates($this->default_lang, true);
-        $apiStatuses = $this->getApiStatuses();
+        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
 
         if (!empty($states)) {
             foreach ($states as $state) {
                 if ($state['name'] != ' ') {
                     $key = $state['id_order_state'];
-                    $statusTypes[] = [
+                    $statusTypes[] = array(
                         'type' => 'select',
                         'label' => $state['name'],
                         'name' => "RETAILCRM_API_STATUS[$key]",
                         'subname' => $key,
                         'required' => false,
-                        'options' => [
-                            'query' => $apiStatuses,
+                        'options' => array(
+                            'query' => $this->apiStatuses,
                             'id' => 'id_option',
-                            'name' => 'name',
-                        ],
-                    ];
+                            'name' => 'name'
+                        )
+                    );
                 }
             }
+        }
+
+        return $statusTypes;
+    }
+
+    public function getOutOfStockStatuses($arParams)
+    {
+        $statusTypes = array();
+        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
+
+        foreach ($arParams as $key => $state) {
+            $statusTypes[] = array(
+                'type' => 'select',
+                'label' => $state,
+                'name' => "RETAILCRM_API_OUT_OF_STOCK_STATUS[$key]",
+                'subname' => $key,
+                'required' => false,
+                'options' => array(
+                    'query' => $this->apiStatuses,
+                    'id' => 'id_option',
+                    'name' => 'name'
+                )
+            );
         }
 
         return $statusTypes;
@@ -119,23 +143,23 @@ class RetailcrmReferences
     public function getPaymentTypes()
     {
         $payments = $this->getSystemPaymentModules();
-        $paymentTypes = [];
+        $paymentTypes = array();
         $apiPaymentTypes = $this->getApiPaymentTypes();
 
         if (!empty($payments)) {
             foreach ($payments as $payment) {
-                $paymentTypes[] = [
+                $paymentTypes[] = array(
                     'type' => 'select',
                     'label' => $payment['name'],
                     'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
                     'subname' => $payment['code'],
                     'required' => false,
-                    'options' => [
+                    'options' => array(
                         'query' => $apiPaymentTypes,
                         'id' => 'id_option',
-                        'name' => 'name',
-                    ],
-                ];
+                        'name' => 'name'
+                    )
+                );
             }
         }
 
@@ -144,61 +168,63 @@ class RetailcrmReferences
 
     public function getPaymentAndDeliveryForDefault($arParams)
     {
-        $paymentTypes = [];
-        $deliveryTypes = [];
+        $paymentTypes = array();
+        $deliveryTypes = array();
 
-        $paymentDeliveryTypes = [];
+        $paymentDeliveryTypes = array();
 
         if (!empty($this->carriers)) {
-            $deliveryTypes[] = [
+
+            $deliveryTypes[] = array(
                 'id_option' => '',
                 'name' => '',
-            ];
+            );
 
             foreach ($this->carriers as $valCarrier) {
-                $deliveryTypes[] = [
+                $deliveryTypes[] = array(
                     'id_option' => $valCarrier['id_carrier'],
                     'name' => $valCarrier['name'],
-                ];
+                );
             }
 
-            $paymentDeliveryTypes[] = [
+            $paymentDeliveryTypes[] = array(
                 'type' => 'select',
                 'label' => $arParams[0],
                 'name' => 'RETAILCRM_API_DELIVERY_DEFAULT',
                 'required' => false,
-                'options' => [
-                    'query' => $deliveryTypes,
+                'options' => array(
+                    'query' =>  $deliveryTypes,
                     'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
+                    'name' => 'name'
+                )
+            );
         }
         $paymentModules = $this->getSystemPaymentModules();
         if (!empty($paymentModules)) {
-            $paymentTypes[] = [
+
+            $paymentTypes[] = array(
                 'id_option' => '',
                 'name' => '',
-            ];
+            );
 
             foreach ($paymentModules as $valPayment) {
-                $paymentTypes[$valPayment['id']] = [
+                $paymentTypes[$valPayment['id']] = array(
                     'id_option' => $valPayment['code'],
                     'name' => $valPayment['name'],
-                ];
+                );
             }
 
-            $paymentDeliveryTypes[] = [
+            $paymentDeliveryTypes[] = array(
                 'type' => 'select',
                 'label' => $arParams[1],
                 'name' => 'RETAILCRM_API_PAYMENT_DEFAULT',
                 'required' => false,
-                'options' => [
+                'options' => array(
                     'query' => $paymentTypes,
                     'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
+                    'name' => 'name'
+                )
+            );
         }
 
         return $paymentDeliveryTypes;
@@ -213,10 +239,10 @@ class RetailcrmReferences
          */
         $modules = RetailCRM::getCachedCmsModulesList();
         $allPaymentModules = PaymentModule::getInstalledPaymentModules();
-        $paymentModulesIds = [];
+        $paymentModulesIds = array();
 
         foreach ($allPaymentModules as $module) {
-            $paymentModulesIds[] = $module['id_module'];
+                $paymentModulesIds[] = $module['id_module'];
         }
 
         foreach ($modules as $module) {
@@ -226,27 +252,21 @@ class RetailcrmReferences
                 if ($module->id) {
                     $module_id = (int) $module->id;
 
-                    if (!get_class($module) == 'SimpleXMLElement') {
-                        $module->country = [];
-                    }
+                    if (!get_class($module) == 'SimpleXMLElement')
+                        $module->country = array();
                     $countries = DB::getInstance()->executeS('SELECT id_country FROM ' . _DB_PREFIX_ . 'module_country WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
-                    foreach ($countries as $country) {
+                    foreach ($countries as $country)
                         $module->country[] = $country['id_country'];
-                    }
-                    if (!get_class($module) == 'SimpleXMLElement') {
-                        $module->currency = [];
-                    }
+                    if (!get_class($module) == 'SimpleXMLElement')
+                        $module->currency = array();
                     $currencies = DB::getInstance()->executeS('SELECT id_currency FROM ' . _DB_PREFIX_ . 'module_currency WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
-                    foreach ($currencies as $currency) {
+                    foreach ($currencies as $currency)
                         $module->currency[] = $currency['id_currency'];
-                    }
-                    if (!get_class($module) == 'SimpleXMLElement') {
-                        $module->group = [];
-                    }
+                    if (!get_class($module) == 'SimpleXMLElement')
+                        $module->group = array();
                     $groups = DB::getInstance()->executeS('SELECT id_group FROM ' . _DB_PREFIX_ . 'module_group WHERE id_module = ' . pSQL($module_id) . ' AND `id_shop`=' . pSQL($shop_id));
-                    foreach ($groups as $group) {
+                    foreach ($groups as $group)
                         $module->group[] = $group['id_group'];
-                    }
                 } else {
                     $module->country = null;
                     $module->currency = null;
@@ -254,11 +274,11 @@ class RetailcrmReferences
                 }
 
                 if ($module->active != 0 || $active === false) {
-                    $this->payment_modules[] = [
+                    $this->payment_modules[] = array(
                         'id' => $module->id,
                         'code' => $module->name,
-                        'name' => $module->displayName,
-                    ];
+                        'name' => $module->displayName
+                    );
                 }
             }
         }
@@ -273,23 +293,23 @@ class RetailcrmReferences
 
     public function getApiDeliveryTypes()
     {
-        $crmDeliveryTypes = [];
+        $crmDeliveryTypes = array();
         $request = $this->api->deliveryTypesList();
 
         if ($request) {
-            $crmDeliveryTypes[] = [
+            $crmDeliveryTypes[] = array(
                 'id_option' => '',
                 'name' => '',
-            ];
+            );
             foreach ($request->deliveryTypes as $dType) {
                 if (!$dType['active']) {
                     continue;
                 }
 
-                $crmDeliveryTypes[] = [
+                $crmDeliveryTypes[] = array(
                     'id_option' => $dType['code'],
                     'name' => $dType['name'],
-                ];
+                );
             }
         }
 
@@ -298,31 +318,31 @@ class RetailcrmReferences
 
     public function getApiStatuses()
     {
-        $crmStatusTypes = [];
+        $crmStatusTypes = array();
         $request = $this->api->statusesList();
 
         if ($request) {
-            $crmStatusTypes[] = [
+            $crmStatusTypes[] = array(
                 'id_option' => '',
                 'name' => '',
                 'ordering' => '',
-            ];
+            );
             foreach ($request->statuses as $sType) {
                 if (!$sType['active']) {
                     continue;
                 }
 
-                $crmStatusTypes[] = [
+                $crmStatusTypes[] = array(
                     'id_option' => $sType['code'],
                     'name' => $sType['name'],
                     'ordering' => $sType['ordering'],
-                ];
+                );
             }
             usort($crmStatusTypes, function ($a, $b) {
                 if ($a['ordering'] == $b['ordering']) {
                     return 0;
                 } else {
-                    return $a['ordering'] < $b['ordering'] ? -1 : 1;
+                    return ($a['ordering'] < $b['ordering'] ? -1 : 1);
                 }
             });
         }
@@ -332,23 +352,23 @@ class RetailcrmReferences
 
     public function getApiPaymentTypes()
     {
-        $crmPaymentTypes = [];
+        $crmPaymentTypes = array();
         $request = $this->api->paymentTypesList();
 
         if ($request) {
-            $crmPaymentTypes[] = [
+            $crmPaymentTypes[] = array(
                 'id_option' => '',
                 'name' => '',
-            ];
+            );
             foreach ($request->paymentTypes as $pType) {
                 if (!$pType['active']) {
                     continue;
                 }
 
-                $crmPaymentTypes[] = [
+                $crmPaymentTypes[] = array(
                     'id_option' => $pType['code'],
-                    'name' => $pType['name'],
-                ];
+                    'name' => $pType['name']
+                );
             }
         }
 
@@ -381,6 +401,7 @@ class RetailcrmReferences
 
             if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()
                 && $response->offsetExists('sites') && $response['sites']) {
+
                 return current($response['sites']);
             }
         } catch (Exception $e) {
@@ -402,16 +423,16 @@ class RetailcrmReferences
         $retailcrmStores = $this->getApiStores();
 
         foreach ($storesShop as $key => $storeShop) {
-            $stores[] = [
+            $stores[] = array(
                 'type' => 'select',
-                'name' => 'RETAILCRM_STORES[' . $key . ']',
+                'name' => 'RETAILCRM_STORES['. $key .']',
                 'label' => $storeShop,
-                'options' => [
+                'options' => array(
                     'query' => $retailcrmStores,
                     'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
+                    'name' => 'name'
+                )
+            );
         }
 
         return $stores;
@@ -419,7 +440,7 @@ class RetailcrmReferences
 
     protected function getShopStores()
     {
-        $stores = [];
+        $stores = array();
         $warehouses = Warehouse::getWarehouses();
 
         foreach ($warehouses as $warehouse) {
@@ -433,20 +454,20 @@ class RetailcrmReferences
 
     protected function getApiStores()
     {
-        $crmStores = [];
+        $crmStores = array();
         $response = $this->api->storesList();
 
         if ($response) {
-            $crmStores[] = [
+            $crmStores[] = array(
                 'id_option' => '',
-                'name' => '',
-            ];
+                'name' => ''
+            );
 
             foreach ($response->stores as $store) {
-                $crmStores[] = [
+                $crmStores[] = array(
                     'id_option' => $store['code'],
-                    'name' => $store['name'],
-                ];
+                    'name' => $store['name']
+                );
             }
         }
 
