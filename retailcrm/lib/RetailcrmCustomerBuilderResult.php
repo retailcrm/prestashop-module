@@ -37,10 +37,10 @@
  */
 class RetailcrmCustomerBuilderResult
 {
-    /** @var Customer|CustomerCore $customer */
+    /** @var Customer|CustomerCore */
     private $customer;
 
-    /**@var Address|AddressCore|null $customerAddress */
+    /** @var Address|AddressCore|null $customerAddress */
     private $customerAddress;
 
     /**
@@ -71,4 +71,3 @@ class RetailcrmCustomerBuilderResult
         return $this->customerAddress;
     }
 }
-

@@ -38,32 +38,32 @@
 class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder implements RetailcrmBuilderInterface
 {
     /**
-     * @var Customer|CustomerCore $corporateCustomer Corporate customer
+     * @var Customer|CustomerCore Corporate customer
      */
     private $corporateCustomer;
 
     /**
-     * @var RetailcrmBuilderInterface $customerBuilder Customer builder
+     * @var RetailcrmBuilderInterface Customer builder
      */
     private $customerBuilder;
 
     /**
-     * @var array $dataCrm customerHistory
+     * @var array customerHistory
      */
     protected $dataCrm;
 
     /**
-     * @var string $companyName
+     * @var string
      */
     private $companyName;
 
     /**
-     * @var string $companyInn
+     * @var string
      */
     protected $companyInn;
 
     /**
-     * @var Address|AddressCore $corporateAddress
+     * @var Address|AddressCore
      */
     private $corporateAddress;
 
@@ -77,51 +77,61 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
 
     /**
      * @param RetailcrmBuilderInterface $customerBuilder
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function setCustomerBuilder($customerBuilder)
     {
         $this->customerBuilder = $customerBuilder;
+
         return $this;
     }
 
     /**
      * @param Customer $corporateCustomer Corporate customer
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function setCustomer($corporateCustomer)
     {
         $this->corporateCustomer = $corporateCustomer;
+
         return $this;
     }
 
     /**
      * @param string $companyName
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function setCompanyName($companyName)
     {
         $this->companyName = $companyName;
+
         return $this;
     }
 
     /**
      * @param string $companyInn
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function setCompanyInn($companyInn)
     {
         $this->companyInn = $companyInn;
+
         return $this;
     }
 
     /**
-     * @param Address|AddressCore  $corporateAddress
+     * @param Address|AddressCore $corporateAddress
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function setCorporateAddress($corporateAddress)
     {
         $this->corporateAddress = $corporateAddress;
+
         return $this;
     }
 
@@ -129,6 +139,7 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
      * Set data in address, name and inn company corporate customer
      *
      * @param array $dataCrm
+     *
      * @return RetailcrmCorporateCustomerBuilder
      */
     public function extractCompanyDataFromOrder($dataCrm)
@@ -145,6 +156,7 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
     public function setDataCrm($dataCrm)
     {
         $this->dataCrm = $dataCrm;
+
         return $this;
     }
 
@@ -188,15 +200,14 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
         $this->buildCustomer();
 
         if (!empty($this->corporateAddress)) {
-
-            if (empty($this->corporateAddress->alias) || $this->corporateAddress->alias == 'default') {
+            if (empty($this->corporateAddress->alias) || 'default' == $this->corporateAddress->alias) {
                 $this->corporateAddress->alias = '--';
             }
 
             $this->corporateAddress->vat_number = !empty($this->companyInn) ? $this->companyInn : '';
             $this->corporateAddress->company = !empty($this->companyName) ? $this->companyName : '';
 
-            if (!empty($this->companyName) && (empty($this->corporateCustomer->firstname) || $this->corporateCustomer->firstname == '--')) {
+            if (!empty($this->companyName) && (empty($this->corporateCustomer->firstname) || '--' == $this->corporateCustomer->firstname)) {
                 $this->corporateCustomer->firstname = $this->companyName;
             }
         }
@@ -204,18 +215,17 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
         $this->corporateCustomer = RetailcrmTools::filter(
             'RetailcrmFilterSaveCorporateCustomer',
             $this->corporateCustomer,
-            array(
+            [
                 'dataCrm' => $this->dataCrm,
-            ));
+            ]);
 
         $this->corporateAddress = RetailcrmTools::filter(
             'RetailcrmFilterSaveCorporateCustomerAddress',
             $this->corporateAddress,
-            array(
+            [
                 'dataCrm' => $this->dataCrm,
-            ));
+            ]);
 
         return $this;
     }
 }
-

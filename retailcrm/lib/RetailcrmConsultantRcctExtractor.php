@@ -52,6 +52,7 @@ class RetailcrmConsultantRcctExtractor extends RetailcrmAbstractDataBuilder
     {
         $this->consultantScript = $consultantScript;
         $this->data = '';
+
         return $this;
     }
 

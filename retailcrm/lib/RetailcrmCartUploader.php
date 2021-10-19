@@ -89,7 +89,7 @@ class RetailcrmCartUploader
     public static function setSyncDelay($time)
     {
         if (is_numeric($time) && $time > 0) {
-            static::$syncDelay = (int)$time;
+            static::$syncDelay = (int) $time;
         } else {
             static::$syncDelay = 0;
         }
@@ -101,8 +101,8 @@ class RetailcrmCartUploader
     public static function init()
     {
         static::$api = null;
-        static::$cartsIds = array();
-        static::$paymentTypes = array();
+        static::$cartsIds = [];
+        static::$paymentTypes = [];
         static::$syncDelay = 0;
         static::$allowedUpdateInterval = 86400;
         static::$syncStatus = '';
@@ -160,7 +160,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersCreate($order) !== false) {
+                if (false !== static::$api->ordersCreate($order)) {
                     $cart->date_upd = date('Y-m-d H:i:s');
                     $cart->save();
                 }
@@ -175,7 +175,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersEdit($order) !== false) {
+                if (false !== static::$api->ordersEdit($order)) {
                     static::registerAbandonedCartSync($cart->id);
                 }
             }
@@ -219,15 +219,15 @@ class RetailcrmCartUploader
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
-            if ($currentCartTotal == 0) {
+            if (0 == $currentCartTotal) {
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
-                sprintf("Failure while trying to get cart total (cart id=%d)", $cart->id)
+                sprintf('Failure while trying to get cart total (cart id=%d)', $cart->id)
             );
-            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
@@ -236,15 +236,15 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
+            if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
-                sprintf("Failure while trying to get cart products (cart id=%d)", $cart->id)
+                sprintf('Failure while trying to get cart products (cart id=%d)', $cart->id)
             );
-            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
@@ -264,7 +264,7 @@ class RetailcrmCartUploader
      */
     private static function buildCartOrder($cart, $cartExternalId)
     {
-        $order = array();
+        $order = [];
 
         try {
             $order = RetailcrmOrderBuilder::buildCrmOrderFromCart(

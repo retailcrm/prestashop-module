@@ -18,11 +18,13 @@ class RetailcrmApiRequest
 
     /**
      * @param mixed $api
+     *
      * @return RetailcrmApiRequest
      */
     public function setApi($api)
     {
         $this->api = $api;
+
         return $this;
     }
 
@@ -40,6 +42,7 @@ class RetailcrmApiRequest
     public function setData($data)
     {
         $this->data = $data;
+
         return $this;
     }
 
@@ -57,8 +60,7 @@ class RetailcrmApiRequest
     public function setMethod($method)
     {
         $this->method = $method;
+
         return $this;
     }
-
-
 }

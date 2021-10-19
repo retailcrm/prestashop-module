@@ -63,6 +63,7 @@ class RetailcrmCachedSettingExtractor extends RetailcrmAbstractDataBuilder
     public function setCachedKey($cachedKey)
     {
         $this->cachedKey = $cachedKey;
+
         return $this;
     }
 
@@ -74,6 +75,7 @@ class RetailcrmCachedSettingExtractor extends RetailcrmAbstractDataBuilder
     public function setConfigKey($configKey)
     {
         $this->configKey = $configKey;
+
         return $this;
     }
 
@@ -86,6 +88,7 @@ class RetailcrmCachedSettingExtractor extends RetailcrmAbstractDataBuilder
     {
         $this->setCachedKey($key);
         $this->setConfigKey($key);
+
         return $this;
     }
 

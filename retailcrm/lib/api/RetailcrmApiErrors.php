@@ -40,7 +40,7 @@ class RetailcrmApiErrors
     /** @var array */
     private static $errors;
 
-    /** @var integer */
+    /** @var int */
     private static $statusCode;
 
     /**
@@ -69,6 +69,7 @@ class RetailcrmApiErrors
     public static function getErrors()
     {
         static::checkArray();
+
         return static::$errors;
     }
 
@@ -78,7 +79,7 @@ class RetailcrmApiErrors
      * Returns false if incorrect data was passed to it.
      *
      * @param array $errors
-     * @param integer $statusCode
+     * @param int $statusCode
      *
      * @return bool
      */
@@ -102,7 +103,7 @@ class RetailcrmApiErrors
     private static function checkArray()
     {
         if (!is_array(static::$errors)) {
-            static::$errors = array();
+            static::$errors = [];
         }
     }
 }

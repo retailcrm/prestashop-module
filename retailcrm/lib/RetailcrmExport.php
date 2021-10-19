@@ -49,12 +49,12 @@ class RetailcrmExport
     static $api;
 
     /**
-     * @var integer
+     * @var int
      */
     static $ordersOffset;
 
     /**
-     * @var integer
+     * @var int
      */
     static $customersOffset;
 
@@ -80,7 +80,7 @@ class RetailcrmExport
             WHERE 1
             ' . Shop::addSqlRestriction(false, 'o');
 
-        return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
+        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
 
     /**
@@ -90,6 +90,7 @@ class RetailcrmExport
      * @param int|null $count Sets the count of orders to get from database
      *
      * @return Generator
+     *
      * @throws PrestaShopDatabaseException
      */
     public static function getOrdersIds($start = 0, $count = null)
@@ -110,16 +111,18 @@ class RetailcrmExport
 
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
-                if ($offset <= 0)
+                if ($offset <= 0) {
                     break;
+                }
 
                 $sql = $predefinedSql . '
-                    LIMIT ' . (int)$start . ', ' . (int)$offset;
+                    LIMIT ' . (int) $start . ', ' . (int) $offset;
 
                 $orders = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
-                if (empty($orders))
+                if (empty($orders)) {
                     break;
+                }
 
                 foreach ($orders as $order) {
                     yield $order;
@@ -140,7 +143,7 @@ class RetailcrmExport
             return;
         }
 
-        $orders = array();
+        $orders = [];
         $orderRecords = static::getOrdersIds($from, $count);
         $orderBuilder = new RetailcrmOrderBuilder();
         $orderBuilder->defaultLangFromConfiguration()->setApi(static::$api);
@@ -180,9 +183,9 @@ class RetailcrmExport
 
             time_nanosleep(0, 250000000);
 
-            if (count($orders) == 50) {
+            if (50 == count($orders)) {
                 static::$api->ordersUpload($orders);
-                $orders = array();
+                $orders = [];
             }
         }
 
@@ -193,6 +196,7 @@ class RetailcrmExport
 
     /**
      * Get total count of customers for context shop
+     *
      * @param bool $withOrders If set to <b>true</b>, then return total count of customers.
      *                         If set to <b>false</b>, then return count of customers without orders
      *
@@ -216,7 +220,7 @@ class RetailcrmExport
             )';
         }
 
-        return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
+        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
 
     /**
@@ -229,6 +233,7 @@ class RetailcrmExport
      * @param bool $returnAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
      *
      * @return Generator
+     *
      * @throws PrestaShopDatabaseException
      */
     public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
@@ -282,19 +287,20 @@ class RetailcrmExport
                 )') . '
                 ORDER BY c.`id_customer` ASC';
 
-
             while ($start < $to) {
                 $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
-                if ($offset <= 0)
+                if ($offset <= 0) {
                     break;
+                }
 
                 $sql = $predefinedSql . '
-                    LIMIT ' . (int)$start . ', ' . (int)$offset;
+                    LIMIT ' . (int) $start . ', ' . (int) $offset;
 
                 $customers = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
-                if (empty($customers))
+                if (empty($customers)) {
                     break;
+                }
 
                 foreach ($customers as $customer) {
                     yield $customer;
@@ -315,7 +321,7 @@ class RetailcrmExport
             return;
         }
 
-        $customers = array();
+        $customers = [];
         $customersRecords = RetailcrmExport::getCustomersIds($from, $count, false);
 
         foreach ($customersRecords as $record) {
@@ -334,7 +340,7 @@ class RetailcrmExport
                         ->build()
                         ->getDataArray();
                 } else {
-                    $address = array();
+                    $address = [];
                 }
 
                 try {
@@ -345,9 +351,9 @@ class RetailcrmExport
                     RetailcrmLogger::output($exception->getMessage());
                 }
 
-                if (count($customers) == 50) {
+                if (50 == count($customers)) {
                     static::$api->customersUpload($customers);
-                    $customers = array();
+                    $customers = [];
 
                     time_nanosleep(0, 250000000);
                 }

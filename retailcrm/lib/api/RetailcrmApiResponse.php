@@ -47,7 +47,7 @@ class RetailcrmApiResponse implements \ArrayAccess
     /**
      * ApiResponse constructor.
      *
-     * @param int   $statusCode   HTTP status code
+     * @param int $statusCode HTTP status code
      * @param mixed $responseBody HTTP body
      *
      * @throws InvalidJsonException
@@ -102,8 +102,8 @@ class RetailcrmApiResponse implements \ArrayAccess
     /**
      * Allow to access for the property throw class method
      *
-     * @param string $name      method name
-     * @param mixed  $arguments method parameters
+     * @param string $name method name
+     * @param mixed $arguments method parameters
      *
      * @throws \InvalidArgumentException
      *
@@ -143,9 +143,10 @@ class RetailcrmApiResponse implements \ArrayAccess
      * Offset set
      *
      * @param mixed $offset offset
-     * @param mixed $value  value
+     * @param mixed $value value
      *
      * @throws \BadMethodCallException
+     *
      * @return void
      */
     public function offsetSet($offset, $value)
@@ -159,6 +160,7 @@ class RetailcrmApiResponse implements \ArrayAccess
      * @param mixed $offset offset
      *
      * @throws \BadMethodCallException
+     *
      * @return void
      */
     public function offsetUnset($offset)

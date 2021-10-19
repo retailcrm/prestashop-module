@@ -41,6 +41,7 @@ interface RetailcrmFilterInterface
     /**
      * @param object|array|string $object
      * @param array $parameters
+     *
      * @return object|array|string
      */
     public static function filter($object, array $parameters);

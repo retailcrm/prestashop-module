@@ -52,7 +52,6 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
      */
     const MODE_ORDER_DELIVERY = 2;
 
-
     /**
      * Divider for order delivery addressline1 and addressline 2
      */
@@ -91,6 +90,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setAddress($address)
     {
         $this->address = $address;
+
         return $this;
     }
 
@@ -102,6 +102,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setIsMain($isMain)
     {
         $this->isMain = $isMain;
+
         return $this;
     }
 
@@ -113,6 +114,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setMode($mode)
     {
         $this->mode = $mode;
+
         return $this;
     }
 
@@ -124,6 +126,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setWithExternalId($withExternalId)
     {
         $this->withExternalId = $withExternalId;
+
         return $this;
     }
 
@@ -135,6 +138,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setExternalIdSuffix($externalIdSuffix)
     {
         $this->externalIdSuffix = $externalIdSuffix;
+
         return $this;
     }
 
@@ -146,6 +150,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     public function setAddressId($addressId)
     {
         $this->address = new Address($addressId);
+
         return $this;
     }
 
@@ -158,7 +163,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     {
         parent::reset();
 
-        $this->data = array();
+        $this->data = [];
         $this->address = null;
         $this->mode = static::MODE_CUSTOMER;
         $this->isMain = false;
@@ -188,17 +193,17 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                     $this->buildOrderNames();
                     break;
                 default:
-                    throw new \InvalidArgumentException("Incorrect builder mode");
+                    throw new \InvalidArgumentException('Incorrect builder mode');
             }
         }
 
         $this->data = RetailcrmTools::filter(
             'RetailcrmFilterProcessAddress',
             $this->data,
-            array(
+            [
                 'address' => $this->address,
-                'mode' => $this->mode
-            ));
+                'mode' => $this->mode,
+            ]);
 
         return $this;
     }
@@ -226,7 +231,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             }
         }
 
-        return array();
+        return [];
     }
 
     /**
@@ -246,7 +251,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             }
         }
 
-        return array_filter(array(
+        return array_filter([
             'index' => $this->address->postcode,
             'city' => $this->address->city,
             'countryIso' => Country::getIsoById($this->address->id_country),
@@ -256,8 +261,8 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                     $this->address->address2,
                 ])),
             'notes' => $this->address->other,
-            'region' => $state
-        ));
+            'region' => $state,
+        ]);
     }
 
     /**
@@ -266,11 +271,11 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     private function buildCustomerPhones()
     {
         if (!empty($this->address->phone_mobile)) {
-            $this->data['customer']['phones'][] = array('number'=> $this->address->phone_mobile);
+            $this->data['customer']['phones'][] = ['number' => $this->address->phone_mobile];
         }
 
         if (!empty($this->address->phone)) {
-            $this->data['customer']['phones'][] = array('number'=> $this->address->phone);
+            $this->data['customer']['phones'][] = ['number' => $this->address->phone];
         }
     }
 

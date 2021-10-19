@@ -59,7 +59,7 @@ abstract class RetailcrmAbstractTemplate
     /** @var array */
     private $confirmations;
 
-    /** @var Context $context */
+    /** @var Context */
     protected $context;
 
     /**
@@ -74,10 +74,10 @@ abstract class RetailcrmAbstractTemplate
         $this->module = $module;
         $this->smarty = $smarty;
         $this->assets = $assets;
-        $this->errors = array();
-        $this->warnings = array();
-        $this->informations = array();
-        $this->confirmations = array();
+        $this->errors = [];
+        $this->warnings = [];
+        $this->informations = [];
+        $this->confirmations = [];
     }
 
     /**
@@ -106,6 +106,7 @@ abstract class RetailcrmAbstractTemplate
      * @param $file
      *
      * @return mixed
+     *
      * @throws RuntimeException
      */
     public function render($file)
@@ -114,21 +115,21 @@ abstract class RetailcrmAbstractTemplate
         $this->setTemplate();
 
         if (null === $this->template) {
-            throw new \RuntimeException("Template not be blank");
+            throw new \RuntimeException('Template not be blank');
         }
 
         // set url post for forms
         if (empty($this->smarty->getTemplateVars('url_post'))) {
             $this->data['url_post'] = $this->smarty->getTemplateVars('current')
-                .'&token='.$this->smarty->getTemplateVars('token');
+                . '&token=' . $this->smarty->getTemplateVars('token');
         }
 
-        $this->smarty->assign(\array_merge($this->data, array(
+        $this->smarty->assign(\array_merge($this->data, [
             'moduleErrors' => $this->errors,
             'moduleWarnings' => $this->warnings,
             'moduleConfirmations' => $this->confirmations,
             'moduleInfos' => $this->informations,
-        )));
+        ]));
 
         return $this->module->display($file, "views/templates/admin/$this->template");
     }
@@ -204,5 +205,6 @@ abstract class RetailcrmAbstractTemplate
     }
 
     abstract protected function buildParams();
+
     abstract protected function setTemplate();
 }

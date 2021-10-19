@@ -1,7 +1,7 @@
 <?php
 
 global $_MODULE;
-$_MODULE = array();
+$_MODULE = [];
 $_MODULE['<{retailcrm}prestashop>retailcrm_9b1e2d4b35252401dbdab3cbad2735c4'] = 'Simla.com';
 $_MODULE['<{retailcrm}prestashop>retailcrm_5e36a81536959d8cde52246dd15a6fca'] = 'Módulo de integración para Simla.com';
 $_MODULE['<{retailcrm}prestashop>retailcrm_876f23178c29dc2552c0b48bf23cd9bd'] = '¿Está seguro de que desea eliminar el módulo?';

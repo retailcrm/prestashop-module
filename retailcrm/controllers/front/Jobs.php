@@ -35,7 +35,6 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 class RetailcrmJobsModuleFrontController extends ModuleFrontController
 {
     /**
@@ -81,6 +80,6 @@ class RetailcrmJobsModuleFrontController extends ModuleFrontController
             RetailcrmTools::startJobManager();
         }
 
-        return array('success' => true);
+        return ['success' => true];
     }
 }

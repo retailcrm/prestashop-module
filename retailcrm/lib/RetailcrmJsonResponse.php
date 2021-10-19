@@ -41,9 +41,11 @@ if (!defined('_PS_VERSION_')) {
 
 /**
  * Class RetailcrmLogger
+ *
  * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
  * @license   GPL
- * @link      https://retailcrm.ru
+ *
+ * @see      https://retailcrm.ru
  */
 class RetailcrmJsonResponse
 {
@@ -54,6 +56,7 @@ class RetailcrmJsonResponse
         $result = json_encode($response);
 
         echo $result;
+
         return $result;
     }
 
@@ -63,7 +66,7 @@ class RetailcrmJsonResponse
 
         return self::jsonResponse([
             'success' => false,
-            'errorMsg' => $msg
+            'errorMsg' => $msg,
         ]);
     }
 
@@ -76,8 +79,9 @@ class RetailcrmJsonResponse
         if (!is_null($data)) {
             if (is_array($key)) {
                 foreach ($key as $i => $value) {
-                    if (isset($data[$i]))
+                    if (isset($data[$i])) {
                         $response[$value] = $data[$i];
+                    }
                 }
             } elseif (is_string($key)) {
                 $response[$key] = $data;

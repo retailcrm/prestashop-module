@@ -35,13 +35,12 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function execute()
     {
@@ -78,25 +77,25 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
         $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
 
-        $order = array(
+        $order = [
             'externalId' => $orderInstance->id,
             'createdAt' => $orderInstance->date_add,
-        );
+        ];
 
-        /**
+        /*
          * Add order customer info
          *
          */
 
         if (!empty($orderInstance->id_customer)) {
             $orderCustomer = new Customer($orderInstance->id_customer);
-            $customer = array(
+            $customer = [
                 'externalId' => $orderCustomer->id,
                 'firstName' => $orderCustomer->firstname,
                 'lastname' => $orderCustomer->lastname,
                 'email' => $orderCustomer->email,
-                'createdAt' => $orderCustomer->date_add
-            );
+                'createdAt' => $orderCustomer->date_add,
+            ];
 
             $response = $api->customersEdit($customer);
 
@@ -110,13 +109,12 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
             }
         }
 
-
-        /**
+        /*
          *  Add order status
          *
          */
 
-        if ($orderInstance->current_state == 0) {
+        if (0 == $orderInstance->current_state) {
             $order['status'] = 'completed';
         } else {
             $order['status'] = array_key_exists($orderInstance->current_state, $status)
@@ -127,9 +125,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
         /**
          * Add order address data
-         *
          */
-
         $cart = new Cart($orderInstance->getCartIdStatic($orderInstance->id));
         $addressCollection = $cart->getAddressCollection();
         $address = array_shift($addressCollection);
@@ -142,7 +138,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
             $postcode = $address->postcode;
             $city = $address->city;
-            $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+            $addres_line = sprintf('%s %s', $address->address1, $address->address2);
         }
 
         if (!empty($postcode)) {
@@ -161,11 +157,11 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
             $order['phone'] = $phone;
         }
 
-        /**
+        /*
          * Add payment & shippment data
          */
 
-        if (Module::getInstanceByName('advancedcheckout') === false) {
+        if (false === Module::getInstanceByName('advancedcheckout')) {
             $paymentType = $orderInstance->module;
         } else {
             $paymentType = $orderInstance->payment;
@@ -185,20 +181,18 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
         /**
          * Add products
-         *
          */
-
         $products = $orderInstance->getProducts();
 
         foreach ($products as $product) {
-            $item = array(
+            $item = [
                 //'productId' => $product['product_id'],
-                'offer' => array('externalId' => $product['product_id']),
+                'offer' => ['externalId' => $product['product_id']],
                 'productName' => $product['product_name'],
                 'quantity' => $product['product_quantity'],
                 'initialPrice' => round($product['product_price'], 2),
-                'purchasePrice' => round($product['purchase_supplier_price'], 2)
-            );
+                'purchasePrice' => round($product['purchase_supplier_price'], 2),
+            ];
 
             $order['items'][] = $item;
         }

@@ -37,16 +37,16 @@
  */
 class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements RetailcrmBuilderInterface
 {
-    /** @var Customer|CustomerCore $customer Customer */
+    /** @var Customer|CustomerCore Customer */
     private $customer;
 
-    /** @var Address|AddressCore|null $customerAddress Address */
+    /** @var Address|AddressCore|null Address */
     private $customerAddress;
 
-    /** @var array $dataCrm customerHistory */
+    /** @var array customerHistory */
     protected $dataCrm;
 
-    /** @var RetailcrmBuilderInterface $addressBuilder Address builder */
+    /** @var RetailcrmBuilderInterface Address builder */
     private $addressBuilder;
 
     public function __construct()
@@ -55,28 +55,33 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
     }
 
     /**
-     * @param Customer|CustomerCore  $customer
+     * @param Customer|CustomerCore $customer
+     *
      * @return RetailcrmCustomerBuilder
      */
     public function setCustomer($customer)
     {
         $this->customer = $customer;
+
         return $this;
     }
 
     /**
      * @param RetailcrmBuilderInterface $addressBuilder
+     *
      * @return RetailcrmCustomerBuilder
      */
     public function setAddressBuilder($addressBuilder)
     {
         $this->addressBuilder = $addressBuilder;
+
         return $this;
     }
 
     public function setDataCrm($dataCrm)
     {
         $this->dataCrm = $dataCrm;
+
         return $this;
     }
 
@@ -128,7 +133,7 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
         $this->customer->firstname = $this->arrayValue('firstName');
         $this->customer->lastname = $this->arrayValue('lastName');
 
-        if (isset($this->dataCrm['subscribed']) && $this->dataCrm['subscribed'] == false) {
+        if (isset($this->dataCrm['subscribed']) && false == $this->dataCrm['subscribed']) {
             $this->customer->newsletter = false;
         }
 
@@ -139,7 +144,7 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
         $this->customer->birthday = $this->arrayValue('birthday', '');
 
         if (isset($this->dataCrm['sex'])) {
-            $this->customer->id_gender = $this->dataCrm['sex'] == 'male' ? 1 : 2;
+            $this->customer->id_gender = 'male' == $this->dataCrm['sex'] ? 1 : 2;
         }
 
         $this->buildAddress();
@@ -150,18 +155,17 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
             $this->customer->email = RetailcrmTools::createPlaceholderEmail($this->arrayValue('firstName', microtime()));
         }
 
-        if (empty($this->customer->passwd )) {
+        if (empty($this->customer->passwd)) {
             $this->customer->passwd = Tools::substr(str_shuffle(Tools::strtolower(sha1(rand() . time()))), 0, 5);
         }
 
         $this->customer = RetailcrmTools::filter(
             'RetailcrmFilterSaveCustomer',
             $this->customer,
-            array(
+            [
                 'dataCrm' => $this->dataCrm,
-            ));
+            ]);
 
         return $this;
     }
 }
-

@@ -38,7 +38,6 @@
  */
 class RetailcrmCatalog
 {
-
     public $default_lang;
     public $default_currency;
     public $default_country;
@@ -49,11 +48,11 @@ class RetailcrmCatalog
 
     public function __construct()
     {
-        $this->default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-        $this->default_currency = (int)Configuration::get('PS_CURRENCY_DEFAULT');
-        $this->default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $this->default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        $this->default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+        $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
 
-        $this->protocol = (Configuration::get('PS_SSL_ENABLED')) ? "https://" : "http://";
+        $this->protocol = (Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
         $this->version = substr(_PS_VERSION_, 0, 3);
         $this->link = new Link();
         $this->home_category = Configuration::get('PS_HOME_CATEGORY');
@@ -61,13 +60,13 @@ class RetailcrmCatalog
 
     public function getData()
     {
-        return array($this->getCategories(), $this->getOffers());
+        return [$this->getCategories(), $this->getOffers()];
     }
 
     public function getCategories()
     {
-        $categories = array();
-        $categoriesIds = array();
+        $categories = [];
+        $categoriesIds = [];
 
         $types = Category::getCategories($this->default_lang, true, false);
 
@@ -76,19 +75,18 @@ class RetailcrmCatalog
                 ? $category['id'] : $category['id_category'];
 
             if (!self::isCategoryActive(new Category($categoryId))) {
-
                 continue;
             }
 
             $picture = $this->link->getCatImageLink($category['link_rewrite'], $categoryId, 'category_default');
 
             $categoriesIds[] = $categoryId;
-            $categories[] = array(
+            $categories[] = [
                 'id' => $categoryId,
                 'parentId' => self::getParentCategoryId($categoryId, $category['id_parent']),
                 'name' => htmlspecialchars($category['name']),
-                'picture' => $picture ? $this->protocol . $picture : ''
-            );
+                'picture' => $picture ? $this->protocol . $picture : '',
+            ];
         }
 
         foreach ($categories as $key => $innerCategory) {
@@ -136,7 +134,7 @@ class RetailcrmCatalog
         $start = 0;
         $count = self::getProductsCount($id_lang);
 
-        if ($count > 0)
+        if ($count > 0) {
             do {
                 $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
 
@@ -160,9 +158,9 @@ class RetailcrmCatalog
                     if (empty($categoriesLeft)) {
                         continue;
                     }
-                    $productsCount++;
+                    ++$productsCount;
 
-                    if ($this->version == "1.3") {
+                    if ('1.3' == $this->version) {
                         $available_for_order = $product['active'] && $product['quantity'];
                     } else {
                         $available_for_order = $product['active'] && $product['available_for_order'];
@@ -194,7 +192,7 @@ class RetailcrmCatalog
                     }
 
                     $weight = round($product['weight'], 2);
-                    if ($weight === 0.0) {
+                    if (0.0 === $weight) {
                         $weight = null;
                     }
 
@@ -202,8 +200,8 @@ class RetailcrmCatalog
                     $height = round($product['height'], 3);
                     $depth = round($product['depth'], 3);
 
-                    if ($width !== 0.0 && $height !== 0.0) {
-                        $dimensions = implode('/', array($depth, $width, $height));
+                    if (0.0 !== $width && 0.0 !== $height) {
+                        $dimensions = implode('/', [$depth, $width, $height]);
                     } else {
                         $dimensions = null;
                     }
@@ -211,7 +209,7 @@ class RetailcrmCatalog
                     $offers = Product::getProductAttributesIds($product['id_product']);
 
                     if (!empty($offers)) {
-                        $offersCount+= count($offers);
+                        $offersCount += count($offers);
                         $productForCombination = new Product($product['id_product']);
 
                         foreach ($offers as $offer) {
@@ -238,10 +236,10 @@ class RetailcrmCatalog
                                 $pictures[] = $picture;
                             }
 
-                            if ($this->version == "1.3") {
+                            if ('1.3' == $this->version) {
                                 $quantity = $product['quantity'];
                             } else {
-                                $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
+                                $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
                             }
 
                             $offerCombination = new Combination($offer['id_product_attribute']);
@@ -300,20 +298,20 @@ class RetailcrmCatalog
                                 $item,
                                 [
                                     'product' => $product,
-                                    'offer' => $offer
+                                    'offer' => $offer,
                                 ]
                             );
                         }
                     } else {
-                        $offersCount++;
+                        ++$offersCount;
 
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
                         $pictures = $this->getPictures($covers, $product);
 
-                        if ($this->version == "1.3") {
+                        if ('1.3' == $this->version) {
                             $quantity = $product['quantity'];
                         } else {
-                            $quantity = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product']);
+                            $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product']);
                         }
 
                         $item = [
@@ -339,7 +337,7 @@ class RetailcrmCatalog
                             'RetailcrmFilterProcessOffer',
                             $item,
                             [
-                                'product' => $product
+                                'product' => $product,
                             ]
                         );
                     }
@@ -347,6 +345,7 @@ class RetailcrmCatalog
 
                 $start += $limit;
             } while ($start < $count && count($products) > 0);
+        }
 
         RetailcrmCatalogHelper::setIcmlFileInfo($productsCount, $offersCount);
     }
@@ -357,27 +356,26 @@ class RetailcrmCatalog
         foreach ($covers as $cover) {
             $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
 
-            if ($offers === false && $cover['cover']) {
+            if (false === $offers && $cover['cover']) {
                 array_unshift($pictures, $picture);
             } else {
                 $pictures[] = $picture;
             }
-
         }
+
         return $pictures;
     }
 
     private static function getProductsCount(
         $id_lang,
         Context $context = null
-    )
-    {
+    ) {
         if (!$context) {
             $context = Context::getContext();
         }
 
         $front = true;
-        if (!in_array($context->controller->controller_type, array('front', 'modulefront'))) {
+        if (!in_array($context->controller->controller_type, ['front', 'modulefront'])) {
             $front = false;
         }
 
@@ -385,10 +383,10 @@ class RetailcrmCatalog
                 FROM `' . _DB_PREFIX_ . 'product` p
                 ' . Shop::addSqlAssociation('product', 'p') . '
                 LEFT JOIN `' . _DB_PREFIX_ . 'product_lang` pl ON (p.`id_product` = pl.`id_product` ' . Shop::addSqlRestrictionOnLang('pl') . ')
-                WHERE pl.`id_lang` = ' . (int)$id_lang .
+                WHERE pl.`id_lang` = ' . (int) $id_lang .
             ($front ? ' AND product_shop.`visibility` IN ("both", "catalog")' : '');
 
-        return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
+        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
 
     /**
@@ -452,5 +450,4 @@ class RetailcrmCatalog
 
         return $parentId;
     }
-
 }

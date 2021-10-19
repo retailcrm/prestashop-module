@@ -35,14 +35,13 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 if (function_exists('date_default_timezone_set') && function_exists('date_default_timezone_get')) {
     date_default_timezone_set(@date_default_timezone_get());
 }
 
-require_once(dirname(__FILE__) . '/../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../init.php');
-require_once(dirname(__FILE__) . '/../bootstrap.php');
+require_once dirname(__FILE__) . '/../../../config/config.inc.php';
+require_once dirname(__FILE__) . '/../../../init.php';
+require_once dirname(__FILE__) . '/../bootstrap.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -53,7 +52,8 @@ if (!defined('_PS_VERSION_')) {
  *
  * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
  * @license   GPL
- * @link      https://retailcrm.ru
+ *
+ * @see      https://retailcrm.ru
  */
 class RetailcrmCli
 {
@@ -98,16 +98,16 @@ class RetailcrmCli
             RetailcrmLogger::output('WARNING: cannot handle signals properly, force stop can cause problems!');
         }
 
-        $shortopts = "j:s:";
-        $longopts = array(
-            "job:",
-            "shop:",
-            "set-web-jobs:",
-            "query-web-jobs",
-            "run-jobs",
-            "reset-job-manager",
-            "reset-all"
-        );
+        $shortopts = 'j:s:';
+        $longopts = [
+            'job:',
+            'shop:',
+            'set-web-jobs:',
+            'query-web-jobs',
+            'run-jobs',
+            'reset-job-manager',
+            'reset-all',
+        ];
 
         $options = getopt($shortopts, $longopts);
         $jobName = isset($options['j']) ? $options['j'] : (isset($options['job']) ? $options['job'] : null);
@@ -148,7 +148,7 @@ class RetailcrmCli
      */
     private function setCleanupOnShutdown()
     {
-        RetailcrmJobManager::setCustomShutdownHandler(array($this, 'cleanupOnShutdown'));
+        RetailcrmJobManager::setCustomShutdownHandler([$this, 'cleanupOnShutdown']);
     }
 
     /**
@@ -184,7 +184,7 @@ class RetailcrmCli
      * Prints error details
      *
      * @param \Exception $exception
-     * @param string     $header
+     * @param string $header
      */
     private function printStack($exception, $header = 'Error while executing a job: ')
     {
@@ -216,19 +216,19 @@ class RetailcrmCli
         RetailcrmLogger::output(sprintf('> php %s --query-web-jobs - Check web jobs status', $this->cliPath));
         RetailcrmLogger::output();
         RetailcrmLogger::output(
-            "NOTICE: If you have MultiShop feature enabled, you can additionally " .
-            "specify shop id when manually running job: "
+            'NOTICE: If you have MultiShop feature enabled, you can additionally ' .
+            'specify shop id when manually running job: '
         );
-        RetailcrmLogger::output("At default jobs are running for all active shops alternately.");
+        RetailcrmLogger::output('At default jobs are running for all active shops alternately.');
         RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf('> php %s -j <job name> -s <shop id> - Runs provided job for specified shop', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --job <job name> --shop <shop id> - Runs provided job for specified shop', $this->cliPath));
         RetailcrmLogger::output();
         RetailcrmLogger::output(
-            "WARNING: Commands below are dangerous and should be used only when " .
+            'WARNING: Commands below are dangerous and should be used only when ' .
             "job manager or cli doesn't work properly."
         );
-        RetailcrmLogger::output("Use them at your own risk.");
+        RetailcrmLogger::output('Use them at your own risk.');
         RetailcrmLogger::output();
         RetailcrmLogger::output(sprintf(
             '> php %s --reset-job-manager - Will reset job manager internal timers & current job name',
@@ -245,12 +245,13 @@ class RetailcrmCli
      * Sets new web jobs state
      *
      * @param bool $state
-     * @param      $shopId
+     * @param $shopId
      */
     private function setWebJobs($state, $shopId = null)
     {
-        if ($shopId === null) {
+        if (null === $shopId) {
             RetailcrmLogger::output('You must specify shop id');
+
             return;
         }
 
@@ -269,8 +270,9 @@ class RetailcrmCli
      */
     private function queryWebJobs($shopId = null)
     {
-        if ($shopId === null) {
+        if (null === $shopId) {
             RetailcrmLogger::output('You must specify shop id');
+
             return;
         }
 
@@ -384,7 +386,7 @@ class RetailcrmCli
      */
     private function getAllowedJobs()
     {
-        return array(
+        return [
             'RetailcrmAbandonedCartsEvent',
             'RetailcrmIcmlEvent',
             'RetailcrmIcmlUpdateUrlEvent',
@@ -392,7 +394,7 @@ class RetailcrmCli
             'RetailcrmInventoriesEvent',
             'RetailcrmExportEvent',
             'RetailcrmUpdateSinceIdEvent',
-            'RetailcrmClearLogsEvent'
-        );
+            'RetailcrmClearLogsEvent',
+        ];
     }
 }

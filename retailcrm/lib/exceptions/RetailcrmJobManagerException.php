@@ -35,30 +35,28 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 class RetailcrmJobManagerException extends Exception
 {
     /**
-     * @var string $job
+     * @var string
      */
     private $job;
 
     /**
-     * @var array $jobs
+     * @var array
      */
     private $jobs;
 
     /**
      * RetailcrmJobManagerException constructor.
      *
-     * @param string          $message
-     * @param string          $job
-     * @param array           $jobs
-     * @param int             $code
+     * @param string $message
+     * @param string $job
+     * @param array $jobs
+     * @param int $code
      * @param \Exception|null $previous
-     *
      */
-    public function __construct($message = "", $job = "", $jobs = array(), $code = 0, \Exception $previous = null)
+    public function __construct($message = '', $job = '', $jobs = [], $code = 0, Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
 

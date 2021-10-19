@@ -46,12 +46,12 @@ class RetailcrmHttpClient
     /**
      * Client constructor.
      *
-     * @param string $url               api url
-     * @param array  $defaultParameters array of parameters
+     * @param string $url api url
+     * @param array $defaultParameters array of parameters
      *
      * @throws \InvalidArgumentException
      */
-    public function __construct($url, array $defaultParameters = array())
+    public function __construct($url, array $defaultParameters = [])
     {
         if (false === stripos($url, 'https://')) {
             throw new \InvalidArgumentException(
@@ -76,9 +76,9 @@ class RetailcrmHttpClient
     /**
      * Make HTTP request
      *
-     * @param string $path       request url
-     * @param string $method     (default: 'GET')
-     * @param array  $parameters (default: array())
+     * @param string $path request url
+     * @param string $method (default: 'GET')
+     * @param array $parameters (default: array())
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      *
@@ -91,9 +91,9 @@ class RetailcrmHttpClient
     public function makeRequest(
         $path,
         $method,
-        array $parameters = array()
+        array $parameters = []
     ) {
-        $allowedMethods = array(self::METHOD_GET, self::METHOD_POST);
+        $allowedMethods = [self::METHOD_GET, self::METHOD_POST];
 
         if (!in_array($method, $allowedMethods, false)) {
             throw new \InvalidArgumentException(

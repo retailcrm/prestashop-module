@@ -43,9 +43,7 @@
  * where this class resides.  Additional options can be provided to control the naming
  * convention of the class files.
  *
- * @package Autoloader
  * @license http://opensource.org/licenses/MIT  MIT License
- *
  */
 class RetailcrmAutoloader
 {
@@ -56,13 +54,11 @@ class RetailcrmAutoloader
 
     /**
      * The top level directory where recursion will begin.
-     *
      */
     protected static $pathTop;
 
     /**
      * The top level directory where recursion for custom classes will begin.
-     *
      */
     protected static $pathTopCustom;
 

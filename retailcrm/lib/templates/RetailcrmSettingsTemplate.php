@@ -44,10 +44,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      * RetailcrmSettingsTemplate constructor.
      *
      * @param \Module $module
-     * @param         $smarty
-     * @param         $assets
-     * @param         $settings
-     * @param         $settingsNames
+     * @param $smarty
+     * @param $assets
+     * @param $settings
+     * @param $settingsNames
      */
     public function __construct(Module $module, $smarty, $assets, $settings, $settingsNames)
     {
@@ -64,24 +64,15 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function getParams()
     {
-        $params = array();
+        $params = [];
 
         if ($this->module->api) {
             $params['statusesDefaultExport'] = $this->module->reference->getStatuseDefaultExport();
             $params['deliveryTypes'] = $this->module->reference->getDeliveryTypes();
             $params['orderStatuses'] = $this->module->reference->getStatuses();
-            $params['outOfStockStatuses'] = $this->module->reference->getOutOfStockStatuses(
-                [
-                    'out_of_stock_paid' => $this->module->translate('If order paid'),
-                    'out_of_stock_not_paid' => $this->module->translate('If order not paid'),
-                ]
-            );
             $params['paymentTypes'] = $this->module->reference->getPaymentTypes();
             $params['methodsForDefault'] = $this->module->reference->getPaymentAndDeliveryForDefault(
-                [
-                    $this->module->translate('Delivery method'),
-                    $this->module->translate('Payment type'),
-                ]
+                [$this->module->translate('Delivery method'), $this->module->translate('Payment type')]
             );
             $params['ordersCount'] = RetailcrmExport::getOrdersCount();
             $params['customersCount'] = RetailcrmExport::getCustomersCount();
@@ -103,10 +94,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
     protected function buildParams()
     {
         $this->data = array_merge(
-            array(
+            [
                 'assets' => $this->assets,
                 'cartsDelays' => $this->module->getSynchronizedCartsTimeSelect(),
-            ),
+            ],
             $this->getParams(),
             $this->settingsNames,
             $this->settings
@@ -118,6 +109,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function setTemplate()
     {
-        $this->template = "settings.tpl";
+        $this->template = 'settings.tpl';
     }
 }

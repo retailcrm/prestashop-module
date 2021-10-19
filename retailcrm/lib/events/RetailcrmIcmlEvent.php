@@ -35,13 +35,12 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function execute()
     {
@@ -67,7 +66,7 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName()
     {

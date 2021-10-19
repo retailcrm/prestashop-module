@@ -64,7 +64,7 @@ class RetailcrmTools
      */
     public static function isCorporateEnabled()
     {
-        return (bool)Configuration::get(RetailCRM::ENABLE_CORPORATE_CLIENTS);
+        return (bool) Configuration::get(RetailCRM::ENABLE_CORPORATE_CLIENTS);
     }
 
     /**
@@ -76,7 +76,7 @@ class RetailcrmTools
      */
     public static function isCustomerCorporate($customer)
     {
-        $addresses = $customer->getAddresses((int)Configuration::get('PS_LANG_DEFAULT'));
+        $addresses = $customer->getAddresses((int) Configuration::get('PS_LANG_DEFAULT'));
 
         foreach ($addresses as $address) {
             if (($address instanceof Address && !empty($address->company))
@@ -116,7 +116,7 @@ class RetailcrmTools
      */
     public static function isCrmOrderCorporate($order)
     {
-        return isset($order['customer']['type']) && $order['customer']['type'] == 'customer_corporate';
+        return isset($order['customer']['type']) && 'customer_corporate' == $order['customer']['type'];
     }
 
     /**
@@ -130,7 +130,7 @@ class RetailcrmTools
     {
         if (!empty($customer->id)) {
             foreach ($customer->getAddresses(self::defaultLang()) as $addressArray) {
-                if ($addressArray['alias'] == 'default') {
+                if ('default' == $addressArray['alias']) {
                     return (int) $addressArray['id_address'];
                 }
             }
@@ -147,9 +147,9 @@ class RetailcrmTools
      *
      * @return bool
      */
-    public static function verifyDate($date, $format = "Y-m-d")
+    public static function verifyDate($date, $format = 'Y-m-d')
     {
-        return $date !== "0000-00-00" && (bool)date_create_from_format($format, $date);
+        return '0000-00-00' !== $date && (bool) date_create_from_format($format, $date);
     }
 
     /**
@@ -163,7 +163,7 @@ class RetailcrmTools
     {
         $ids = explode(',', $ids);
 
-        $ranges = array();
+        $ranges = [];
 
         foreach ($ids as $idx => $uid) {
             if (strpos($uid, '-')) {
@@ -182,18 +182,20 @@ class RetailcrmTools
     /**
      * @param ObjectModel $object
      * @param ObjectModel|null $relatedObject
+     *
      * @return bool
+     *
      * @throws PrestaShopException
      */
     public static function validateEntity($object, $relatedObject = null)
     {
         $validate = $object->validateFields(false, true);
-        if ($validate === true) {
+        if (true === $validate) {
             return true;
         }
 
         $msg = '';
-        if ($relatedObject !== null) {
+        if (null !== $relatedObject) {
             $msg = sprintf('for %s with id %s',
                 get_class($relatedObject),
                 $relatedObject->id
@@ -224,10 +226,11 @@ class RetailcrmTools
         if (!is_object($object)) {
             ob_start();
             var_dump($object);
-            return (string)ob_get_clean();
+
+            return (string) ob_get_clean();
         }
 
-        $data = array();
+        $data = [];
         $type = get_class($object);
 
         if (property_exists($type, 'definition')) {
@@ -243,7 +246,6 @@ class RetailcrmTools
                         $data[$field] = $object->$field;
                     }
                 }
-
             }
         }
 
@@ -253,27 +255,28 @@ class RetailcrmTools
     /**
      * Converts CMS address to CRM address
      *
-     * @param       $address
+     * @param $address
      * @param array $customer
      * @param array $order
+     *
      * @deprecated Replaced with RetailcrmAddressBuilder
      *
      * @return array
      */
-    public static function addressParse($address, &$customer = array(), &$order = array())
+    public static function addressParse($address, &$customer = [], &$order = [])
     {
         if (!isset($customer)) {
-            $customer = array();
+            $customer = [];
         }
 
         if (!isset($order)) {
-            $order = array();
+            $order = [];
         }
 
         if ($address instanceof Address) {
             $postcode = $address->postcode;
             $city = $address->city;
-            $addres_line = sprintf("%s %s", $address->address1, $address->address2);
+            $addres_line = sprintf('%s %s', $address->address1, $address->address2);
             $countryIso = Country::getIsoById($address->id_country);
             $vat = $address->vat_number;
         }
@@ -302,31 +305,31 @@ class RetailcrmTools
         $order = array_merge($order, $phones['order']);
         $customer = array_merge($customer, $phones['customer']);
 
-        return array(
+        return [
             'order' => RetailcrmTools::clearArray($order),
             'customer' => RetailcrmTools::clearArray($customer),
-            'vat' => isset($vat) && !empty($vat) ? $vat : ''
-        );
+            'vat' => isset($vat) && !empty($vat) ? $vat : '',
+        ];
     }
 
-    public static function getPhone($address, &$customer = array(), &$order = array())
+    public static function getPhone($address, &$customer = [], &$order = [])
     {
         if (!isset($customer)) {
-            $customer = array();
+            $customer = [];
         }
 
         if (!isset($order)) {
-            $order = array();
+            $order = [];
         }
 
         if (!empty($address->phone_mobile)) {
             $order['phone'] = $address->phone_mobile;
-            $customer['phones'][] = array('number'=> $address->phone_mobile);
+            $customer['phones'][] = ['number' => $address->phone_mobile];
         }
 
         if (!empty($address->phone)) {
             $order['additionalPhone'] = $address->phone;
-            $customer['phones'][] = array('number'=> $address->phone);
+            $customer['phones'][] = ['number' => $address->phone];
         }
 
         if (!isset($order['phone']) && !empty($order['additionalPhone'])) {
@@ -334,7 +337,7 @@ class RetailcrmTools
             unset($order['additionalPhone']);
         }
 
-        $phonesArray = array('customer' => $customer, 'order' => $order);
+        $phonesArray = ['customer' => $customer, 'order' => $order];
 
         return $phonesArray;
     }
@@ -368,8 +371,8 @@ class RetailcrmTools
 
     public static function explodeFIO($string)
     {
-        $result = array();
-        $parse = (!$string) ? false : explode(" ", $string, 3);
+        $result = [];
+        $parse = (!$string) ? false : explode(' ', $string, 3);
 
         switch (count($parse)) {
             case 1:
@@ -410,6 +413,7 @@ class RetailcrmTools
      * @param callable|null $filterFunc
      *
      * @return array
+     *
      * @todo Don't filter out false & all methods MUST NOT use false as blank value.
      */
     public static function clearArray(array $arr, $filterFunc = null)
@@ -418,15 +422,15 @@ class RetailcrmTools
             return $arr;
         }
 
-        $result = array();
+        $result = [];
 
         foreach ($arr as $index => $node) {
             $result[$index] = (is_array($node))
                 ? self::clearArray($node)
                 : $node;
 
-            if ($result[$index] === ''
-                || $result[$index] === null
+            if ('' === $result[$index]
+                || null === $result[$index]
                 || (is_array($result[$index]) && count($result[$index]) < 1)
             ) {
                 unset($result[$index]);
@@ -499,8 +503,8 @@ class RetailcrmTools
      */
     public static function mergeCustomerAddress($customer, $address)
     {
-        $customerPhones = isset($customer['phones']) ? $customer['phones'] : array();
-        $addressPhones = isset($address['phones']) ? $address['phones'] : array();
+        $customerPhones = isset($customer['phones']) ? $customer['phones'] : [];
+        $addressPhones = isset($address['phones']) ? $address['phones'] : [];
         $squashedCustomerPhones = array_filter(array_map(function ($val) {
             return isset($val['number']) ? $val['number'] : null;
         }, $customerPhones));
@@ -515,19 +519,21 @@ class RetailcrmTools
             }
         }
 
-        return array_merge($customer, $address, array('phones' => $customerPhones));
+        return array_merge($customer, $address, ['phones' => $customerPhones]);
     }
 
     /**
      * Compare 'address' and 'phones' fields from crm customer info arrays
+     *
      * @param $customer1
      * @param $customer2
+     *
      * @return bool <b>true</b> if addresses are equal, <b>false</b> otherwise
      */
     public static function isEqualCustomerAddress($customer1, $customer2)
     {
-        $customer1Phones = isset($customer1['phones']) ? $customer1['phones'] : array();
-        $customer2Phones = isset($customer2['phones']) ? $customer2['phones'] : array();
+        $customer1Phones = isset($customer1['phones']) ? $customer1['phones'] : [];
+        $customer2Phones = isset($customer2['phones']) ? $customer2['phones'] : [];
 
         $squashedCustomer1Phones = array_filter(array_map(function ($val) {
             return isset($val['number']) ? $val['number'] : null;
@@ -542,8 +548,8 @@ class RetailcrmTools
             return false;
         }
 
-        $customer1Address = isset($customer1['address']) ? $customer1['address'] : array();
-        $customer2Address = isset($customer2['address']) ? $customer2['address'] : array();
+        $customer1Address = isset($customer1['address']) ? $customer1['address'] : [];
+        $customer2Address = isset($customer2['address']) ? $customer2['address'] : [];
 
         if (isset($customer1Address['id'])) {
             unset($customer1Address['id']);
@@ -573,7 +579,7 @@ class RetailcrmTools
         if (function_exists('http_response_code')) {
             $code = http_response_code($code);
         } else {
-            if ($code !== NULL) {
+            if (null !== $code) {
                 switch ($code) {
                     case 100: $text = 'Continue'; break;
                     case 101: $text = 'Switching Protocols'; break;
@@ -638,7 +644,7 @@ class RetailcrmTools
      */
     public static function isCustomerChangedToRegular($assembledOrder)
     {
-        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'individual';
+        return isset($assembledOrder['contragentType']) && 'individual' == $assembledOrder['contragentType'];
     }
 
     /**
@@ -651,7 +657,7 @@ class RetailcrmTools
      */
     public static function isCustomerChangedToLegal($assembledOrder)
     {
-        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'legal-entity';
+        return isset($assembledOrder['contragentType']) && 'legal-entity' == $assembledOrder['contragentType'];
     }
 
     /**
@@ -682,13 +688,13 @@ class RetailcrmTools
      * (it will be set to id from provided customer, even if it doesn't have ID yet).
      *
      * @param Customer|CustomerCore $customer
-     * @param Address|\AddressCore  $address
+     * @param Address|\AddressCore $address
      */
     public static function assignAddressIdsByFields($customer, $address)
     {
         RetailcrmLogger::writeDebugArray(
             __METHOD__,
-            array('Called with customer', $customer->id, 'and address', self::dumpEntity($address))
+            ['Called with customer', $customer->id, 'and address', self::dumpEntity($address)]
         );
 
         foreach ($customer->getAddresses(self::defaultLang()) as $customerInnerAddress) {
@@ -711,13 +717,13 @@ class RetailcrmTools
      */
     public static function startJobManager()
     {
-        $intervals = array(
+        $intervals = [
             'RetailcrmClearLogsEvent' => new \DateInterval('P1D'),
             'RetailcrmIcmlEvent' => new \DateInterval('PT4H'),
             'RetailcrmInventoriesEvent' => new \DateInterval('PT15M'),
             'RetailcrmSyncEvent' => new \DateInterval('PT7M'),
-            'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M')
-        );
+            'RetailcrmAbandonedCartsEvent' => new \DateInterval('PT1M'),
+        ];
 
         RetailcrmJobManager::startJobs(self::filter(
             'RetailcrmFilterJobManagerIntervals',
@@ -735,7 +741,7 @@ class RetailcrmTools
      */
     protected static function isAddressesEqualByFields($first, $second)
     {
-        $checkMapping = array(
+        $checkMapping = [
             'alias',
             'id_country',
             'lastname',
@@ -748,21 +754,21 @@ class RetailcrmTools
             'other',
             'phone',
             'company',
-            'vat_number'
-        );
+            'vat_number',
+        ];
 
         foreach ($checkMapping as $field) {
             if ($first->$field != $second->$field) {
-                RetailcrmLogger::writeDebug(__METHOD__, json_encode(array(
-                    'first' => array(
+                RetailcrmLogger::writeDebug(__METHOD__, json_encode([
+                    'first' => [
                         'id' => $first->id,
-                        $field => $first->$field
-                    ),
-                    'second' => array(
+                        $field => $first->$field,
+                    ],
+                    'second' => [
                         'id' => $second->id,
-                        $field => $second->$field
-                    ),
-                )));
+                        $field => $second->$field,
+                    ],
+                ]));
 
                 return false;
             }
@@ -780,7 +786,7 @@ class RetailcrmTools
      *
      * @return false|mixed
      */
-    public static function filter($filter, $object, $parameters = array())
+    public static function filter($filter, $object, $parameters = [])
     {
         if (!class_exists($filter)) {
             return $object;
@@ -798,8 +804,8 @@ class RetailcrmTools
         try {
             RetailcrmLogger::writeDebug($filter . '::before', print_r(self::dumpEntity($object), true));
             $result = call_user_func_array(
-                array($filter, 'filter'),
-                array($object, $parameters)
+                [$filter, 'filter'],
+                [$object, $parameters]
             );
             RetailcrmLogger::writeDebug($filter . '::after', print_r(self::dumpEntity($result), true));
 
@@ -814,6 +820,7 @@ class RetailcrmTools
 
     /**
      * @param $name
+     *
      * @return array|false|mixed
      */
     public static function getConfigurationByName($name)
@@ -836,12 +843,13 @@ class RetailcrmTools
         try {
             return current(Db::getInstance()->executeS($sql));
         } catch (PrestaShopDatabaseException $e) {
-            return array();
+            return [];
         }
     }
 
     /**
      * @param $name
+     *
      * @return DateTime|false
      */
     public static function getConfigurationCreatedAtByName($name)
