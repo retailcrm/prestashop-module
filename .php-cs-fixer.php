@@ -34,6 +34,8 @@ return (new PhpCsFixer\Config())
             'align' => 'left',
         ],
         'phpdoc_summary' => false,
+        'psr_autoloading' => false,
+        'yoda_style' => false,
         'protected_to_private' => false,
         'self_accessor' => false,
         'single_line_throw' => false,
