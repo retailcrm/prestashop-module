@@ -134,7 +134,7 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
         $this->customer->firstname = $this->arrayValue('firstName');
         $this->customer->lastname = $this->arrayValue('lastName');
 
-        if (isset($this->dataCrm['subscribed']) && $this->dataCrm['subscribed'] == false) {
+        if (isset($this->dataCrm['subscribed']) && false == $this->dataCrm['subscribed']) {
             $this->customer->newsletter = false;
         }
 
@@ -145,7 +145,7 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
         $this->customer->birthday = $this->arrayValue('birthday', '');
 
         if (isset($this->dataCrm['sex'])) {
-            $this->customer->id_gender = $this->dataCrm['sex'] == 'male' ? 1 : 2;
+            $this->customer->id_gender = 'male' == $this->dataCrm['sex'] ? 1 : 2;
         }
 
         $this->buildAddress();

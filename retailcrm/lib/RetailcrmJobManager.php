@@ -39,9 +39,9 @@ if (function_exists('date_default_timezone_set') && function_exists('date_defaul
     date_default_timezone_set(@date_default_timezone_get());
 }
 
-require_once __DIR__ . '/../../../config/config.inc.php';
-require_once __DIR__ . '/../../../init.php';
-require_once __DIR__ . '/../bootstrap.php';
+require_once dirname(__FILE__) . '/../../../config/config.inc.php';
+require_once dirname(__FILE__) . '/../../../init.php';
+require_once dirname(__FILE__) . '/../bootstrap.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -143,10 +143,10 @@ class RetailcrmJobManager
             $date1 = new \DateTime();
             $date2 = new \DateTime();
 
-            if ($diff1 !== null) {
+            if (!is_null($diff1)) {
                 $date1->add($diff1);
             }
-            if ($diff2 !== null) {
+            if (!is_null($diff2)) {
                 $date2->add($diff2);
             }
 
@@ -172,7 +172,7 @@ class RetailcrmJobManager
                 RetailcrmLogger::writeDebug(__METHOD__, sprintf(
                     'Checking %s, interval %s, shouldRunAt: %s: %s',
                     $job,
-                    $diff === null ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
+                    is_null($diff) ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
                     isset($shouldRunAt) && $shouldRunAt instanceof \DateTime
                         ? $shouldRunAt->format(DATE_RFC3339)
                         : 'undefined',
@@ -298,7 +298,7 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
 
-        if (json_last_error() != JSON_ERROR_NONE) {
+        if (JSON_ERROR_NONE != json_last_error()) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $ran) {
@@ -370,7 +370,7 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 
-        if (json_last_error() != JSON_ERROR_NONE) {
+        if (JSON_ERROR_NONE != json_last_error()) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $details) {
@@ -499,7 +499,7 @@ class RetailcrmJobManager
      */
     public static function clearCurrentJob($job)
     {
-        if ($job === null || self::getCurrentJob() == $job) {
+        if (is_null($job) || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK);
         }
 
@@ -542,7 +542,7 @@ class RetailcrmJobManager
     {
         $error = error_get_last();
 
-        if ($error !== null && $error['type'] === E_ERROR) {
+        if (null !== $error && E_ERROR === $error['type']) {
             self::defaultShutdownHandler($error);
         }
     }
@@ -568,7 +568,7 @@ class RetailcrmJobManager
         if (is_callable(self::$customShutdownHandler)) {
             call_user_func_array(self::$customShutdownHandler, [$error]);
         } else {
-            if ($error !== null) {
+            if (null !== $error) {
                 $job = self::getCurrentJob();
                 if (!empty($job)) {
                     $lastRunsDetails = self::getLastRunDetails();
@@ -657,8 +657,8 @@ class RetailcrmJobManager
         if (!$cliMode && !$force) {
             ignore_user_abort(true);
 
-            if (version_compare(phpversion(), '7.0.16', '>=')
-                && function_exists('fastcgi_finish_request')
+            if (version_compare(phpversion(), '7.0.16', '>=') &&
+                function_exists('fastcgi_finish_request')
             ) {
                 if (!headers_sent()) {
                     header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');

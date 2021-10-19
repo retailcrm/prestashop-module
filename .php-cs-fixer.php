@@ -10,29 +10,6 @@ return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
-        '@Symfony:risky' => true,
-        'ordered_imports' => true,
-        'global_namespace_import' => [
-            'import_classes' => false,
-            'import_constants' => false,
-            'import_functions' => false,
-        ],
-
-        'native_constant_invocation' => false,
-        'native_function_invocation' => false,
-        'modernize_types_casting' => true,
-        'is_null' => true,
-        'operator_linebreak' => [
-            'only_booleans' => true,
-            'position' => 'beginning',
-        ],
-        'array_syntax' => [
-            'syntax' => 'short',
-        ],
-        'phpdoc_annotation_without_dot' => false,
-        'logical_operators' => true,
-        'php_unit_test_case_static_method_calls' => ['call_type' => 'this'],
-        'multiline_whitespace_before_semicolons' => ['strategy' => 'new_line_for_chained_calls'],
         'array_indentation' => true,
         'cast_spaces' => [
             'space' => 'single',
@@ -57,12 +34,6 @@ return (new PhpCsFixer\Config())
             'align' => 'left',
         ],
         'phpdoc_summary' => false,
-        'psr_autoloading' => false,
-        'yoda_style' => [
-            'equal' => false,
-            'identical' => false,
-            'less_and_greater' => false
-        ],
         'protected_to_private' => false,
         'self_accessor' => false,
         'single_line_throw' => false,

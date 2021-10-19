@@ -55,7 +55,7 @@ function upgrade_module_3_0_1($module)
     $syncCarts = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
 
     // Suppress warning. DB creation below shouldn't be changed in next versions.
-    if ($module->name != 'retailcrm') {
+    if ('retailcrm' != $module->name) {
         return false;
     }
 
@@ -70,7 +70,7 @@ function upgrade_module_3_0_1($module)
     }
 
     // Immediate cart synchronization is not safe anymore (causes data inconsistency)
-    if (Configuration::hasKey($syncCarts) && Configuration::get($syncCarts) == '0') {
+    if (Configuration::hasKey($syncCarts) && '0' == Configuration::get($syncCarts)) {
         Configuration::set($syncCarts, '900');
     }
 

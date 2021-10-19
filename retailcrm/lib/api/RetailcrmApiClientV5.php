@@ -256,7 +256,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
@@ -285,7 +285,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
@@ -314,7 +314,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );

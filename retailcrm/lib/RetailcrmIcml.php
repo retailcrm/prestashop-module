@@ -152,7 +152,7 @@ class RetailcrmIcml
             $offerKeys = array_keys($offer);
 
             foreach ($offerKeys as $key) {
-                if ($offer[$key] == null) {
+                if (null == $offer[$key]) {
                     continue;
                 }
 

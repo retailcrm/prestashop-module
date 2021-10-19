@@ -35,7 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
+require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -114,7 +114,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          *
          */
 
-        if ($orderInstance->current_state == 0) {
+        if (0 == $orderInstance->current_state) {
             $order['status'] = 'completed';
         } else {
             $order['status'] = array_key_exists($orderInstance->current_state, $status)
@@ -131,8 +131,8 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $address = array_shift($addressCollection);
 
         if ($address instanceof Address) {
-            $phone = $address->phone === null
-                ? $address->phone_mobile === null ? '' : $address->phone_mobile
+            $phone = is_null($address->phone)
+                ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
                 : $address->phone
             ;
 
@@ -161,7 +161,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          * Add payment & shippment data
          */
 
-        if (Module::getInstanceByName('advancedcheckout') === false) {
+        if (false === Module::getInstanceByName('advancedcheckout')) {
             $paymentType = $orderInstance->module;
         } else {
             $paymentType = $orderInstance->payment;

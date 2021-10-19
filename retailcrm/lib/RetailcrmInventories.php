@@ -54,7 +54,7 @@ class RetailcrmInventories
         do {
             $result = self::$api->storeInventories([], $page, 250);
 
-            if ($result === false) {
+            if (false === $result) {
                 return $result;
             }
 

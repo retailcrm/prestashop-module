@@ -116,7 +116,7 @@ class RetailcrmTools
      */
     public static function isCrmOrderCorporate($order)
     {
-        return isset($order['customer']['type']) && $order['customer']['type'] == 'customer_corporate';
+        return isset($order['customer']['type']) && 'customer_corporate' == $order['customer']['type'];
     }
 
     /**
@@ -130,7 +130,7 @@ class RetailcrmTools
     {
         if (!empty($customer->id)) {
             foreach ($customer->getAddresses(self::defaultLang()) as $addressArray) {
-                if ($addressArray['alias'] == 'default') {
+                if ('default' == $addressArray['alias']) {
                     return (int) $addressArray['id_address'];
                 }
             }
@@ -149,7 +149,7 @@ class RetailcrmTools
      */
     public static function verifyDate($date, $format = 'Y-m-d')
     {
-        return $date !== '0000-00-00' && (bool) date_create_from_format($format, $date);
+        return '0000-00-00' !== $date && (bool) date_create_from_format($format, $date);
     }
 
     /**
@@ -190,12 +190,12 @@ class RetailcrmTools
     public static function validateEntity($object, $relatedObject = null)
     {
         $validate = $object->validateFields(false, true);
-        if ($validate === true) {
+        if (true === $validate) {
             return true;
         }
 
         $msg = '';
-        if ($relatedObject !== null) {
+        if (null !== $relatedObject) {
             $msg = sprintf('for %s with id %s',
                 get_class($relatedObject),
                 $relatedObject->id
@@ -429,8 +429,8 @@ class RetailcrmTools
                 ? self::clearArray($node)
                 : $node;
 
-            if ($result[$index] === ''
-                || $result[$index] === null
+            if ('' === $result[$index]
+                || null === $result[$index]
                 || (is_array($result[$index]) && count($result[$index]) < 1)
             ) {
                 unset($result[$index]);
@@ -442,7 +442,7 @@ class RetailcrmTools
         }
 
         return array_filter($result, function ($value) {
-            return $value !== null;
+            return !is_null($value);
         });
     }
 
@@ -454,7 +454,7 @@ class RetailcrmTools
      */
     public static function isDebug()
     {
-        return Configuration::get(RetailCRM::ENABLE_DEBUG_MODE) === '1';
+        return '1' === Configuration::get(RetailCRM::ENABLE_DEBUG_MODE);
     }
 
     /**
@@ -490,7 +490,7 @@ class RetailcrmTools
 
     public static function isWebJobsEnabled()
     {
-        return Configuration::get(RetailCRM::ENABLE_WEB_JOBS) !== '0';
+        return '0' !== Configuration::get(RetailCRM::ENABLE_WEB_JOBS);
     }
 
     /**
@@ -579,7 +579,7 @@ class RetailcrmTools
         if (function_exists('http_response_code')) {
             $code = http_response_code($code);
         } else {
-            if ($code !== null) {
+            if (null !== $code) {
                 switch ($code) {
                     case 100: $text = 'Continue'; break;
                     case 101: $text = 'Switching Protocols'; break;
@@ -644,7 +644,7 @@ class RetailcrmTools
      */
     public static function isCustomerChangedToRegular($assembledOrder)
     {
-        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'individual';
+        return isset($assembledOrder['contragentType']) && 'individual' == $assembledOrder['contragentType'];
     }
 
     /**
@@ -657,7 +657,7 @@ class RetailcrmTools
      */
     public static function isCustomerChangedToLegal($assembledOrder)
     {
-        return isset($assembledOrder['contragentType']) && $assembledOrder['contragentType'] == 'legal-entity';
+        return isset($assembledOrder['contragentType']) && 'legal-entity' == $assembledOrder['contragentType'];
     }
 
     /**
@@ -809,7 +809,7 @@ class RetailcrmTools
             );
             RetailcrmLogger::writeDebug($filter . '::after', print_r(self::dumpEntity($result), true));
 
-            return ($result === null || $result === false) ? $object : $result;
+            return (null === $result || false === $result) ? $object : $result;
         } catch (Exception $e) {
             RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
             RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
