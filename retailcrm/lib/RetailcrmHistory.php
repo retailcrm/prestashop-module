@@ -200,10 +200,11 @@ class RetailcrmHistory
             $filter = array();
         }
 
-        $orderFix = array();
-        $updateOrderIds = array();
-        $newItemsIdsByOrderId = array();
-        $historyChanges = array();
+        $orderFix = [];
+        $updateOrderIds = [];
+        $updateOrderStatuses = [];
+        $newItemsIdsByOrderId = [];
+        $historyChanges = [];
 
         $request = new RetailcrmApiPaginatedRequest();
         $history = $request
@@ -715,6 +716,27 @@ class RetailcrmHistory
 
                             $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
 
+                            if (!$product->checkQty($orderDetail->product_quantity)) {
+
+                                self::$api->ordersFixExternalIds([[
+                                    'id' => $order['id'],
+                                    'externalId' => $newOrder->id,
+                                ]]);
+
+                                self::setOutOfStockStatus(
+                                    $order,
+                                    $newOrder,
+                                    $statuses
+                                );
+                            }
+
+                            StockAvailable::updateQuantity(
+                                $product_id,
+                                $product_attribute_id,
+                                -1 * $orderDetail->product_quantity,
+                                Context::getContext()->shop->id
+                            );
+
                             if (self::loadInCMS($orderDetail, 'save')) {
                                 $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
                             }
@@ -970,7 +992,21 @@ class RetailcrmHistory
                                     $id_order_detail = !empty($parsedExtId['id_order_detail'])
                                         ? $parsedExtId['id_order_detail'] : 0;
 
-                                    self::deleteOrderDetailByProduct($orderToUpdate->id, $product_id, $product_attribute_id, $id_order_detail);
+                                    if (isset($item['quantity'])) {
+                                        StockAvailable::updateQuantity(
+                                            $product_id,
+                                            $product_attribute_id,
+                                            $item['quantity'],
+                                            Context::getContext()->shop->id
+                                        );
+                                    }
+
+                                    self::deleteOrderDetailByProduct(
+                                        $orderToUpdate->id,
+                                        $product_id,
+                                        $product_attribute_id,
+                                        $id_order_detail
+                                    );
                                     unset($order['items'][$key]);
                                 }
                             }
@@ -1006,9 +1042,33 @@ class RetailcrmHistory
                                         }
 
                                         // quantity
-                                        if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
+                                        if (
+                                            isset($item['quantity'])
+                                            && $item['quantity'] != $orderItem['product_quantity']
+                                        ) {
+                                            $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
                                             $orderDetail->product_quantity = $item['quantity'];
                                             $orderDetail->product_quantity_in_stock = $item['quantity'];
+
+                                            if ($deltaQuantity < 0 && !$product->checkQty(-1 * $deltaQuantity)) {
+                                                $newStatus = self::setOutOfStockStatus(
+                                                    $infoOrder,
+                                                    $orderToUpdate,
+                                                    $statuses
+                                                );
+
+                                                if ($newStatus) {
+                                                    $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
+                                                    $orderToUpdate->current_state = $statuses[$newStatus];
+                                                }
+                                            }
+
+                                            StockAvailable::updateQuantity(
+                                                $product_id,
+                                                $product_attribute_id,
+                                                $deltaQuantity,
+                                                Context::getContext()->shop->id
+                                            );
                                         }
 
                                         $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
@@ -1078,6 +1138,26 @@ class RetailcrmHistory
                                 $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
                                     ? $parsedExtId['id_order_detail'] : null;
 
+                                if (!$product->checkQty($orderDetail->product_quantity)) {
+                                    $newStatus = self::setOutOfStockStatus(
+                                        $infoOrder,
+                                        $orderToUpdate,
+                                        $statuses
+                                    );
+
+                                    if ($newStatus) {
+                                        $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
+                                        $orderToUpdate->current_state = $statuses[$newStatus];
+                                    }
+                                }
+
+                                StockAvailable::updateQuantity(
+                                    $product_id,
+                                    $product_attribute_id,
+                                    -1 * $orderDetail->product_quantity,
+                                    Context::getContext()->shop->id
+                                );
+
                                 if (self::loadInCMS($orderDetail, 'save')) {
                                     $newItemsIds[Db::getInstance()->Insert_ID()] = $newItem['id'];
                                 }
@@ -1126,7 +1206,7 @@ class RetailcrmHistory
                     /**
                      * check status
                      */
-                    if (!empty($order['status'])) {
+                    if (!empty($order['status']) && !array_key_exists($orderToUpdate->id, $updateOrderStatuses)) {
                         $stype = $order['status'];
 
                         if (isset($statuses[$stype]) && !empty($statuses[$stype])) {
@@ -1242,6 +1322,66 @@ class RetailcrmHistory
         } else {
             $data->setNewCustomer($crmCustomer);
         }
+    }
+
+    /**
+     * Sets order status to 'outOfStock' and returns CRM status or false if status will not change
+     *
+     * @param array $crmOrder
+     * @param \Order $cmsOrder
+     * @param array $statuses
+     *
+     * @return string|false
+     */
+    private static function setOutOfStockStatus($crmOrder, $cmsOrder, $statuses)
+    {
+        $statusArray = json_decode(
+            Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS),
+            true
+        );
+
+        if (isset($crmOrder['fullPaidAt']) && !empty($crmOrder['fullPaidAt'])) {
+            $stype = $statusArray['out_of_stock_paid'];
+
+            if ($stype == '') {
+                return false;
+            }
+        } else {
+            $stype = $statusArray['out_of_stock_not_paid'];
+
+            if ($stype == '') {
+                return false;
+            }
+        }
+
+        if ($statuses[$stype] != $cmsOrder->current_state) {
+            $orderHistory = new OrderHistory();
+            $orderHistory->id_order = $cmsOrder->id;
+            $orderHistory->id_order_state = $statuses[$stype];
+            $orderHistory->date_add = date('Y-m-d H:i:s');
+
+            self::loadInCMS($orderHistory, 'save');
+
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
+                sprintf(
+                    '<Order ID: %d> %s::%s',
+                    $cmsOrder->id,
+                    get_class($orderHistory),
+                    'changeIdOrderState'
+                )
+            );
+
+            $orderHistory->changeIdOrderState(
+                (int) $statuses[$stype],
+                $cmsOrder->id,
+                true
+            );
+
+            return $stype;
+        }
+
+        return false;
     }
 
     /**
@@ -1486,7 +1626,8 @@ class RetailcrmHistory
                 $notOurChanges[$externalId] = array();
             }
 
-            if ($entry['source'] == 'api'
+            if (
+                $entry['source'] == 'api'
                 && isset($entry['apiKey']['current'])
                 && $entry['apiKey']['current'] == true
             ) {

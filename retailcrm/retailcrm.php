@@ -52,6 +52,7 @@ class RetailCRM extends Module
     const API_KEY = 'RETAILCRM_API_TOKEN';
     const DELIVERY = 'RETAILCRM_API_DELIVERY';
     const STATUS = 'RETAILCRM_API_STATUS';
+    const OUT_OF_STOCK_STATUS = 'RETAILCRM_API_OUT_OF_STOCK_STATUS';
     const PAYMENT = 'RETAILCRM_API_PAYMENT';
     const DELIVERY_DEFAULT = 'RETAILCRM_API_DELIVERY_DEFAULT';
     const PAYMENT_DEFAULT = 'RETAILCRM_API_PAYMENT_DEFAULT';
@@ -229,6 +230,7 @@ class RetailCRM extends Module
             Configuration::deleteByName(static::API_KEY) &&
             Configuration::deleteByName(static::DELIVERY) &&
             Configuration::deleteByName(static::STATUS) &&
+            Configuration::deleteByName(static::OUT_OF_STOCK_STATUS) &&
             Configuration::deleteByName(static::PAYMENT) &&
             Configuration::deleteByName(static::DELIVERY_DEFAULT) &&
             Configuration::deleteByName(static::PAYMENT_DEFAULT) &&
@@ -997,6 +999,7 @@ class RetailCRM extends Module
                 'address' => (string) (Tools::getValue(static::API_URL)),
                 'delivery' => json_encode(Tools::getValue(static::DELIVERY)),
                 'status' => json_encode(Tools::getValue(static::STATUS)),
+                'outOfStockStatus' => json_encode(Tools::getValue(static::OUT_OF_STOCK_STATUS)),
                 'payment' => json_encode(Tools::getValue(static::PAYMENT)),
                 'deliveryDefault' => json_encode(Tools::getValue(static::DELIVERY_DEFAULT)),
                 'paymentDefault' => json_encode(Tools::getValue(static::PAYMENT_DEFAULT)),
@@ -1023,6 +1026,7 @@ class RetailCRM extends Module
                 Configuration::updateValue(static::API_KEY, $settings['apiKey']);
                 Configuration::updateValue(static::DELIVERY, $settings['delivery']);
                 Configuration::updateValue(static::STATUS, $settings['status']);
+                Configuration::updateValue(static::OUT_OF_STOCK_STATUS, $settings['outOfStockStatus']);
                 Configuration::updateValue(static::PAYMENT, $settings['payment']);
                 Configuration::updateValue(static::DELIVERY_DEFAULT, $settings['deliveryDefault']);
                 Configuration::updateValue(static::PAYMENT_DEFAULT, $settings['paymentDefault']);
@@ -1405,6 +1409,7 @@ class RetailCRM extends Module
             'apiKey' => (string)(Configuration::get(static::API_KEY)),
             'delivery' => json_decode(Configuration::get(static::DELIVERY), true),
             'status' => json_decode(Configuration::get(static::STATUS), true),
+            'outOfStockStatus' => json_decode(Configuration::get(static::OUT_OF_STOCK_STATUS), true),
             'payment' => json_decode(Configuration::get(static::PAYMENT), true),
             'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
             'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
@@ -1438,6 +1443,7 @@ class RetailCRM extends Module
             'apiKeyName' => static::API_KEY,
             'deliveryName' => static::DELIVERY,
             'statusName' => static::STATUS,
+            'outOfStockStatusName' => static::OUT_OF_STOCK_STATUS,
             'paymentName' => static::PAYMENT,
             'deliveryDefaultName' => static::DELIVERY_DEFAULT,
             'paymentDefaultName' => static::PAYMENT_DEFAULT,
