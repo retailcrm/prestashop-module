@@ -1274,7 +1274,7 @@ class RetailCRM extends Module
                     return false;
                 }
             }
-        } elseif ($icmlInfo['isOutdated'] || !$icmlInfo['isUrlActual']) {
+        } elseif ($icmlInfo['isOutdated'] || (isset($icmlInfo['isUrlActual']) && $icmlInfo['isUrlActual'] === false)) {
             return false;
         }
 
