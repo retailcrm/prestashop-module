@@ -342,65 +342,36 @@ class RetailCRM extends Module
             return $this->displayError($this->l("At least one order ID should be specified"));
         }
 
-        $apiUrl = Configuration::get(static::API_URL);
-        $apiKey = Configuration::get(static::API_KEY);
-        $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
-        $isSuccessful = true;
-
-        if (!empty($apiUrl) && !empty($apiKey)) {
-            if (!($this->api instanceof RetailcrmProxy)) {
+        if (!($this->api instanceof RetailcrmProxy)) {
+            $apiUrl = Configuration::get(static::API_URL);
+            $apiKey = Configuration::get(static::API_KEY);
+            if (!empty($apiUrl) && !empty($apiKey)) {
                 $this->api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
+            } else {
+                return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
             }
-        } else {
-            return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
         }
 
         $result = '';
+        $isSuccessful = true;
         $skippedOrders = array();
+        RetailcrmExport::$api = $this->api;
+        $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         foreach ($orderIds as $orderId) {
-            $object = new Order($orderId);
-            $customer = new Customer($object->id_customer);
-            $apiResponse = $this->api->ordersGet($object->id);
-            $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : array();
-
-            if (!Validate::isLoadedObject($object)) {
-                array_push($skippedOrders, $orderId);
-                continue;
-            }
+            $response = false;
 
             try {
-                $orderBuilder = new RetailcrmOrderBuilder();
-                $crmOrder = $orderBuilder
-                    ->defaultLangFromConfiguration()
-                    ->setApi($this->api)
-                    ->setCmsOrder($object)
-                    ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer();
-            } catch (\InvalidArgumentException $exception) {
-                $result .= $this->displayError($exception->getMessage());
-                RetailcrmLogger::writeCaller(__METHOD__, $exception->getTraceAsString());
+                $response = RetailcrmExport::exportOrder($orderId, $receiveOrderNumber);
+            } catch (PrestaShopObjectNotFoundExceptionCore $e) {
+                $skippedOrders[] = $orderId;
+            } catch (Exception $e) {
+                $this->displayError($e->getMessage());
+                RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
             }
 
-            if (!empty($crmOrder)) {
-                $response = false;
-
-                if (empty($existingOrder)) {
-                    $response = $this->api->ordersCreate($crmOrder);
-
-                    if ($response instanceof RetailcrmApiResponse && $response->isSuccessful() && $receiveOrderNumber) {
-                        $crmOrder = $response->order;
-                        $object->reference = $crmOrder['number'];
-                        $object->update();
-                    }
-                } else {
-                    $response = $this->api->ordersEdit($crmOrder);
-                }
-
-                $isSuccessful = $isSuccessful ? (is_bool($response) ? $response : $response->isSuccessful()) : false;
-
-                time_nanosleep(0, 50000000);
-            }
+            $isSuccessful = $isSuccessful ? $response : false;
+            time_nanosleep(0, 50000000);
         }
 
         if ($isSuccessful && empty($skippedOrders)) {
@@ -739,82 +710,17 @@ class RetailCRM extends Module
 
     public function hookActionOrderEdited($params)
     {
-        if ($this->api) {
-            try {
-                $orderdb = new Order($params['order']->id);
-            } catch (PrestaShopDatabaseException $exception) {
-                RetailcrmLogger::writeCaller('hookActionOrderEdited', $exception->getMessage());
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-            } catch (PrestaShopException $exception) {
-                RetailcrmLogger::writeCaller('hookActionOrderEdited', $exception->getMessage());
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-            }
+        if (!$this->api) {
+            return false;
+        }
 
-            $orderCrm = $this->api->ordersGet($params['order']->id);
+        try {
+            RetailcrmExport::$api = $this->api;
 
-            if (!($orderCrm instanceof RetailcrmApiResponse) || !$orderCrm->isSuccessful()) {
-                /** @var Order|\OrderCore $order */
-                $order = $params['order'];
-
-                $this->hookNewOrder(array(
-                    'orderStatus' => $order->current_state,
-                    'id_order' => (int) $order->id,
-                    'order' => $order,
-                    'cart' => new Cart($order->id_cart),
-                    'customer' => new Customer($order->id_customer)
-                ));
-
-                return false;
-            }
-
-            $order = array(
-                'externalId' => $params['order']->id,
-                'firstName' => $params['customer']->firstname,
-                'lastName' => $params['customer']->lastname,
-                'email' => $params['customer']->email,
-                'createdAt' => RetailcrmTools::verifyDate($params['order']->date_add, 'Y-m-d H:i:s')
-                    ? $params['order']->date_add : date('Y-m-d H:i:s'),
-                'delivery' => array('cost' => $params['order']->total_shipping),
-                'discountManualAmount' => round($params['order']->total_discounts, 2)
-            );
-
-            if (((float) $order['discountManualAmount']) > ((float) $params['order']->total_paid)) {
-                $order['discountManualAmount'] = $params['order']->total_paid;
-            }
-
-            $comment = $orderdb->getFirstMessage();
-
-            if ($comment !== false) {
-                $order['customerComment'] = $comment;
-            }
-
-            unset($comment);
-
-            foreach ($orderdb->getProducts() as $item) {
-                if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
-                    $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
-                } else {
-                    $productId = $item['product_id'];
-                }
-
-                $order['items'][] = array(
-                    "externalIds" => array(
-                        array(
-                            'code' =>'prestashop',
-                            'value' => $productId."_".$item['id_order_detail'],
-                        )
-                    ),
-                    'initialPrice' => $item['unit_price_tax_incl'],
-                    'quantity' => $item['product_quantity'],
-                    'offer' => array('externalId' => $productId),
-                    'productName' => $item['product_name'],
-                );
-            }
-
-            $order['customer']['externalId'] = $params['order']->id_customer;
-            $this->api->ordersEdit($order);
-
-            return true;
+            return RetailcrmExport::exportOrder($params['order']->id);
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
         }
 
         return false;
@@ -822,56 +728,24 @@ class RetailCRM extends Module
 
     public function hookActionOrderStatusPostUpdate($params)
     {
+        if (!$this->api) {
+            return false;
+        }
+
         $status = json_decode(Configuration::get(static::STATUS), true);
         $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
 
         if (isset($params['orderStatus'])) {
-            $cmsOrder = $params['order'];
-            $cart = $params['cart'];
-            $customer = $params['customer'];
-            $response = $this->api->ordersGet(RetailcrmTools::getCartOrderExternalId($cart));
-            $crmOrder = isset($response['order']) ? $response['order'] : array();
-            $orderBuilder = new RetailcrmOrderBuilder();
-
             try {
-                $order = $orderBuilder
-                    ->defaultLangFromConfiguration()
-                    ->setApi($this->api)
-                    ->setCmsOrder($cmsOrder)
-                    ->setCmsCart($cart)
-                    ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer();
-            } catch (\InvalidArgumentException $exception) {
-                RetailcrmLogger::writeCaller(
-                    'hookActionOrderStatusPostUpdate',
-                    $exception->getMessage()
-                );
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+                RetailcrmExport::$api = $this->api;
 
-                return false;
+                return RetailcrmExport::exportOrder($params['order']->id, $receiveOrderNumber);
+            } catch (Exception $e) {
+                RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
+                RetailcrmLogger::writeNoCaller($e->getTraceAsString());
             }
 
-            if (!empty($crmOrder)) {
-                $order['id'] = $crmOrder['id'];
-                $this->api->ordersEdit($order, 'id');
-
-                if (empty($crmOrder['payments']) && !empty($order['payments'])) {
-                    $payment = array_merge(reset($order['payments']), array(
-                        'order' => array('externalId' => $order['externalId'])
-                    ));
-                    $this->api->ordersPaymentCreate($payment);
-                }
-            } else {
-                $response = $this->api->ordersCreate($order);
-
-                if ($response instanceof RetailcrmApiResponse && $response->isSuccessful() && $receiveOrderNumber) {
-                    $crmOrder = $response->order;
-                    $cmsOrder->reference = $crmOrder['number'];
-                    $cmsOrder->update();
-                }
-            }
-
-            return true;
+            return false;
         } elseif (isset($params['newOrderStatus'])) {
             $statusCode = $params['newOrderStatus']->id;
 
