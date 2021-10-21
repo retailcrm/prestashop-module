@@ -61,8 +61,8 @@ class RetailcrmContextSwitcher
         self::storeContext();
 
         foreach (self::getShops() as $shop) {
-            self::setShopContext(intval($shop['id_shop']));
-            $result[intval($shop['id_shop'])] = call_user_func_array($callback, $arguments);
+            self::setShopContext((int) ($shop['id_shop']));
+            $result[(int) ($shop['id_shop'])] = call_user_func_array($callback, $arguments);
         }
 
         self::restoreContext();

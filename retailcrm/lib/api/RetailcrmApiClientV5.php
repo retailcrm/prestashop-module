@@ -246,10 +246,10 @@ class RetailcrmApiClientV5
      */
     public function customFieldsCreate($entity, $customField)
     {
-        if (!count($customField) ||
-            empty($customField['code']) ||
-            empty($customField['name']) ||
-            empty($customField['type'])
+        if (!count($customField)
+            || empty($customField['code'])
+            || empty($customField['name'])
+            || empty($customField['type'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `customField` must contain a data & fields `code`, `name` & `type` must be set'
@@ -365,9 +365,9 @@ class RetailcrmApiClientV5
      */
     public function customDictionariesCreate($customDictionary)
     {
-        if (!count($customDictionary) ||
-            empty($customDictionary['code']) ||
-            empty($customDictionary['elements'])
+        if (!count($customDictionary)
+            || empty($customDictionary['code'])
+            || empty($customDictionary['elements'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `dictionary` must contain a data & fields `code` & `elemets` must be set'
@@ -390,9 +390,9 @@ class RetailcrmApiClientV5
      */
     public function customDictionariesEdit($customDictionary)
     {
-        if (!count($customDictionary) ||
-            empty($customDictionary['code']) ||
-            empty($customDictionary['elements'])
+        if (!count($customDictionary)
+            || empty($customDictionary['code'])
+            || empty($customDictionary['elements'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `dictionary` must contain a data & fields `code` & `elemets` must be set'

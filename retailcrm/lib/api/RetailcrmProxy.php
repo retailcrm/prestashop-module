@@ -66,7 +66,8 @@ class RetailcrmProxy
             ->setAction(function ($request) {
                 return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
             })
-            ->build();
+            ->build()
+        ;
     }
 
     public function __call($method, $arguments)
@@ -75,7 +76,8 @@ class RetailcrmProxy
 
         $request->setApi($this->client)
             ->setMethod($method)
-            ->setData($arguments);
+            ->setData($arguments)
+        ;
 
         return $this->pipeline->run($request);
     }

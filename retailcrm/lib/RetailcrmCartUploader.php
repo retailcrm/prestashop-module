@@ -326,12 +326,12 @@ class RetailcrmCartUploader
      */
     private static function loadAbandonedCartsIds()
     {
-        $sql = 'SELECT c.id_cart, c.date_upd 
+        $sql = 'SELECT c.id_cart, c.date_upd
                 FROM ' . _DB_PREFIX_ . 'cart AS c
                 LEFT JOIN ' . _DB_PREFIX_ . 'customer cus
                   ON
                     c.id_customer = cus.id_customer
-                WHERE c.id_customer != 0 
+                WHERE c.id_customer != 0
                   AND cus.is_guest = 0
                 ' . Shop::addSqlRestriction(false, 'c') . '
                   AND TIME_TO_SEC(TIMEDIFF(\'' . pSQL(static::$now->format('Y-m-d H:i:s'))
@@ -359,7 +359,7 @@ class RetailcrmCartUploader
         ob_clean();
         ob_end_flush();
 
-        if (is_null($lastUploadDate) || is_null($lastUpdatedDate)) {
+        if ($lastUploadDate === null || $lastUpdatedDate === null) {
             return true;
         }
 
@@ -375,7 +375,7 @@ class RetailcrmCartUploader
     {
         if (empty(static::$syncStatus)
             || (count(static::$paymentTypes) < 1)
-            || is_null(static::$now)
+            || static::$now === null
             || !static::$api
         ) {
             return false;

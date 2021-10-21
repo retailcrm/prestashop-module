@@ -52,6 +52,10 @@ else
         && bash travis-scripts/install-prestashop.sh
 endif
 
+lint:
+	cd $(PRESTASHOP_DIR) \
+		&& php ./vendor/bin/php-cs-fixer fix --path-mode=intersection modules/retailcrm
+
 test:
 ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) \

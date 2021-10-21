@@ -442,7 +442,7 @@ class RetailcrmTools
         }
 
         return array_filter($result, function ($value) {
-            return !is_null($value);
+            return $value !== null;
         });
     }
 

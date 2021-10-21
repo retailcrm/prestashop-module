@@ -75,8 +75,8 @@ class RetailcrmExport
      */
     public static function getOrdersCount()
     {
-        $sql = 'SELECT count(o.id_order) 
-            FROM `' . _DB_PREFIX_ . 'orders` o 
+        $sql = 'SELECT count(o.id_order)
+            FROM `' . _DB_PREFIX_ . 'orders` o
             WHERE 1
             ' . Shop::addSqlRestriction(false, 'o');
 
@@ -95,7 +95,7 @@ class RetailcrmExport
      */
     public static function getOrdersIds($start = 0, $count = null)
     {
-        if (is_null($count)) {
+        if ($count === null) {
             $to = static::getOrdersCount();
             $count = $to - $start;
         } else {
@@ -104,7 +104,7 @@ class RetailcrmExport
 
         if ($count > 0) {
             $predefinedSql = 'SELECT o.`id_order`
-                FROM `' . _DB_PREFIX_ . 'orders` o 
+                FROM `' . _DB_PREFIX_ . 'orders` o
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 ORDER BY o.`id_order` ASC';
@@ -204,7 +204,7 @@ class RetailcrmExport
      */
     public static function getCustomersCount($withOrders = true)
     {
-        $sql = 'SELECT count(c.id_customer) 
+        $sql = 'SELECT count(c.id_customer)
             FROM `' . _DB_PREFIX_ . 'customer` c
             WHERE 1
             ' . Shop::addSqlRestriction(false, 'c');
@@ -212,8 +212,8 @@ class RetailcrmExport
         if (!$withOrders) {
             $sql .= '
             AND c.id_customer not in (
-                select o.id_customer 
-                from `' . _DB_PREFIX_ . 'orders` o 
+                select o.id_customer
+                from `' . _DB_PREFIX_ . 'orders` o
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 group by o.id_customer
@@ -238,7 +238,7 @@ class RetailcrmExport
      */
     public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
-        if (is_null($count)) {
+        if ($count === null) {
             $to = static::getCustomersCount($withOrders);
             $count = $to - $start;
         } else {
@@ -279,8 +279,8 @@ class RetailcrmExport
                 ' . Shop::addSqlRestriction(false, 'c') .
                 ($withOrders ? '' : '
                 AND c.`id_customer` not in (
-                    select o.`id_customer` 
-                    from `' . _DB_PREFIX_ . 'orders` o 
+                    select o.`id_customer`
+                    from `' . _DB_PREFIX_ . 'orders` o
                     WHERE 1
                     ' . Shop::addSqlRestriction(false, 'o') . '
                     group by o.`id_customer`
@@ -338,7 +338,8 @@ class RetailcrmExport
                     $address = $addressBuilder
                         ->setAddress($cmsAddress)
                         ->build()
-                        ->getDataArray();
+                        ->getDataArray()
+                    ;
                 } else {
                     $address = [];
                 }
@@ -433,9 +434,9 @@ class RetailcrmExport
      */
     private static function validateState()
     {
-        if (!static::$api ||
-            !static::$ordersOffset ||
-            !static::$customersOffset
+        if (!static::$api
+            || !static::$ordersOffset
+            || !static::$customersOffset
         ) {
             return false;
         }

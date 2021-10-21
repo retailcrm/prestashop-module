@@ -223,7 +223,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 ->setPhone($billingPhone)
                 ->setAlias('--')
                 ->build()
-                ->getData();
+                ->getData()
+            ;
             $address->company = $this->data->getNewCompanyName();
             RetailcrmTools::assignAddressIdsByFields($customer, $address);
         }
@@ -427,7 +428,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
             ->setLastName($customer->lastname)
             ->setAlias($alias)
             ->build()
-            ->getData();
+            ->getData()
+        ;
     }
 
     /**

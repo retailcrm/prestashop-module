@@ -35,7 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -53,7 +53,7 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             $job = new RetailcrmCatalog();
             $data = $job->getData();

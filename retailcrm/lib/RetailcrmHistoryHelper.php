@@ -195,8 +195,8 @@ class RetailcrmHistoryHelper
 
             // email_marketing_unsubscribed_at old value will be null and new value will be datetime in
             // `Y-m-d H:i:s` format if customer was marked as unsubscribed in retailCRM
-            if (isset($change['customer']['id']) &&
-                $change['field'] == 'email_marketing_unsubscribed_at'
+            if (isset($change['customer']['id'])
+                && $change['field'] == 'email_marketing_unsubscribed_at'
             ) {
                 if ($change['oldValue'] == null && is_string(self::newValue($change['newValue']))) {
                     $customers[$change['customer']['id']]['subscribed'] = false;

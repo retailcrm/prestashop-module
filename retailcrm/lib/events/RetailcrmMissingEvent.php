@@ -35,7 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -131,8 +131,8 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $address = array_shift($addressCollection);
 
         if ($address instanceof Address) {
-            $phone = is_null($address->phone)
-                ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
+            $phone = $address->phone === null
+                ? $address->phone_mobile === null ? '' : $address->phone_mobile
                 : $address->phone
             ;
 

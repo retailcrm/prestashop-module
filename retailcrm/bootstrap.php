@@ -138,7 +138,7 @@ class RetailcrmAutoloader
     }
 }
 
-RetailcrmAutoloader::setPath(realpath(dirname(__FILE__)));
+RetailcrmAutoloader::setPath(realpath(__DIR__));
 RetailcrmAutoloader::setPathCustom(realpath(_PS_MODULE_DIR_ . '/retailcrm/custom'));
 RetailcrmAutoloader::setFileExt('.php');
 spl_autoload_register('RetailcrmAutoloader::loader');

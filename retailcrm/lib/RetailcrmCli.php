@@ -39,9 +39,9 @@ if (function_exists('date_default_timezone_set') && function_exists('date_defaul
     date_default_timezone_set(@date_default_timezone_get());
 }
 
-require_once dirname(__FILE__) . '/../../../config/config.inc.php';
-require_once dirname(__FILE__) . '/../../../init.php';
-require_once dirname(__FILE__) . '/../bootstrap.php';
+require_once __DIR__ . '/../../../config/config.inc.php';
+require_once __DIR__ . '/../../../init.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -354,7 +354,7 @@ class RetailcrmCli
      */
     public static function clearCurrentJob($job)
     {
-        if (is_null($job) || self::getCurrentJob() == $job) {
+        if ($job === null || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK_CLI);
         }
 

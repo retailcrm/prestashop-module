@@ -35,7 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -57,7 +57,7 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
         }
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
 

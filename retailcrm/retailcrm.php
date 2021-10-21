@@ -43,7 +43,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once dirname(__FILE__) . '/bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
@@ -183,17 +183,17 @@ class RetailCRM extends Module
         }
 
         return
-            parent::install() &&
-            $this->registerHook('newOrder') &&
-            $this->registerHook('actionOrderStatusPostUpdate') &&
-            $this->registerHook('actionPaymentConfirmation') &&
-            $this->registerHook('actionCustomerAccountAdd') &&
-            $this->registerHook('actionOrderEdited') &&
-            $this->registerHook('actionCarrierUpdate') &&
-            $this->registerHook('header') &&
-            ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true) &&
-            ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true) &&
-            $this->installDB()
+            parent::install()
+            && $this->registerHook('newOrder')
+            && $this->registerHook('actionOrderStatusPostUpdate')
+            && $this->registerHook('actionPaymentConfirmation')
+            && $this->registerHook('actionCustomerAccountAdd')
+            && $this->registerHook('actionOrderEdited')
+            && $this->registerHook('actionCarrierUpdate')
+            && $this->registerHook('header')
+            && ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
+            && ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
+            && $this->installDB()
         ;
     }
 
@@ -223,40 +223,40 @@ class RetailCRM extends Module
             $this->integrationModule($api, $clientId, false);
         }
 
-        return parent::uninstall() &&
-            Configuration::deleteByName(static::API_URL) &&
-            Configuration::deleteByName(static::API_KEY) &&
-            Configuration::deleteByName(static::DELIVERY) &&
-            Configuration::deleteByName(static::STATUS) &&
-            Configuration::deleteByName(static::PAYMENT) &&
-            Configuration::deleteByName(static::DELIVERY_DEFAULT) &&
-            Configuration::deleteByName(static::PAYMENT_DEFAULT) &&
-            Configuration::deleteByName(static::STATUS_EXPORT) &&
-            Configuration::deleteByName(static::CLIENT_ID) &&
-            Configuration::deleteByName(static::COLLECTOR_ACTIVE) &&
-            Configuration::deleteByName(static::COLLECTOR_KEY) &&
-            Configuration::deleteByName(static::SYNC_CARTS_ACTIVE) &&
-            Configuration::deleteByName(static::SYNC_CARTS_STATUS) &&
-            Configuration::deleteByName(static::SYNC_CARTS_DELAY) &&
-            Configuration::deleteByName(static::UPLOAD_ORDERS) &&
-            Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM) &&
-            Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS) &&
-            Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS) &&
-            Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING) &&
-            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING) &&
-            Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING) &&
-            Configuration::deleteByName(static::ENABLE_DEBUG_MODE) &&
-            Configuration::deleteByName(static::ENABLE_WEB_JOBS) &&
-            Configuration::deleteByName('RETAILCRM_LAST_SYNC') &&
-            Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC') &&
-            Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC') &&
-            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME) &&
-            Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME) &&
-            Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME) &&
-            Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME) &&
-            Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK) &&
-            Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI) &&
-            $this->uninstallDB();
+        return parent::uninstall()
+            && Configuration::deleteByName(static::API_URL)
+            && Configuration::deleteByName(static::API_KEY)
+            && Configuration::deleteByName(static::DELIVERY)
+            && Configuration::deleteByName(static::STATUS)
+            && Configuration::deleteByName(static::PAYMENT)
+            && Configuration::deleteByName(static::DELIVERY_DEFAULT)
+            && Configuration::deleteByName(static::PAYMENT_DEFAULT)
+            && Configuration::deleteByName(static::STATUS_EXPORT)
+            && Configuration::deleteByName(static::CLIENT_ID)
+            && Configuration::deleteByName(static::COLLECTOR_ACTIVE)
+            && Configuration::deleteByName(static::COLLECTOR_KEY)
+            && Configuration::deleteByName(static::SYNC_CARTS_ACTIVE)
+            && Configuration::deleteByName(static::SYNC_CARTS_STATUS)
+            && Configuration::deleteByName(static::SYNC_CARTS_DELAY)
+            && Configuration::deleteByName(static::UPLOAD_ORDERS)
+            && Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM)
+            && Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS)
+            && Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS)
+            && Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING)
+            && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING)
+            && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING)
+            && Configuration::deleteByName(static::ENABLE_DEBUG_MODE)
+            && Configuration::deleteByName(static::ENABLE_WEB_JOBS)
+            && Configuration::deleteByName('RETAILCRM_LAST_SYNC')
+            && Configuration::deleteByName('RETAILCRM_LAST_ORDERS_SYNC')
+            && Configuration::deleteByName('RETAILCRM_LAST_CUSTOMERS_SYNC')
+            && Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_NAME)
+            && Configuration::deleteByName(RetailcrmJobManager::LAST_RUN_DETAIL_NAME)
+            && Configuration::deleteByName(RetailcrmCatalogHelper::ICML_INFO_NAME)
+            && Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME)
+            && Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK)
+            && Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI)
+            && $this->uninstallDB();
     }
 
     public function installDB()
@@ -326,7 +326,8 @@ class RetailCRM extends Module
             ->setWarnings($this->getWarningMessage())
             ->setInformations($this->getInformationMessages())
             ->setConfirmations($this->getConfirmationMessages())
-            ->render(__FILE__);
+            ->render(__FILE__)
+        ;
     }
 
     public function uploadOrders($orderIds)
@@ -362,7 +363,7 @@ class RetailCRM extends Module
             $existingOrder = (!empty($apiResponse) && isset($apiResponse['order'])) ? $apiResponse['order'] : [];
 
             if (!Validate::isLoadedObject($object)) {
-                array_push($skippedOrders, $orderId);
+                $skippedOrders[] = $orderId;
                 continue;
             }
 
@@ -373,7 +374,8 @@ class RetailCRM extends Module
                     ->setApi($this->api)
                     ->setCmsOrder($object)
                     ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer();
+                    ->buildOrderWithPreparedCustomer()
+                ;
             } catch (\InvalidArgumentException $exception) {
                 $result .= $this->displayError($exception->getMessage());
                 RetailcrmLogger::writeCaller(__METHOD__, $exception->getTraceAsString());
@@ -668,7 +670,8 @@ class RetailCRM extends Module
                     $addressBuilder
                         ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
                         ->setAddressId($cart->id_address_invoice)
-                        ->build();
+                        ->build()
+                    ;
                 }
 
                 $customerSend = RetailcrmTools::mergeCustomerAddress($customerSend, $addressBuilder->getDataArray());
@@ -839,7 +842,8 @@ class RetailCRM extends Module
                     ->setCmsOrder($cmsOrder)
                     ->setCmsCart($cart)
                     ->setCmsCustomer($customer)
-                    ->buildOrderWithPreparedCustomer();
+                    ->buildOrderWithPreparedCustomer()
+                ;
             } catch (\InvalidArgumentException $exception) {
                 RetailcrmLogger::writeCaller(
                     'hookActionOrderStatusPostUpdate',
@@ -1579,19 +1583,19 @@ class RetailCRM extends Module
      */
     private function initializeTemplateMessages()
     {
-        if (is_null($this->templateErrors)) {
+        if ($this->templateErrors === null) {
             $this->templateErrors = [];
         }
 
-        if (is_null($this->templateWarnings)) {
+        if ($this->templateWarnings === null) {
             $this->templateWarnings = [];
         }
 
-        if (is_null($this->templateConfirms)) {
+        if ($this->templateConfirms === null) {
             $this->templateConfirms = [];
         }
 
-        if (is_null($this->templateErrors)) {
+        if ($this->templateErrors === null) {
             $this->templateInfos = [];
         }
     }

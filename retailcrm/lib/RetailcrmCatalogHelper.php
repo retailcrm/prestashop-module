@@ -44,7 +44,7 @@ class RetailcrmCatalogHelper
     {
         $date = null;
         $filePath = self::getIcmlFilePath();
-        if (!file_exists($filePath) || ($fileHandler = fopen($filePath, 'rb')) === false) {
+        if (!file_exists($filePath) || ($fileHandler = fopen($filePath, 'r')) === false) {
             return null;
         }
 

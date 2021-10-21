@@ -79,7 +79,8 @@ class RetailcrmConsultantModuleFrontController extends ModuleFrontController
         $rcctExtractor = new RetailcrmCachedSettingExtractor();
         $rcct = $rcctExtractor
             ->setCachedAndConfigKey(RetailCRM::CONSULTANT_RCCT)
-            ->getData();
+            ->getData()
+        ;
 
         if (empty($rcct)) {
             $script = trim(Configuration::get(RetailCRM::CONSULTANT_SCRIPT));

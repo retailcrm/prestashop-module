@@ -67,7 +67,8 @@ class RetailcrmHistory
             ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
-            ->getData();
+            ->getData()
+        ;
 
         if (count($history) > 0) {
             $historyChanges = static::filterHistory($history, 'customer');
@@ -111,13 +112,15 @@ class RetailcrmHistory
                     $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
                     $addressBuilder
-                        ->setCustomerAddress($customerAddress);
+                        ->setCustomerAddress($customerAddress)
+                    ;
 
                     $customerBuilder
                         ->setCustomer($foundCustomer)
                         ->setAddressBuilder($addressBuilder)
                         ->setDataCrm($customerData)
-                        ->build();
+                        ->build()
+                    ;
 
                     $customer = $customerBuilder->getData()->getCustomer();
                     $address = $customerBuilder->getData()->getCustomerAddress();
@@ -136,7 +139,8 @@ class RetailcrmHistory
                 } else {
                     $customerBuilder
                         ->setDataCrm($customerHistory)
-                        ->build();
+                        ->build()
+                    ;
 
                     $customer = $customerBuilder->getData()->getCustomer();
 
@@ -215,7 +219,8 @@ class RetailcrmHistory
             ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
-            ->getData();
+            ->getData()
+        ;
 
         if (count($history) > 0) {
             $historyChanges = static::filterHistory($history, 'order');
@@ -388,7 +393,8 @@ class RetailcrmHistory
                             ->setCustomer(new Customer($customerId))
                             ->setDataCrm($dataOrder)
                             ->extractCompanyDataFromOrder($order)
-                            ->build();
+                            ->build()
+                        ;
 
                         $customer = $corporateCustomerBuilder->getData()->getCustomer();
                         $addressInvoice = $corporateCustomerBuilder->getData()->getCustomerAddress();
@@ -400,7 +406,8 @@ class RetailcrmHistory
 
                         $customerBuilder
                             ->setDataCrm($order['customer'])
-                            ->build();
+                            ->build()
+                        ;
 
                         $customer = $customerBuilder->getData()->getCustomer();
                         $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
@@ -449,7 +456,8 @@ class RetailcrmHistory
                         ->setLastName(isset($order['lastName']) ? $order['lastName'] : null)
                         ->setPhone(isset($order['phone']) ? $order['phone'] : null)
                         ->build()
-                        ->getData();
+                        ->getData()
+                    ;
 
                     if (RetailcrmTools::validateEntity($addressDelivery)) {
                         RetailcrmTools::assignAddressIdsByFields($customer, $addressDelivery);
@@ -466,7 +474,7 @@ class RetailcrmHistory
                     $cart->id_currency = $default_currency;
                     $cart->id_lang = self::$default_lang;
                     $cart->id_shop = Context::getContext()->shop->id;
-                    $cart->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
+                    $cart->id_shop_group = (int) (Context::getContext()->shop->id_shop_group);
                     $cart->id_customer = $customer->id;
                     $cart->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
                     $cart->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
@@ -500,7 +508,7 @@ class RetailcrmHistory
                     */
                     $newOrder = new Order();
                     $newOrder->id_shop = Context::getContext()->shop->id;
-                    $newOrder->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
+                    $newOrder->id_shop_group = (int) (Context::getContext()->shop->id_shop_group);
                     $newOrder->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
                     $newOrder->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
                     $newOrder->id_cart = (int) $cart->id;
@@ -819,7 +827,8 @@ class RetailcrmHistory
                             ->setPhone($orderPhone)
                             ->setAlias($orderAddress->alias)
                             ->build()
-                            ->getData();
+                            ->getData()
+                        ;
 
                         if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
                             $address->id = null;
@@ -858,8 +867,8 @@ class RetailcrmHistory
 
                         if (
                             (
-                                $dtype !== null &&
-                                isset($deliveries[$dtype])
+                                $dtype !== null
+                                && isset($deliveries[$dtype])
                                 && $deliveries[$dtype] !== null
                                 && $deliveries[$dtype] !== $orderToUpdate->id_carrier
                             )
@@ -991,9 +1000,9 @@ class RetailcrmHistory
                                     $product_attribute_id = $parsedExtId['product_attribute_id'];
                                     $isExistingItem = isset($item['create']) ? false : true;
 
-                                    if ($isExistingItem &&
-                                        $product_id == $orderItem['product_id'] &&
-                                        $product_attribute_id == $orderItem['product_attribute_id']
+                                    if ($isExistingItem
+                                        && $product_id == $orderItem['product_id']
+                                        && $product_attribute_id == $orderItem['product_attribute_id']
                                     ) {
                                         $product = new Product((int) $product_id, false, self::$default_lang);
 
@@ -1341,7 +1350,8 @@ class RetailcrmHistory
             try {
                 $result = $switcher->setData($data)
                     ->build()
-                    ->getResult();
+                    ->getResult()
+                ;
                 $result->save();
                 $handled = true;
             } catch (\Exception $exception) {
@@ -1734,7 +1744,7 @@ class RetailcrmHistory
                 $history = $historyResponse['history'];
                 $lastSinceId = end($history)['id'];
 
-                if ($currentSinceID !== strval($lastSinceId)) {
+                if ($currentSinceID !== (string) $lastSinceId) {
                     RetailcrmLogger::writeDebug(__METHOD__, "Updating to: $lastSinceId");
                     Configuration::updateValue($key, $lastSinceId);
                 }

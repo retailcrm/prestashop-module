@@ -35,7 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -81,8 +81,8 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setShopId($shopId = null)
     {
-        if (!is_null($shopId)) {
-            $this->shopId = intval($shopId);
+        if ($shopId !== null) {
+            $this->shopId = (int) $shopId;
         }
     }
 
