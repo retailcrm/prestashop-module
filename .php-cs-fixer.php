@@ -1,8 +1,6 @@
 <?php
 
 require_once __DIR__ . '/tests/init.php';
-require_once __DIR__ . '/../PrestaShop/vendor/friendsofphp/php-cs-fixer/src/Finder.php';
-require_once __DIR__ . '/../PrestaShop/vendor/friendsofphp/php-cs-fixer/src/Config.php';
 
 
 

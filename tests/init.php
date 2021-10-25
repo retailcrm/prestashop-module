@@ -1,13 +1,9 @@
 <?php
 
-require_once __DIR__.'/../../PrestaShop/config/defines.inc.php';
-require_once __DIR__.'/../../PrestaShop/classes/PrestaShopAutoload.php';
+require_once __DIR__.'/../vendor/autoload.php';
 
-require_once __DIR__ . '/../../PrestaShop/config/config.inc.php';
-require_once __DIR__ . '/../../PrestaShop/config/defines_uri.inc.php';
-require_once __DIR__ . '/../retailcrm/bootstrap.php';
-require_once __DIR__ . '/../retailcrm/retailcrm.php';
-require_once __DIR__ . '/../../PrestaShop/init.php';
+define('_PS_VERSION_', AppKernel::VERSION);
 
-$module = new RetailCRM();
-$module->install();
+require_once _PS_CONFIG_DIR_.'alias.php';
+require_once _PS_CLASS_DIR_.'PrestaShopAutoload.php';
+spl_autoload_register([PrestaShopAutoload::getInstance(), 'load']);
