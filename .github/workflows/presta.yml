@@ -123,11 +123,6 @@ jobs:
           COMPOSERV1: ${{ matrix.composerv1 }}
           MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
         run: make before_script
-      - name: Code style
-        env:
-          BRANCH: ${{ matrix.branch }}
-          COMPOSERV1: ${{ matrix.composerv1 }}
-        run: make lint
       - name: Run tests
         env:
           BRANCH: ${{ matrix.branch }}

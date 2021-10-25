@@ -40,7 +40,7 @@ class RetailcrmCustomerBuilderResult
     /** @var Customer|CustomerCore */
     private $customer;
 
-    /** @var Address|AddressCore|null $customerAddress */
+    /** @var Address|AddressCore|null */
     private $customerAddress;
 
     /**

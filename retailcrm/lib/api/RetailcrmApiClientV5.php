@@ -65,9 +65,9 @@ class RetailcrmApiClientV5
      */
     public function __construct($url, $apiKey, $site = null)
     {
-        $unversionedUrl = ($url[strlen($url) - 1] !== '/' ? $url . '/' : $url) . 'api';
+        $unversionedUrl = ('/' !== $url[strlen($url) - 1] ? $url . '/' : $url) . 'api';
 
-        if ($url[strlen($url) - 1] !== '/') {
+        if ('/' !== $url[strlen($url) - 1]) {
             $url .= '/';
         }
 
@@ -121,10 +121,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -192,10 +192,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -222,10 +222,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -342,10 +342,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -447,10 +447,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -651,10 +651,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -803,10 +803,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -976,10 +976,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -1035,10 +1035,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -1126,10 +1126,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
         /* @noinspection PhpUndefinedMethodInspection */
@@ -1209,10 +1209,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -1243,10 +1243,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
         /* @noinspection PhpUndefinedMethodInspection */
@@ -1389,10 +1389,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
         /* @noinspection PhpUndefinedMethodInspection */
@@ -1502,10 +1502,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
         /* @noinspection PhpUndefinedMethodInspection */
@@ -1605,10 +1605,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
         /* @noinspection PhpUndefinedMethodInspection */
@@ -1736,10 +1736,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -1797,10 +1797,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -1900,10 +1900,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -2007,10 +2007,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -2041,10 +2041,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 
@@ -2153,10 +2153,10 @@ class RetailcrmApiClientV5
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if ($page !== null) {
+        if (null !== $page) {
             $parameters['page'] = (int) $page;
         }
-        if ($limit !== null) {
+        if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
 

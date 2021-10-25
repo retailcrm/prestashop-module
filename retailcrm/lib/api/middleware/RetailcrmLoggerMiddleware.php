@@ -45,7 +45,7 @@ class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
     {
         $method = $request->getMethod();
 
-        if ($method !== null) {
+        if (null !== $method) {
             RetailcrmLogger::writeDebug($method, print_r($request->getData(), true));
         }
 

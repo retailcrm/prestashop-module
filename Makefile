@@ -53,8 +53,8 @@ else
 endif
 
 lint:
-	cd $(PRESTASHOP_DIR) \
-		&& php ./vendor/bin/php-cs-fixer fix --path-mode=intersection modules/retailcrm
+	cd $(PRESTASHOP_DIR) && docker run --rm -it -w=/app -v ${PWD}:/app oskarstark/php-cs-fixer-ga:latest --config=.php-cs-fixer.php --dry-run --using-cache=no
+
 
 test:
 ifeq ($(COMPOSERV1),1)

@@ -95,7 +95,7 @@ class RetailcrmExport
      */
     public static function getOrdersIds($start = 0, $count = null)
     {
-        if ($count === null) {
+        if (null === $count) {
             $to = static::getOrdersCount();
             $count = $to - $start;
         } else {
@@ -238,7 +238,7 @@ class RetailcrmExport
      */
     public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
-        if ($count === null) {
+        if (null === $count) {
             $to = static::getCustomersCount($withOrders);
             $count = $to - $start;
         } else {
@@ -367,9 +367,11 @@ class RetailcrmExport
     }
 
     /**
-     * @param int   $id
+     * @param int $id
      * @param false $receiveOrderNumber
+     *
      * @return bool
+     *
      * @throws PrestaShopObjectNotFoundExceptionCore
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
@@ -399,7 +401,8 @@ class RetailcrmExport
             ->setApi(static::$api)
             ->setCmsOrder($object)
             ->setCmsCustomer($customer)
-            ->buildOrderWithPreparedCustomer();
+            ->buildOrderWithPreparedCustomer()
+        ;
 
         if (empty($crmOrder)) {
             return false;
@@ -417,9 +420,9 @@ class RetailcrmExport
             $response = static::$api->ordersEdit($crmOrder);
 
             if (empty($existingOrder['payments']) && !empty($crmOrder['payments'])) {
-                $payment = array_merge(reset($crmOrder['payments']), array(
-                    'order' => array('externalId' => $crmOrder['externalId'])
-                ));
+                $payment = array_merge(reset($crmOrder['payments']), [
+                    'order' => ['externalId' => $crmOrder['externalId']],
+                ]);
                 static::$api->ordersPaymentCreate($payment);
             }
         }

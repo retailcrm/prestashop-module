@@ -359,7 +359,7 @@ class RetailcrmCartUploader
         ob_clean();
         ob_end_flush();
 
-        if ($lastUploadDate === null || $lastUpdatedDate === null) {
+        if (null === $lastUploadDate || null === $lastUpdatedDate) {
             return true;
         }
 
@@ -375,7 +375,7 @@ class RetailcrmCartUploader
     {
         if (empty(static::$syncStatus)
             || (count(static::$paymentTypes) < 1)
-            || static::$now === null
+            || null === static::$now
             || !static::$api
         ) {
             return false;
