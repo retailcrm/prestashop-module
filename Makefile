@@ -55,10 +55,6 @@ endif
 lint:
 	cd $(PRESTASHOP_DIR) && php vendor/bin/php-cs-fixer fix --dry-run --config-file=$(ROOT_DIR)/.php-cs-fixer.php -vvv
 
-#lint-fix:
-	#cd $(PRESTASHOP_DIR) && docker run --rm -it -w=/app -v ${PWD}:/app oskarstark/php-cs-fixer-ga:latest --config-file=$(ROOT_DIR)/.php-cs-fixer.php --using-cache=no
-
-
 test:
 ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) \
