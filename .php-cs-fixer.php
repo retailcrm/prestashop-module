@@ -1,6 +1,6 @@
 <?php
 
-ini_set('memory_limit','256M');
+require_once __DIR__ . '/../../PrestaShop/tests/bootstrap.php';
 
 $finder = PhpCsFixer\Finder::create()->in([
     __DIR__.'/retailcrm'

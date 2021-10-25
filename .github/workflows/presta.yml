@@ -88,6 +88,7 @@ jobs:
           - php-version: '7.1'
             branch: '1.7.4.0'
             composerv1: 1
+            lint: 1
             phpunit-version: 'phpunit:6.4.3'
           - php-version: '7.2'
             branch: '1.7.4.0'
@@ -123,6 +124,14 @@ jobs:
           COMPOSERV1: ${{ matrix.composerv1 }}
           MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
         run: make before_script
+      - name: Code style
+        env:
+          BRANCH: ${{ matrix.branch }}
+          COMPOSERV1: ${{ matrix.composerv1 }}
+          LINT: ${{ matrix.lint }}
+        if: env.LINT == 1
+        run: |
+          make lint
       - name: Run tests
         env:
           BRANCH: ${{ matrix.branch }}
