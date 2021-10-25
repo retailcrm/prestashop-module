@@ -114,7 +114,7 @@ abstract class RetailcrmAbstractTemplate
         $this->buildParams();
         $this->setTemplate();
 
-        if (null === $this->template) {
+        if ($this->template === null) {
             throw new \RuntimeException('Template not be blank');
         }
 

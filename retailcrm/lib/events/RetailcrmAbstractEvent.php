@@ -81,8 +81,8 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setShopId($shopId = null)
     {
-        if (!is_null($shopId)) {
-            $this->shopId = intval($shopId);
+        if ($shopId !== null) {
+            $this->shopId = (int) $shopId;
         }
     }
 
@@ -93,7 +93,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function isRunning()
     {
-        return !$this->force && ('' !== RetailcrmJobManager::getCurrentJob() || '' !== RetailcrmCli::getCurrentJob());
+        return !$this->force && (RetailcrmJobManager::getCurrentJob() !== '' || RetailcrmCli::getCurrentJob() !== '');
     }
 
     /**

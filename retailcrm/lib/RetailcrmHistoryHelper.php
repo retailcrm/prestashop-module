@@ -76,10 +76,10 @@ class RetailcrmHistoryHelper
                 } else {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']] = $change['payment'];
                 }
-                if (null == $change['oldValue'] && 'payments' == $change['field']) {
+                if ($change['oldValue'] == null && $change['field'] == 'payments') {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']]['create'] = true;
                 }
-                if (null == $change['newValue'] && 'payments' == $change['field']) {
+                if ($change['newValue'] == null && $change['field'] == 'payments') {
                     $orders[$change['order']['id']]['payments'][$change['payment']['id']]['delete'] = true;
                 }
                 if (!$orders[$change['order']['id']]['payments'][$change['payment']['id']] && $fields['payment'][$change['field']]) {
@@ -94,10 +94,10 @@ class RetailcrmHistoryHelper
                     $orders[$change['order']['id']]['items'][$change['item']['id']] = $change['item'];
                 }
 
-                if (empty($change['oldValue']) && 'order_product' == $change['field']) {
+                if (empty($change['oldValue']) && $change['field'] == 'order_product') {
                     $orders[$change['order']['id']]['items'][$change['item']['id']]['create'] = true;
                 }
-                if (empty($change['newValue']) && 'order_product' == $change['field']) {
+                if (empty($change['newValue']) && $change['field'] == 'order_product') {
                     $orders[$change['order']['id']]['items'][$change['item']['id']]['delete'] = true;
                 }
                 if (!isset($orders[$change['order']['id']]['items'][$change['item']['id']]['create'])
@@ -107,7 +107,7 @@ class RetailcrmHistoryHelper
                 }
             } else {
                 if (isset($fields['delivery'][$change['field']])
-                    && 'service' == $fields['delivery'][$change['field']]
+                    && $fields['delivery'][$change['field']] == 'service'
                 ) {
                     $orders[$change['order']['id']]['delivery']['service']['code'] = self::newValue($change['newValue']);
                 } elseif (isset($fields['delivery'][$change['field']])
@@ -126,7 +126,7 @@ class RetailcrmHistoryHelper
                     && $fields['customerContragent'][$change['field']]
                 ) {
                     $orders[$change['order']['id']][$fields['customerContragent'][$change['field']]] = self::newValue($change['newValue']);
-                } elseif (false !== strripos($change['field'], 'custom_')) {
+                } elseif (strripos($change['field'], 'custom_') !== false) {
                     $orders[$change['order']['id']]['customFields'][str_replace('custom_', '', $change['field'])] = self::newValue($change['newValue']);
                 } elseif (isset($fields['order'][$change['field']])
                     && $fields['order'][$change['field']]
@@ -159,7 +159,7 @@ class RetailcrmHistoryHelper
             $objects = simplexml_load_file(_PS_ROOT_DIR_ . '/modules/retailcrm/objects.xml');
 
             foreach ($objects->fields->field as $object) {
-                if ('customer' == $object['group']) {
+                if ($object['group'] == 'customer') {
                     $fields[(string) $object['group']][(string) $object['id']] = (string) $object;
                 }
             }
@@ -177,7 +177,7 @@ class RetailcrmHistoryHelper
                 continue;
             }
 
-            if ('id' == $change['field']) {
+            if ($change['field'] == 'id') {
                 $customers[$change['customer']['id']] = $change['customer'];
             }
 
@@ -195,12 +195,12 @@ class RetailcrmHistoryHelper
 
             // email_marketing_unsubscribed_at old value will be null and new value will be datetime in
             // `Y-m-d H:i:s` format if customer was marked as unsubscribed in retailCRM
-            if (isset($change['customer']['id']) &&
-                'email_marketing_unsubscribed_at' == $change['field']
+            if (isset($change['customer']['id'])
+                && $change['field'] == 'email_marketing_unsubscribed_at'
             ) {
-                if (null == $change['oldValue'] && is_string(self::newValue($change['newValue']))) {
+                if ($change['oldValue'] == null && is_string(self::newValue($change['newValue']))) {
                     $customers[$change['customer']['id']]['subscribed'] = false;
-                } elseif (is_string($change['oldValue']) && null == self::newValue($change['newValue'])) {
+                } elseif (is_string($change['oldValue']) && self::newValue($change['newValue']) == null) {
                     $customers[$change['customer']['id']]['subscribed'] = true;
                 }
             }
@@ -268,7 +268,7 @@ class RetailcrmHistoryHelper
                 $customersCorporate[$change['customer']['id']]['address'][$fields['customerAddress'][$change['field']]] = self::newValue($change['newValue']);
             }
 
-            if ('address' == $change['field']) {
+            if ($change['field'] == 'address') {
                 $customersCorporate[$change['customer']['id']]['address'] = array_merge($change['address'], self::newValue($change['newValue']));
             }
         }
@@ -297,7 +297,7 @@ class RetailcrmHistoryHelper
         $outputArray = [];
         if (!empty($inputArray)) {
             foreach ($inputArray as $key => $element) {
-                if (!empty($element) || 0 === $element || '0' === $element) {
+                if (!empty($element) || $element === 0 || $element === '0') {
                     if (is_array($element)) {
                         $element = self::removeEmpty($element);
                     }

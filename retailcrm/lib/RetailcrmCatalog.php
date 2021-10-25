@@ -160,7 +160,7 @@ class RetailcrmCatalog
                     }
                     ++$productsCount;
 
-                    if ('1.3' == $this->version) {
+                    if ($this->version == '1.3') {
                         $available_for_order = $product['active'] && $product['quantity'];
                     } else {
                         $available_for_order = $product['active'] && $product['available_for_order'];
@@ -192,7 +192,7 @@ class RetailcrmCatalog
                     }
 
                     $weight = round($product['weight'], 2);
-                    if (0.0 === $weight) {
+                    if ($weight === 0.0) {
                         $weight = null;
                     }
 
@@ -200,7 +200,7 @@ class RetailcrmCatalog
                     $height = round($product['height'], 3);
                     $depth = round($product['depth'], 3);
 
-                    if (0.0 !== $width && 0.0 !== $height) {
+                    if ($width !== 0.0 && $height !== 0.0) {
                         $dimensions = implode('/', [$depth, $width, $height]);
                     } else {
                         $dimensions = null;
@@ -236,7 +236,7 @@ class RetailcrmCatalog
                                 $pictures[] = $picture;
                             }
 
-                            if ('1.3' == $this->version) {
+                            if ($this->version == '1.3') {
                                 $quantity = $product['quantity'];
                             } else {
                                 $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
@@ -308,7 +308,7 @@ class RetailcrmCatalog
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
                         $pictures = $this->getPictures($covers, $product);
 
-                        if ('1.3' == $this->version) {
+                        if ($this->version == '1.3') {
                             $quantity = $product['quantity'];
                         } else {
                             $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product']);
@@ -356,7 +356,7 @@ class RetailcrmCatalog
         foreach ($covers as $cover) {
             $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
 
-            if (false === $offers && $cover['cover']) {
+            if ($offers === false && $cover['cover']) {
                 array_unshift($pictures, $picture);
             } else {
                 $pictures[] = $picture;

@@ -114,7 +114,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          *
          */
 
-        if (0 == $orderInstance->current_state) {
+        if ($orderInstance->current_state == 0) {
             $order['status'] = 'completed';
         } else {
             $order['status'] = array_key_exists($orderInstance->current_state, $status)
@@ -131,8 +131,8 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $address = array_shift($addressCollection);
 
         if ($address instanceof Address) {
-            $phone = is_null($address->phone)
-                ? is_null($address->phone_mobile) ? '' : $address->phone_mobile
+            $phone = $address->phone === null
+                ? $address->phone_mobile === null ? '' : $address->phone_mobile
                 : $address->phone
             ;
 
@@ -161,7 +161,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          * Add payment & shippment data
          */
 
-        if (false === Module::getInstanceByName('advancedcheckout')) {
+        if (Module::getInstanceByName('advancedcheckout') === false) {
             $paymentType = $orderInstance->module;
         } else {
             $paymentType = $orderInstance->payment;

@@ -48,7 +48,7 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_3_3_0($module)
 {
-    if ('retailcrm' != $module->name) {
+    if ($module->name != 'retailcrm') {
         return false;
     }
 
@@ -74,13 +74,13 @@ function retailcrm_upgrade_recursive_copy($src, $dst, $childFolder = '')
         mkdir($dst);
     }
 
-    if ('' != $childFolder) {
+    if ($childFolder != '') {
         if (!file_exists($dst . '/' . $childFolder)) {
             mkdir($dst . '/' . $childFolder);
         }
 
         while (false !== ($file = readdir($dir))) {
-            if (('.' != $file) && ('..' != $file)) {
+            if (($file != '.') && ($file != '..')) {
                 if (is_dir($src . '/' . $file)) {
                     retailcrm_upgrade_recursive_copy($src . '/' . $file, $dst . '/' . $childFolder . '/' . $file);
                 } else {
@@ -90,7 +90,7 @@ function retailcrm_upgrade_recursive_copy($src, $dst, $childFolder = '')
         }
     } else {
         while (false !== ($file = readdir($dir))) {
-            if (('.' != $file) && ('..' != $file)) {
+            if (($file != '.') && ($file != '..')) {
                 if (is_dir($src . '/' . $file)) {
                     retailcrm_upgrade_recursive_copy($src . '/' . $file, $dst . '/' . $file);
                 } else {

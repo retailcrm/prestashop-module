@@ -57,7 +57,7 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
         }
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             $syncCartsActive = Configuration::get(RetailCRM::SYNC_CARTS_ACTIVE);
 

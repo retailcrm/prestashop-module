@@ -119,7 +119,7 @@ class RetailcrmLogger
      */
     public static function output($message = '', $end = PHP_EOL)
     {
-        if ('cli' == php_sapi_name()) {
+        if (php_sapi_name() == 'cli') {
             echo $message . $end;
         }
     }
@@ -217,7 +217,7 @@ class RetailcrmLogger
      */
     private static function getLogFilePrefix()
     {
-        if ('cli' == php_sapi_name()) {
+        if (php_sapi_name() == 'cli') {
             if (isset($_SERVER['TERM'])) {
                 return 'cli';
             } else {
@@ -279,7 +279,7 @@ class RetailcrmLogger
 
         $handle = opendir($logDir);
         while (($file = readdir($handle)) !== false) {
-            if (false !== self::checkFileName($file)) {
+            if (self::checkFileName($file) !== false) {
                 yield "$logDir/$file";
             }
         }

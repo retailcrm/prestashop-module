@@ -53,7 +53,7 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
                 RetailcrmLogger::writeDebug(

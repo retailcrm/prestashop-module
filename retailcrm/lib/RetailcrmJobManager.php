@@ -102,7 +102,7 @@ class RetailcrmJobManager
      */
     public static function execJobs($jobs = [])
     {
-        $current = date_create('now');
+        $current = date_create_immutable('now');
         $lastRuns = [];
         $lastRunsDetails = [];
 
@@ -140,13 +140,13 @@ class RetailcrmJobManager
         }
 
         uasort($jobs, function ($diff1, $diff2) {
-            $date1 = new \DateTime();
-            $date2 = new \DateTime();
+            $date1 = new \DateTimeImmutable();
+            $date2 = new \DateTimeImmutable();
 
-            if (!is_null($diff1)) {
+            if ($diff1 !== null) {
                 $date1->add($diff1);
             }
-            if (!is_null($diff2)) {
+            if ($diff2 !== null) {
                 $date2->add($diff2);
             }
 
@@ -159,21 +159,21 @@ class RetailcrmJobManager
 
         foreach ($jobs as $job => $diff) {
             try {
-                if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTime) {
+                if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTimeImmutable) {
                     $shouldRunAt = clone $lastRuns[$job];
 
                     if ($diff instanceof DateInterval) {
                         $shouldRunAt->add($diff);
                     }
                 } else {
-                    $shouldRunAt = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
+                    $shouldRunAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
                 }
 
                 RetailcrmLogger::writeDebug(__METHOD__, sprintf(
                     'Checking %s, interval %s, shouldRunAt: %s: %s',
                     $job,
-                    is_null($diff) ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
-                    isset($shouldRunAt) && $shouldRunAt instanceof \DateTime
+                    $diff === null ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
+                    isset($shouldRunAt) && $shouldRunAt instanceof \DateTimeImmutable
                         ? $shouldRunAt->format(DATE_RFC3339)
                         : 'undefined',
                     (isset($shouldRunAt) && $shouldRunAt <= $current) ? 'true' : 'false'
@@ -186,7 +186,7 @@ class RetailcrmJobManager
                         __METHOD__,
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
                     );
-                    $lastRuns[$job] = new \DateTime('now');
+                    $lastRuns[$job] = new \DateTimeImmutable('now');
 
                     break;
                 }
@@ -199,7 +199,7 @@ class RetailcrmJobManager
 
                 $lastRunsDetails[$job] = [
                     'success' => false,
-                    'lastRun' => new \DateTime('now'),
+                    'lastRun' => new \DateTimeImmutable('now'),
                     'error' => [
                         'message' => $exception->getMessage(),
                         'trace' => $exception->getTraceAsString(),
@@ -220,7 +220,7 @@ class RetailcrmJobManager
         if (isset($result) && $result) {
             $lastRunsDetails[$job] = [
                 'success' => true,
-                'lastRun' => new \DateTime('now'),
+                'lastRun' => new \DateTimeImmutable('now'),
                 'error' => null,
             ];
 
@@ -260,7 +260,7 @@ class RetailcrmJobManager
             if ($result) {
                 static::updateLastRunDetail($jobName, [
                     'success' => true,
-                    'lastRun' => new \DateTime('now'),
+                    'lastRun' => new \DateTimeImmutable('now'),
                     'error' => null,
                 ]);
             }
@@ -276,7 +276,7 @@ class RetailcrmJobManager
             RetailcrmLogger::printException($exception, '', false);
             self::updateLastRunDetail($jobName, [
                 'success' => false,
-                'lastRun' => new \DateTime('now'),
+                'lastRun' => new \DateTimeImmutable('now'),
                 'error' => [
                     'message' => $exception->getMessage(),
                     'trace' => $exception->getTraceAsString(),
@@ -298,16 +298,16 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (json_last_error() != JSON_ERROR_NONE) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $ran) {
-                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $ran);
+                $lastRan = DateTimeImmutable::createFromFormat(DATE_RFC3339, $ran);
 
-                if ($lastRan instanceof DateTime) {
+                if ($lastRan instanceof DateTimeImmutable) {
                     $lastRuns[$job] = $lastRan;
                 } else {
-                    $lastRuns[$job] = new DateTime();
+                    $lastRuns[$job] = new DateTimeImmutable();
                 }
             }
         }
@@ -324,14 +324,14 @@ class RetailcrmJobManager
      */
     private static function setLastRuns($lastRuns = [])
     {
-        $now = new DateTime();
+        $now = new DateTimeImmutable();
 
         if (!is_array($lastRuns)) {
             $lastRuns = [];
         }
 
         foreach ($lastRuns as $job => $ran) {
-            if ($ran instanceof DateTime) {
+            if ($ran instanceof DateTimeImmutable) {
                 $lastRuns[$job] = $ran->format(DATE_RFC3339);
             } else {
                 $lastRuns[$job] = $now->format(DATE_RFC3339);
@@ -370,13 +370,13 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (json_last_error() != JSON_ERROR_NONE) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $details) {
-                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $details['lastRun']);
+                $lastRan = DateTimeImmutable::createFromFormat(DATE_RFC3339, $details['lastRun']);
 
-                if ($lastRan instanceof DateTime) {
+                if ($lastRan instanceof DateTimeImmutable) {
                     $lastRuns[$job]['lastRun'] = $lastRan;
                 } else {
                     $lastRuns[$job]['lastRun'] = null;
@@ -401,7 +401,7 @@ class RetailcrmJobManager
         }
 
         foreach ($lastRuns as $job => $details) {
-            if (isset($details['lastRun']) && $details['lastRun'] instanceof DateTime) {
+            if (isset($details['lastRun']) && $details['lastRun'] instanceof DateTimeImmutable) {
                 $lastRuns[$job]['lastRun'] = $details['lastRun']->format(DATE_RFC3339);
             } else {
                 $lastRuns[$job]['lastRun'] = null;
@@ -499,7 +499,7 @@ class RetailcrmJobManager
      */
     public static function clearCurrentJob($job)
     {
-        if (is_null($job) || self::getCurrentJob() == $job) {
+        if ($job === null || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK);
         }
 
@@ -542,7 +542,7 @@ class RetailcrmJobManager
     {
         $error = error_get_last();
 
-        if (null !== $error && E_ERROR === $error['type']) {
+        if ($error !== null && $error['type'] === E_ERROR) {
             self::defaultShutdownHandler($error);
         }
     }
@@ -568,14 +568,14 @@ class RetailcrmJobManager
         if (is_callable(self::$customShutdownHandler)) {
             call_user_func_array(self::$customShutdownHandler, [$error]);
         } else {
-            if (null !== $error) {
+            if ($error !== null) {
                 $job = self::getCurrentJob();
                 if (!empty($job)) {
                     $lastRunsDetails = self::getLastRunDetails();
 
                     $lastRunsDetails[$job] = [
                         'success' => false,
-                        'lastRun' => new \DateTime('now'),
+                        'lastRun' => new \DateTimeImmutable('now'),
                         'error' => [
                             'message' => (isset($error['message']) ? $error['message'] : print_r($error, true)),
                             'trace' => print_r($error, true),
@@ -657,8 +657,8 @@ class RetailcrmJobManager
         if (!$cliMode && !$force) {
             ignore_user_abort(true);
 
-            if (version_compare(phpversion(), '7.0.16', '>=') &&
-                function_exists('fastcgi_finish_request')
+            if (version_compare(phpversion(), '7.0.16', '>=')
+                && function_exists('fastcgi_finish_request')
             ) {
                 if (!headers_sent()) {
                     header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
@@ -726,7 +726,7 @@ class RetailcrmJobManager
         $lastRuns = array_values(static::getLastRuns());
 
         if (empty($lastRuns)) {
-            return \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
+            return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
         }
 
         usort(

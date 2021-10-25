@@ -106,7 +106,7 @@ class RetailcrmCartUploader
         static::$syncDelay = 0;
         static::$allowedUpdateInterval = 86400;
         static::$syncStatus = '';
-        static::$now = new \DateTime();
+        static::$now = new \DateTimeImmutable();
         static::$context = Context::getContext();
     }
 
@@ -134,7 +134,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $cartLastUpdateDate = \DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
+                $cartLastUpdateDate = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
             }
 
             if (!static::isAbandonedCartShouldBeUpdated(
@@ -160,7 +160,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (false !== static::$api->ordersCreate($order)) {
+                if (static::$api->ordersCreate($order) !== false) {
                     $cart->date_upd = date('Y-m-d H:i:s');
                     $cart->save();
                 }
@@ -175,7 +175,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (false !== static::$api->ordersEdit($order)) {
+                if (static::$api->ordersEdit($order) !== false) {
                     static::registerAbandonedCartSync($cart->id);
                 }
             }
@@ -219,7 +219,7 @@ class RetailcrmCartUploader
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
-            if (0 == $currentCartTotal) {
+            if ($currentCartTotal == 0) {
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
@@ -236,7 +236,7 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
+            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {
@@ -318,7 +318,7 @@ class RetailcrmCartUploader
             return null;
         }
 
-        return \DateTime::createFromFormat('Y-m-d H:i:s', $when);
+        return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
     }
 
     /**
@@ -359,7 +359,7 @@ class RetailcrmCartUploader
         ob_clean();
         ob_end_flush();
 
-        if (null === $lastUploadDate || null === $lastUpdatedDate) {
+        if ($lastUploadDate === null || $lastUpdatedDate === null) {
             return true;
         }
 
@@ -375,7 +375,7 @@ class RetailcrmCartUploader
     {
         if (empty(static::$syncStatus)
             || (count(static::$paymentTypes) < 1)
-            || null === static::$now
+            || static::$now === null
             || !static::$api
         ) {
             return false;

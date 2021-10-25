@@ -49,9 +49,9 @@ class RetailcrmCatalogHelper
         }
 
         while ($line = fgets($fileHandler)) {
-            if (false !== strpos($line, 'yml_catalog date=')) {
+            if (strpos($line, 'yml_catalog date=') !== false) {
                 preg_match_all('/date="([\d\- :]+)"/', $line, $matches);
-                if (2 == count($matches)) {
+                if (count($matches) == 2) {
                     $date = $matches[1][0];
                 }
                 break;
@@ -60,7 +60,7 @@ class RetailcrmCatalogHelper
 
         fclose($fileHandler);
 
-        return DateTime::createFromFormat('Y-m-d H:i:s', $date);
+        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date);
     }
 
     public static function getIcmlFileLink()
@@ -91,18 +91,18 @@ class RetailcrmCatalogHelper
     {
         $icmlInfo = json_decode((string) Configuration::get(self::ICML_INFO_NAME), true);
 
-        if (null === $icmlInfo || JSON_ERROR_NONE !== json_last_error()) {
+        if ($icmlInfo === null || json_last_error() !== JSON_ERROR_NONE) {
             $icmlInfo = [];
         }
 
         $lastGenerated = self::getIcmlFileDate();
 
-        if (false === $lastGenerated) {
+        if ($lastGenerated === false) {
             return $icmlInfo;
         }
 
         $icmlInfo['lastGenerated'] = $lastGenerated;
-        $now = new DateTime();
+        $now = new DateTimeImmutable();
         /** @var DateInterval $diff */
         $diff = $lastGenerated->diff($now);
 
@@ -119,7 +119,7 @@ class RetailcrmCatalogHelper
 
         $api = RetailcrmTools::getApiClient();
 
-        if (null !== $api) {
+        if ($api !== null) {
             $reference = new RetailcrmReferences($api);
 
             $site = $reference->getSite();

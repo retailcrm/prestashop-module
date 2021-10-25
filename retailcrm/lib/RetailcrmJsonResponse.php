@@ -76,7 +76,7 @@ class RetailcrmJsonResponse
             'success' => true,
         ];
 
-        if (null !== $data) {
+        if ($data !== null) {
             if (is_array($key)) {
                 foreach ($key as $i => $value) {
                     if (isset($data[$i])) {

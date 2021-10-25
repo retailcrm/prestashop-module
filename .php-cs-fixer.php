@@ -14,6 +14,13 @@ return (new PhpCsFixer\Config())
         'cast_spaces' => [
             'space' => 'single',
         ],
+        'yoda_style' => [
+            'equal' => false,
+            'identical' => false,
+            'less_and_greater' => false
+        ],
+
+        'date_time_immutable' => true,
         'combine_consecutive_issets' => true,
         'concat_space' => [
             'spacing' => 'one',
@@ -38,7 +45,30 @@ return (new PhpCsFixer\Config())
         'self_accessor' => false,
         'single_line_throw' => false,
         'no_alias_language_construct_call' => false,
-        'visibility_required' => false
+        'visibility_required' => false,
+        'ordered_imports' => true,
+        'global_namespace_import' => [
+            'import_classes' => false,
+            'import_constants' => false,
+            'import_functions' => false,
+        ],
+        'native_constant_invocation' => false,
+        'native_function_invocation' => false,
+        'modernize_types_casting' => true,
+        'is_null' => true,
+        'operator_linebreak' => [
+            'only_booleans' => true,
+            'position' => 'beginning',
+        ],
+        'ternary_to_null_coalescing' => false,
+        'array_syntax' => [
+            'syntax' => 'short',
+        ],
+        'phpdoc_annotation_without_dot' => false,
+        'logical_operators' => true,
+        'php_unit_test_case_static_method_calls' => ['call_type' => 'this'],
+        'multiline_whitespace_before_semicolons' => ['strategy' => 'new_line_for_chained_calls'],
+
     ])
     ->setFinder($finder)
     ->setCacheFile(__DIR__.'/var/.php_cs.cache');
