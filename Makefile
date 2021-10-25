@@ -53,7 +53,7 @@ else
 endif
 
 lint:
-	cd $(PRESTASHOP_DIR) && php vendor/bin/php-cs-fixer fix --dry-run --config-file=$(ROOT_DIR)/.php-cs-fixer.php -vvv
+	cd $(PRESTASHOP_DIR) && composer install &&  php vendor/bin/php-cs-fixer fix --dry-run --config-file=$(ROOT_DIR)/.php-cs-fixer.php -vvv
 
 test:
 ifeq ($(COMPOSERV1),1)
