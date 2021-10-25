@@ -8,9 +8,11 @@ define('_PS_VERSION_', AppKernel::VERSION);
 require_once __DIR__.'/../PrestaShop/config/defines.inc.php';
 require_once __DIR__.'/../PrestaShop/config/alias.php';
 require_once __DIR__.'/../PrestaShop/classes/PrestaShopAutoload.php';
+require_once __DIR__.'/../PrestaShop/vendor/friendsofphp/php-cs-fixer/src/Finder.php';
+require_once __DIR__.'/../PrestaShop/vendor/friendsofphp/php-cs-fixer/src/Config.php';
+
+
 spl_autoload_register([PrestaShopAutoload::getInstance(), 'load']);
-
-
 
 
 $finder = PhpCsFixer\Finder::create()->in([
