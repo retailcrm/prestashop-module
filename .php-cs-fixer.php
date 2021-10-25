@@ -70,5 +70,4 @@ return (new PhpCsFixer\Config())
         'multiline_whitespace_before_semicolons' => ['strategy' => 'new_line_for_chained_calls'],
 
     ])
-    ->setFinder($finder)
-    ->setCacheFile(__DIR__.'/var/.php_cs.cache');
+    ->setFinder($finder);
