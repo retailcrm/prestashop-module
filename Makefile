@@ -53,7 +53,7 @@ else
 endif
 
 lint:
-	cd $(PRESTASHOP_DIR) && php vendor/bin/php-cs-fixer fix --dry-run --config-file=$(ROOT_DIR)/.php-cs-fixer.php --using-cache=no -vvv
+	cd $(PRESTASHOP_DIR) && php vendor/bin/php-cs-fixer fix --dry-run --config-file=$(ROOT_DIR)/.php-cs-fixer.php -vvv
 
 #lint-fix:
 	#cd $(PRESTASHOP_DIR) && docker run --rm -it -w=/app -v ${PWD}:/app oskarstark/php-cs-fixer-ga:latest --config-file=$(ROOT_DIR)/.php-cs-fixer.php --using-cache=no
