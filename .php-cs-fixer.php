@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/tests/bootstrap.php';
+require_once __DIR__ . '/tests/init.php';
 
 $finder = PhpCsFixer\Finder::create()->in([
     __DIR__.'/retailcrm'
