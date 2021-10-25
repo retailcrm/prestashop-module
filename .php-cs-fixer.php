@@ -4,8 +4,8 @@ require_once __DIR__.'/../PrestaShop/vendor/autoload.php';
 
 define('_PS_VERSION_', AppKernel::VERSION);
 
-require_once _PS_CONFIG_DIR_.'alias.php';
-require_once _PS_CLASS_DIR_.'PrestaShopAutoload.php';
+require_once __DIR__.'/../PrestaShop/config/alias.php';
+require_once __DIR__.'/../PrestaShop/classes/PrestaShopAutoload.php';
 spl_autoload_register([PrestaShopAutoload::getInstance(), 'load']);
 
 
