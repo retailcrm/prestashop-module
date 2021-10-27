@@ -1215,7 +1215,7 @@ class RetailcrmHistory
         return true;
     }
 
-    private static function createProducts($orderItems): array
+    private static function createProducts($orderItems)
     {
         $products = [];
         foreach ($orderItems as $item) {
