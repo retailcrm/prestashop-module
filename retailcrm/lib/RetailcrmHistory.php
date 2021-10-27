@@ -53,7 +53,7 @@ class RetailcrmHistory
 
         $customerFix = [];
 
-        $filter = false === $lastSync
+        $filter = $lastSync === false
             ? ['startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s'))))]
             : ['sinceId' => $lastSync];
 
@@ -67,10 +67,9 @@ class RetailcrmHistory
             ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
-            ->getData()
-        ;
+            ->getData();
 
-        if (0 < count($history)) {
+        if (count($history) > 0) {
             $historyChanges = static::filterHistory($history, 'customer');
             $end = end($history);
             Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $end['id']);
@@ -112,39 +111,36 @@ class RetailcrmHistory
                     $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
                     $addressBuilder
-                        ->setCustomerAddress($customerAddress)
-                    ;
+                        ->setCustomerAddress($customerAddress);
 
                     $customerBuilder
                         ->setCustomer($foundCustomer)
                         ->setAddressBuilder($addressBuilder)
                         ->setDataCrm($customerData)
-                        ->build()
-                    ;
+                        ->build();
 
                     $customer = $customerBuilder->getData()->getCustomer();
                     $address = $customerBuilder->getData()->getCustomerAddress();
 
-                    if (false === self::loadInCMS($customer, 'update')) {
+                    if (self::loadInCMS($customer, 'update') === false) {
                         continue;
                     }
 
                     if (!empty($address)) {
                         RetailcrmTools::assignAddressIdsByFields($customer, $address);
 
-                        if (false === self::loadInCMS($address, 'update')) {
+                        if (self::loadInCMS($address, 'update') === false) {
                             continue;
                         }
                     }
                 } else {
                     $customerBuilder
                         ->setDataCrm($customerHistory)
-                        ->build()
-                    ;
+                        ->build();
 
                     $customer = $customerBuilder->getData()->getCustomer();
 
-                    if (false === self::loadInCMS($customer, 'add')) {
+                    if (self::loadInCMS($customer, 'add') === false) {
                         continue;
                     }
 
@@ -160,7 +156,7 @@ class RetailcrmHistory
 
                         $address->id_customer = $customer->id;
 
-                        if (false === self::loadInCMS($address, 'add')) {
+                        if (self::loadInCMS($address, 'add') === false) {
                             continue;
                         }
                     }
@@ -190,25 +186,22 @@ class RetailcrmHistory
         $lastSync = Configuration::get('RETAILCRM_LAST_ORDERS_SYNC');
         $lastDate = Configuration::get('RETAILCRM_LAST_SYNC');
 
-        if (false === $lastSync && false === $lastDate) {
+        if ($lastSync === false && $lastDate === false) {
             $filter = [
                 'startDate' => date(
                     'Y-m-d H:i:s',
                     strtotime('-1 days', strtotime(date('Y-m-d H:i:s')))
                 ),
             ];
-        } elseif (false === $lastSync && false !== $lastDate) {
+        } elseif ($lastSync === false && $lastDate !== false) {
             $filter = ['startDate' => $lastDate];
-        } elseif (false !== $lastSync) {
+        } elseif ($lastSync !== false) {
             $filter = ['sinceId' => $lastSync];
         } else {
             $filter = [];
         }
 
         $orderFix = [];
-        $updateOrderIds = [];
-        $updateOrderStatuses = [];
-        $newItemsIdsByOrderId = [];
         $historyChanges = [];
 
         $request = new RetailcrmApiPaginatedRequest();
@@ -220,10 +213,9 @@ class RetailcrmHistory
             ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
-            ->getData()
-        ;
+            ->getData();
 
-        if (0 < count($history)) {
+        if (count($history) > 0) {
             $historyChanges = static::filterHistory($history, 'order');
             $end = end($history);
             Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $end['id']);
@@ -255,12 +247,12 @@ class RetailcrmHistory
                     $order_history
                 );
 
-                if (isset($order_history['deleted']) && true == $order_history['deleted']) {
+                if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
                     continue;
                 }
-                $infoOrder = null;
 
                 if (!array_key_exists('externalId', $order_history)) {
+
                     // get full order
                     $order = self::getCRMOrder($order_history['id'], 'id');
                     if (!$order) {
@@ -277,7 +269,7 @@ class RetailcrmHistory
 
                     // status
                     $state = $order['status'];
-                    if (array_key_exists($state, $statuses) && '' != $statuses[$state]) {
+                    if (array_key_exists($state, $statuses) && $statuses[$state] != '') {
                         $orderStatus = $statuses[$state];
                     }
 
@@ -286,12 +278,12 @@ class RetailcrmHistory
                     $paymentId = null;
                     $paymentType = null;
                     if (isset($order['payments'])) {
-                        if (1 === count($order['payments'])) {
+                        if (count($order['payments']) === 1) {
                             $paymentCRM = end($order['payments']);
                             $paymentTypeCRM = $paymentCRM['type'];
-                        } elseif (1 < count($order['payments'])) {
+                        } elseif (count($order['payments']) > 1) {
                             foreach ($order['payments'] as $paymentCRM) {
-                                if (isset($paymentCRM['status']) && 'paid' !== $paymentCRM['status']) {
+                                if (isset($paymentCRM['status']) && $paymentCRM['status'] !== 'paid') {
                                     $paymentTypeCRM = $paymentCRM['type'];
                                     break;
                                 }
@@ -338,7 +330,7 @@ class RetailcrmHistory
 
                     // delivery
                     $delivery = isset($order['delivery']['code']) ? $order['delivery']['code'] : false;
-                    if ($delivery && array_key_exists($delivery, $deliveries) && '' != $deliveries[$delivery]) {
+                    if ($delivery && array_key_exists($delivery, $deliveries) && $deliveries[$delivery] != '') {
                         $deliveryType = $deliveries[$delivery];
                     }
 
@@ -361,7 +353,7 @@ class RetailcrmHistory
                     $customer = null;
                     $customerId = null;
 
-                    if ('customer_corporate' === $order['customer']['type']
+                    if ($order['customer']['type'] === 'customer_corporate'
                         && RetailcrmTools::isCorporateEnabled()
                         && !empty($order['contact'])
                         && array_key_exists('externalId', $order['contact'])
@@ -394,8 +386,7 @@ class RetailcrmHistory
                             ->setCustomer(new Customer($customerId))
                             ->setDataCrm($dataOrder)
                             ->extractCompanyDataFromOrder($order)
-                            ->build()
-                        ;
+                            ->build();
 
                         $customer = $corporateCustomerBuilder->getData()->getCustomer();
                         $addressInvoice = $corporateCustomerBuilder->getData()->getCustomerAddress();
@@ -408,8 +399,7 @@ class RetailcrmHistory
 
                         $customerBuilder
                             ->setDataCrm($order['customer'])
-                            ->build()
-                        ;
+                            ->build();
 
                         $customer = $customerBuilder->getData()->getCustomer();
                         $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
@@ -419,35 +409,37 @@ class RetailcrmHistory
                         $customer->id = self::getCustomerIdByEmail($customer->email);
                     }
 
-                    if (false === self::loadInCMS($customer, 'save')) {
+                    if (self::loadInCMS($customer, 'save') === false) {
                         continue;
                     }
+                    if ($addressInvoice !== null) {
+                        if (RetailcrmTools::validateEntity($addressInvoice)) {
+                            $addressInvoice->id_customer = $customer->id;
+                            RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
 
-                    if (RetailcrmTools::validateEntity($addressInvoice)) {
-                        $addressInvoice->id_customer = $customer->id;
-                        RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
+                            if (empty($addressInvoice->id)) {
+                                self::loadInCMS($addressInvoice, 'add');
 
-                        if (empty($addressInvoice->id)) {
-                            self::loadInCMS($addressInvoice, 'add');
+                                if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
+                                    self::$api->customersCorporateAddressesEdit(
+                                        $order['customer']['id'],
+                                        $order['company']['address']['id'],
+                                        array_merge(
+                                            $order['company']['address'],
+                                            ['externalId' => $addressInvoice->id]
+                                        ),
+                                        'id',
+                                        'id'
+                                    );
 
-                            if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
-                                self::$api->customersCorporateAddressesEdit(
-                                    $order['customer']['id'],
-                                    $order['company']['address']['id'],
-                                    array_merge(
-                                        $order['company']['address'],
-                                        ['externalId' => $addressInvoice->id]
-                                    ),
-                                    'id',
-                                    'id'
-                                );
-
-                                time_nanosleep(0, 20000000);
+                                    time_nanosleep(0, 20000000);
+                                }
+                            } else {
+                                self::loadInCMS($addressInvoice, 'save');
                             }
-                        } else {
-                            self::loadInCMS($addressInvoice, 'save');
                         }
                     }
+
 
                     // address delivery
                     $addressBuilder = new RetailcrmCustomerAddressBuilder();
@@ -458,8 +450,7 @@ class RetailcrmHistory
                         ->setLastName(isset($order['lastName']) ? $order['lastName'] : null)
                         ->setPhone(isset($order['phone']) ? $order['phone'] : null)
                         ->build()
-                        ->getData()
-                    ;
+                        ->getData();
 
                     if (RetailcrmTools::validateEntity($addressDelivery)) {
                         RetailcrmTools::assignAddressIdsByFields($customer, $addressDelivery);
@@ -476,7 +467,7 @@ class RetailcrmHistory
                     $cart->id_currency = $default_currency;
                     $cart->id_lang = self::$default_lang;
                     $cart->id_shop = Context::getContext()->shop->id;
-                    $cart->id_shop_group = (int) (Context::getContext()->shop->id_shop_group);
+                    $cart->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
                     $cart->id_customer = $customer->id;
                     $cart->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
                     $cart->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
@@ -486,135 +477,31 @@ class RetailcrmHistory
 
                     $products = [];
                     if (!empty($order['items'])) {
-                        foreach ($order['items'] as $item) {
-                            if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                                continue;
-                            }
-
-                            $productId = explode('#', $item['offer']['externalId']);
-                            $product = [];
-                            $product['id_product'] = (int) $productId[0];
-                            $product['id_product_attribute'] = !empty($productId[1]) ? $productId[1] : 0;
-                            $product['quantity'] = $item['quantity'];
-                            $product['id_address_delivery'] = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
-                            $products[] = $product;
-                        }
+                        $products = RetailcrmHistory::createProducts($order['items']);
                     }
 
-                    $cart->setWsCartRows($products);
-
-                    self::loadInCMS($cart, 'update');
-
-                    /*
-                     * Create order
-                    */
-                    $newOrder = new Order();
-                    $newOrder->id_shop = Context::getContext()->shop->id;
-                    $newOrder->id_shop_group = (int) (Context::getContext()->shop->id_shop_group);
-                    $newOrder->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
-                    $newOrder->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
-                    $newOrder->id_cart = (int) $cart->id;
-                    $newOrder->id_currency = $default_currency;
-                    $newOrder->id_lang = self::$default_lang;
-                    $newOrder->id_customer = (int) $customer->id;
-                    $orderNumber = $receiveOrderNumber ? $order['number'] : $newOrder->generateReference();
-                    $newOrder->reference = $orderNumber;
-
-                    if (isset($deliveryType)) {
-                        $newOrder->id_carrier = (int) $deliveryType;
+                    if (count($products) > 0) {
+                        $cart->setWsCartRows($products);
+                        self::loadInCMS($cart, 'update');
                     }
 
-                    if (isset($paymentType)) {
-                        $newOrder->payment = $paymentType;
-                        $newOrder->module = $paymentId;
-                    }
-
-                    // totals
-                    $totalPaid = $order['totalSumm'];
-                    $orderTotalProducts = array_reduce($order['items'], function ($sum, $it) {
-                        $sum += $it['initialPrice'] * $it['quantity'];
-
-                        return $sum;
-                    });
-                    $deliveryCost = $order['delivery']['cost'];
-                    $totalDiscount = round($deliveryCost + $orderTotalProducts - $totalPaid, 2);
-
-                    $newOrder->total_discounts = $totalDiscount;
-                    $newOrder->total_discounts_tax_incl = $totalDiscount;
-                    $newOrder->total_discounts_tax_excl = $totalDiscount;
-
-                    $newOrder->total_paid = $totalPaid;
-                    $newOrder->total_paid_tax_incl = $totalPaid;
-                    $newOrder->total_paid_tax_excl = $totalPaid;
-                    $newOrder->total_paid_real = $totalPaid;
-
-                    $newOrder->total_products = (int) $orderTotalProducts;
-                    $newOrder->total_products_wt = (int) $orderTotalProducts;
-
-                    $newOrder->total_shipping = $deliveryCost;
-                    $newOrder->total_shipping_tax_incl = $deliveryCost;
-                    $newOrder->total_shipping_tax_excl = $deliveryCost;
-
-                    $newOrder->conversion_rate = 1.000000;
-
-                    if (isset($orderStatus)) {
-                        $newOrder->current_state = (int) $orderStatus;
-                        $newOrderHistoryRecord = new OrderHistory(
-                            null,
-                            static::$default_lang,
-                            Context::getContext()->shop->id
-                        );
-                    }
-
-                    if (!empty($order['delivery']['date'])) {
-                        $newOrder->delivery_date = $order['delivery']['date'];
-                    }
-
-                    $newOrder->date_add = $order['createdAt'];
-                    $newOrder->date_upd = $order['createdAt'];
-                    $newOrder->invoice_date = $order['createdAt'];
-                    $newOrder->valid = 1;
-                    $newOrder->secure_key = md5(time());
-
-                    // save order
-                    try {
-                        RetailcrmLogger::writeDebug(
-                            __METHOD__,
-                            sprintf(
-                                '<Customer ID: %d> %s::%s',
-                                $newOrder->id_customer,
-                                get_class($newOrder),
-                                'add'
-                            )
-                        );
-
-                        $newOrder->add(false, false);
-
-                        // set status for the order
-                        if (isset($newOrderHistoryRecord)) {
-                            $newOrderHistoryRecord->id_order = $newOrder->id;
-                            $newOrderHistoryRecord->id_order_state = $newOrder->current_state;
-                            $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
-                            $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
-                            $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
-
-                            self::loadInCMS($newOrderHistoryRecord, 'add');
-                        }
-                    } catch (\Exception $e) {
-                        RetailcrmLogger::writeCaller(
-                            __METHOD__,
-                            sprintf('Error adding order id=%d: %s', $order['id'], $e->getMessage())
-                        );
-
-                        RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-                    }
+                    $newOrder = RetailcrmHistory::createOrder(
+                        $cart,
+                        $customer,
+                        $default_currency,
+                        $receiveOrderNumber,
+                        $order,
+                        $paymentId,
+                        $deliveryType,
+                        $paymentType
+                    );
 
                     // payment
                     if (isset($order['payments']) && !empty($order['payments'])) {
                         foreach ($order['payments'] as $payment) {
                             if (!isset($payment['externalId'])
                                 && isset($payment['status'])
-                                && 'paid' === $payment['status']
+                                && $payment['status'] === 'paid'
                             ) {
                                 $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
                                 $paymentType = null;
@@ -681,78 +568,7 @@ class RetailcrmHistory
 
                     $newItemsIds = [];
                     if (!empty($order['items'])) {
-                        foreach ($order['items'] as $item) {
-                            $product = new Product((int) $item['offer']['externalId'], false, self::$default_lang);
-                            $product_id = $item['offer']['externalId'];
-                            $product_attribute_id = 0;
-
-                            if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                                continue;
-                            }
-
-                            if (false !== strpos($item['offer']['externalId'], '#')) {
-                                $externalIds = explode('#', $item['offer']['externalId']);
-                                $product_id = $externalIds[0];
-                                $product_attribute_id = $externalIds[1];
-                            }
-
-                            if (0 != $product_attribute_id) {
-                                $productName = htmlspecialchars(
-                                    strip_tags(Product::getProductName($product_id, $product_attribute_id))
-                                );
-                            } else {
-                                $productName = htmlspecialchars(strip_tags($product->name));
-                            }
-
-                            $productPrice = round($item['initialPrice'], 2);
-
-                            $orderDetail = new OrderDetail();
-                            static::setOrderDetailProductName($orderDetail, $productName);
-
-                            $orderDetail->id_order = $newOrder->id;
-                            $orderDetail->id_order_invoice = $newOrder->invoice_number;
-                            $orderDetail->id_shop = Context::getContext()->shop->id;
-
-                            $orderDetail->product_id = (int) $product_id;
-                            $orderDetail->product_attribute_id = (int) $product_attribute_id;
-                            $orderDetail->product_reference = implode('', ['\'', $product->reference, '\'']);
-
-                            $orderDetail->product_price = $productPrice;
-                            $orderDetail->original_product_price = $productPrice;
-                            $orderDetail->product_quantity = (int) $item['quantity'];
-                            $orderDetail->product_quantity_in_stock = (int) $item['quantity'];
-
-                            $orderDetail->total_price_tax_incl = $productPrice * $orderDetail->product_quantity;
-                            $orderDetail->unit_price_tax_incl = $productPrice;
-
-                            $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
-
-                            if (!$product->checkQty($orderDetail->product_quantity)) {
-                                self::$api->ordersFixExternalIds([[
-                                    'id' => $order['id'],
-                                    'externalId' => $newOrder->id,
-                                ]]);
-
-                                self::setOutOfStockStatus(
-                                    $order,
-                                    $newOrder,
-                                    $statuses
-                                );
-                            }
-
-                            StockAvailable::updateQuantity(
-                                $product_id,
-                                $product_attribute_id,
-                                -1 * $orderDetail->product_quantity,
-                                Context::getContext()->shop->id
-                            );
-
-                            if (self::loadInCMS($orderDetail, 'save')) {
-                                $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
-                            }
-
-                            unset($orderDetail);
-                        }
+                        $order = RetailcrmHistory::createOrderDetails($newOrder, $order, $statuses);
                     }
 
                     // collect order ids for single fix request
@@ -769,516 +585,22 @@ class RetailcrmHistory
                         ];
                     }
                 } else {
-                    $order = $order_history;
-
-                    if (false !== stripos($order['externalId'], 'pscart_')) {
-                        continue;
-                    }
-
-                    $orderToUpdate = new Order((int) $order['externalId']);
-                    if (!Validate::isLoadedObject($orderToUpdate)) {
-                        continue;
-                    }
-
-                    $order = RetailcrmTools::filter(
-                        'RetailcrmFilterOrdersHistoryUpdate',
-                        $order,
-                        [
-                            'orderToUpdate' => $orderToUpdate,
-                        ]
+                    RetailcrmHistory::updateOrder(
+                        $order_history,
+                        $payments,
+                        $paymentDefault,
+                        $default_currency,
+                        $statuses,
+                        $receiveOrderNumber,
+                        $sendOrderNumber,
+                        $deliveries
                     );
-
-                    self::handleCustomerDataChange($orderToUpdate, $order);
-
-                    /*
-                     * check delivery changes
-                     */
-                    if (isset($order['delivery']['address'])
-                        || array_key_exists('firstName', $order)
-                        || array_key_exists('lastName', $order)
-                        || array_key_exists('phone', $order)
-                    ) {
-                        $addressBuilder = new RetailcrmCustomerAddressBuilder();
-
-                        $orderAddress = new Address($orderToUpdate->id_address_delivery);
-                        $orderAddressCrm = isset($order['delivery']['address']) ? $order['delivery']['address'] : [];
-                        $orderFirstName = $orderAddress->firstname;
-                        $orderLastName = $orderAddress->lastname;
-                        $orderPhone = $orderAddress->phone;
-
-                        if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
-                            || !Validate::isLoadedObject($orderAddress)
-                        ) {
-                            $infoOrder = self::getCRMOrder($order['externalId']);
-                            if (isset($infoOrder['delivery']['address'])) {
-                                // array_replace used to save changes, made by custom filters
-                                $orderAddressCrm = array_replace(
-                                    $infoOrder['delivery']['address'],
-                                    $orderAddressCrm
-                                );
-                            }
-
-                            if (isset($infoOrder['firstName'])) {
-                                $orderFirstName = $infoOrder['firstName'];
-                            }
-                            if (isset($infoOrder['lastName'])) {
-                                $orderLastName = $infoOrder['lastName'];
-                            }
-                            if (isset($infoOrder['phone'])) {
-                                $orderPhone = $infoOrder['phone'];
-                            }
-                        }
-
-                        // may override actual order data, but used to save changes, made by custom filters
-                        if (array_key_exists('firstName', $order)) {
-                            $orderFirstName = $order['firstName'];
-                        }
-                        if (array_key_exists('lastName', $order)) {
-                            $orderLastName = $order['lastName'];
-                        }
-                        if (array_key_exists('phone', $order)) {
-                            $orderPhone = $order['phone'];
-                        }
-
-                        $address = $addressBuilder
-                            ->setCustomerAddress($orderAddress)
-                            ->setIdCustomer($orderToUpdate->id_customer)
-                            ->setDataCrm($orderAddressCrm)
-                            ->setFirstName($orderFirstName)
-                            ->setLastName($orderLastName)
-                            ->setPhone($orderPhone)
-                            ->setAlias($orderAddress->alias)
-                            ->build()
-                            ->getData()
-                        ;
-
-                        if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
-                            $address->id = null;
-                            RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
-
-                            if (null === $address->id) {
-                                // Modifying an address in order creates another address
-                                // instead of changing the original one. This issue has been fixed in PS 1.7.7
-                                if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-                                    self::loadInCMS($address, 'add');
-
-                                    $orderToUpdate->id_address_delivery = $address->id;
-                                    self::loadInCMS($orderToUpdate, 'update');
-                                } else {
-                                    $address->id = $orderToUpdate->id_address_delivery;
-                                    self::loadInCMS($address, 'update');
-                                }
-                            } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
-                                RetailcrmLogger::writeDebug(__METHOD__, sprintf(
-                                    'Binding to existing address [%d]',
-                                    $address->id
-                                ));
-
-                                $orderToUpdate->id_address_delivery = $address->id;
-                                self::loadInCMS($orderToUpdate, 'update');
-                            }
-                        }
-                    }
-
-                    /*
-                     * check delivery type and cost
-                     */
-                    if (!empty($order['delivery']['code']) || !empty($order['delivery']['cost'])) {
-                        $dtype = !empty($order['delivery']['code']) ? $order['delivery']['code'] : null;
-                        $dcost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
-
-                        if (
-                            (
-                                null !== $dtype
-                                && isset($deliveries[$dtype])
-                                && null !== $deliveries[$dtype]
-                                && $deliveries[$dtype] !== $orderToUpdate->id_carrier
-                            )
-                            || null !== $dcost
-                        ) {
-                            if (property_exists($orderToUpdate, 'id_order_carrier')) {
-                                $idOrderCarrier = $orderToUpdate->id_order_carrier;
-                            } elseif (method_exists($orderToUpdate, 'getIdOrderCarrier')) {
-                                $idOrderCarrier = $orderToUpdate->getIdOrderCarrier();
-                            } else {
-                                $idOrderCarrier = null;
-                            }
-
-                            $orderCarrier = new OrderCarrier($idOrderCarrier);
-
-                            if (null != $dtype) {
-                                $orderCarrier->id_carrier = $deliveries[$dtype];
-                            }
-
-                            if (null != $dcost) {
-                                $orderCarrier->shipping_cost_tax_incl = $dcost;
-                                $orderCarrier->shipping_cost_tax_excl = $dcost;
-                            }
-
-                            $orderCarrier->id_order = $orderToUpdate->id;
-
-                            self::loadInCMS($orderCarrier, 'update');
-                        }
-                    }
-
-                    /*
-                     * check payment type
-                     */
-                    if (!empty($order['payments'])) {
-                        foreach ($order['payments'] as $payment) {
-                            if (!isset($payment['externalId'])
-                                && isset($payment['status'])
-                                && 'paid' === $payment['status']
-                            ) {
-                                $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
-                                $paymentType = null;
-                                $paymentId = null;
-
-                                if ($paymentTypeCRM) {
-                                    if (array_key_exists($paymentTypeCRM, $payments) && !empty($payments[$paymentTypeCRM])) {
-                                        $paymentId = $payments[$paymentTypeCRM];
-                                    } else {
-                                        continue;
-                                    }
-                                } elseif ($paymentDefault) {
-                                    $paymentId = $paymentDefault;
-                                } else {
-                                    continue;
-                                }
-
-                                $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
-
-                                $orderToUpdate->payment = $paymentType;
-                                $orderPayment = new OrderPayment();
-                                $orderPayment->payment_method = $paymentType;
-                                $orderPayment->order_reference = $orderToUpdate->reference;
-
-                                if (isset($payment['amount'])) {
-                                    $orderPayment->amount = $payment['amount'];
-                                } else {
-                                    $orderPayment->amount = $orderToUpdate->total_paid;
-                                }
-
-                                $orderPayment->id_currency = $default_currency;
-                                $orderPayment->date_add =
-                                    isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
-
-                                RetailcrmLogger::writeDebug(
-                                    __METHOD__,
-                                    sprintf(
-                                        '<Order Reference: %s> %s::%s',
-                                        $orderToUpdate->reference,
-                                        get_class($orderPayment),
-                                        'save'
-                                    )
-                                );
-
-                                $orderPayment->save();
-                            }
-                        }
-                    }
-
-                    // change order totals
-                    if (isset($order['items']) || isset($order['delivery']['cost'])) {
-                        // get full order
-                        if (empty($infoOrder)) {
-                            $infoOrder = self::getCRMOrder($order['externalId']);
-                        }
-
-                        // items
-                        if (isset($order['items']) && is_array($order['items'])) {
-                            /*
-                             * Clean deleted items
-                             */
-                            $id_order_detail = null;
-                            foreach ($order['items'] as $key => $item) {
-                                if (isset($item['delete']) && true == $item['delete']) {
-                                    if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                                        $orderToUpdate->gift = false;
-                                    }
-
-                                    $parsedExtId = static::parseItemExternalId($item);
-                                    $product_id = $parsedExtId['product_id'];
-                                    $product_attribute_id = $parsedExtId['product_attribute_id'];
-                                    $id_order_detail = !empty($parsedExtId['id_order_detail'])
-                                        ? $parsedExtId['id_order_detail'] : 0;
-
-                                    if (isset($item['quantity'])) {
-                                        StockAvailable::updateQuantity(
-                                            $product_id,
-                                            $product_attribute_id,
-                                            $item['quantity'],
-                                            Context::getContext()->shop->id
-                                        );
-                                    }
-
-                                    self::deleteOrderDetailByProduct(
-                                        $orderToUpdate->id,
-                                        $product_id,
-                                        $product_attribute_id,
-                                        $id_order_detail
-                                    );
-                                    unset($order['items'][$key]);
-                                }
-                            }
-
-                            /*
-                             * Check items quantity and discount
-                             */
-                            foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
-                                foreach ($order['items'] as $key => $item) {
-                                    if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                                        continue;
-                                    }
-
-                                    $parsedExtId = static::parseItemExternalId($item);
-                                    $product_id = $parsedExtId['product_id'];
-                                    $product_attribute_id = $parsedExtId['product_attribute_id'];
-                                    $isExistingItem = isset($item['create']) ? false : true;
-
-                                    if ($isExistingItem
-                                        && $product_id == $orderItem['product_id']
-                                        && $product_attribute_id == $orderItem['product_attribute_id']
-                                    ) {
-                                        $product = new Product((int) $product_id, false, self::$default_lang);
-
-                                        $orderDetailId = !empty($parsedExtId['id_order_detail'])
-                                            ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
-                                        $orderDetail = new OrderDetail($orderDetailId);
-
-                                        // price
-                                        if (isset($item['initialPrice'])) {
-                                            $productPrice = round($item['initialPrice'], 2);
-                                            $orderDetail->unit_price_tax_incl = $productPrice;
-                                        }
-
-                                        // quantity
-                                        if (
-                                            isset($item['quantity'])
-                                            && $item['quantity'] != $orderItem['product_quantity']
-                                        ) {
-                                            $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
-                                            $orderDetail->product_quantity = $item['quantity'];
-                                            $orderDetail->product_quantity_in_stock = $item['quantity'];
-
-                                            if (0 > $deltaQuantity && !$product->checkQty(-1 * $deltaQuantity)) {
-                                                $newStatus = self::setOutOfStockStatus(
-                                                    $infoOrder,
-                                                    $orderToUpdate,
-                                                    $statuses
-                                                );
-
-                                                if ($newStatus) {
-                                                    $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
-                                                    $orderToUpdate->current_state = $statuses[$newStatus];
-                                                }
-                                            }
-
-                                            StockAvailable::updateQuantity(
-                                                $product_id,
-                                                $product_attribute_id,
-                                                $deltaQuantity,
-                                                Context::getContext()->shop->id
-                                            );
-                                        }
-
-                                        $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
-                                            ? $orderToUpdate->id_warehouse : 0;
-
-                                        self::loadInCMS($orderDetail, 'update');
-                                        unset($order['items'][$key]);
-                                    }
-                                }
-                            }
-
-                            /*
-                             * Check new items
-                             */
-                            $isNewItemsExist = false;
-                            $newItemsIds = [];
-                            foreach ($order['items'] as $key => $newItem) {
-                                if (RetailcrmOrderBuilder::isGiftItem($newItem)) {
-                                    continue;
-                                }
-
-                                $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
-                                if (!$isNewItem) {
-                                    continue;
-                                }
-
-                                $parsedExtId = static::parseItemExternalId($newItem);
-                                $product_id = $parsedExtId['product_id'];
-                                $product_attribute_id = $parsedExtId['product_attribute_id'];
-
-                                $product = new Product((int) $product_id, false, self::$default_lang);
-
-                                if (0 != $product_attribute_id) {
-                                    $productName = htmlspecialchars(
-                                        strip_tags(Product::getProductName($product_id, $product_attribute_id))
-                                    );
-                                } else {
-                                    $productName = htmlspecialchars(strip_tags($product->name));
-                                }
-
-                                $productPrice = $newItem['initialPrice'];
-
-                                $orderDetail = new OrderDetail(
-                                    !empty($parsedExtId['id_order_detail']) ? $parsedExtId['id_order_detail'] : null
-                                );
-
-                                static::setOrderDetailProductName($orderDetail, $productName);
-
-                                $orderDetail->id_order = $orderToUpdate->id;
-                                $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
-                                $orderDetail->id_shop = Context::getContext()->shop->id;
-
-                                $orderDetail->product_id = (int) $product_id;
-                                $orderDetail->product_attribute_id = (int) $product_attribute_id;
-                                $orderDetail->product_reference = implode('', ['\'', $product->reference, '\'']);
-
-                                $orderDetail->product_price = $productPrice;
-                                $orderDetail->original_product_price = $productPrice;
-                                $orderDetail->product_quantity = (int) $newItem['quantity'];
-                                $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
-
-                                $orderDetail->total_price_tax_incl = $productPrice * $orderDetail->product_quantity;
-                                $orderDetail->unit_price_tax_incl = $productPrice;
-
-                                $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
-                                    ? $orderToUpdate->id_warehouse : 0;
-                                $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
-                                    ? $parsedExtId['id_order_detail'] : null;
-
-                                if (!$product->checkQty($orderDetail->product_quantity)) {
-                                    $newStatus = self::setOutOfStockStatus(
-                                        $infoOrder,
-                                        $orderToUpdate,
-                                        $statuses
-                                    );
-
-                                    if ($newStatus) {
-                                        $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
-                                        $orderToUpdate->current_state = $statuses[$newStatus];
-                                    }
-                                }
-
-                                StockAvailable::updateQuantity(
-                                    $product_id,
-                                    $product_attribute_id,
-                                    -1 * $orderDetail->product_quantity,
-                                    Context::getContext()->shop->id
-                                );
-
-                                if (self::loadInCMS($orderDetail, 'save')) {
-                                    $newItemsIds[Db::getInstance()->Insert_ID()] = $newItem['id'];
-                                }
-
-                                unset($orderDetail);
-                                unset($order['items'][$key]);
-                                $isNewItemsExist = true;
-                            }
-
-                            // update order items ids in crm
-                            if ($isNewItemsExist) {
-                                $newItemsIdsByOrderId[$orderToUpdate->id] = $newItemsIds;
-                            }
-                        }
-
-                        // totals
-                        $totalPaid = $infoOrder['totalSumm'];
-                        $orderTotalProducts = array_reduce($infoOrder['items'], function ($sum, $it) {
-                            $sum += $it['initialPrice'] * $it['quantity'];
-
-                            return $sum;
-                        });
-                        $deliveryCost = $infoOrder['delivery']['cost'];
-                        $totalDiscount = round($deliveryCost + $orderTotalProducts - $totalPaid, 2);
-
-                        // delete all cart discount
-                        $orderCartRules = $orderToUpdate->getCartRules();
-                        foreach ($orderCartRules as $valCartRules) {
-                            $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
-                            $order_cart_rule->delete();
-                        }
-
-                        $orderToUpdate->total_discounts = $totalDiscount;
-                        $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
-                        $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
-                        $orderToUpdate->total_shipping = $deliveryCost;
-                        $orderToUpdate->total_shipping_tax_incl = $deliveryCost;
-                        $orderToUpdate->total_shipping_tax_excl = $deliveryCost;
-                        $orderToUpdate->total_paid = $totalPaid;
-                        $orderToUpdate->total_paid_tax_incl = $totalPaid;
-                        $orderToUpdate->total_paid_tax_excl = $totalPaid;
-                        $orderToUpdate->total_products_wt = $orderTotalProducts;
-
-                        self::loadInCMS($orderToUpdate, 'update');
-                    }
-
-                    /*
-                     * check status
-                     */
-                    if (!empty($order['status']) && !array_key_exists($orderToUpdate->id, $updateOrderStatuses)) {
-                        $stype = $order['status'];
-
-                        if (isset($statuses[$stype]) && !empty($statuses[$stype])) {
-                            if ($statuses[$stype] != $orderToUpdate->current_state) {
-                                $orderHistory = new OrderHistory();
-                                $orderHistory->id_employee = 0;
-                                $orderHistory->id_order = $orderToUpdate->id;
-                                $orderHistory->id_order_state = $statuses[$stype];
-                                $orderHistory->date_add = date('Y-m-d H:i:s');
-
-                                self::loadInCMS($orderHistory, 'save');
-
-                                RetailcrmLogger::writeDebug(
-                                    __METHOD__,
-                                    sprintf(
-                                        '<Order ID: %d> %s::%s',
-                                        $orderToUpdate->id,
-                                        get_class($orderHistory),
-                                        'changeIdOrderState'
-                                    )
-                                );
-
-                                $orderHistory->changeIdOrderState($statuses[$stype], $orderToUpdate->id, true);
-                            }
-                        }
-                    }
-
-                    // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
-                    if (isset($order['number']) && $receiveOrderNumber) {
-                        $orderToUpdate->reference = $order['number'];
-                        $orderToUpdate->update();
-                    }
-
-                    // collect orders id and reference if option sendOrderNumber enabled
-                    if ($sendOrderNumber) {
-                        $updateOrderIds[] = [
-                            'externalId' => $orderToUpdate->id,
-                            'number' => $orderToUpdate->reference,
-                        ];
-                    }
                 }
             }
 
             // fix order externalId
             if (!empty($orderFix)) {
                 self::$api->ordersFixExternalIds($orderFix);
-            }
-
-            // update orders number in CRM
-            if (!empty($updateOrderIds)) {
-                foreach ($updateOrderIds as $upOrder) {
-                    self::$api->ordersEdit($upOrder);
-                }
-            }
-
-            // update order items ids in crm
-            if (!empty($newItemsIdsByOrderId)) {
-                foreach ($newItemsIdsByOrderId as $newOrderId => $newItemsIds) {
-                    static::updateOrderItems($newOrderId, $newItemsIds);
-                }
             }
 
             return true;
@@ -1355,13 +677,13 @@ class RetailcrmHistory
         if (isset($crmOrder['fullPaidAt']) && !empty($crmOrder['fullPaidAt'])) {
             $stype = $statusArray['out_of_stock_paid'];
 
-            if ('' == $stype) {
+            if ($stype == '') {
                 return false;
             }
         } else {
             $stype = $statusArray['out_of_stock_not_paid'];
 
-            if ('' == $stype) {
+            if ($stype == '') {
                 return false;
             }
         }
@@ -1490,8 +812,7 @@ class RetailcrmHistory
             try {
                 $result = $switcher->setData($data)
                     ->build()
-                    ->getResult()
-                ;
+                    ->getResult();
                 $result->save();
                 $handled = true;
             } catch (\Exception $exception) {
@@ -1556,7 +877,6 @@ class RetailcrmHistory
     {
         try {
             $prefix = $object->id;
-
             if (empty($object->id)) {
                 if (property_exists(get_class($object), 'id_customer')) {
                     $prefix = sprintf('Customer ID: %d', $object->id_customer);
@@ -1615,10 +935,10 @@ class RetailcrmHistory
 
         foreach ($historyEntries as $entry) {
             if (!isset($entry[$recordType]['externalId'])) {
-                if ('api' == $entry['source']
+                if ($entry['source'] == 'api'
                     && isset($change['apiKey']['current'])
-                    && true == $entry['apiKey']['current']
-                    && 'externalId' != $entry['field']
+                    && $entry['apiKey']['current'] == true
+                    && $entry['field'] != 'externalId'
                 ) {
                     continue;
                 } else {
@@ -1640,11 +960,11 @@ class RetailcrmHistory
             }
 
             if (
-                'api' == $entry['source']
+                $entry['source'] == 'api'
                 && isset($entry['apiKey']['current'])
-                && true == $entry['apiKey']['current']
+                && $entry['apiKey']['current'] == true
             ) {
-                if (isset($notOurChanges[$externalId][$field]) || 'externalId' == $field || 'status' == $field) {
+                if (isset($notOurChanges[$externalId][$field]) || $field == 'externalId' || $field == 'status') {
                     $organizedHistory[$externalId][] = $entry;
                 } else {
                     continue;
@@ -1676,7 +996,7 @@ class RetailcrmHistory
         if (!empty($customerEmail)) {
             $item = Customer::getCustomersByEmail($customerEmail);
 
-            if (is_array($item) && 0 < count($item)) {
+            if (is_array($item) && count($item) > 0) {
                 $item = reset($item);
 
                 return (int) $item['id_customer'];
@@ -1699,7 +1019,7 @@ class RetailcrmHistory
     {
         if (isset($item['externalIds'])) {
             foreach ($item['externalIds'] as $externalId) {
-                if ('prestashop' == $externalId['code']) {
+                if ($externalId['code'] == 'prestashop') {
                     return static::parseItemExternalIdString($externalId['value']);
                 }
             }
@@ -1726,17 +1046,17 @@ class RetailcrmHistory
             'id_order_detail' => 0,
         ];
 
-        if (0 < count($parsed)) {
+        if (count($parsed) > 0) {
             $productIdParsed = explode('#', $parsed[0]);
 
-            if (2 == count($productIdParsed)) {
+            if (count($productIdParsed) == 2) {
                 $data['product_id'] = $productIdParsed[0];
                 $data['product_attribute_id'] = $productIdParsed[1];
-            } elseif (1 == count($productIdParsed)) {
+            } elseif (count($productIdParsed) == 1) {
                 $data['product_id'] = $parsed[0];
             }
 
-            if (2 == count($parsed)) {
+            if (count($parsed) == 2) {
                 $data['id_order_detail'] = $parsed[1];
             }
         }
@@ -1768,10 +1088,10 @@ class RetailcrmHistory
      */
     private static function removeEdgeQuotes($str)
     {
-        if (2 <= strlen($str)) {
+        if (strlen($str) >= 2) {
             $newStr = $str;
 
-            if ('\'' == $newStr[0] && '\'' == $newStr[strlen($newStr) - 1]) {
+            if ($newStr[0] == '\'' && $newStr[strlen($newStr) - 1] == '\'') {
                 $newStr = substr($newStr, 1, strlen($newStr) - 2);
             }
 
@@ -1793,7 +1113,7 @@ class RetailcrmHistory
     {
         $object->product_name = static::removeEdgeQuotes($name);
 
-        if (true !== $object->validateField('product_name', $object->product_name)) {
+        if ($object->validateField('product_name', $object->product_name) !== true) {
             $object->product_name = implode('', ['\'', $name, '\'']);
         }
     }
@@ -1806,7 +1126,7 @@ class RetailcrmHistory
 
         $orderdb = new Order($orderId);
         foreach ($orderdb->getProducts() as $item) {
-            if (isset($item['product_attribute_id']) && 0 < $item['product_attribute_id']) {
+            if (isset($item['product_attribute_id']) && $item['product_attribute_id'] > 0) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
             } else {
                 $productId = $item['product_id'];
@@ -1843,10 +1163,10 @@ class RetailcrmHistory
      */
     public static function updateSinceId($entity)
     {
-        if ('orders' === $entity) {
+        if ($entity === 'orders') {
             $key = 'RETAILCRM_LAST_ORDERS_SYNC';
             $method = 'ordersHistory';
-        } elseif ('customers' === $entity) {
+        } elseif ($entity === 'customers') {
             $key = 'RETAILCRM_LAST_CUSTOMERS_SYNC';
             $method = 'customersHistory';
         } else {
@@ -1867,7 +1187,7 @@ class RetailcrmHistory
 
         if ($historyResponse instanceof RetailcrmApiResponse && $historyResponse->offsetExists('pagination')) {
             $lastPage = $historyResponse['pagination']['totalPageCount'];
-            if (1 < $lastPage) {
+            if ($lastPage > 1) {
                 $historyResponse = call_user_func_array(
                     [self::$api, $method],
                     [
@@ -1885,7 +1205,7 @@ class RetailcrmHistory
                 $history = $historyResponse['history'];
                 $lastSinceId = end($history)['id'];
 
-                if ($currentSinceID !== (string) $lastSinceId) {
+                if ($currentSinceID !== strval($lastSinceId)) {
                     RetailcrmLogger::writeDebug(__METHOD__, "Updating to: $lastSinceId");
                     Configuration::updateValue($key, $lastSinceId);
                 }
@@ -1893,5 +1213,728 @@ class RetailcrmHistory
         }
 
         return true;
+    }
+
+    private static function createProducts($orderItems): array
+    {
+        $products = [];
+        foreach ($orderItems as $item) {
+            if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                continue;
+            }
+
+            if (isset($item['offer']['externalId'])) {
+                $productId = explode('#', $item['offer']['externalId']);
+                $product = [];
+                $product['id_product'] = (int) $productId[0];
+                $product['id_product_attribute'] = !empty($productId[1]) ? $productId[1] : 0;
+                $product['quantity'] = $item['quantity'];
+                $product['id_address_delivery'] = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
+                $products[] = $product;
+            }
+        }
+
+        return $products;
+    }
+
+    private static function createOrder($cart, $customer, $default_currency, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType): Order
+    {
+        $newOrder = new Order();
+        $newOrder->id_shop = Context::getContext()->shop->id;
+        $newOrder->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
+        $newOrder->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
+        $newOrder->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
+        $newOrder->id_cart = (int) $cart->id;
+        $newOrder->id_currency = $default_currency;
+        $newOrder->id_lang = self::$default_lang;
+        $newOrder->id_customer = (int) $customer->id;
+        $orderNumber = $receiveOrderNumber ? $order['number'] : $newOrder->generateReference();
+        $newOrder->reference = $orderNumber;
+
+        if (isset($deliveryType)) {
+            $newOrder->id_carrier = (int) $deliveryType;
+        }
+
+        if (isset($paymentType)) {
+            $newOrder->payment = $paymentType;
+            $newOrder->module = $paymentId;
+        }
+
+        // totals
+        $totalPaid = $order['totalSumm'];
+        $orderTotalProducts = array_reduce($order['items'], function ($sum, $it) {
+            $sum += $it['initialPrice'] * $it['quantity'];
+
+            return $sum;
+        });
+        $deliveryCost = $order['delivery']['cost'];
+        $totalDiscount = round($deliveryCost + $orderTotalProducts - $totalPaid, 2);
+
+        $newOrder->total_discounts = $totalDiscount;
+        $newOrder->total_discounts_tax_incl = $totalDiscount;
+        $newOrder->total_discounts_tax_excl = $totalDiscount;
+
+        $newOrder->total_paid = $totalPaid;
+        $newOrder->total_paid_tax_incl = $totalPaid;
+        $newOrder->total_paid_tax_excl = $totalPaid;
+        $newOrder->total_paid_real = $totalPaid;
+
+        $newOrder->total_products = (int) $orderTotalProducts;
+        $newOrder->total_products_wt = (int) $orderTotalProducts;
+
+        $newOrder->total_shipping = $deliveryCost;
+        $newOrder->total_shipping_tax_incl = $deliveryCost;
+        $newOrder->total_shipping_tax_excl = $deliveryCost;
+
+        $newOrder->conversion_rate = 1.000000;
+
+        if (isset($orderStatus)) {
+            $newOrder->current_state = (int) $orderStatus;
+            $newOrderHistoryRecord = new OrderHistory(
+                null,
+                static::$default_lang,
+                Context::getContext()->shop->id
+            );
+        }
+
+        if (!empty($order['delivery']['date'])) {
+            $newOrder->delivery_date = $order['delivery']['date'];
+        }
+
+        $newOrder->date_add = $order['createdAt'];
+        $newOrder->date_upd = $order['createdAt'];
+        $newOrder->invoice_date = $order['createdAt'];
+        $newOrder->valid = 1;
+        $newOrder->secure_key = md5(time());
+
+        // save order
+        try {
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
+                sprintf(
+                    '<Customer ID: %d> %s::%s',
+                    $newOrder->id_customer,
+                    get_class($newOrder),
+                    'add'
+                )
+            );
+
+            $newOrder->add(false, false);
+
+            // set status for the order
+            if (isset($newOrderHistoryRecord)) {
+                $newOrderHistoryRecord->id_order = $newOrder->id;
+                $newOrderHistoryRecord->id_order_state = $newOrder->current_state;
+                $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
+                $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
+                $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
+
+                self::loadInCMS($newOrderHistoryRecord, 'add');
+            }
+        } catch (\Exception $e) {
+            RetailcrmLogger::writeCaller(
+                __METHOD__,
+                sprintf('Error adding order id=%d: %s', $order['id'], $e->getMessage())
+            );
+
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+        }
+
+        return $newOrder;
+    }
+
+    private static function createOrderDetails($newOrder, $order, $statuses)
+    {
+        foreach ($order['items'] as $item) {
+            if (!isset($item['offer']['externalId'])) {
+                continue;
+            }
+            $product = new Product((int) $item['offer']['externalId'], false, self::$default_lang);
+            $product_id = $item['offer']['externalId'];
+            $product_attribute_id = 0;
+
+            if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                continue;
+            }
+
+            if (strpos($item['offer']['externalId'], '#') !== false) {
+                $externalIds = explode('#', $item['offer']['externalId']);
+                $product_id = $externalIds[0];
+                $product_attribute_id = $externalIds[1];
+            }
+
+            if ($product_attribute_id != 0) {
+                $productName = htmlspecialchars(
+                    strip_tags(Product::getProductName($product_id, $product_attribute_id))
+                );
+            } else {
+                $productName = htmlspecialchars(strip_tags($product->name));
+            }
+
+            $productPrice = round($item['initialPrice'], 2);
+
+            $orderDetail = new OrderDetail();
+            static::setOrderDetailProductName($orderDetail, $productName);
+
+            $orderDetail->id_order = $newOrder->id;
+            $orderDetail->id_order_invoice = $newOrder->invoice_number;
+            $orderDetail->id_shop = Context::getContext()->shop->id;
+
+            $orderDetail->product_id = (int) $product_id;
+            $orderDetail->product_attribute_id = (int) $product_attribute_id;
+            $orderDetail->product_reference = implode('', ['\'', $product->reference, '\'']);
+
+            $orderDetail->product_price = $productPrice;
+            $orderDetail->original_product_price = $productPrice;
+            $orderDetail->product_quantity = (int) $item['quantity'];
+            $orderDetail->product_quantity_in_stock = (int) $item['quantity'];
+
+            $orderDetail->total_price_tax_incl = $productPrice * $orderDetail->product_quantity;
+            $orderDetail->unit_price_tax_incl = $productPrice;
+
+            $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
+
+            if (!$product->checkQty($orderDetail->product_quantity)) {
+                self::$api->ordersFixExternalIds([[
+                    'id' => $order['id'],
+                    'externalId' => $newOrder->id,
+                ]]);
+
+                self::setOutOfStockStatus(
+                    $order,
+                    $newOrder,
+                    $statuses
+                );
+            }
+
+            StockAvailable::updateQuantity(
+                $product_id,
+                $product_attribute_id,
+                -1 * $orderDetail->product_quantity,
+                Context::getContext()->shop->id
+            );
+
+            if (self::loadInCMS($orderDetail, 'save')) {
+                $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
+            }
+
+            unset($orderDetail);
+        }
+
+        return $order;
+    }
+
+    private static function checkOrderStatus($order, $orderToUpdate, $updateOrderStatuses)
+    {
+        if (!empty($order['status']) && !array_key_exists($orderToUpdate->id, $updateOrderStatuses)) {
+            $orderStatus = $order['status'];
+
+            if (isset($statuses[$orderStatus]) && !empty($statuses[$orderStatus])) {
+                if ($statuses[$orderStatus] != $orderToUpdate->current_state) {
+                    $orderHistory = new OrderHistory();
+                    $orderHistory->id_employee = 0;
+                    $orderHistory->id_order = $orderToUpdate->id;
+                    $orderHistory->id_order_state = $statuses[$orderStatus];
+                    $orderHistory->date_add = date('Y-m-d H:i:s');
+
+                    self::loadInCMS($orderHistory, 'save');
+
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<Order ID: %d> %s::%s',
+                            $orderToUpdate->id,
+                            get_class($orderHistory),
+                            'changeIdOrderState'
+                        )
+                    );
+
+                    $orderHistory->changeIdOrderState($statuses[$orderStatus], $orderToUpdate->id, true);
+                }
+            }
+        }
+    }
+
+    private static function updateOrder($order, $payments, $paymentDefault, $default_currency, $statuses, $receiveOrderNumber, $sendOrderNumber, $deliveries)
+    {
+        $infoOrder = null;
+        $updateOrderStatuses = [];
+        $updateOrderIds = [];
+        $newItemsIdsByOrderId = [];
+
+        if (stripos($order['externalId'], 'pscart_') !== false) {
+            return;
+        }
+
+        $orderToUpdate = new Order((int) $order['externalId']);
+
+        if (!Validate::isLoadedObject($orderToUpdate)) {
+            return;
+        }
+
+        $order = RetailcrmTools::filter(
+            'RetailcrmFilterOrdersHistoryUpdate',
+            $order,
+            [
+                'orderToUpdate' => $orderToUpdate,
+            ]
+        );
+
+        self::handleCustomerDataChange($orderToUpdate, $order);
+
+        /*
+         * check delivery changes
+         */
+
+        if (isset($order['delivery']['address'])
+            || array_key_exists('firstName', $order)
+            || array_key_exists('lastName', $order)
+            || array_key_exists('phone', $order)
+        ) {
+            $addressBuilder = new RetailcrmCustomerAddressBuilder();
+
+            $orderAddress = new Address($orderToUpdate->id_address_delivery);
+            $orderAddressCrm = isset($order['delivery']['address']) ? $order['delivery']['address'] : [];
+            $orderFirstName = $orderAddress->firstname;
+            $orderLastName = $orderAddress->lastname;
+            $orderPhone = $orderAddress->phone;
+
+            if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
+                || !Validate::isLoadedObject($orderAddress)
+            ) {
+                $infoOrder = self::getCRMOrder($order['externalId']);
+                if (isset($infoOrder['delivery']['address'])) {
+                    // array_replace used to save changes, made by custom filters
+                    $orderAddressCrm = array_replace(
+                        $infoOrder['delivery']['address'],
+                        $orderAddressCrm
+                    );
+                }
+
+                if (isset($infoOrder['firstName'])) {
+                    $orderFirstName = $infoOrder['firstName'];
+                }
+                if (isset($infoOrder['lastName'])) {
+                    $orderLastName = $infoOrder['lastName'];
+                }
+                if (isset($infoOrder['phone'])) {
+                    $orderPhone = $infoOrder['phone'];
+                }
+            }
+
+            // may override actual order data, but used to save changes, made by custom filters
+            if (array_key_exists('firstName', $order)) {
+                $orderFirstName = $order['firstName'];
+            }
+            if (array_key_exists('lastName', $order)) {
+                $orderLastName = $order['lastName'];
+            }
+            if (array_key_exists('phone', $order)) {
+                $orderPhone = $order['phone'];
+            }
+
+            $address = $addressBuilder
+                ->setCustomerAddress($orderAddress)
+                ->setIdCustomer($orderToUpdate->id_customer)
+                ->setDataCrm($orderAddressCrm)
+                ->setFirstName($orderFirstName)
+                ->setLastName($orderLastName)
+                ->setPhone($orderPhone)
+                ->setAlias($orderAddress->alias)
+                ->build()
+                ->getData();
+
+            if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
+                $address->id = null;
+                RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
+
+                if ($address->id === null) {
+                    // Modifying an address in order creates another address
+                    // instead of changing the original one. This issue has been fixed in PS 1.7.7
+                    if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                        self::loadInCMS($address, 'add');
+
+                        $orderToUpdate->id_address_delivery = $address->id;
+                        self::loadInCMS($orderToUpdate, 'update');
+                    } else {
+                        $address->id = $orderToUpdate->id_address_delivery;
+                        self::loadInCMS($address, 'update');
+                    }
+                } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
+                    RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+                        'Binding to existing address [%d]',
+                        $address->id
+                    ));
+
+                    $orderToUpdate->id_address_delivery = $address->id;
+                    self::loadInCMS($orderToUpdate, 'update');
+                }
+            }
+        }
+
+        /*
+         * check delivery type and cost
+         */
+        if (!empty($order['delivery']['code']) || !empty($order['delivery']['cost'])) {
+            $dtype = !empty($order['delivery']['code']) ? $order['delivery']['code'] : null;
+            $dcost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
+
+            if (
+                (
+                    $dtype !== null &&
+                    isset($deliveries[$dtype])
+                    && $deliveries[$dtype] !== null
+                    && $deliveries[$dtype] !== $orderToUpdate->id_carrier
+                )
+                || $dcost !== null
+            ) {
+                if (property_exists($orderToUpdate, 'id_order_carrier')) {
+                    $idOrderCarrier = $orderToUpdate->id_order_carrier;
+                } elseif (method_exists($orderToUpdate, 'getIdOrderCarrier')) {
+                    $idOrderCarrier = $orderToUpdate->getIdOrderCarrier();
+                } else {
+                    $idOrderCarrier = null;
+                }
+
+                $orderCarrier = new OrderCarrier($idOrderCarrier);
+
+                if ($dtype != null) {
+                    $orderCarrier->id_carrier = $deliveries[$dtype];
+                }
+
+                if ($dcost != null) {
+                    $orderCarrier->shipping_cost_tax_incl = $dcost;
+                    $orderCarrier->shipping_cost_tax_excl = $dcost;
+                }
+
+                $orderCarrier->id_order = $orderToUpdate->id;
+
+                self::loadInCMS($orderCarrier, 'update');
+            }
+        }
+
+        /*
+         * check payment type
+         */
+        if (!empty($order['payments'])) {
+            foreach ($order['payments'] as $payment) {
+                if (!isset($payment['externalId'])
+                    && isset($payment['status'])
+                    && $payment['status'] === 'paid'
+                ) {
+                    $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
+                    $paymentType = null;
+                    $paymentId = null;
+
+                    if ($paymentTypeCRM) {
+                        if (array_key_exists($paymentTypeCRM, $payments) && !empty($payments[$paymentTypeCRM])) {
+                            $paymentId = $payments[$paymentTypeCRM];
+                        } else {
+                            continue;
+                        }
+                    } elseif ($paymentDefault) {
+                        $paymentId = $paymentDefault;
+                    } else {
+                        continue;
+                    }
+
+                    $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
+
+                    $orderToUpdate->payment = $paymentType;
+                    $orderPayment = new OrderPayment();
+                    $orderPayment->payment_method = $paymentType;
+                    $orderPayment->order_reference = $orderToUpdate->reference;
+
+                    if (isset($payment['amount'])) {
+                        $orderPayment->amount = $payment['amount'];
+                    } else {
+                        $orderPayment->amount = $orderToUpdate->total_paid;
+                    }
+
+                    $orderPayment->id_currency = $default_currency;
+                    $orderPayment->date_add =
+                        isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
+
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<Order Reference: %s> %s::%s',
+                            $orderToUpdate->reference,
+                            get_class($orderPayment),
+                            'save'
+                        )
+                    );
+
+                    $orderPayment->save();
+                }
+            }
+        }
+
+        // change order totals
+        if (isset($order['items']) || isset($order['delivery']['cost'])) {
+            // get full order
+            if (empty($infoOrder)) {
+                $infoOrder = self::getCRMOrder($order['externalId']);
+            }
+
+            // items
+            if (isset($order['items']) && is_array($order['items'])) {
+                /*
+                 * Clean deleted items
+                 */
+                $id_order_detail = null;
+                foreach ($order['items'] as $key => $item) {
+                    if (isset($item['delete']) && $item['delete'] == true) {
+                        if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                            $orderToUpdate->gift = false;
+                        }
+
+                        $parsedExtId = static::parseItemExternalId($item);
+                        $product_id = $parsedExtId['product_id'];
+                        $product_attribute_id = $parsedExtId['product_attribute_id'];
+                        $id_order_detail = !empty($parsedExtId['id_order_detail'])
+                            ? $parsedExtId['id_order_detail'] : 0;
+
+                        if (isset($item['quantity'])) {
+                            StockAvailable::updateQuantity(
+                                $product_id,
+                                $product_attribute_id,
+                                $item['quantity'],
+                                Context::getContext()->shop->id
+                            );
+                        }
+
+                        self::deleteOrderDetailByProduct(
+                            $orderToUpdate->id,
+                            $product_id,
+                            $product_attribute_id,
+                            $id_order_detail
+                        );
+                        unset($order['items'][$key]);
+                    }
+                }
+
+                /*
+                 * Check items quantity and discount
+                 */
+                foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
+                    foreach ($order['items'] as $key => $item) {
+                        if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                            continue;
+                        }
+
+                        $parsedExtId = static::parseItemExternalId($item);
+                        $product_id = $parsedExtId['product_id'];
+                        $product_attribute_id = $parsedExtId['product_attribute_id'];
+                        $isExistingItem = isset($item['create']) ? false : true;
+
+                        if ($isExistingItem &&
+                            $product_id == $orderItem['product_id'] &&
+                            $product_attribute_id == $orderItem['product_attribute_id']
+                        ) {
+                            $product = new Product((int) $product_id, false, self::$default_lang);
+
+                            $orderDetailId = !empty($parsedExtId['id_order_detail'])
+                                ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
+                            $orderDetail = new OrderDetail($orderDetailId);
+
+                            // price
+                            if (isset($item['initialPrice'])) {
+                                $productPrice = round($item['initialPrice'], 2);
+                                $orderDetail->unit_price_tax_incl = $productPrice;
+                            }
+
+                            // quantity
+                            if (
+                                isset($item['quantity'])
+                                && $item['quantity'] != $orderItem['product_quantity']
+                            ) {
+                                $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
+                                $orderDetail->product_quantity = $item['quantity'];
+                                $orderDetail->product_quantity_in_stock = $item['quantity'];
+
+                                if ($deltaQuantity < 0 && !$product->checkQty(-1 * $deltaQuantity)) {
+                                    $newStatus = self::setOutOfStockStatus(
+                                        $infoOrder,
+                                        $orderToUpdate,
+                                        $statuses
+                                    );
+
+                                    if ($newStatus) {
+                                        $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
+                                        $orderToUpdate->current_state = $statuses[$newStatus];
+                                    }
+                                }
+
+                                StockAvailable::updateQuantity(
+                                    $product_id,
+                                    $product_attribute_id,
+                                    $deltaQuantity,
+                                    Context::getContext()->shop->id
+                                );
+                            }
+
+                            $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
+                                ? $orderToUpdate->id_warehouse : 0;
+
+                            self::loadInCMS($orderDetail, 'update');
+                            unset($order['items'][$key]);
+                        }
+                    }
+                }
+
+                /*
+                 * Check new items
+                 */
+                $isNewItemsExist = false;
+                $newItemsIds = [];
+                foreach ($order['items'] as $key => $newItem) {
+                    if (RetailcrmOrderBuilder::isGiftItem($newItem)) {
+                        continue;
+                    }
+
+                    $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
+                    if (!$isNewItem) {
+                        continue;
+                    }
+
+                    $parsedExtId = static::parseItemExternalId($newItem);
+                    $product_id = $parsedExtId['product_id'];
+                    $product_attribute_id = $parsedExtId['product_attribute_id'];
+
+                    $product = new Product((int) $product_id, false, self::$default_lang);
+
+                    if ($product_attribute_id != 0) {
+                        $productName = htmlspecialchars(
+                            strip_tags(Product::getProductName($product_id, $product_attribute_id))
+                        );
+                    } else {
+                        $productName = htmlspecialchars(strip_tags($product->name));
+                    }
+
+                    $productPrice = $newItem['initialPrice'];
+
+                    $orderDetail = new OrderDetail(
+                        !empty($parsedExtId['id_order_detail']) ? $parsedExtId['id_order_detail'] : null
+                    );
+
+                    static::setOrderDetailProductName($orderDetail, $productName);
+
+                    $orderDetail->id_order = $orderToUpdate->id;
+                    $orderDetail->id_order_invoice = $orderToUpdate->invoice_number;
+                    $orderDetail->id_shop = Context::getContext()->shop->id;
+
+                    $orderDetail->product_id = (int) $product_id;
+                    $orderDetail->product_attribute_id = (int) $product_attribute_id;
+                    $orderDetail->product_reference = implode('', ['\'', $product->reference, '\'']);
+
+                    $orderDetail->product_price = $productPrice;
+                    $orderDetail->original_product_price = $productPrice;
+                    $orderDetail->product_quantity = (int) $newItem['quantity'];
+                    $orderDetail->product_quantity_in_stock = (int) $newItem['quantity'];
+
+                    $orderDetail->total_price_tax_incl = $productPrice * $orderDetail->product_quantity;
+                    $orderDetail->unit_price_tax_incl = $productPrice;
+
+                    $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
+                        ? $orderToUpdate->id_warehouse : 0;
+                    $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
+                        ? $parsedExtId['id_order_detail'] : null;
+
+                    if (!$product->checkQty($orderDetail->product_quantity)) {
+                        $newStatus = self::setOutOfStockStatus(
+                            $infoOrder,
+                            $orderToUpdate,
+                            $statuses
+                        );
+
+                        if ($newStatus) {
+                            $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
+                            $orderToUpdate->current_state = $statuses[$newStatus];
+                        }
+                    }
+
+                    StockAvailable::updateQuantity(
+                        $product_id,
+                        $product_attribute_id,
+                        -1 * $orderDetail->product_quantity,
+                        Context::getContext()->shop->id
+                    );
+
+                    if (self::loadInCMS($orderDetail, 'save')) {
+                        $newItemsIds[Db::getInstance()->Insert_ID()] = $newItem['id'];
+                    }
+
+                    unset($orderDetail);
+                    unset($order['items'][$key]);
+                    $isNewItemsExist = true;
+                }
+
+                // update order items ids in crm
+                if ($isNewItemsExist) {
+                    $newItemsIdsByOrderId[$orderToUpdate->id] = $newItemsIds;
+                }
+            }
+
+            // totals
+            $totalPaid = $infoOrder['totalSumm'];
+            $orderTotalProducts = array_reduce($infoOrder['items'], function ($sum, $it) {
+                $sum += $it['initialPrice'] * $it['quantity'];
+
+                return $sum;
+            });
+            $deliveryCost = $infoOrder['delivery']['cost'];
+            $totalDiscount = round($deliveryCost + $orderTotalProducts - $totalPaid, 2);
+
+            // delete all cart discount
+            $orderCartRules = $orderToUpdate->getCartRules();
+            foreach ($orderCartRules as $valCartRules) {
+                $order_cart_rule = new OrderCartRule($valCartRules['id_order_cart_rule']);
+                $order_cart_rule->delete();
+            }
+
+            $orderToUpdate->total_discounts = $totalDiscount;
+            $orderToUpdate->total_discounts_tax_incl = $totalDiscount;
+            $orderToUpdate->total_discounts_tax_excl = $totalDiscount;
+            $orderToUpdate->total_shipping = $deliveryCost;
+            $orderToUpdate->total_shipping_tax_incl = $deliveryCost;
+            $orderToUpdate->total_shipping_tax_excl = $deliveryCost;
+            $orderToUpdate->total_paid = $totalPaid;
+            $orderToUpdate->total_paid_tax_incl = $totalPaid;
+            $orderToUpdate->total_paid_tax_excl = $totalPaid;
+            $orderToUpdate->total_products_wt = $orderTotalProducts;
+
+            self::loadInCMS($orderToUpdate, 'update');
+        }
+
+        RetailcrmHistory::checkOrderStatus($order, $orderToUpdate, $updateOrderStatuses);
+
+        // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
+        if (isset($order['number']) && $receiveOrderNumber) {
+            $orderToUpdate->reference = $order['number'];
+            $orderToUpdate->update();
+        }
+
+        // collect orders id and reference if option sendOrderNumber enabled
+        if ($sendOrderNumber) {
+            $updateOrderIds[] = [
+                'externalId' => $orderToUpdate->id,
+                'number' => $orderToUpdate->reference,
+            ];
+        }
+
+        // update orders number in CRM
+        if (!empty($updateOrderIds)) {
+            foreach ($updateOrderIds as $upOrder) {
+                self::$api->ordersEdit($upOrder);
+            }
+        }
+
+        // update order items ids in crm
+        if (!empty($newItemsIdsByOrderId)) {
+            foreach ($newItemsIdsByOrderId as $newOrderId => $newItemsIds) {
+                static::updateOrderItems($newOrderId, $newItemsIds);
+            }
+        }
     }
 }
