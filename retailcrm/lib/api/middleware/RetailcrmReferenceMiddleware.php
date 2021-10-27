@@ -47,7 +47,8 @@ class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
         $response = $next($request);
 
         if (
-            $response->isSuccessful()
+            null !== $response
+            && $response->isSuccessful()
             && (
                 'ordersCreate' === $request->getMethod()
                 || 'ordersEdit' === $request->getMethod()
