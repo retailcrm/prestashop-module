@@ -1237,7 +1237,7 @@ class RetailcrmHistory
         return $products;
     }
 
-    private static function createOrder($cart, $customer, $default_currency, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType): Order
+    private static function createOrder($cart, $customer, $default_currency, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType)
     {
         $newOrder = new Order();
         $newOrder->id_shop = Context::getContext()->shop->id;
