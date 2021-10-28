@@ -1136,13 +1136,9 @@ class RetailcrmHistory
         }
     }
 
-    private static function updateOrder($order, $statuses, $receiveOrderNumber, $sendOrderNumber, $deliveries)
+    private static function updateOrder($order, $statuses, $receiveOrderNumber, $deliveries, $orderToUpdate)
     {
-        if (stripos($order['externalId'], 'pscart_') !== false) {
-            return;
-        }
 
-        $orderToUpdate = new Order((int) $order['externalId']);
 
         if (!Validate::isLoadedObject($orderToUpdate)) {
             return;
@@ -1174,13 +1170,7 @@ class RetailcrmHistory
             $orderToUpdate->update();
         }
 
-        // collect orders id and reference if option sendOrderNumber enabled
-        if ($sendOrderNumber) {
-            $updateOrderIds[] = [
-                'externalId' => $orderToUpdate->id,
-                'number' => $orderToUpdate->reference,
-            ];
-        }
+
     }
 
     private static function getPaymentsCms(RetailcrmReferences $references)
@@ -1197,7 +1187,6 @@ class RetailcrmHistory
     {
         $orderFix = [];
         $updateOrderIds = [];
-        $updateOrderStatuses = [];
         $newItemsIdsByOrderId = [];
 
         $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
@@ -1543,13 +1532,25 @@ class RetailcrmHistory
                     ];
                 }
             } else {
+
+                if (stripos($order_history['externalId'], 'pscart_') !== false) {
+                    continue;
+                }
+                $orderToUpdate = new Order((int) $order_history['externalId']);
                 RetailcrmHistory::updateOrder(
                     $order_history,
                     $statuses,
                     $receiveOrderNumber,
-                    $sendOrderNumber,
-                    $deliveries
+                    $deliveries,
+                     $orderToUpdate
                 );
+                // collect orders id and reference if option sendOrderNumber enabled
+                if ($sendOrderNumber) {
+                    $updateOrderIds[] = [
+                        'externalId' => $orderToUpdate->id,
+                        'number' => $orderToUpdate->reference,
+                    ];
+                }
             }
         }
 
