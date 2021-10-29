@@ -921,7 +921,7 @@ class RetailcrmHistory
         return $products;
     }
 
-    private static function createOrder($cart, $customer, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType)
+    private static function createOrder($cart, $customer, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType, $addressDelivery)
     {
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
         $newOrder = new Order();
@@ -1138,8 +1138,6 @@ class RetailcrmHistory
 
     private static function updateOrder($order, $statuses, $receiveOrderNumber, $deliveries, $orderToUpdate)
     {
-
-
         if (!Validate::isLoadedObject($orderToUpdate)) {
             return;
         }
@@ -1169,8 +1167,6 @@ class RetailcrmHistory
             $orderToUpdate->reference = $order['number'];
             $orderToUpdate->update();
         }
-
-
     }
 
     private static function getPaymentsCms(RetailcrmReferences $references)
@@ -1197,23 +1193,26 @@ class RetailcrmHistory
         $payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
         $deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
         $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
-        $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+
         $references = new RetailcrmReferences(self::$api);
         $paymentsCMS = RetailcrmHistory::getPaymentsCms($references);
 
-        foreach ($orders as $order_history) {
-            $order_history = RetailcrmTools::filter(
-                'RetailcrmFilterOrdersHistory',
-                $order_history
-            );
+        foreach ($orders as $orderHistory) {
+            $orderHistory = RetailcrmTools::filter('RetailcrmFilterOrdersHistory', $orderHistory);
+            $orderDeleted = isset($orderHistory['deleted']) && $orderHistory['deleted'] == true;
+            $orderExists = isset($orderHistory['externalId']);
 
-            if (isset($order_history['deleted']) && $order_history['deleted'] == true) {
+            if ($orderDeleted) {
                 continue;
             }
 
-            if (!isset($order_history['externalId'])) {
+            if ($orderExists && (stripos($orderHistory['externalId'], 'pscart_') !== false)) {
+                continue;
+            }
+
+            if (!$orderExists) {
                 // get full order
-                $order = self::getCRMOrder($order_history['id'], 'id');
+                $order = self::getCRMOrder($orderHistory['id'], 'id');
                 if (!$order) {
                     continue;
                 }
@@ -1371,57 +1370,12 @@ class RetailcrmHistory
                     continue;
                 }
                 if ($addressInvoice !== null) {
-                    if (RetailcrmTools::validateEntity($addressInvoice)) {
-                        $addressInvoice->id_customer = $customer->id;
-                        RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
-
-                        if (empty($addressInvoice->id)) {
-                            self::loadInCMS($addressInvoice, 'add');
-
-                            if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
-                                self::$api->customersCorporateAddressesEdit(
-                                    $order['customer']['id'],
-                                    $order['company']['address']['id'],
-                                    array_merge(
-                                        $order['company']['address'],
-                                        ['externalId' => $addressInvoice->id]
-                                    ),
-                                    'id',
-                                    'id'
-                                );
-
-                                time_nanosleep(0, 20000000);
-                            }
-                        } else {
-                            self::loadInCMS($addressInvoice, 'save');
-                        }
-                    }
+                    RetailcrmHistory::updateAddressInvoice($addressInvoice, $customer, $order);
                 }
 
                 $addressDelivery = RetailcrmHistory::createAddress($order, $customer);
 
-                if (RetailcrmTools::validateEntity($addressDelivery)) {
-                    RetailcrmTools::assignAddressIdsByFields($customer, $addressDelivery);
-
-                    if (empty($addressDelivery->id)) {
-                        self::loadInCMS($addressDelivery, 'add');
-                    } else {
-                        self::loadInCMS($addressDelivery, 'save');
-                    }
-                }
-
-                // cart
-                $cart = new Cart();
-                $cart->id_currency = $default_currency;
-                $cart->id_lang = self::$default_lang;
-                $cart->id_shop = Context::getContext()->shop->id;
-                $cart->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
-                $cart->id_customer = $customer->id;
-                $cart->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
-                $cart->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
-                $cart->id_carrier = (int) $deliveryType;
-
-                self::loadInCMS($cart, 'add');
+                $cart = RetailcrmHistory::createCart($customer, $addressDelivery, $deliveryType);
 
                 $products = [];
                 if (!empty($order['items'])) {
@@ -1440,74 +1394,13 @@ class RetailcrmHistory
                     $order,
                     $paymentId,
                     $deliveryType,
-                    $paymentType
+                    $paymentType,
+                    $addressDelivery
                 );
 
-                // payment
-                if (isset($order['payments']) && !empty($order['payments'])) {
-                    foreach ($order['payments'] as $payment) {
-                        if (!isset($payment['externalId'])
-                            && isset($payment['status'])
-                            && $payment['status'] === 'paid'
-                        ) {
-                            $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
-                            $paymentType = null;
-                            $paymentId = null;
+                RetailcrmHistory::createPayments($order, $newOrder);
 
-                            if ($paymentTypeCRM) {
-                                if (isset($payments[$paymentTypeCRM]) && !empty($payments[$paymentTypeCRM])) {
-                                    $paymentId = $payments[$paymentTypeCRM];
-                                } else {
-                                    continue;
-                                }
-                            } elseif ($paymentDefault) {
-                                $paymentId = $paymentDefault;
-                            } else {
-                                continue;
-                            }
-
-                            $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
-
-                            $orderPayment = new OrderPayment();
-                            $orderPayment->payment_method = $paymentType;
-                            $orderPayment->order_reference = $newOrder->reference;
-                            $orderPayment->id_currency = $default_currency;
-                            $orderPayment->amount = $payment['amount'];
-                            $orderPayment->date_add = $payment['paidAt'];
-
-                            RetailcrmLogger::writeDebug(
-                                __METHOD__,
-                                sprintf(
-                                    '<Order Reference: %s> %s::%s',
-                                    $newOrder->reference,
-                                    get_class($orderPayment),
-                                    'save'
-                                )
-                            );
-
-                            $orderPayment->save();
-                        }
-                    }
-                }
-
-                // delivery save
-                $carrier = new OrderCarrier();
-                $carrier->id_order = $newOrder->id;
-                $carrier->id_carrier = $deliveryType;
-                $carrier->shipping_cost_tax_excl = $order['delivery']['cost'];
-                $carrier->shipping_cost_tax_incl = $order['delivery']['cost'];
-
-                RetailcrmLogger::writeDebug(
-                    __METHOD__,
-                    sprintf(
-                        '<Order ID: %d> %s::%s',
-                        $carrier->id_order,
-                        get_class($carrier),
-                        'add'
-                    )
-                );
-
-                $carrier->add(true, false);
+                RetailcrmHistory::saveCarrier($newOrder->id, $deliveryType, $order['delivery']['cost']);
 
                 /*
                  * Create order details
@@ -1532,17 +1425,13 @@ class RetailcrmHistory
                     ];
                 }
             } else {
-
-                if (stripos($order_history['externalId'], 'pscart_') !== false) {
-                    continue;
-                }
-                $orderToUpdate = new Order((int) $order_history['externalId']);
+                $orderToUpdate = new Order((int) $orderHistory['externalId']);
                 RetailcrmHistory::updateOrder(
-                    $order_history,
+                    $orderHistory,
                     $statuses,
                     $receiveOrderNumber,
                     $deliveries,
-                     $orderToUpdate
+                    $orderToUpdate
                 );
                 // collect orders id and reference if option sendOrderNumber enabled
                 if ($sendOrderNumber) {
@@ -1586,6 +1475,11 @@ class RetailcrmHistory
             ->getData()
         ;
 
+        if (RetailcrmTools::validateEntity($address)) {
+            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+            self::loadInCMS($address, 'add');
+        }
+
         return $address;
     }
 
@@ -1603,24 +1497,11 @@ class RetailcrmHistory
                 RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
 
                 if ($address->id === null) {
-                    // Modifying an address in order creates another address
-                    // instead of changing the original one. This issue has been fixed in PS 1.7.7
-                    if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-                        self::loadInCMS($address, 'add');
-
-                        $orderToUpdate->id_address_delivery = $address->id;
-                        self::loadInCMS($orderToUpdate, 'update');
+                    if ($orderToUpdate->id_address_delivery < 1) {
+                        RetailcrmHistory::setNewAddressInOrder($orderToUpdate, $address);
                     } else {
-                        if ($orderToUpdate->id_address_delivery < 1) {
-
-                            self::loadInCMS($address, 'add');
-                            $orderToUpdate->id_address_delivery = $address->id;
-                            self::loadInCMS($orderToUpdate, 'update');
-                        } else {
-
-                            $address->id = $orderToUpdate->id_address_delivery;
-                            self::loadInCMS($address, 'update');
-                        }
+                        $address->id = $orderToUpdate->id_address_delivery;
+                        self::loadInCMS($address, 'update');
                     }
                 } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf(
@@ -2035,5 +1916,134 @@ class RetailcrmHistory
         }
 
         return $paymentId;
+    }
+
+    private static function setNewAddressInOrder($order, $address)
+    {
+        self::loadInCMS($address, 'add');
+        $order->id_address_delivery = $address->id;
+        self::loadInCMS($order, 'update');
+    }
+
+    private static function saveCarrier($orderId, $deliveryType, $cost)
+    {
+        // delivery save
+        $carrier = new OrderCarrier();
+        $carrier->id_order = $orderId;
+        $carrier->id_carrier = $deliveryType;
+        $carrier->shipping_cost_tax_excl = $cost;
+        $carrier->shipping_cost_tax_incl = $cost;
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__,
+            sprintf(
+                '<Order ID: %d> %s::%s',
+                $carrier->id_order,
+                get_class($carrier),
+                'add'
+            )
+        );
+
+        $carrier->add(true, false);
+    }
+
+    private static function createCart($customer, $addressDelivery, $deliveryType)
+    {
+        $cart = new Cart();
+        $cart->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+        $cart->id_lang = self::$default_lang;
+        $cart->id_shop = Context::getContext()->shop->id;
+        $cart->id_shop_group = intval(Context::getContext()->shop->id_shop_group);
+        $cart->id_customer = $customer->id;
+        $cart->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
+        $cart->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
+        $cart->id_carrier = (int) $deliveryType;
+
+        self::loadInCMS($cart, 'add');
+
+        return $cart;
+    }
+
+    private static function createPayments($order, $newOrder)
+    {
+        $references = new RetailcrmReferences(self::$api);
+        $paymentsCMS = RetailcrmHistory::getPaymentsCms($references);
+
+        $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
+
+        if (isset($order['payments']) && !empty($order['payments'])) {
+            foreach ($order['payments'] as $payment) {
+                if (!isset($payment['externalId'])
+                    && isset($payment['status'])
+                    && $payment['status'] === 'paid'
+                ) {
+                    $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
+                    $paymentType = null;
+                    $paymentId = null;
+
+                    if ($paymentTypeCRM) {
+                        if (isset($payments[$paymentTypeCRM]) && !empty($payments[$paymentTypeCRM])) {
+                            $paymentId = $payments[$paymentTypeCRM];
+                        } else {
+                            continue;
+                        }
+                    } elseif ($paymentDefault) {
+                        $paymentId = $paymentDefault;
+                    } else {
+                        continue;
+                    }
+
+                    $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
+
+                    $orderPayment = new OrderPayment();
+                    $orderPayment->payment_method = $paymentType;
+                    $orderPayment->order_reference = $newOrder->reference;
+                    $orderPayment->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+                    $orderPayment->amount = $payment['amount'];
+                    $orderPayment->date_add = $payment['paidAt'];
+
+                    RetailcrmLogger::writeDebug(
+                        __METHOD__,
+                        sprintf(
+                            '<Order Reference: %s> %s::%s',
+                            $newOrder->reference,
+                            get_class($orderPayment),
+                            'save'
+                        )
+                    );
+
+                    $orderPayment->save();
+                }
+            }
+        }
+    }
+
+    private static function updateAddressInvoice($addressInvoice, $customer, $order)
+    {
+        if (RetailcrmTools::validateEntity($addressInvoice)) {
+            $addressInvoice->id_customer = $customer->id;
+            RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
+
+            if (empty($addressInvoice->id)) {
+                self::loadInCMS($addressInvoice, 'add');
+
+                if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
+                    self::$api->customersCorporateAddressesEdit(
+                        $order['customer']['id'],
+                        $order['company']['address']['id'],
+                        array_merge(
+                            $order['company']['address'],
+                            ['externalId' => $addressInvoice->id]
+                        ),
+                        'id',
+                        'id'
+                    );
+
+                    time_nanosleep(0, 20000000);
+                }
+            } else {
+                self::loadInCMS($addressInvoice, 'save');
+            }
+        }
     }
 }
