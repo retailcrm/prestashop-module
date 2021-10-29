@@ -505,9 +505,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $idAddressAfter = $orderAfter->id_address_delivery;
         $addressAfter = $this->createAddress($idAddressAfter, $crmOrder['firstName'], $crmOrder['lastName'], $crmOrder['phone']);
 
-        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-            $this->assertNotEquals($idAddress, $idAddressAfter);
-        }
+//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+//            $this->assertNotEquals($idAddress, $idAddressAfter);
+//        }
 
         $this->assertEquals($crmOrder['firstName'], $addressAfter->firstname);
         $this->assertEquals($crmOrder['lastName'], $addressAfter->lastname);
