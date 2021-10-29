@@ -921,7 +921,7 @@ class RetailcrmHistory
         return $products;
     }
 
-    private static function createOrder($cart, $customer, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType, $addressDelivery)
+    private static function createOrder($cart, $customer, $receiveOrderNumber, $order, $paymentId, $deliveryType, $paymentType, $addressDelivery, $addressInvoice)
     {
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
         $newOrder = new Order();
@@ -1310,12 +1310,13 @@ class RetailcrmHistory
 
                 $customer = null;
                 $customerId = null;
-
-                if ($order['customer']['type'] === 'customer_corporate'
+                $isCorporateCustomer =
+                    $order['customer']['type'] === 'customer_corporate'
                     && RetailcrmTools::isCorporateEnabled()
                     && !empty($order['contact'])
-                    && isset($order['contact']['externalId'])
-                ) {
+                    && isset($order['contact']['externalId']);
+
+                if ($isCorporateCustomer) {
                     if (isset($order['contact']['externalId'])) {
                         $customerId = Customer::customerIdExistsStatic($order['contact']['externalId']);
                     }
@@ -1350,16 +1351,14 @@ class RetailcrmHistory
                     $addressInvoice = $corporateCustomerBuilder->getData()->getCustomerAddress();
                 } else {
                     $customerBuilder = new RetailcrmCustomerBuilder();
-                    if ($customerId) {
-                        $customerBuilder->setCustomer(new Customer($customerId));
-                    }
 
                     $customerBuilder
                         ->setDataCrm($order['customer'])
                         ->build();
 
+                    $addressInvoice = self::createAddressInvoiceForCustomer($customerBuilder, $customerId);
+
                     $customer = $customerBuilder->getData()->getCustomer();
-                    $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
                 }
 
                 if (empty($customer->id) && !empty($customer->email)) {
@@ -1369,13 +1368,14 @@ class RetailcrmHistory
                 if (self::loadInCMS($customer, 'save') === false) {
                     continue;
                 }
+
                 if ($addressInvoice !== null) {
                     RetailcrmHistory::updateAddressInvoice($addressInvoice, $customer, $order);
                 }
 
                 $addressDelivery = RetailcrmHistory::createAddress($order, $customer);
 
-                $cart = RetailcrmHistory::createCart($customer, $addressDelivery, $deliveryType);
+                $cart = RetailcrmHistory::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
 
                 $products = [];
                 if (!empty($order['items'])) {
@@ -1395,7 +1395,8 @@ class RetailcrmHistory
                     $paymentId,
                     $deliveryType,
                     $paymentType,
-                    $addressDelivery
+                    $addressDelivery,
+                    $addressInvoice
                 );
 
                 RetailcrmHistory::createPayments($order, $newOrder);
@@ -1947,7 +1948,7 @@ class RetailcrmHistory
         $carrier->add(true, false);
     }
 
-    private static function createCart($customer, $addressDelivery, $deliveryType)
+    private static function createCart($customer, $addressDelivery, $addressInvoice, $deliveryType)
     {
         $cart = new Cart();
         $cart->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
@@ -2045,5 +2046,16 @@ class RetailcrmHistory
                 self::loadInCMS($addressInvoice, 'save');
             }
         }
+    }
+
+    private static function createAddressInvoiceForCustomer($customerBuilder, $customerId)
+    {
+        if ($customerId) {
+            $customerBuilder->setCustomer(new Customer($customerId));
+        }
+
+        $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
+
+        return $addressInvoice;
     }
 }
