@@ -210,7 +210,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         if (isset($orderData['customer']['address']['id'])) {
             unset($orderData['customer']['address']['id']);
         }
-//        $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
+        $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
 //        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
 
         // types and totals
