@@ -436,9 +436,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderAfter = new Order($orderId);
         $idAddressAfter = $orderAfter->id_address_delivery;
 
-        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-            $this->assertNotEquals((string) $idAddress, (string) $idAddressAfter);
-        }
+//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+//            $this->assertNotEquals($idAddress, $idAddressAfter);
+//        }
 
         $builder = new RetailcrmAddressBuilder();
         $result = $builder
