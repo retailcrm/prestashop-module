@@ -191,7 +191,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($orderData['phone'], $addressDelivery['phone']);
 
         // customer address
-        $address = $this->createAddress($order->id_address_invoice, $orderData['customer']['firstName'], $orderData['customer']['lastName']);
+        $address = $this->createAddress(
+            $order->id_address_invoice,
+            $orderData['customer']['firstName'],
+            $orderData['customer']['lastName'],
+            $orderData['customer']['phones'][0]['number']
+        );
 
         $this->assertEquals($orderData['customer']['firstName'],$address->firstname);
         $this->assertEquals($orderData['customer']['lastName'],$address->lastname);
@@ -200,13 +205,14 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             ->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER)
             ->setAddress($address)
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         if(isset($orderData['customer']['address']['id'])) {
             unset($orderData['customer']['address']['id']);
         }
         $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
-//        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
+        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
 
         // types and totals
         $this->assertEquals($orderData['totalSumm'], $order->total_paid);
