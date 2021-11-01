@@ -171,7 +171,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $order->id_carrier = 1;
 
         // delivery address
-        $address = $this->createAddress($order->id_address_delivery, $orderData['firstName'], $orderData['lastName']);
+        $address = $this->createAddress($order->id_address_delivery, $orderData['firstName'], $orderData['lastName'], $orderData['phone']);
 
         $this->assertEquals($orderData['firstName'], $address->firstname);
         $this->assertEquals($orderData['lastName'], $address->lastname);
@@ -187,8 +187,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($orderData['delivery']['address']['countryIso'], $addressDelivery['countryIso']);
         unset($orderData['delivery']['address']['countryIso']);
 
-//        $this->assertEquals($orderData['delivery']['address'], $addressDelivery['delivery']['address']);
-//        $this->assertEquals($orderData['phone'], $addressDelivery['phone']);
+        $this->assertEquals($orderData['delivery']['address'], $addressDelivery['delivery']['address']);
+        $this->assertEquals($orderData['phone'], $addressDelivery['phone']);
 
         // customer address
         $address = $this->createAddress($order->id_address_invoice, $orderData['customer']['firstName'], $orderData['customer']['lastName']);
