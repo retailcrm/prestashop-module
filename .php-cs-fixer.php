@@ -3,7 +3,8 @@
 ini_set('memory_limit','256M');
 
 $finder = PhpCsFixer\Finder::create()->in([
-    __DIR__.'/retailcrm'
+    __DIR__.'/retailcrm',
+    __DIR__.'/tests',
 ]);
 
 return (new PhpCsFixer\Config())
@@ -15,9 +16,9 @@ return (new PhpCsFixer\Config())
             'space' => 'single',
         ],
         'yoda_style' => [
-            'equal' => false,
-            'identical' => false,
-            'less_and_greater' => false
+            'equal' => true,
+            'identical' => true,
+            'less_and_greater' => true
         ],
 
         'date_time_immutable' => true,
@@ -70,5 +71,4 @@ return (new PhpCsFixer\Config())
         'multiline_whitespace_before_semicolons' => ['strategy' => 'new_line_for_chained_calls'],
 
     ])
-    ->setFinder($finder)
-    ->setCacheFile(__DIR__.'/var/.php_cs.cache');
+    ->setFinder($finder);
