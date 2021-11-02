@@ -4,7 +4,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
 {
     protected $data;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

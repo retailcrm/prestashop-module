@@ -2,7 +2,7 @@
 
 class RetailcrmOrderBuilderTest extends RetailcrmTestCase
 {
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
     }

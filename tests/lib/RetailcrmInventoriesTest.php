@@ -9,7 +9,7 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
     const PRODUCT1_QUANTITY = 10;
     const PRODUCT2_QUANTITY = 15;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

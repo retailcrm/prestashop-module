@@ -4,7 +4,7 @@ class RetailcrmExceptionMiddlewareTest extends RetailcrmTestCase
 {
     private $api;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

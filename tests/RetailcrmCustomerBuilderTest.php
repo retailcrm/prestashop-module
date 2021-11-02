@@ -4,7 +4,7 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
 {
     protected $customer;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
     }

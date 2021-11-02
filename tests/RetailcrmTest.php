@@ -5,7 +5,7 @@ class RetailCRMTest extends RetailcrmTestCase
     private $retailcrmModule;
     private $apiMock;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

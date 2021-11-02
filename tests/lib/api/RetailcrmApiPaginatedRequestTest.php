@@ -4,7 +4,7 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmTestCase
 {
     private $apiMock;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

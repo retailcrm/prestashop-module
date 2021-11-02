@@ -11,7 +11,7 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     /**
      * setUp test
      */
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

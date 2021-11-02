@@ -5,7 +5,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     private $apiMock;
     private $product;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 
