@@ -13,7 +13,6 @@ return (new PhpCsFixer\Config())
         '@Symfony' => true,
         '@Symfony:risky' => true,
         'psr_autoloading' => false,
-        'php_unit_construct' => false,
         'array_indentation' => true,
         'cast_spaces' => [
             'space' => 'single',
