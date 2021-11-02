@@ -11,6 +11,9 @@ return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
+        '@Symfony:risky' => true,
+        'psr_autoloading' => false,
+        'php_unit_set_up_tear_down_visibility' => false,
         'array_indentation' => true,
         'cast_spaces' => [
             'space' => 'single',

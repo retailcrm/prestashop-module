@@ -83,7 +83,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             $this->assertTrue($newLastId > $oldLastId);
         }
 
-        $this->assertEquals(true, RetailcrmHistory::customersHistory());
+        $this->assertTrue(RetailcrmHistory::customersHistory());
     }
 
     public function testOrdersHistory()

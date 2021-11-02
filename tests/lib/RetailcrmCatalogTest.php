@@ -93,6 +93,6 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
         $icml->generate($this->data[0], $this->data[1]);
         $this->assertFileExists(_PS_ROOT_DIR_ . '/retailcrm.xml');
         $xml = simplexml_load_file(_PS_ROOT_DIR_ . '/retailcrm.xml');
-        $this->assertNotEquals(false, $xml);
+        $this->assertNotFalse($xml);
     }
 }

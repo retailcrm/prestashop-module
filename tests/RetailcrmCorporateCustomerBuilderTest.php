@@ -57,7 +57,7 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
         $customerResult = $this->corporateCustomer->getData()->getCustomer();
         $this->assertEquals('April', $customerResult->firstname);
         $this->assertEquals('Iphone', $customerResult->lastname);
-        $this->assertEquals(false, $customerResult->newsletter);
+        $this->assertFalse($customerResult->newsletter);
         $this->assertEquals('1997-04-09', $customerResult->birthday);
         $this->assertEquals(2, $customerResult->id_gender);
         $this->assertEquals('hello@world.ru', $customerResult->email);
