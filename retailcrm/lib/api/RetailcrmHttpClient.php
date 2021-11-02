@@ -53,7 +53,7 @@ class RetailcrmHttpClient
      */
     public function __construct($url, array $defaultParameters = [])
     {
-        if (stripos($url, 'https://') === false) {
+        if (false === stripos($url, 'https://')) {
             throw new \InvalidArgumentException(
                 'API schema requires HTTPS protocol'
             );
@@ -109,7 +109,7 @@ class RetailcrmHttpClient
 
         $url = $this->url . $path;
 
-        if ($method === self::METHOD_GET && count($parameters)) {
+        if (self::METHOD_GET === $method && count($parameters)) {
             $url .= '?' . http_build_query($parameters, '', '&');
         }
 
@@ -123,7 +123,7 @@ class RetailcrmHttpClient
         curl_setopt($curlHandler, CURLOPT_TIMEOUT, 30);
         curl_setopt($curlHandler, CURLOPT_CONNECTTIMEOUT, 30);
 
-        if ($method === self::METHOD_POST) {
+        if (self::METHOD_POST === $method) {
             curl_setopt($curlHandler, CURLOPT_POST, true);
             curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $parameters);
         }
@@ -146,7 +146,7 @@ class RetailcrmHttpClient
                 $url,
                 (int) $statusCode
             ),
-            $method == self::METHOD_POST ? ' POST fields: `' . print_r($parameters, true) . '`' : ''
+            self::METHOD_POST == $method ? ' POST fields: `' . print_r($parameters, true) . '`' : ''
         );
 
         return new RetailcrmApiResponse($statusCode, $responseBody);

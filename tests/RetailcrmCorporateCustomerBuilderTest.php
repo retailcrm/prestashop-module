@@ -15,7 +15,8 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
 
         $this->corporateCustomer
             ->setDataCrm($this->getDataCrm())
-            ->build();
+            ->build()
+        ;
 
         $result = new RetailcrmCustomerBuilderResult(null, null);
 
@@ -28,7 +29,8 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
 
         $this->corporateCustomer
             ->setDataCrm($this->getDataCrm())
-            ->build();
+            ->build()
+        ;
 
         $builtCustomer = $this->corporateCustomer->getData()->getCustomer();
         $builtAddress = $this->corporateCustomer->getData()->getCustomerAddress();
@@ -49,7 +51,8 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
             ->setCustomer($this->getDataBuilder())
             ->setCompanyName('Test')
             ->setCompanyInn(5666)
-            ->build();
+            ->build()
+        ;
 
         $customerResult = $this->corporateCustomer->getData()->getCustomer();
         $this->assertEquals('April', $customerResult->firstname);
@@ -67,44 +70,46 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
         $this->assertEquals(5666, $addressResult->vat_number);
     }
 
-    private function getDataBuilder() {
-        return array(
+    private function getDataBuilder()
+    {
+        return [
             'type' => 'customer_corporate',
             'id' => 9090,
             'nickName' => 'TestName',
-            'mainAddress' => array(
+            'mainAddress' => [
                 'id' => 4001,
-                'name' => 'Test'
-            ),
+                'name' => 'Test',
+            ],
             'createdAt' => '2020-02-17 07:44:31',
             'vip' => false,
             'bad' => false,
             'site' => 'opencart',
-            'tags' => array(),
+            'tags' => [],
             'marginSumm' => 0,
             'totalSumm' => 0,
             'averageSumm' => 0,
             'ordersCount' => 0,
             'costSumm' => 0,
-            'customFields' => array(),
+            'customFields' => [],
             'personalDiscount' => 0,
-            'mainCustomerContact' => array(
+            'mainCustomerContact' => [
                 'id' => 37,
-                'customer' => array(
-                    'id' => 9089
-                ),
-                'companies' => array()
-            ),
-            'mainCompany' => array(
+                'customer' => [
+                    'id' => 9089,
+                ],
+                'companies' => [],
+            ],
+            'mainCompany' => [
                 'id' => 34,
                 'name' => 'Test',
-                'contragentInn' => 5666
-            )
-        );
+                'contragentInn' => 5666,
+            ],
+        ];
     }
 
-    private function getDataCrm() {
-        return array(
+    private function getDataCrm()
+    {
+        return [
             'type' => 'customer',
             'id' => 9000,
             'externalId' => '1777754',
@@ -113,32 +118,31 @@ class RetailcrmCorporateCustomerBuilderTest extends RetailcrmTestCase
             'vip' => true,
             'bad' => true,
             'site' => '127-0-0-1-8080',
-            'contragent' => array(
-                'contragentType' => 'individual'
-            ),
-            'tags' => array(),
+            'contragent' => [
+                'contragentType' => 'individual',
+            ],
+            'tags' => [],
             'marginSumm' => 0,
             'totalSumm' => 0,
             'averageSumm' => 0,
             'ordersCount' => 0,
             'costSumm' => 0,
-            'customFields' => array(),
+            'customFields' => [],
             'personalDiscount' => 0,
-            'address' => array(
+            'address' => [
                 'id' => 9718,
                 'countryIso' => 'RU',
                 'region' => 'Moscow',
                 'city' => 'г. Москва',
                 'index' => '344004',
-                'text' => 'MAY'
-            ),
-            'segments' => array(),
+                'text' => 'MAY',
+            ],
+            'segments' => [],
             'firstName' => 'April',
             'lastName' => 'Iphone',
             'email' => 'hello@world.ru',
             'sex' => 'female',
-            'birthday' =>'1997-04-09'
-        );
+            'birthday' => '1997-04-09',
+        ];
     }
 }
-

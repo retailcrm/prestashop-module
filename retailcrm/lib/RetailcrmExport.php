@@ -95,14 +95,14 @@ class RetailcrmExport
      */
     public static function getOrdersIds($start = 0, $count = null)
     {
-        if ($count === null) {
+        if (null === $count) {
             $to = static::getOrdersCount();
             $count = $to - $start;
         } else {
             $to = $start + $count;
         }
 
-        if ($count > 0) {
+        if (0 < $count) {
             $predefinedSql = 'SELECT o.`id_order`
                 FROM `' . _DB_PREFIX_ . 'orders` o
                 WHERE 1
@@ -111,7 +111,7 @@ class RetailcrmExport
 
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
-                if ($offset <= 0) {
+                if (0 >= $offset) {
                     break;
                 }
 
@@ -183,7 +183,7 @@ class RetailcrmExport
 
             time_nanosleep(0, 250000000);
 
-            if (count($orders) == 50) {
+            if (50 == count($orders)) {
                 static::$api->ordersUpload($orders);
                 $orders = [];
             }
@@ -238,14 +238,14 @@ class RetailcrmExport
      */
     public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
-        if ($count === null) {
+        if (null === $count) {
             $to = static::getCustomersCount($withOrders);
             $count = $to - $start;
         } else {
             $to = $start + $count;
         }
 
-        if ($count > 0) {
+        if (0 < $count) {
             $predefinedSql = 'SELECT c.`id_customer`
                 ' . ($returnAddressId ? ', a.`id_address`' : '') . '
                 FROM `' . _DB_PREFIX_ . 'customer` c
@@ -289,7 +289,7 @@ class RetailcrmExport
 
             while ($start < $to) {
                 $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
-                if ($offset <= 0) {
+                if (0 >= $offset) {
                     break;
                 }
 
@@ -352,7 +352,7 @@ class RetailcrmExport
                     RetailcrmLogger::output($exception->getMessage());
                 }
 
-                if (count($customers) == 50) {
+                if (50 == count($customers)) {
                     static::$api->customersUpload($customers);
                     $customers = [];
 

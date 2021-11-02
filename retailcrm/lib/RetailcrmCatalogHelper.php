@@ -49,9 +49,9 @@ class RetailcrmCatalogHelper
         }
 
         while ($line = fgets($fileHandler)) {
-            if (strpos($line, 'yml_catalog date=') !== false) {
+            if (false !== strpos($line, 'yml_catalog date=')) {
                 preg_match_all('/date="([\d\- :]+)"/', $line, $matches);
-                if (count($matches) == 2) {
+                if (2 == count($matches)) {
                     $date = $matches[1][0];
                 }
                 break;
@@ -91,13 +91,13 @@ class RetailcrmCatalogHelper
     {
         $icmlInfo = json_decode((string) Configuration::get(self::ICML_INFO_NAME), true);
 
-        if ($icmlInfo === null || json_last_error() !== JSON_ERROR_NONE) {
+        if (null === $icmlInfo || JSON_ERROR_NONE !== json_last_error()) {
             $icmlInfo = [];
         }
 
         $lastGenerated = self::getIcmlFileDate();
 
-        if ($lastGenerated === false) {
+        if (false === $lastGenerated) {
             return $icmlInfo;
         }
 
@@ -113,13 +113,13 @@ class RetailcrmCatalogHelper
         ];
 
         $icmlInfo['isOutdated'] = (
-            $icmlInfo['lastGeneratedDiff']['days'] > 0
-            || $icmlInfo['lastGeneratedDiff']['hours'] > 4
+            0 < $icmlInfo['lastGeneratedDiff']['days']
+            || 4 < $icmlInfo['lastGeneratedDiff']['hours']
         );
 
         $api = RetailcrmTools::getApiClient();
 
-        if ($api !== null) {
+        if (null !== $api) {
             $reference = new RetailcrmReferences($api);
 
             $site = $reference->getSite();

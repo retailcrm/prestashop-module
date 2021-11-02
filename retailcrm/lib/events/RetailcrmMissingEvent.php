@@ -114,7 +114,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          *
          */
 
-        if ($orderInstance->current_state == 0) {
+        if (0 == $orderInstance->current_state) {
             $order['status'] = 'completed';
         } else {
             $order['status'] = array_key_exists($orderInstance->current_state, $status)
@@ -131,8 +131,8 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         $address = array_shift($addressCollection);
 
         if ($address instanceof Address) {
-            $phone = $address->phone === null
-                ? $address->phone_mobile === null ? '' : $address->phone_mobile
+            $phone = null === $address->phone
+                ? null === $address->phone_mobile ? '' : $address->phone_mobile
                 : $address->phone
             ;
 
@@ -161,7 +161,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
          * Add payment & shippment data
          */
 
-        if (Module::getInstanceByName('advancedcheckout') === false) {
+        if (false === Module::getInstanceByName('advancedcheckout')) {
             $paymentType = $orderInstance->module;
         } else {
             $paymentType = $orderInstance->payment;
@@ -175,7 +175,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
             $order['delivery']['code'] = $delivery[$orderInstance->id_carrier];
         }
 
-        if (isset($orderInstance->total_shipping_tax_incl) && (int) $orderInstance->total_shipping_tax_incl > 0) {
+        if (isset($orderInstance->total_shipping_tax_incl) && 0 < (int) $orderInstance->total_shipping_tax_incl) {
             $order['delivery']['cost'] = round($orderInstance->total_shipping_tax_incl, 2);
         }
 

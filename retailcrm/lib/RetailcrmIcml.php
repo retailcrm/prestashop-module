@@ -121,7 +121,7 @@ class RetailcrmIcml
                 $e->appendChild($this->dd->createElement('picture', $category['picture']));
             }
 
-            if ($category['parentId'] > 0) {
+            if (0 < $category['parentId']) {
                 $e->setAttribute('parentId', $category['parentId']);
             }
         }
@@ -152,7 +152,7 @@ class RetailcrmIcml
             $offerKeys = array_keys($offer);
 
             foreach ($offerKeys as $key) {
-                if ($offer[$key] == null) {
+                if (null == $offer[$key]) {
                     continue;
                 }
 

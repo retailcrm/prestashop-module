@@ -2,7 +2,6 @@
 
 class RetailcrmToolsTest extends RetailcrmTestCase
 {
-
     /**
      * @dataProvider equalCustomerAddresses
      */
@@ -17,184 +16,184 @@ class RetailcrmToolsTest extends RetailcrmTestCase
             'Equal addresses' => [
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                true
+                true,
             ],
             'Changed phone' => [
                 [
                     'phones' => [
-                        ['number' => '222']
+                        ['number' => '222'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Changed index' => [
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '222',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Reduced address' => [
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Expanded address' => [
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Reduced phone' => [
                 [
                     'phones' => [
-                        ['number' => '111',],
-                        ['number' => '222',]
+                        ['number' => '111'],
+                        ['number' => '222'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Expanded phone' => [
                 [
                     'phones' => [
-                        ['number' => '111',],
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
                         ['number' => '222'],
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
             'Replaced field' => [
                 [
                     'phones' => [
-                        ['number' => '111',],
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'text' => 'Address line 1 (client Address 2)',
-                    ]
+                    ],
                 ],
                 [
                     'phones' => [
-                        ['number' => '111']
+                        ['number' => '111'],
                     ],
                     'address' => [
                         'index' => '398055',
                         'city' => 'Order City here',
                         'region' => 'Region',
-                    ]
+                    ],
                 ],
-                false
+                false,
             ],
         ];
     }

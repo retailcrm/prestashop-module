@@ -81,7 +81,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setShopId($shopId = null)
     {
-        if ($shopId !== null) {
+        if (null !== $shopId) {
             $this->shopId = (int) $shopId;
         }
     }
@@ -93,7 +93,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function isRunning()
     {
-        return !$this->force && (RetailcrmJobManager::getCurrentJob() !== '' || RetailcrmCli::getCurrentJob() !== '');
+        return !$this->force && ('' !== RetailcrmJobManager::getCurrentJob() || '' !== RetailcrmCli::getCurrentJob());
     }
 
     /**
@@ -124,7 +124,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
         $shops = Shop::getShops();
 
         if (Shop::isFeatureActive()) {
-            if ($this->shopId > 0) {
+            if (0 < $this->shopId) {
                 if (isset($shops[$this->shopId])) {
                     RetailcrmLogger::writeDebug(
                         __METHOD__,

@@ -45,7 +45,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
     public function testIsPricesWithTax()
     {
         $products = $this->data[1];
-        $productsPresta = array();
+        $productsPresta = [];
         $productsPrestaList = Product::getProducts(
             (int) Configuration::get('PS_LANG_DEFAULT'),
             0,
@@ -69,7 +69,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
                 ? round($prestaProduct['price'], 2) + (round($prestaProduct['price'], 2) * $prestaProduct['rate'] / 100)
                 : round($prestaProduct['price'], 2);
 
-            if (strpos($product['id'], '#') !== false) {
+            if (false !== strpos($product['id'], '#')) {
                 $offerId = explode('#', $product['id']);
                 $offerId = $offerId[1];
                 $offerCombination = new Combination($offerId);
@@ -78,7 +78,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
                     ? round($offerCombination->price, 2) + (round($offerCombination->price, 2) * $prestaProduct['rate'] / 100)
                     : round($offerCombination->price, 2);
                 $offerPrice = round($offerCombinationPrice, 2) + $price;
-                $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+                $offerPrice = 0 < $offerPrice ? $offerPrice : $price;
 
                 $this->assertEquals(round($offerPrice, 2), round($product['price'], 2));
             } else {

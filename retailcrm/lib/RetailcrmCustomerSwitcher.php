@@ -381,7 +381,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
             $newCompany = $this->data->getNewCompanyName();
             RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
 
-            if ($address->alias == '' || $address->alias == 'default') {
+            if ('' == $address->alias || 'default' == $address->alias) {
                 $address->alias = '--';
             }
 

@@ -96,7 +96,7 @@ class RetailcrmApiResponse implements \ArrayAccess
      */
     public function isSuccessful()
     {
-        return $this->statusCode < 400;
+        return 400 > $this->statusCode;
     }
 
     /**

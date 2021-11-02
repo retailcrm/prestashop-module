@@ -88,7 +88,7 @@ class RetailcrmCartUploader
      */
     public static function setSyncDelay($time)
     {
-        if (is_numeric($time) && $time > 0) {
+        if (is_numeric($time) && 0 < $time) {
             static::$syncDelay = (int) $time;
         } else {
             static::$syncDelay = 0;
@@ -160,7 +160,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersCreate($order) !== false) {
+                if (false !== static::$api->ordersCreate($order)) {
                     $cart->date_upd = date('Y-m-d H:i:s');
                     $cart->save();
                 }
@@ -175,7 +175,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersEdit($order) !== false) {
+                if (false !== static::$api->ordersEdit($order)) {
                     static::registerAbandonedCartSync($cart->id);
                 }
             }
@@ -219,7 +219,7 @@ class RetailcrmCartUploader
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
-            if ($currentCartTotal == 0) {
+            if (0 == $currentCartTotal) {
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
@@ -236,7 +236,7 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
+            if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {
@@ -359,7 +359,7 @@ class RetailcrmCartUploader
         ob_clean();
         ob_end_flush();
 
-        if ($lastUploadDate === null || $lastUpdatedDate === null) {
+        if (null === $lastUploadDate || null === $lastUpdatedDate) {
             return true;
         }
 
@@ -374,8 +374,8 @@ class RetailcrmCartUploader
     private static function validateState()
     {
         if (empty(static::$syncStatus)
-            || (count(static::$paymentTypes) < 1)
-            || static::$now === null
+            || (1 > count(static::$paymentTypes))
+            || null === static::$now
             || !static::$api
         ) {
             return false;

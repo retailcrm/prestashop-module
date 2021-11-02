@@ -138,7 +138,7 @@ class RetailcrmCli
      */
     public function cleanupOnShutdown($error)
     {
-        if ($error !== null) {
+        if (null !== $error) {
             self::clearCurrentJob(null);
         }
     }
@@ -249,7 +249,7 @@ class RetailcrmCli
      */
     private function setWebJobs($state, $shopId = null)
     {
-        if ($shopId === null) {
+        if (null === $shopId) {
             RetailcrmLogger::output('You must specify shop id');
 
             return;
@@ -270,7 +270,7 @@ class RetailcrmCli
      */
     private function queryWebJobs($shopId = null)
     {
-        if ($shopId === null) {
+        if (null === $shopId) {
             RetailcrmLogger::output('You must specify shop id');
 
             return;
@@ -354,7 +354,7 @@ class RetailcrmCli
      */
     public static function clearCurrentJob($job)
     {
-        if ($job === null || self::getCurrentJob() == $job) {
+        if (null === $job || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK_CLI);
         }
 
@@ -368,11 +368,11 @@ class RetailcrmCli
      */
     private static function getBool($param)
     {
-        if ($param == 'true') {
+        if ('true' == $param) {
             return true;
         }
 
-        if ($param == 'false') {
+        if ('false' == $param) {
             return false;
         }
 

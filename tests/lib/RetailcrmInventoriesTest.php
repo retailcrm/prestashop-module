@@ -5,7 +5,7 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
     private $apiMock;
     private $product1;
     private $product2;
-    
+
     const PRODUCT1_QUANTITY = 10;
     const PRODUCT2_QUANTITY = 15;
 
@@ -16,11 +16,12 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
         $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
             ->disableOriginalConstructor()
             ->setMethods(
-                array(
-                    'storeInventories'
-                )
+                [
+                    'storeInventories',
+                ]
             )
-            ->getMock();
+            ->getMock()
+        ;
 
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
@@ -37,7 +38,7 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
      */
     public function testLoadStocks($response)
     {
-        if ($response['success'] == true) {
+        if (true == $response['success']) {
             $this->apiMock->expects($this->any())
                 ->method('storeInventories')
                 ->willReturn(
@@ -47,11 +48,13 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
                             $this->getApiInventories()
                         )
                     )
-                );
+                )
+            ;
         } else {
-           $this->apiMock->expects($this->any())
-            ->method('storeInventories')
-            ->willReturn($response);
+            $this->apiMock->expects($this->any())
+                ->method('storeInventories')
+                ->willReturn($response)
+            ;
         }
 
         RetailcrmInventories::$api = $this->apiMock;
@@ -60,14 +63,14 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
 
         $product1Id = explode('#', $this->product1['id']);
         $product2Id = explode('#', $this->product2['id']);
-        
-        if (isset($product1Id[1])){
+
+        if (isset($product1Id[1])) {
             $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], $product1Id[1]);
         } else {
             $prod1Quantity = StockAvailable::getQuantityAvailableByProduct($product1Id[0], 0);
         }
-        
-        if (isset($product2Id[1])){
+
+        if (isset($product2Id[1])) {
             $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], $product2Id[1]);
         } else {
             $prod2Quantity = StockAvailable::getQuantityAvailableByProduct($product2Id[0], 0);
@@ -81,46 +84,46 @@ class RetailcrmInventoriesTest extends RetailcrmTestCase
     {
         $response = $this->getResponseData();
 
-        return array(
-            array(
-                'response' => $response['true']
-            ),
-            array(
-                'response' => $response['false']
-            )
-        );
+        return [
+            [
+                'response' => $response['true'],
+            ],
+            [
+                'response' => $response['false'],
+            ],
+        ];
     }
 
     private function getResponseData()
     {
-        return array(
+        return [
             'true' => $this->getApiInventories(),
-            'false' => false
-        );
+            'false' => false,
+        ];
     }
 
     private function getApiInventories()
     {
-        return array( 
-            "success" => true,
-            "pagination"=> array(
-                "limit"=> 250,
-                "totalCount"=> 1,
-                "currentPage"=> 1,
-                "totalPageCount"=> 1
-            ),
-            "offers" => array(
-                array(
+        return [
+            'success' => true,
+            'pagination' => [
+                'limit' => 250,
+                'totalCount' => 1,
+                'currentPage' => 1,
+                'totalPageCount' => 1,
+            ],
+            'offers' => [
+                [
                     'externalId' => $this->product1['id'],
                     'xmlId' => 'xmlId',
                     'quantity' => self::PRODUCT1_QUANTITY,
-                ),
-                array(
+                ],
+                [
                     'externalId' => $this->product2['id'],
                     'xmlId' => 'xmlId',
                     'quantity' => self::PRODUCT2_QUANTITY,
-                )
-            )
-        );
+                ],
+            ],
+        ];
     }
 }

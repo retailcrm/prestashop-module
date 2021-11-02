@@ -134,7 +134,7 @@ class RetailcrmCatalog
         $start = 0;
         $count = self::getProductsCount($id_lang);
 
-        if ($count > 0) {
+        if (0 < $count) {
             do {
                 $products = Product::getProducts($id_lang, $start, $limit, 'name', 'asc');
 
@@ -160,7 +160,7 @@ class RetailcrmCatalog
                     }
                     ++$productsCount;
 
-                    if ($this->version == '1.3') {
+                    if ('1.3' == $this->version) {
                         $available_for_order = $product['active'] && $product['quantity'];
                     } else {
                         $available_for_order = $product['active'] && $product['available_for_order'];
@@ -192,7 +192,7 @@ class RetailcrmCatalog
                     }
 
                     $weight = round($product['weight'], 2);
-                    if ($weight === 0.0) {
+                    if (0.0 === $weight) {
                         $weight = null;
                     }
 
@@ -200,7 +200,7 @@ class RetailcrmCatalog
                     $height = round($product['height'], 3);
                     $depth = round($product['depth'], 3);
 
-                    if ($width !== 0.0 && $height !== 0.0) {
+                    if (0.0 !== $width && 0.0 !== $height) {
                         $dimensions = implode('/', [$depth, $width, $height]);
                     } else {
                         $dimensions = null;
@@ -236,7 +236,7 @@ class RetailcrmCatalog
                                 $pictures[] = $picture;
                             }
 
-                            if ($this->version == '1.3') {
+                            if ('1.3' == $this->version) {
                                 $quantity = $product['quantity'];
                             } else {
                                 $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product'], $offer['id_product_attribute']);
@@ -249,9 +249,9 @@ class RetailcrmCatalog
                                 : round($offerCombination->price, 2);
 
                             $offerPrice = round($offerCombinationPrice, 2) + $price;
-                            $offerPrice = $offerPrice > 0 ? $offerPrice : $price;
+                            $offerPrice = 0 < $offerPrice ? $offerPrice : $price;
 
-                            if ($offerCombination->wholesale_price > 0) {
+                            if (0 < $offerCombination->wholesale_price) {
                                 $offerPurchasePrice = round($offerCombination->wholesale_price, 2);
                             } else {
                                 $offerPurchasePrice = $purchasePrice;
@@ -272,7 +272,7 @@ class RetailcrmCatalog
                                 'categoryId' => $categoriesLeft,
                                 'picture' => $pictures,
                                 'url' => $url,
-                                'quantity' => $quantity > 0 ? $quantity : 0,
+                                'quantity' => 0 < $quantity ? $quantity : 0,
                                 'purchasePrice' => $offerPurchasePrice,
                                 'price' => round($offerPrice, 2),
                                 'vendor' => $vendor,
@@ -308,7 +308,7 @@ class RetailcrmCatalog
                         $covers = Image::getImages($id_lang, $product['id_product'], null);
                         $pictures = $this->getPictures($covers, $product);
 
-                        if ($this->version == '1.3') {
+                        if ('1.3' == $this->version) {
                             $quantity = $product['quantity'];
                         } else {
                             $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product']);
@@ -323,7 +323,7 @@ class RetailcrmCatalog
                             'categoryId' => $categoriesLeft,
                             'picture' => $pictures,
                             'url' => $url,
-                            'quantity' => $quantity > 0 ? $quantity : 0,
+                            'quantity' => 0 < $quantity ? $quantity : 0,
                             'purchasePrice' => round($purchasePrice, 2),
                             'price' => $price,
                             'vendor' => $vendor,
@@ -344,7 +344,7 @@ class RetailcrmCatalog
                 }
 
                 $start += $limit;
-            } while ($start < $count && count($products) > 0);
+            } while ($start < $count && 0 < count($products));
         }
 
         RetailcrmCatalogHelper::setIcmlFileInfo($productsCount, $offersCount);
@@ -356,7 +356,7 @@ class RetailcrmCatalog
         foreach ($covers as $cover) {
             $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $product['id_product'] . '-' . $cover['id_image'], 'large_default');
 
-            if ($offers === false && $cover['cover']) {
+            if (false === $offers && $cover['cover']) {
                 array_unshift($pictures, $picture);
             } else {
                 $pictures[] = $picture;

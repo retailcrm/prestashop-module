@@ -11,20 +11,21 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmTestCase
         $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
             ->disableOriginalConstructor()
             ->setMethods(
-                array(
+                [
                     'ordersHistory',
-                )
+                ]
             )
-            ->getMock();
+            ->getMock()
+        ;
     }
 
     public function getPageLimits()
     {
-        return array(
-            'Big history' => array(2, 3, 12, 6),
-            'Equal history' => array(2, 3, 6, 6),
-            'Small history' => array(2, 3, 3, 3),
-        );
+        return [
+            'Big history' => [2, 3, 12, 6],
+            'Equal history' => [2, 3, 6, 6],
+            'Small history' => [2, 3, 3, 3],
+        ];
     }
 
     /**
@@ -34,18 +35,20 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmTestCase
     {
         $this->apiMock->expects($this->any())
             ->method('ordersHistory')
-            ->willReturnOnConsecutiveCalls(...$this->getHistory($limit, $totalCount));
+            ->willReturnOnConsecutiveCalls(...$this->getHistory($limit, $totalCount))
+        ;
 
         $request = new RetailcrmApiPaginatedRequest();
         $history = $request
             ->setApi($this->apiMock)
             ->setMethod('ordersHistory')
-            ->setParams(array(array(), '{{page}}'))
+            ->setParams([[], '{{page}}'])
             ->setDataKey('history')
             ->setLimit($limit)
             ->setPageLimit($pageLimit)
             ->execute()
-            ->getData();
+            ->getData()
+        ;
 
         $lastId = end($history)['id'];
 
@@ -59,7 +62,7 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmTestCase
         $currentPage = 0;
 
         while ($currentPage < $totalPageCount) {
-            $history = array();
+            $history = [];
 
             $from = ($limit * $currentPage) + 1;
             $to = ($limit * $currentPage) + $limit;
@@ -68,28 +71,27 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmTestCase
             }
 
             foreach (range($from, $to) as $historyId) {
-                $history[] = array(
+                $history[] = [
                     'id' => $historyId,
-                );
+                ];
             }
-            $currentPage++;
+            ++$currentPage;
 
             yield new RetailcrmApiResponse(
                 '200',
                 json_encode(
-                    array(
+                    [
                         'success' => true,
                         'history' => $history,
-                        'pagination' => array(
+                        'pagination' => [
                             'limit' => $limit,
                             'totalCount' => $totalCount,
                             'currentPage' => $currentPage,
-                            'totalPageCount' => $totalPageCount
-                        )
-                    )
+                            'totalPageCount' => $totalPageCount,
+                        ],
+                    ]
                 )
             );
         }
-
     }
 }

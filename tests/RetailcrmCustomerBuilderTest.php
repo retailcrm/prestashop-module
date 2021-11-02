@@ -15,7 +15,8 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
 
         $this->customer
             ->setDataCrm($this->getDataCrm())
-            ->build();
+            ->build()
+        ;
 
         $result = new RetailcrmCustomerBuilderResult(null, null);
 
@@ -28,7 +29,8 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
 
         $this->customer
             ->setCustomer(new Customer(9719))
-            ->build();
+            ->build()
+        ;
 
         $this->assertNotEmpty($this->customer->getData());
     }
@@ -39,7 +41,8 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
 
         $this->customer
             ->setDataCrm($this->getDataCrm())
-            ->build();
+            ->build()
+        ;
 
         $builtCustomer = $this->customer->getData()->getCustomer();
         $builtAddress = $this->customer->getData()->getCustomerAddress();
@@ -66,7 +69,8 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
 
         $this->customer
             ->setDataCrm($this->getDataCrm())
-            ->build();
+            ->build()
+        ;
 
         $customerResult = $this->customer->getData()->getCustomer();
 
@@ -83,8 +87,9 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
         $this->assertEquals('г. Москва', $addressResult->city);
     }
 
-    private function getDataCrm() {
-        return array(
+    private function getDataCrm()
+    {
+        return [
             'type' => 'customer',
             'id' => 9000,
             'externalId' => '1777754',
@@ -93,32 +98,31 @@ class RetailcrmCustomerBuilderTest extends RetailcrmTestCase
             'vip' => true,
             'bad' => true,
             'site' => '127-0-0-1-8080',
-            'contragent' => array(
-                'contragentType' => 'individual'
-            ),
-            'tags' => array(),
+            'contragent' => [
+                'contragentType' => 'individual',
+            ],
+            'tags' => [],
             'marginSumm' => 0,
             'totalSumm' => 0,
             'averageSumm' => 0,
             'ordersCount' => 0,
             'costSumm' => 0,
-            'customFields' => array(),
+            'customFields' => [],
             'personalDiscount' => 0,
-            'address' => array(
+            'address' => [
                 'id' => 9718,
                 'countryIso' => 'RU',
                 'region' => 'Moscow',
                 'city' => 'г. Москва',
                 'index' => '344004',
-                'text' => 'MAY'
-            ),
-            'segments' => array(),
+                'text' => 'MAY',
+            ],
+            'segments' => [],
             'firstName' => 'April',
             'lastName' => 'Iphone',
             'email' => 'hello@world.ru',
             'sex' => 'female',
-            'birthday' =>'1997-04-09'
-        );
+            'birthday' => '1997-04-09',
+        ];
     }
 }
-
