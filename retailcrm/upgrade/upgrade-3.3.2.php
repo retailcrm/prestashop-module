@@ -35,7 +35,6 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -114,8 +113,8 @@ function upgrade_module_3_3_2($module)
         }
 
         if (!$response->isSuccessful()
-            || $response['siteAccess'] !== 'access_selective'
-            || count($response['sitesAvailable']) !== 1
+            || 'access_selective' !== $response['siteAccess']
+            || 1 !== count($response['sitesAvailable'])
             || !in_array('/api/reference/sites', $response['credentials'])
             || !in_array('/api/reference/sites/{code}/edit', $response['credentials'])
         ) {

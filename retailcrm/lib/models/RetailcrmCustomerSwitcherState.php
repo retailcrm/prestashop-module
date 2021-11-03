@@ -37,22 +37,22 @@
  */
 class RetailcrmCustomerSwitcherState
 {
-    /** @var \Order $order */
-   private $order;
+    /** @var \Order */
+    private $order;
 
-   /** @var array */
-   private $newCustomer;
+    /** @var array */
+    private $newCustomer;
 
-   /** @var array */
-   private $newContact;
+    /** @var array */
+    private $newContact;
 
-   /** @var string $newCompanyName */
+    /** @var string */
     private $newCompanyName;
 
-    /** @var array $companyAddress */
+    /** @var array */
     private $companyAddress;
 
-    /** @var array $crmOrderShippingAddress */
+    /** @var array */
     private $crmOrderShippingAddress;
 
     /**
@@ -71,6 +71,7 @@ class RetailcrmCustomerSwitcherState
     public function setOrder($order)
     {
         $this->order = $order;
+
         return $this;
     }
 
@@ -90,6 +91,7 @@ class RetailcrmCustomerSwitcherState
     public function setNewCustomer($newCustomer)
     {
         $this->newCustomer = $newCustomer;
+
         return $this;
     }
 
@@ -109,6 +111,7 @@ class RetailcrmCustomerSwitcherState
     public function setNewContact($newContact)
     {
         $this->newContact = $newContact;
+
         return $this;
     }
 
@@ -128,6 +131,7 @@ class RetailcrmCustomerSwitcherState
     public function setNewCompanyName($newCompanyName)
     {
         $this->newCompanyName = $newCompanyName;
+
         return $this;
     }
 
@@ -147,6 +151,7 @@ class RetailcrmCustomerSwitcherState
     public function setCompanyAddress($companyAddress)
     {
         $this->companyAddress = $companyAddress;
+
         return $this;
     }
 
@@ -184,6 +189,7 @@ class RetailcrmCustomerSwitcherState
     public function setCrmOrderShippingAddress($crmOrderShippingAddress)
     {
         $this->crmOrderShippingAddress = $crmOrderShippingAddress;
+
         return $this;
     }
 
@@ -202,6 +208,7 @@ class RetailcrmCustomerSwitcherState
      * Throws an exception if state is not valid
      *
      * @throws \InvalidArgumentException
+     *
      * @return void
      */
     public function validate()
@@ -217,11 +224,11 @@ class RetailcrmCustomerSwitcherState
         if (!empty($this->newCustomer) && !empty($this->newContact)) {
             RetailcrmLogger::writeDebugArray(
                 __METHOD__,
-                array(
+                [
                     'State data (customer and contact):' . PHP_EOL,
                     $this->getNewCustomer(),
-                    $this->getNewContact()
-                )
+                    $this->getNewContact(),
+                ]
             );
             throw new \InvalidArgumentException(
                 'Too much data in state - cannot determine which customer should be used.'

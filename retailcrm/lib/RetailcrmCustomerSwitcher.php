@@ -38,16 +38,16 @@
 class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
 {
     /**
-     * @var \RetailcrmCustomerSwitcherState $data
+     * @var \RetailcrmCustomerSwitcherState
      */
     private $data;
 
     /**
-     * @var \RetailcrmCustomerSwitcherResult|null $result
+     * @var \RetailcrmCustomerSwitcherResult|null
      */
     private $result;
 
-    /** @var bool $isContact */
+    /** @var bool */
     private $isContact;
 
     /**
@@ -75,10 +75,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         if (!empty($newCustomer)) {
             RetailcrmLogger::writeDebugArray(
                 __METHOD__,
-                array(
+                [
                     'Changing to individual customer for order',
-                    $this->data->getOrder()->id
-                )
+                    $this->data->getOrder()->id,
+                ]
             );
             $this->isContact = false;
             $this->processChangeToRegular($this->data->getOrder(), $newCustomer);
@@ -90,10 +90,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
             if (!empty($newContact)) {
                 RetailcrmLogger::writeDebugArray(
                     __METHOD__,
-                    array(
+                    [
                         'Changing to contact person customer for order',
-                        $this->data->getOrder()->id
-                    )
+                        $this->data->getOrder()->id,
+                    ]
                 );
                 $this->isContact = true;
                 $this->processChangeToRegular($this->data->getOrder(), $newContact);
@@ -124,7 +124,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      * Change order customer to regular one
      *
      * @param \Order $order
-     * @param array  $newCustomer
+     * @param array $newCustomer
      */
     protected function processChangeToRegular($order, $newCustomer)
     {
@@ -141,12 +141,12 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
 
         RetailcrmLogger::writeDebugArray(
             __METHOD__,
-            array(
+            [
                 'Switching in order',
                 $order->id,
                 'to',
-                $newCustomer
-            )
+                $newCustomer,
+            ]
         );
 
         if (isset($newCustomer['externalId'])) {
@@ -175,10 +175,10 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
             $customer = $result->getCustomer();
             $address = $this->getCustomerAddress($customer, $result->getCustomerAddress());
 
-            RetailcrmLogger::writeDebugArray(__METHOD__, array('Result:', array(
+            RetailcrmLogger::writeDebugArray(__METHOD__, ['Result:', [
                 'customer' => RetailcrmTools::dumpEntity($customer),
-                'address' => RetailcrmTools::dumpEntity($address)
-            )));
+                'address' => RetailcrmTools::dumpEntity($address),
+            ]]);
         }
 
         $this->result = new RetailcrmCustomerSwitcherResult($customer, $address, $order);
@@ -223,7 +223,8 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
                 ->setPhone($billingPhone)
                 ->setAlias('--')
                 ->build()
-                ->getData();
+                ->getData()
+            ;
             $address->company = $this->data->getNewCompanyName();
             RetailcrmTools::assignAddressIdsByFields($customer, $address);
         }
@@ -277,6 +278,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
     {
         $this->data = new RetailcrmCustomerSwitcherState();
         $this->result = null;
+
         return $this;
     }
 
@@ -310,6 +312,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
         }
 
         $this->data = $data;
+
         return $this;
     }
 
@@ -335,20 +338,20 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
     private function debugLogState()
     {
         if (RetailcrmTools::isDebug()) {
-            RetailcrmLogger::writeDebugArray(__METHOD__, array('state', array(
+            RetailcrmLogger::writeDebugArray(__METHOD__, ['state', [
                 'newCustomer' => $this->data->getNewCustomer(),
                 'newContact' => $this->data->getNewContact(),
                 'newCompanyName' => $this->data->getNewCompanyName(),
                 'companyAddress' => $this->data->getCompanyAddress(),
                 'order' => RetailcrmTools::dumpEntity($this->data->getOrder()),
-            )));
+            ]]);
         }
     }
 
     /**
      * Returns placeholder address if customer hasn't one; returns address without any changes otherwise.
      *
-     * @param \Customer|\CustomerCore   $customer
+     * @param \Customer|\CustomerCore $customer
      * @param Address|\AddressCore|null $address
      *
      * @return \Address|\AddressCore|array|mixed
@@ -370,7 +373,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      * Process address fields for existing customer.
      *
      * @param Customer|\CustomerCore $customer
-     * @param Address|\AddressCore   $address
+     * @param Address|\AddressCore $address
      */
     private function processCustomerAddress($customer, $address)
     {
@@ -378,7 +381,7 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
             $newCompany = $this->data->getNewCompanyName();
             RetailcrmLogger::writeDebug(__METHOD__, 'Processing address for a contact person');
 
-            if ($address->alias == '' || $address->alias == 'default') {
+            if ('' == $address->alias || 'default' == $address->alias) {
                 $address->alias = '--';
             }
 
@@ -411,20 +414,22 @@ class RetailcrmCustomerSwitcher implements RetailcrmBuilderInterface
      * Builds placeholder address for customer if he doesn't have address.
      *
      * @param \Customer $customer
-     * @param string    $alias
+     * @param string $alias
      *
      * @return \Address|\AddressCore|array|mixed
      */
     private function createPlaceholderAddress($customer, $alias = 'default')
     {
         $addressBuilder = new RetailcrmCustomerAddressBuilder();
+
         return $addressBuilder
             ->setIdCustomer($customer->id)
             ->setFirstName($customer->firstname)
             ->setLastName($customer->lastname)
             ->setAlias($alias)
             ->build()
-            ->getData();
+            ->getData()
+        ;
     }
 
     /**

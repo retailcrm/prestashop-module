@@ -2,16 +2,16 @@
 
 class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 {
-    /** @var \AddressCore|Address $address */
+    /** @var \AddressCore|Address */
     protected $address;
 
-    /** @var int $defaultLang */
+    /** @var int */
     protected $defaultLang;
 
     /**
      * setUp test
      */
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 
@@ -42,7 +42,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         $this->assertNotEmpty($result);
         $this->assertArrayHasKey('address', $result);
@@ -64,7 +65,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         $this->assertNotEmpty($result);
         $this->assertNotEmpty($result['externalId']);
@@ -82,7 +84,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         $this->assertNotEmpty($result);
         $this->assertArrayHasKey('delivery', $result);
@@ -96,7 +99,7 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
         $this->assertArrayHasKey('additionalPhone', $result);
         $this->assertNotEmpty($result['phone']);
         $this->assertNotEmpty($result['additionalPhone']);
-        $this->assertFieldsNotEmpty($result['delivery']['address'], array('countryIso'));
+        $this->assertFieldsNotEmpty($result['delivery']['address'], ['countryIso']);
     }
 
     /**
@@ -116,7 +119,8 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             ->setWithExternalId(true)
             ->setExternalIdSuffix('suffix')
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         $this->assertNotEmpty($result);
         $this->assertArrayHasKey('delivery', $result);
@@ -130,7 +134,7 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
      *
      * @param array $address
      */
-    private function assertFieldsNotEmpty($address, $skip = array())
+    private function assertFieldsNotEmpty($address, $skip = [])
     {
         foreach (array_diff($this->getCheckableFields(), $skip) as $field) {
             $this->assertArrayHasKey($field, $address);
@@ -140,23 +144,23 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
 
     public function getAddressLines()
     {
-        return array(
-            array(
+        return [
+            [
                 'addressline 1',
                 'addressline 2',
-                'addressline 1' . RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2'
-            ),
-            array(
+                'addressline 1' . RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2',
+            ],
+            [
                 'addressline 1',
                 '',
-                'addressline 1'
-            ),
-            array(
+                'addressline 1',
+            ],
+            [
                 '',
                 'addressline 2',
-                RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2'
-            ),
-        );
+                RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER . 'addressline 2',
+            ],
+        ];
     }
 
     /**
@@ -166,6 +170,6 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
      */
     private function getCheckableFields()
     {
-        return array('index', 'city', 'countryIso', 'text', 'region');
+        return ['index', 'city', 'countryIso', 'text', 'region'];
     }
 }

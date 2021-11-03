@@ -90,6 +90,7 @@ class RetailcrmApiPaginatedRequest
     public function setApi($api)
     {
         $this->api = $api;
+
         return $this;
     }
 
@@ -103,6 +104,7 @@ class RetailcrmApiPaginatedRequest
     public function setMethod($method)
     {
         $this->method = $method;
+
         return $this;
     }
 
@@ -116,6 +118,7 @@ class RetailcrmApiPaginatedRequest
     public function setParams($params)
     {
         $this->params = $params;
+
         return $this;
     }
 
@@ -129,6 +132,7 @@ class RetailcrmApiPaginatedRequest
     public function setDataKey($dataKey)
     {
         $this->dataKey = $dataKey;
+
         return $this;
     }
 
@@ -142,6 +146,7 @@ class RetailcrmApiPaginatedRequest
     public function setLimit($limit)
     {
         $this->limit = $limit;
+
         return $this;
     }
 
@@ -155,6 +160,7 @@ class RetailcrmApiPaginatedRequest
     public function setPageLimit($pageLimit)
     {
         $this->pageLimit = $pageLimit;
+
         return $this;
     }
 
@@ -165,13 +171,13 @@ class RetailcrmApiPaginatedRequest
      */
     public function execute()
     {
-        $this->data = array();
+        $this->data = [];
         $response = true;
         $page = 1;
 
         do {
             $response = call_user_func_array(
-                array($this->api, $this->method),
+                [$this->api, $this->method],
                 $this->buildParams($this->params, $page)
             );
 
@@ -180,7 +186,7 @@ class RetailcrmApiPaginatedRequest
                 $page = $response['pagination']['currentPage'] + 1;
             }
 
-            if($this->pageLimit !== null && $page > $this->pageLimit) {
+            if (null !== $this->pageLimit && $page > $this->pageLimit) {
                 break;
             }
 
@@ -211,7 +217,7 @@ class RetailcrmApiPaginatedRequest
         $this->method = '';
         $this->limit = 100;
         $this->pageLimit = null;
-        $this->data = array();
+        $this->data = [];
 
         return $this;
     }
@@ -220,18 +226,18 @@ class RetailcrmApiPaginatedRequest
      * buildParams
      *
      * @param array $placeholderParams
-     * @param int   $currentPage
+     * @param int $currentPage
      *
      * @return mixed
      */
     private function buildParams($placeholderParams, $currentPage)
     {
         foreach ($placeholderParams as $key => $param) {
-            if ($param == '{{page}}') {
+            if ('{{page}}' == $param) {
                 $placeholderParams[$key] = $currentPage;
             }
 
-            if ($param == '{{limit}}') {
+            if ('{{limit}}' == $param) {
                 $placeholderParams[$key] = $this->limit;
             }
         }

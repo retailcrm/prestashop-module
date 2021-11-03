@@ -35,13 +35,12 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function execute()
     {
@@ -54,7 +53,7 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
                 RetailcrmLogger::writeDebug(
@@ -67,7 +66,7 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
 
             $apiUrl = Configuration::get(RetailCRM::API_URL);
             $apiKey = Configuration::get(RetailCRM::API_KEY);
-            RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+            RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
 
             if (!empty($apiUrl) && !empty($apiKey)) {
                 RetailcrmHistory::$api = new RetailcrmProxy($apiUrl, $apiKey, RetailcrmLogger::getLogFile());
@@ -85,7 +84,7 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName()
     {

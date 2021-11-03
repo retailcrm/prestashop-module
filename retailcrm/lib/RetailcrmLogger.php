@@ -41,9 +41,11 @@ if (!defined('_PS_VERSION_')) {
 
 /**
  * Class RetailcrmLogger
+ *
  * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
  * @license   GPL
- * @link      https://retailcrm.ru
+ *
+ * @see      https://retailcrm.ru
  */
 class RetailcrmLogger
 {
@@ -117,7 +119,7 @@ class RetailcrmLogger
      */
     public static function output($message = '', $end = PHP_EOL)
     {
-        if (php_sapi_name() == 'cli') {
+        if ('cli' == php_sapi_name()) {
             echo $message . $end;
         }
     }
@@ -158,7 +160,7 @@ class RetailcrmLogger
     /**
      * Debug log record with multiple entries
      *
-     * @param string       $caller
+     * @param string $caller
      * @param array|string $messages
      */
     public static function writeDebugArray($caller, $messages)
@@ -170,6 +172,7 @@ class RetailcrmLogger
                         $messages,
                         function ($carry, $item) {
                             $carry .= ' ' . print_r($item, true);
+
                             return $carry;
                         }
                     ),
@@ -214,7 +217,7 @@ class RetailcrmLogger
      */
     private static function getLogFilePrefix()
     {
-        if (php_sapi_name() == 'cli') {
+        if ('cli' == php_sapi_name()) {
             if (isset($_SERVER['TERM'])) {
                 return 'cli';
             } else {
@@ -250,13 +253,13 @@ class RetailcrmLogger
         $logFiles = self::getLogFiles();
 
         foreach ($logFiles as $logFile) {
-                $fileNames[] = [
-                    'name' => basename($logFile),
-                    'path' => $logFile,
-                    'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
-                    'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
-                ];
-            }
+            $fileNames[] = [
+                'name' => basename($logFile),
+                'path' => $logFile,
+                'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
+                'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
+            ];
+        }
 
         return $fileNames;
     }
@@ -276,7 +279,7 @@ class RetailcrmLogger
 
         $handle = opendir($logDir);
         while (($file = readdir($handle)) !== false) {
-            if (self::checkFileName($file) !== false) {
+            if (false !== self::checkFileName($file)) {
                 yield "$logDir/$file";
             }
         }
@@ -288,6 +291,7 @@ class RetailcrmLogger
      * Checks if given logs filename relates to the module
      *
      * @param string $file
+     *
      * @return false|string
      */
     public static function checkFileName($file)

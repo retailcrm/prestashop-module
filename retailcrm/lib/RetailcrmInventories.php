@@ -52,9 +52,9 @@ class RetailcrmInventories
         $page = 1;
 
         do {
-            $result = self::$api->storeInventories(array(), $page, 250);
+            $result = self::$api->storeInventories([], $page, 250);
 
-            if ($result === false) {
+            if (false === $result) {
                 return $result;
             }
 
@@ -63,11 +63,11 @@ class RetailcrmInventories
             }
 
             $totalPageCount = $result['pagination']['totalPageCount'];
-            $page++;
+            ++$page;
         } while ($page <= $totalPageCount);
     }
 
-    private static function setQuantityOffer($offer) 
+    private static function setQuantityOffer($offer)
     {
         if (isset($offer['externalId'])) {
             $invOffer = explode('#', $offer['externalId']);

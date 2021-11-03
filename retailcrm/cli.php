@@ -36,7 +36,7 @@
  * to avoid any conflicts with others containers.
  */
 
-declare(ticks = 1);
+declare(ticks=1);
 
 if (!isset($_SERVER['REQUEST_METHOD'])) {
     $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -46,7 +46,7 @@ if (!isset($_SERVER['REMOTE_ADDR'])) {
     $_SERVER['REMOTE_ADDR'] = '0.0.0.0';
 }
 
-require_once dirname(__FILE__) . '/lib/RetailcrmCli.php';
+require_once __DIR__ . '/lib/RetailcrmCli.php';
 
 function retailcrmCliInterruptHandler($signo)
 {
@@ -59,9 +59,9 @@ function retailcrmCliInterruptHandler($signo)
     exit(1);
 }
 
-if (php_sapi_name() == 'cli') {
+if ('cli' == php_sapi_name()) {
     $cli = new RetailcrmCli(__FILE__);
     $cli->execute('retailcrmCliInterruptHandler');
 } else {
-    include_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'index.php';
+    include_once __DIR__ . DIRECTORY_SEPARATOR . 'index.php';
 }

@@ -35,7 +35,6 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 class RetailcrmDaemonCollectorModuleFrontController extends ModuleFrontController
 {
     /**
@@ -83,7 +82,7 @@ class RetailcrmDaemonCollectorModuleFrontController extends ModuleFrontControlle
         $siteKey = Configuration::get(RetailCRM::COLLECTOR_KEY);
         $collectorConfigured = $isActive && $siteKey;
 
-        $params = array('siteKey' => !$collectorConfigured ? '' : $siteKey);
+        $params = ['siteKey' => !$collectorConfigured ? '' : $siteKey];
 
         if ($collectorConfigured && !empty($this->context->customer) && $this->context->customer->id) {
             $params['customerId'] = $this->context->customer->id;

@@ -35,7 +35,6 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -71,15 +70,15 @@ function upgrade_module_3_0_1($module)
     }
 
     // Immediate cart synchronization is not safe anymore (causes data inconsistency)
-    if (Configuration::hasKey($syncCarts) && Configuration::get($syncCarts) == "0") {
-        Configuration::set($syncCarts, "900");
+    if (Configuration::hasKey($syncCarts) && '0' == Configuration::get($syncCarts)) {
+        Configuration::set($syncCarts, '900');
     }
 
     return $result && Db::getInstance()->execute(
-        'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'retailcrm_abandonedcarts` (
+        'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts` (
                     `id_cart` INT UNSIGNED UNIQUE NOT NULL,
                     `last_uploaded` DATETIME,
-                    FOREIGN KEY (id_cart) REFERENCES '._DB_PREFIX_.'cart (id_cart)
+                    FOREIGN KEY (id_cart) REFERENCES ' . _DB_PREFIX_ . 'cart (id_cart)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'

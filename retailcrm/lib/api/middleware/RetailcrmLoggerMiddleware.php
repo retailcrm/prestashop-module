@@ -36,18 +36,16 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-
 class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
         $method = $request->getMethod();
 
-        if (!is_null($method)) {
+        if (null !== $method) {
             RetailcrmLogger::writeDebug($method, print_r($request->getData(), true));
         }
 

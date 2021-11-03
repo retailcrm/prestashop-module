@@ -5,7 +5,7 @@ class RetailCRMTest extends RetailcrmTestCase
     private $retailcrmModule;
     private $apiMock;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 
@@ -22,7 +22,7 @@ class RetailCRMTest extends RetailcrmTestCase
         return $this->getMockBuilder('RetailcrmProxy')
             ->disableOriginalConstructor()
             ->setMethods(
-                array(
+                [
                     'customersCreate',
                     'customersEdit',
                     'customersGet',
@@ -30,9 +30,10 @@ class RetailCRMTest extends RetailcrmTestCase
                     'ordersEdit',
                     'ordersGet',
                     'ordersPaymentEdit',
-                    'ordersPaymentCreate'
-                )
-            );
+                    'ordersPaymentCreate',
+                ]
+            )
+        ;
     }
 
     public function testUploadOrders()
@@ -44,19 +45,19 @@ class RetailCRMTest extends RetailcrmTestCase
         $updReference = 'test';
         $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
             200,
-            json_encode(array(
+            json_encode([
                 'success' => true,
-                'order' => array(),
-            ))
+                'order' => [],
+            ])
         ));
         $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
             200,
-            json_encode(array(
+            json_encode([
                 'success' => true,
-                'order' => array(
+                'order' => [
                     'number' => $updReference,
-                ),
-            ))
+                ],
+            ])
         ));
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
@@ -75,7 +76,7 @@ class RetailCRMTest extends RetailcrmTestCase
     public function testHookActionCustomerAccountAdd()
     {
         $newCustomer = new Customer(1);
-        $params = array('newCustomer' => $newCustomer);
+        $params = ['newCustomer' => $newCustomer];
 
         $this->assertTrue($this->retailcrmModule->hookActionCustomerAccountAdd($params));
     }
@@ -83,7 +84,7 @@ class RetailCRMTest extends RetailcrmTestCase
     public function testHookActionCustomerAccountUpdate()
     {
         $customer = new Customer(1);
-        $params = array('customer' => $customer);
+        $params = ['customer' => $customer];
 
         $this->assertTrue($this->retailcrmModule->hookActionCustomerAccountUpdate($params));
     }
@@ -92,28 +93,27 @@ class RetailCRMTest extends RetailcrmTestCase
     {
         $order = new Order(1);
         $customer = new Customer($order->id_customer);
-        $params = array('order' => $order, 'customer' => $customer);
+        $params = ['order' => $order, 'customer' => $customer];
         $reference = $order->reference;
         $updReference = 'test';
 
         $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
             200,
-            json_encode(array(
+            json_encode([
                 'success' => true,
-                'order' => array()
-            ))
+                'order' => [],
+            ])
         ));
 
         $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
             200,
-            json_encode(array(
+            json_encode([
                 'success' => true,
-                'order' => array(
+                'order' => [
                     'number' => $updReference,
-                ),
-            ))
+                ],
+            ])
         ));
-
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
 
@@ -141,40 +141,40 @@ class RetailCRMTest extends RetailcrmTestCase
         $reference = $order->reference;
         $updReference = 'test';
 
-        if ($newOrder === false) {
+        if (false === $newOrder) {
             $status->id = 11;
 
-            $params = array(
+            $params = [
                 'newOrderStatus' => $status,
-                'id_order' => $order->id
-            );
+                'id_order' => $order->id,
+            ];
         } else {
             $status->id = 'new';
 
-            $params = array(
+            $params = [
                 'orderStatus' => $status,
                 'customer' => $customer,
                 'order' => $order,
                 'cart' => $cart,
-            );
+            ];
 
             $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
                 200,
-                json_encode(array(
+                json_encode([
                     'success' => true,
-                    'order' => array()
-                ))
+                    'order' => [],
+                ])
             ));
         }
 
         $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
             200,
-            json_encode(array(
+            json_encode([
                 'success' => true,
-                'order' => array(
+                'order' => [
                     'number' => $updReference,
-                ),
-            ))
+                ],
+            ])
         ));
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
@@ -199,10 +199,10 @@ class RetailCRMTest extends RetailcrmTestCase
         $orderPayment = RetailcrmTestHelper::createOrderPayment($order->reference);
         $cart = new Cart($order->id_cart);
 
-        $params = array(
+        $params = [
             'paymentCC' => $orderPayment,
-            'cart' => $cart
-        );
+            'cart' => $cart,
+        ];
 
         $referenceMock = $this->createMock('RetailcrmReferences');
         $referenceMock->expects($this->once())->method('getSystemPaymentModules')->willReturn($this->getSystemPaymentModules());
@@ -222,14 +222,14 @@ class RetailCRMTest extends RetailcrmTestCase
      */
     public function dataProvider()
     {
-        return array(
-            array(
-                'newOrder' => true
-            ),
-            array(
-                'newOrder' => false
-            )
-        );
+        return [
+            [
+                'newOrder' => true,
+            ],
+            [
+                'newOrder' => false,
+            ],
+        ];
     }
 
     /**
@@ -237,34 +237,34 @@ class RetailCRMTest extends RetailcrmTestCase
      */
     public function ordersGetDataProvider()
     {
-        return array(
-            array(
-                'ordersGet' => array(
+        return [
+            [
+                'ordersGet' => [
                     'success' => true,
-                    'order' => array(
-                        'payments' => array(
-                            array(
-                                'type' => 'bankwire'
-                            )
-                        ),
-                        'totalSumm' => 1500
-                    )
-                )
-            ),
-            array(
-                'ordersGet' => array(
+                    'order' => [
+                        'payments' => [
+                            [
+                                'type' => 'bankwire',
+                            ],
+                        ],
+                        'totalSumm' => 1500,
+                    ],
+                ],
+            ],
+            [
+                'ordersGet' => [
                     'success' => true,
-                    'order' => array(
-                        'payments' => array(
-                            array(
-                                'type' => 'cheque'
-                            )
-                        ),
-                        'totalSumm' => 1500
-                    )
-                )
-            )
-        );
+                    'order' => [
+                        'payments' => [
+                            [
+                                'type' => 'cheque',
+                            ],
+                        ],
+                        'totalSumm' => 1500,
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -272,26 +272,26 @@ class RetailCRMTest extends RetailcrmTestCase
      */
     private function getProducts()
     {
-        return array(
-            array(
+        return [
+            [
                 'id_product_attribute' => 1,
                 'id_product' => 1,
                 'attributes' => '',
                 'rate' => 1,
                 'price' => 100,
                 'name' => 'Test product 1',
-                'quantity' => 2
-            ),
-            array(
+                'quantity' => 2,
+            ],
+            [
                 'id_product_attribute' => 1,
                 'id_product' => 2,
                 'attributes' => '',
                 'rate' => 1,
                 'price' => 100,
                 'name' => 'Test product 2',
-                'quantity' => 1
-            )
-        );
+                'quantity' => 1,
+            ],
+        ];
     }
 
     /**
@@ -301,7 +301,7 @@ class RetailCRMTest extends RetailcrmTestCase
     {
         $address = new Address(1);
 
-        return array($address);
+        return [$address];
     }
 
     /**
@@ -309,17 +309,17 @@ class RetailCRMTest extends RetailcrmTestCase
      */
     private function getSystemPaymentModules()
     {
-        return array (
-            array (
+        return [
+            [
                 'id' => '3',
                 'code' => 'bankwire',
                 'name' => 'Bank wire',
-            ),
-            array (
+            ],
+            [
                 'id' => '30',
                 'code' => 'cheque',
                 'name' => 'Payment by check',
-            )
-        );
+            ],
+        ];
     }
 }

@@ -35,8 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
@@ -45,16 +44,16 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
     private $shopId;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     abstract public function execute();
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName()
     {
-        throw new InvalidArgumentException("Not implemented.");
+        throw new InvalidArgumentException('Not implemented.');
     }
 
     /**
@@ -64,7 +63,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setCliMode($mode)
     {
-        $this->cliMode = (bool)$mode;
+        $this->cliMode = (bool) $mode;
     }
 
     /**
@@ -72,7 +71,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setForce($force)
     {
-        $this->force = (bool)$force;
+        $this->force = (bool) $force;
     }
 
     /**
@@ -82,8 +81,9 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     public function setShopId($shopId = null)
     {
-        if (!is_null($shopId))
-            $this->shopId = intval($shopId);
+        if (null !== $shopId) {
+            $this->shopId = (int) $shopId;
+        }
     }
 
     /**
@@ -93,7 +93,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function isRunning()
     {
-        return !$this->force && (RetailcrmJobManager::getCurrentJob() !== '' || RetailcrmCli::getCurrentJob() !== '');
+        return !$this->force && ('' !== RetailcrmJobManager::getCurrentJob() || '' !== RetailcrmCli::getCurrentJob());
     }
 
     /**
@@ -103,7 +103,7 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
      */
     protected function setRunning()
     {
-        if($this->force) {
+        if ($this->force) {
             return true;
         }
 
@@ -124,12 +124,12 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
         $shops = Shop::getShops();
 
         if (Shop::isFeatureActive()) {
-            if ($this->shopId > 0) {
+            if (0 < $this->shopId) {
                 if (isset($shops[$this->shopId])) {
                     RetailcrmLogger::writeDebug(
                         __METHOD__,
                         sprintf(
-                            "Running job for shop %s (%s).",
+                            'Running job for shop %s (%s).',
                             $shops[$this->shopId]['name'],
                             $this->shopId
                         )
@@ -151,7 +151,6 @@ abstract class RetailcrmAbstractEvent implements RetailcrmEventInterface
 
             return $shops;
         } else {
-
             return [$shops[Shop::getContextShopID()]];
         }
     }

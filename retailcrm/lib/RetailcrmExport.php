@@ -49,12 +49,12 @@ class RetailcrmExport
     static $api;
 
     /**
-     * @var integer
+     * @var int
      */
     static $ordersOffset;
 
     /**
-     * @var integer
+     * @var int
      */
     static $customersOffset;
 
@@ -75,12 +75,12 @@ class RetailcrmExport
      */
     public static function getOrdersCount()
     {
-        $sql = 'SELECT count(o.id_order) 
-            FROM `' . _DB_PREFIX_ . 'orders` o 
+        $sql = 'SELECT count(o.id_order)
+            FROM `' . _DB_PREFIX_ . 'orders` o
             WHERE 1
             ' . Shop::addSqlRestriction(false, 'o');
 
-        return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
+        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
 
     /**
@@ -90,36 +90,39 @@ class RetailcrmExport
      * @param int|null $count Sets the count of orders to get from database
      *
      * @return Generator
+     *
      * @throws PrestaShopDatabaseException
      */
     public static function getOrdersIds($start = 0, $count = null)
     {
-        if (is_null($count)) {
+        if (null === $count) {
             $to = static::getOrdersCount();
             $count = $to - $start;
         } else {
             $to = $start + $count;
         }
 
-        if ($count > 0) {
+        if (0 < $count) {
             $predefinedSql = 'SELECT o.`id_order`
-                FROM `' . _DB_PREFIX_ . 'orders` o 
+                FROM `' . _DB_PREFIX_ . 'orders` o
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 ORDER BY o.`id_order` ASC';
 
             while ($start < $to) {
                 $offset = ($start + static::$ordersOffset > $to) ? $to - $start : static::$ordersOffset;
-                if ($offset <= 0)
+                if (0 >= $offset) {
                     break;
+                }
 
                 $sql = $predefinedSql . '
-                    LIMIT ' . (int)$start . ', ' . (int)$offset;
+                    LIMIT ' . (int) $start . ', ' . (int) $offset;
 
                 $orders = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
-                if (empty($orders))
+                if (empty($orders)) {
                     break;
+                }
 
                 foreach ($orders as $order) {
                     yield $order;
@@ -140,7 +143,7 @@ class RetailcrmExport
             return;
         }
 
-        $orders = array();
+        $orders = [];
         $orderRecords = static::getOrdersIds($from, $count);
         $orderBuilder = new RetailcrmOrderBuilder();
         $orderBuilder->defaultLangFromConfiguration()->setApi(static::$api);
@@ -180,9 +183,9 @@ class RetailcrmExport
 
             time_nanosleep(0, 250000000);
 
-            if (count($orders) == 50) {
+            if (50 == count($orders)) {
                 static::$api->ordersUpload($orders);
-                $orders = array();
+                $orders = [];
             }
         }
 
@@ -193,6 +196,7 @@ class RetailcrmExport
 
     /**
      * Get total count of customers for context shop
+     *
      * @param bool $withOrders If set to <b>true</b>, then return total count of customers.
      *                         If set to <b>false</b>, then return count of customers without orders
      *
@@ -200,7 +204,7 @@ class RetailcrmExport
      */
     public static function getCustomersCount($withOrders = true)
     {
-        $sql = 'SELECT count(c.id_customer) 
+        $sql = 'SELECT count(c.id_customer)
             FROM `' . _DB_PREFIX_ . 'customer` c
             WHERE 1
             ' . Shop::addSqlRestriction(false, 'c');
@@ -208,15 +212,15 @@ class RetailcrmExport
         if (!$withOrders) {
             $sql .= '
             AND c.id_customer not in (
-                select o.id_customer 
-                from `' . _DB_PREFIX_ . 'orders` o 
+                select o.id_customer
+                from `' . _DB_PREFIX_ . 'orders` o
                 WHERE 1
                 ' . Shop::addSqlRestriction(false, 'o') . '
                 group by o.id_customer
             )';
         }
 
-        return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
+        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
 
     /**
@@ -229,18 +233,19 @@ class RetailcrmExport
      * @param bool $returnAddressId If set to <b>true</b>, then also return address id in <i>`id_address`</i>
      *
      * @return Generator
+     *
      * @throws PrestaShopDatabaseException
      */
     public static function getCustomersIds($start = 0, $count = null, $withOrders = true, $returnAddressId = true)
     {
-        if (is_null($count)) {
+        if (null === $count) {
             $to = static::getCustomersCount($withOrders);
             $count = $to - $start;
         } else {
             $to = $start + $count;
         }
 
-        if ($count > 0) {
+        if (0 < $count) {
             $predefinedSql = 'SELECT c.`id_customer`
                 ' . ($returnAddressId ? ', a.`id_address`' : '') . '
                 FROM `' . _DB_PREFIX_ . 'customer` c
@@ -274,27 +279,28 @@ class RetailcrmExport
                 ' . Shop::addSqlRestriction(false, 'c') .
                 ($withOrders ? '' : '
                 AND c.`id_customer` not in (
-                    select o.`id_customer` 
-                    from `' . _DB_PREFIX_ . 'orders` o 
+                    select o.`id_customer`
+                    from `' . _DB_PREFIX_ . 'orders` o
                     WHERE 1
                     ' . Shop::addSqlRestriction(false, 'o') . '
                     group by o.`id_customer`
                 )') . '
                 ORDER BY c.`id_customer` ASC';
 
-
             while ($start < $to) {
                 $offset = ($start + static::$customersOffset > $to) ? $to - $start : static::$customersOffset;
-                if ($offset <= 0)
+                if (0 >= $offset) {
                     break;
+                }
 
                 $sql = $predefinedSql . '
-                    LIMIT ' . (int)$start . ', ' . (int)$offset;
+                    LIMIT ' . (int) $start . ', ' . (int) $offset;
 
                 $customers = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
-                if (empty($customers))
+                if (empty($customers)) {
                     break;
+                }
 
                 foreach ($customers as $customer) {
                     yield $customer;
@@ -315,7 +321,7 @@ class RetailcrmExport
             return;
         }
 
-        $customers = array();
+        $customers = [];
         $customersRecords = RetailcrmExport::getCustomersIds($from, $count, false);
 
         foreach ($customersRecords as $record) {
@@ -332,9 +338,10 @@ class RetailcrmExport
                     $address = $addressBuilder
                         ->setAddress($cmsAddress)
                         ->build()
-                        ->getDataArray();
+                        ->getDataArray()
+                    ;
                 } else {
-                    $address = array();
+                    $address = [];
                 }
 
                 try {
@@ -345,9 +352,9 @@ class RetailcrmExport
                     RetailcrmLogger::output($exception->getMessage());
                 }
 
-                if (count($customers) == 50) {
+                if (50 == count($customers)) {
                     static::$api->customersUpload($customers);
-                    $customers = array();
+                    $customers = [];
 
                     time_nanosleep(0, 250000000);
                 }
@@ -360,9 +367,11 @@ class RetailcrmExport
     }
 
     /**
-     * @param int   $id
+     * @param int $id
      * @param false $receiveOrderNumber
+     *
      * @return bool
+     *
      * @throws PrestaShopObjectNotFoundExceptionCore
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
@@ -392,7 +401,8 @@ class RetailcrmExport
             ->setApi(static::$api)
             ->setCmsOrder($object)
             ->setCmsCustomer($customer)
-            ->buildOrderWithPreparedCustomer();
+            ->buildOrderWithPreparedCustomer()
+        ;
 
         if (empty($crmOrder)) {
             return false;
@@ -410,9 +420,9 @@ class RetailcrmExport
             $response = static::$api->ordersEdit($crmOrder);
 
             if (empty($existingOrder['payments']) && !empty($crmOrder['payments'])) {
-                $payment = array_merge(reset($crmOrder['payments']), array(
-                    'order' => array('externalId' => $crmOrder['externalId'])
-                ));
+                $payment = array_merge(reset($crmOrder['payments']), [
+                    'order' => ['externalId' => $crmOrder['externalId']],
+                ]);
                 static::$api->ordersPaymentCreate($payment);
             }
         }
@@ -427,9 +437,9 @@ class RetailcrmExport
      */
     private static function validateState()
     {
-        if (!static::$api ||
-            !static::$ordersOffset ||
-            !static::$customersOffset
+        if (!static::$api
+            || !static::$ordersOffset
+            || !static::$customersOffset
         ) {
             return false;
         }

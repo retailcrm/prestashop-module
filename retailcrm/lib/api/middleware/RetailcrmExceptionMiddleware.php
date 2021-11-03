@@ -35,12 +35,10 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-
 class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
@@ -52,7 +50,7 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
 
             $response = new RetailcrmApiResponse(500, json_encode([
                 'success' => false,
-                'errorMsg' => sprintf('Internal error: %s', $e->getMessage())
+                'errorMsg' => sprintf('Internal error: %s', $e->getMessage()),
             ]));
         }
 

@@ -43,15 +43,15 @@ class RetailcrmCustomerSwitcherResult
     /** @var \Address */
     private $address;
 
-    /** @var \Order $order */
+    /** @var \Order */
     private $order;
 
     /**
      * RetailcrmCustomerSwitcherResult constructor.
      *
      * @param \Customer $customer
-     * @param \Address  $address
-     * @param \Order    $order
+     * @param \Address $address
+     * @param \Order $order
      */
     public function __construct($customer, $address, $order)
     {
@@ -88,6 +88,7 @@ class RetailcrmCustomerSwitcherResult
     public function setAddress($address)
     {
         $this->address = $address;
+
         return $this;
     }
 
@@ -103,20 +104,21 @@ class RetailcrmCustomerSwitcherResult
      * Save customer (if exists) and order.
      *
      * @return $this
+     *
      * @throws \PrestaShopException
      */
     public function save()
     {
         RetailcrmLogger::writeDebugArray(
             __METHOD__,
-            array(
+            [
                 'Saving customer, address and order:',
-                array(
+                [
                     'customer' => RetailcrmTools::dumpEntity($this->customer),
                     'address' => RetailcrmTools::dumpEntity($this->address),
-                    'order' => RetailcrmTools::dumpEntity($this->order)
-                )
-            )
+                    'order' => RetailcrmTools::dumpEntity($this->order),
+                ],
+            ]
         );
 
         if (!empty($this->customer)) {

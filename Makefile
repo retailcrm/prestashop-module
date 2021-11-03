@@ -52,6 +52,10 @@ else
         && bash travis-scripts/install-prestashop.sh
 endif
 
+lint:
+	php-cs-fixer fix --config=$(ROOT_DIR)/.php-cs-fixer.php -v
+
+
 test:
 ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) \

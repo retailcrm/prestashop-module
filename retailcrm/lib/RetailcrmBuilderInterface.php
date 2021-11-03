@@ -67,4 +67,3 @@ interface RetailcrmBuilderInterface
      */
     public function reset();
 }
-

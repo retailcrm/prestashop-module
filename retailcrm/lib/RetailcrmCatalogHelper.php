@@ -44,14 +44,14 @@ class RetailcrmCatalogHelper
     {
         $date = null;
         $filePath = self::getIcmlFilePath();
-        if (!file_exists($filePath) || ($fileHandler = fopen($filePath, 'rb')) === false) {
+        if (!file_exists($filePath) || ($fileHandler = fopen($filePath, 'r')) === false) {
             return false;
         }
 
         while ($line = fgets($fileHandler)) {
-            if (strpos($line, 'yml_catalog date=') !== false) {
+            if (false !== strpos($line, 'yml_catalog date=')) {
                 preg_match_all('/date="([\d\- :]+)"/', $line, $matches);
-                if (count($matches) == 2) {
+                if (2 == count($matches)) {
                     $date = $matches[1][0];
                 }
                 break;
@@ -60,7 +60,7 @@ class RetailcrmCatalogHelper
 
         fclose($fileHandler);
 
-        return DateTime::createFromFormat('Y-m-d H:i:s', $date);
+        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date);
     }
 
     public static function getIcmlFileLink()
@@ -89,37 +89,37 @@ class RetailcrmCatalogHelper
 
     public static function getIcmlFileInfo()
     {
-        $icmlInfo = json_decode((string)Configuration::get(self::ICML_INFO_NAME), true);
+        $icmlInfo = json_decode((string) Configuration::get(self::ICML_INFO_NAME), true);
 
-        if ($icmlInfo === null || json_last_error() !== JSON_ERROR_NONE) {
-            $icmlInfo = array();
+        if (null === $icmlInfo || JSON_ERROR_NONE !== json_last_error()) {
+            $icmlInfo = [];
         }
 
         $lastGenerated = self::getIcmlFileDate();
 
-        if ($lastGenerated === false) {
+        if (false === $lastGenerated) {
             return $icmlInfo;
         }
 
         $icmlInfo['lastGenerated'] = $lastGenerated;
-        $now = new DateTime();
+        $now = new DateTimeImmutable();
         /** @var DateInterval $diff */
         $diff = $lastGenerated->diff($now);
 
-        $icmlInfo['lastGeneratedDiff'] = array(
+        $icmlInfo['lastGeneratedDiff'] = [
             'days' => $diff->days,
             'hours' => $diff->h,
-            'minutes' => $diff->i
-        );
+            'minutes' => $diff->i,
+        ];
 
         $icmlInfo['isOutdated'] = (
-            $icmlInfo['lastGeneratedDiff']['days'] > 0
-            || $icmlInfo['lastGeneratedDiff']['hours'] > 4
+            0 < $icmlInfo['lastGeneratedDiff']['days']
+            || 4 < $icmlInfo['lastGeneratedDiff']['hours']
         );
 
         $api = RetailcrmTools::getApiClient();
 
-        if ($api !== null) {
+        if (null !== $api) {
             $reference = new RetailcrmReferences($api);
 
             $site = $reference->getSite();
@@ -134,7 +134,7 @@ class RetailcrmCatalogHelper
 
     public static function getIcmlFileInfoMultistore()
     {
-        return RetailcrmContextSwitcher::runInContext(array(self::class, 'getIcmlFileInfo'));
+        return RetailcrmContextSwitcher::runInContext([self::class, 'getIcmlFileInfo']);
     }
 
     /**
@@ -143,10 +143,10 @@ class RetailcrmCatalogHelper
      */
     public static function setIcmlFileInfo($productsCount, $offersCount)
     {
-        $icmlInfo = array(
+        $icmlInfo = [
             'productsCount' => $productsCount,
-            'offersCount' => $offersCount
-        );
-        Configuration::updateValue(self::ICML_INFO_NAME, (string)json_encode($icmlInfo));
+            'offersCount' => $offersCount,
+        ];
+        Configuration::updateValue(self::ICML_INFO_NAME, (string) json_encode($icmlInfo));
     }
 }

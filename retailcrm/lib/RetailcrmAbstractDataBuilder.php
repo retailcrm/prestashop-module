@@ -38,7 +38,7 @@
 abstract class RetailcrmAbstractDataBuilder
 {
     /**
-     * @var mixed $data Any data type (depends on the builder)
+     * @var mixed Any data type (depends on the builder)
      */
     protected $data;
 
@@ -73,7 +73,7 @@ abstract class RetailcrmAbstractDataBuilder
             return RetailcrmTools::clearArray((array) $this->data);
         }
 
-        return array();
+        return [];
     }
 
     /**

@@ -44,10 +44,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      * RetailcrmSettingsTemplate constructor.
      *
      * @param \Module $module
-     * @param         $smarty
-     * @param         $assets
-     * @param         $settings
-     * @param         $settingsNames
+     * @param $smarty
+     * @param $assets
+     * @param $settings
+     * @param $settingsNames
      */
     public function __construct(Module $module, $smarty, $assets, $settings, $settingsNames)
     {
@@ -64,7 +64,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function getParams()
     {
-        $params = array();
+        $params = [];
 
         if ($this->module->api) {
             $params['statusesDefaultExport'] = $this->module->reference->getStatuseDefaultExport();
@@ -103,10 +103,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
     protected function buildParams()
     {
         $this->data = array_merge(
-            array(
+            [
                 'assets' => $this->assets,
                 'cartsDelays' => $this->module->getSynchronizedCartsTimeSelect(),
-            ),
+            ],
             $this->getParams(),
             $this->settingsNames,
             $this->settings
@@ -118,6 +118,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function setTemplate()
     {
-        $this->template = "settings.tpl";
+        $this->template = 'settings.tpl';
     }
 }

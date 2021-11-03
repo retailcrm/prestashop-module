@@ -55,9 +55,9 @@ class RetailcrmApiClientV5
     /**
      * Client creating
      *
-     * @param string $url    api url
+     * @param string $url api url
      * @param string $apiKey api key
-     * @param string $site   site code
+     * @param string $site site code
      *
      * @throws \InvalidArgumentException
      *
@@ -73,9 +73,9 @@ class RetailcrmApiClientV5
 
         $url = $url . 'api/' . self::VERSION;
 
-        $this->client = new RetailcrmHttpClient($url, array('apiKey' => $apiKey));
+        $this->client = new RetailcrmHttpClient($url, ['apiKey' => $apiKey]);
         $this->apiKey = $apiKey;
-        $this->unversionedClient = new RetailcrmHttpClient($unversionedUrl, array('apiKey' => $apiKey));
+        $this->unversionedClient = new RetailcrmHttpClient($unversionedUrl, ['apiKey' => $apiKey]);
         $this->siteCode = $site;
     }
 
@@ -91,6 +91,7 @@ class RetailcrmApiClientV5
 
     /**
      * @return RetailcrmApiResponse
+     *
      * @throws CurlException
      * @throws InvalidArgumentException
      * @throws InvalidJsonException
@@ -104,8 +105,8 @@ class RetailcrmApiClientV5
      * Returns users list
      *
      * @param array $filter
-     * @param null  $page
-     * @param null  $limit
+     * @param null $page
+     * @param null $limit
      *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
@@ -113,9 +114,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function usersList(array $filter = array(), $page = null, $limit = null)
+    public function usersList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -137,7 +138,7 @@ class RetailcrmApiClientV5
     /**
      * Returns user data
      *
-     * @param integer $id user ID
+     * @param int $id user ID
      *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
@@ -153,14 +154,14 @@ class RetailcrmApiClientV5
     /**
      * Change user status
      *
-     * @param integer $id     user ID
-     * @param string  $status user status
+     * @param int $id user ID
+     * @param string $status user status
      *
      * @return RetailcrmApiResponse
      */
     public function usersStatus($id, $status)
     {
-        $statuses = array("free", "busy", "dinner", "break");
+        $statuses = ['free', 'busy', 'dinner', 'break'];
 
         if (empty($status) || !in_array($status, $statuses)) {
             throw new \InvalidArgumentException(
@@ -171,7 +172,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/users/$id/status",
             RetailcrmHttpClient::METHOD_POST,
-            array('status' => $status)
+            ['status' => $status]
         );
     }
 
@@ -179,14 +180,14 @@ class RetailcrmApiClientV5
      * Get segments list
      *
      * @param array $filter
-     * @param null  $limit
-     * @param null  $page
+     * @param null $limit
+     * @param null $page
      *
      * @return RetailcrmApiResponse
      */
-    public function segmentsList(array $filter = array(), $limit = null, $page = null)
+    public function segmentsList(array $filter = [], $limit = null, $page = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -209,14 +210,14 @@ class RetailcrmApiClientV5
      * Get custom fields list
      *
      * @param array $filter
-     * @param null  $limit
-     * @param null  $page
+     * @param null $limit
+     * @param null $page
      *
      * @return RetailcrmApiResponse
      */
-    public function customFieldsList(array $filter = array(), $limit = null, $page = null)
+    public function customFieldsList(array $filter = [], $limit = null, $page = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -245,17 +246,17 @@ class RetailcrmApiClientV5
      */
     public function customFieldsCreate($entity, $customField)
     {
-        if (!count($customField) ||
-            empty($customField['code']) ||
-            empty($customField['name']) ||
-            empty($customField['type'])
+        if (!count($customField)
+            || empty($customField['code'])
+            || empty($customField['name'])
+            || empty($customField['type'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `customField` must contain a data & fields `code`, `name` & `type` must be set'
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
@@ -264,7 +265,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/custom-fields/$entity/create",
             RetailcrmHttpClient::METHOD_POST,
-            array('customField' => json_encode($customField))
+            ['customField' => json_encode($customField)]
         );
     }
 
@@ -284,7 +285,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
@@ -293,7 +294,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/custom-fields/$entity/edit/{$customField['code']}",
             RetailcrmHttpClient::METHOD_POST,
-            array('customField' => json_encode($customField))
+            ['customField' => json_encode($customField)]
         );
     }
 
@@ -313,7 +314,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || $entity != 'customer' || $entity != 'order') {
+        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
@@ -329,14 +330,14 @@ class RetailcrmApiClientV5
      * Get custom dictionaries list
      *
      * @param array $filter
-     * @param null  $limit
-     * @param null  $page
+     * @param null $limit
+     * @param null $page
      *
      * @return RetailcrmApiResponse
      */
-    public function customDictionariesList(array $filter = array(), $limit = null, $page = null)
+    public function customDictionariesList(array $filter = [], $limit = null, $page = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -364,9 +365,9 @@ class RetailcrmApiClientV5
      */
     public function customDictionariesCreate($customDictionary)
     {
-        if (!count($customDictionary) ||
-            empty($customDictionary['code']) ||
-            empty($customDictionary['elements'])
+        if (!count($customDictionary)
+            || empty($customDictionary['code'])
+            || empty($customDictionary['elements'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `dictionary` must contain a data & fields `code` & `elemets` must be set'
@@ -376,7 +377,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/custom-fields/dictionaries/{$customDictionary['code']}/create",
             RetailcrmHttpClient::METHOD_POST,
-            array('customDictionary' => json_encode($customDictionary))
+            ['customDictionary' => json_encode($customDictionary)]
         );
     }
 
@@ -389,9 +390,9 @@ class RetailcrmApiClientV5
      */
     public function customDictionariesEdit($customDictionary)
     {
-        if (!count($customDictionary) ||
-            empty($customDictionary['code']) ||
-            empty($customDictionary['elements'])
+        if (!count($customDictionary)
+            || empty($customDictionary['code'])
+            || empty($customDictionary['elements'])
         ) {
             throw new \InvalidArgumentException(
                 'Parameter `dictionary` must contain a data & fields `code` & `elemets` must be set'
@@ -401,7 +402,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/custom-fields/dictionaries/{$customDictionary['code']}/edit",
             RetailcrmHttpClient::METHOD_POST,
-            array('customDictionary' => json_encode($customDictionary))
+            ['customDictionary' => json_encode($customDictionary)]
         );
     }
 
@@ -430,8 +431,8 @@ class RetailcrmApiClientV5
      * Returns filtered orders list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -439,9 +440,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersList(array $filter = array(), $page = null, $limit = null)
+    public function ordersList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -463,8 +464,8 @@ class RetailcrmApiClientV5
     /**
      * Create a order
      *
-     * @param array  $order order data
-     * @param string $site  (default: null)
+     * @param array $order order data
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -483,7 +484,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/create',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('order' => json_encode($order)))
+            $this->fillSite($site, ['order' => json_encode($order)])
         );
     }
 
@@ -500,7 +501,7 @@ class RetailcrmApiClientV5
      */
     public function ordersFixExternalIds(array $ids)
     {
-        if (! count($ids)) {
+        if (!count($ids)) {
             throw new \InvalidArgumentException(
                 'Method parameter must contains at least one IDs pair'
             );
@@ -509,15 +510,15 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/fix-external-ids',
             RetailcrmHttpClient::METHOD_POST,
-            array('orders' => json_encode($ids)
-            )
+            ['orders' => json_encode($ids),
+            ]
         );
     }
 
     /**
      * Returns statuses of the orders
      *
-     * @param array $ids         (default: array())
+     * @param array $ids (default: array())
      * @param array $externalIds (default: array())
      *
      * @throws \InvalidArgumentException
@@ -526,9 +527,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersStatuses(array $ids = array(), array $externalIds = array())
+    public function ordersStatuses(array $ids = [], array $externalIds = [])
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($ids)) {
             $parameters['ids'] = $ids;
@@ -547,8 +548,8 @@ class RetailcrmApiClientV5
     /**
      * Upload array of the orders
      *
-     * @param array  $orders array of orders
-     * @param string $site   (default: null)
+     * @param array $orders array of orders
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -567,15 +568,15 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/upload',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('orders' => json_encode($orders)))
+            $this->fillSite($site, ['orders' => json_encode($orders)])
         );
     }
 
     /**
      * Get order by id or externalId
      *
-     * @param string $id   order identificator
-     * @param string $by   (default: 'externalId')
+     * @param string $id order identificator
+     * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
@@ -591,16 +592,16 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/orders/$id",
             RetailcrmHttpClient::METHOD_GET,
-            $this->fillSite($site, array('by' => $by))
+            $this->fillSite($site, ['by' => $by])
         );
     }
 
     /**
      * Edit a order
      *
-     * @param array  $order order data
-     * @param string $by    (default: 'externalId')
-     * @param string $site  (default: null)
+     * @param array $order order data
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -629,22 +630,23 @@ class RetailcrmApiClientV5
             RetailcrmHttpClient::METHOD_POST,
             $this->fillSite(
                 $site,
-                array('order' => json_encode($order), 'by' => $by)
+                ['order' => json_encode($order), 'by' => $by]
             )
         );
     }
 
     /**
      * Get orders history
+     *
      * @param array $filter
      * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersHistory(array $filter = array(), $page = null, $limit = null)
+    public function ordersHistory(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -667,14 +669,14 @@ class RetailcrmApiClientV5
      * Combine orders
      *
      * @param string $technique
-     * @param array  $order
-     * @param array  $resultOrder
+     * @param array $order
+     * @param array $resultOrder
      *
      * @return RetailcrmApiResponse
      */
     public function ordersCombine($order, $resultOrder, $technique = 'ours')
     {
-        $techniques = array('ours', 'summ', 'theirs');
+        $techniques = ['ours', 'summ', 'theirs'];
 
         if (!count($order) || !count($resultOrder)) {
             throw new \InvalidArgumentException(
@@ -691,11 +693,11 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/combine',
             RetailcrmHttpClient::METHOD_POST,
-            array(
+            [
                 'technique' => $technique,
                 'order' => json_encode($order),
-                'resultOrder' => json_encode($resultOrder)
-            )
+                'resultOrder' => json_encode($resultOrder),
+            ]
         );
     }
 
@@ -721,16 +723,16 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/payments/create',
             RetailcrmHttpClient::METHOD_POST,
-            array('payment' => json_encode($payment))
+            ['payment' => json_encode($payment)]
         );
     }
 
     /**
      * Edit an order payment
      *
-     * @param array  $payment order data
-     * @param string $by      by key
-     * @param null   $site    site code
+     * @param array $payment order data
+     * @param string $by by key
+     * @param null $site site code
      *
      * @return RetailcrmApiResponse
      */
@@ -755,7 +757,7 @@ class RetailcrmApiClientV5
             RetailcrmHttpClient::METHOD_POST,
             $this->fillSite(
                 $site,
-                array('payment' => json_encode($payment), 'by' => $by)
+                ['payment' => json_encode($payment), 'by' => $by]
             )
         );
     }
@@ -785,8 +787,8 @@ class RetailcrmApiClientV5
      * Returns filtered customers list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -794,9 +796,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersList(array $filter = array(), $page = null, $limit = null)
+    public function customersList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -818,8 +820,8 @@ class RetailcrmApiClientV5
     /**
      * Create a customer
      *
-     * @param array  $customer customer data
-     * @param string $site     (default: null)
+     * @param array $customer customer data
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -829,7 +831,7 @@ class RetailcrmApiClientV5
      */
     public function customersCreate(array $customer, $site = null)
     {
-        if (! count($customer)) {
+        if (!count($customer)) {
             throw new \InvalidArgumentException(
                 'Parameter `customer` must contains a data'
             );
@@ -838,7 +840,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/customers/create',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('customer' => json_encode($customer)))
+            $this->fillSite($site, ['customer' => json_encode($customer)])
         );
     }
 
@@ -855,7 +857,7 @@ class RetailcrmApiClientV5
      */
     public function customersFixExternalIds(array $ids)
     {
-        if (! count($ids)) {
+        if (!count($ids)) {
             throw new \InvalidArgumentException(
                 'Method parameter must contains at least one IDs pair'
             );
@@ -864,15 +866,15 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/customers/fix-external-ids',
             RetailcrmHttpClient::METHOD_POST,
-            array('customers' => json_encode($ids))
+            ['customers' => json_encode($ids)]
         );
     }
 
     /**
      * Upload array of the customers
      *
-     * @param array  $customers array of customers
-     * @param string $site      (default: null)
+     * @param array $customers array of customers
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -882,7 +884,7 @@ class RetailcrmApiClientV5
      */
     public function customersUpload(array $customers, $site = null)
     {
-        if (! count($customers)) {
+        if (!count($customers)) {
             throw new \InvalidArgumentException(
                 'Parameter `customers` must contains array of the customers'
             );
@@ -891,15 +893,15 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/customers/upload',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('customers' => json_encode($customers)))
+            $this->fillSite($site, ['customers' => json_encode($customers)])
         );
     }
 
     /**
      * Get customer by id or externalId
      *
-     * @param string $id   customer identificator
-     * @param string $by   (default: 'externalId')
+     * @param string $id customer identificator
+     * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
@@ -915,16 +917,16 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/customers/$id",
             RetailcrmHttpClient::METHOD_GET,
-            $this->fillSite($site, array('by' => $by))
+            $this->fillSite($site, ['by' => $by])
         );
     }
 
     /**
      * Edit a customer
      *
-     * @param array  $customer customer data
-     * @param string $by       (default: 'externalId')
-     * @param string $site     (default: null)
+     * @param array $customer customer data
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -953,22 +955,23 @@ class RetailcrmApiClientV5
             RetailcrmHttpClient::METHOD_POST,
             $this->fillSite(
                 $site,
-                array('customer' => json_encode($customer), 'by' => $by)
+                ['customer' => json_encode($customer), 'by' => $by]
             )
         );
     }
 
     /**
      * Get customers history
+     *
      * @param array $filter
      * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function customersHistory(array $filter = array(), $page = null, $limit = null)
+    public function customersHistory(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -997,7 +1000,6 @@ class RetailcrmApiClientV5
      */
     public function customersCombine(array $customers, $resultCustomer)
     {
-
         if (!count($customers) || !count($resultCustomer)) {
             throw new \InvalidArgumentException(
                 'Parameters `customers` & `resultCustomer` must contains a data'
@@ -1007,10 +1009,10 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/customers/combine',
             RetailcrmHttpClient::METHOD_POST,
-            array(
+            [
                 'customers' => json_encode($customers),
-                'resultCustomer' => json_encode($resultCustomer)
-            )
+                'resultCustomer' => json_encode($resultCustomer),
+            ]
         );
     }
 
@@ -1018,8 +1020,8 @@ class RetailcrmApiClientV5
      * Returns filtered customers notes list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1027,9 +1029,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersNotesList(array $filter = array(), $page = null, $limit = null)
+    public function customersNotesList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
@@ -1039,6 +1041,7 @@ class RetailcrmApiClientV5
         if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
+
         return $this->client->makeRequest(
             '/customers/notes',
             RetailcrmHttpClient::METHOD_GET,
@@ -1050,7 +1053,7 @@ class RetailcrmApiClientV5
      * Create customer note
      *
      * @param array $note (default: array())
-     * @param string $site     (default: null)
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1065,17 +1068,18 @@ class RetailcrmApiClientV5
                 'Customer identifier must be set'
             );
         }
+
         return $this->client->makeRequest(
             '/customers/notes/create',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('note' => json_encode($note)))
+            $this->fillSite($site, ['note' => json_encode($note)])
         );
     }
 
     /**
      * Delete customer note
      *
-     * @param integer $id
+     * @param int $id
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1090,6 +1094,7 @@ class RetailcrmApiClientV5
                 'Note id must be set'
             );
         }
+
         return $this->client->makeRequest(
             "/customers/notes/$id/delete",
             RetailcrmHttpClient::METHOD_POST
@@ -1100,8 +1105,8 @@ class RetailcrmApiClientV5
      * Returns filtered corporate customers list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1109,9 +1114,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateList(array $filter = array(), $page = null, $limit = null)
+    public function customersCorporateList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (isset($filter['contactIds'])) {
             $parameters['contactIds'] = $filter['contactIds'];
@@ -1130,15 +1135,16 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate',
-            "GET",
+            'GET',
             $parameters
         );
     }
+
     /**
      * Create a corporate customer
      *
-     * @param array  $customerCorporate corporate customer data
-     * @param string $site     (default: null)
+     * @param array $customerCorporate corporate customer data
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1148,7 +1154,7 @@ class RetailcrmApiClientV5
      */
     public function customersCorporateCreate(array $customerCorporate, $site = null)
     {
-        if (! count($customerCorporate)) {
+        if (!count($customerCorporate)) {
             throw new \InvalidArgumentException(
                 'Parameter `customerCorporate` must contains a data'
             );
@@ -1156,10 +1162,11 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/create',
-            "POST",
-            $this->fillSite($site, array('customerCorporate' => json_encode($customerCorporate)))
+            'POST',
+            $this->fillSite($site, ['customerCorporate' => json_encode($customerCorporate)])
         );
     }
+
     /**
      * Save corporate customer IDs' (id and externalId) association in the CRM
      *
@@ -1173,7 +1180,7 @@ class RetailcrmApiClientV5
      */
     public function customersCorporateFixExternalIds(array $ids)
     {
-        if (! count($ids)) {
+        if (!count($ids)) {
             throw new \InvalidArgumentException(
                 'Method parameter must contains at least one IDs pair'
             );
@@ -1181,21 +1188,23 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/fix-external-ids',
-            "POST",
-            array('customersCorporate' => json_encode($ids))
+            'POST',
+            ['customersCorporate' => json_encode($ids)]
         );
     }
+
     /**
      * Get corporate customers history
+     *
      * @param array $filter
      * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateHistory(array $filter = array(), $page = null, $limit = null)
+    public function customersCorporateHistory(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -1210,16 +1219,17 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/history',
-            "GET",
+            'GET',
             $parameters
         );
     }
+
     /**
      * Returns filtered corporate customers notes list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1227,9 +1237,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateNotesList(array $filter = array(), $page = null, $limit = null)
+    public function customersCorporateNotesList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
@@ -1242,15 +1252,16 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/notes',
-            "GET",
+            'GET',
             $parameters
         );
     }
+
     /**
      * Create corporate customer note
      *
      * @param array $note (default: array())
-     * @param string $site     (default: null)
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1268,14 +1279,15 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/notes/create',
-            "POST",
-            $this->fillSite($site, array('note' => json_encode($note)))
+            'POST',
+            $this->fillSite($site, ['note' => json_encode($note)])
         );
     }
+
     /**
      * Delete corporate customer note
      *
-     * @param integer $id
+     * @param int $id
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1293,19 +1305,20 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/notes/$id/delete",
-            "POST"
+            'POST'
         );
     }
+
     /**
      * Upload array of the corporate customers
      *
-     * @param array  $customersCorporate array of corporate customers
-     * @param string $site               (default: null)
+     * @param array $customersCorporate array of corporate customers
+     * @param string $site (default: null)
      *
      * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
      * @throws \InvalidArgumentException
      */
     public function customersCorporateUpload(array $customersCorporate, $site = null)
@@ -1318,15 +1331,16 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             '/customers-corporate/upload',
-            "POST",
-            $this->fillSite($site, array('customersCorporate' => json_encode($customersCorporate)))
+            'POST',
+            $this->fillSite($site, ['customersCorporate' => json_encode($customersCorporate)])
         );
     }
+
     /**
      * Get corporate customer by id or externalId
      *
-     * @param string $id   corporate customer identifier
-     * @param string $by   (default: 'externalId')
+     * @param string $id corporate customer identifier
+     * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
@@ -1341,19 +1355,20 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id",
-            "GET",
-            $this->fillSite($site, array('by' => $by))
+            'GET',
+            $this->fillSite($site, ['by' => $by])
         );
     }
+
     /**
      * Get corporate customer addresses by id or externalId
      *
-     * @param string $id     corporate customer identifier
-     * @param array  $filter (default: array())
-     * @param int    $page   (default: null)
-     * @param int    $limit  (default: null)
-     * @param string $by     (default: 'externalId')
-     * @param string $site   (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $filter (default: array())
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1363,14 +1378,14 @@ class RetailcrmApiClientV5
      */
     public function customersCorporateAddresses(
         $id,
-        array $filter = array(),
+        array $filter = [],
         $page = null,
         $limit = null,
         $by = 'externalId',
         $site = null
     ) {
         $this->checkIdParameter($by);
-        $parameters = array('by' => $by);
+        $parameters = ['by' => $by];
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
@@ -1383,7 +1398,7 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/addresses",
-            "GET",
+            'GET',
             $this->fillSite($site, $parameters)
         );
     }
@@ -1391,10 +1406,10 @@ class RetailcrmApiClientV5
     /**
      * Create corporate customer address
      *
-     * @param string $id       corporate customer identifier
-     * @param array  $address  (default: array())
-     * @param string $by       (default: 'externalId')
-     * @param string $site     (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $address (default: array())
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1402,13 +1417,13 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateAddressesCreate($id, array $address = array(), $by = 'externalId', $site = null)
+    public function customersCorporateAddressesCreate($id, array $address = [], $by = 'externalId', $site = null)
     {
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/addresses/create",
-            "POST",
-            $this->fillSite($site, array('address' => json_encode($address), 'by' => $by))
+            'POST',
+            $this->fillSite($site, ['address' => json_encode($address), 'by' => $by])
         );
     }
 
@@ -1416,11 +1431,11 @@ class RetailcrmApiClientV5
      * Edit corporate customer address
      *
      * @param string $customerId corporate customer identifier
-     * @param string $addressId  corporate customer identifier
-     * @param array  $address    (default: array())
+     * @param string $addressId corporate customer identifier
+     * @param array $address (default: array())
      * @param string $customerBy (default: 'externalId')
-     * @param string $addressBy  (default: 'externalId')
-     * @param string $site       (default: null)
+     * @param string $addressBy (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1431,13 +1446,13 @@ class RetailcrmApiClientV5
     public function customersCorporateAddressesEdit(
         $customerId,
         $addressId,
-        array $address = array(),
+        array $address = [],
         $customerBy = 'externalId',
         $addressBy = 'externalId',
         $site = null
     ) {
         $addressFiltered = array_filter($address);
-        if ((count(array_keys($addressFiltered)) <= 1)
+        if ((1 >= count(array_keys($addressFiltered)))
             && (!isset($addressFiltered['text'])
                 || (isset($addressFiltered['text']) && empty($addressFiltered['text']))
             )
@@ -1449,23 +1464,24 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$customerId/addresses/$addressId/edit",
-            "POST",
-            $this->fillSite($site, array(
+            'POST',
+            $this->fillSite($site, [
                 'address' => json_encode($address),
                 'by' => $customerBy,
-                'entityBy' => $addressBy
-            ))
+                'entityBy' => $addressBy,
+            ])
         );
     }
+
     /**
      * Get corporate customer companies by id or externalId
      *
-     * @param string $id     corporate customer identifier
-     * @param array  $filter (default: array())
-     * @param int    $page   (default: null)
-     * @param int    $limit  (default: null)
-     * @param string $by     (default: 'externalId')
-     * @param string $site   (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $filter (default: array())
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1475,14 +1491,14 @@ class RetailcrmApiClientV5
      */
     public function customersCorporateCompanies(
         $id,
-        array $filter = array(),
+        array $filter = [],
         $page = null,
         $limit = null,
         $by = 'externalId',
         $site = null
     ) {
         $this->checkIdParameter($by);
-        $parameters = array('by' => $by);
+        $parameters = ['by' => $by];
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
@@ -1495,17 +1511,18 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/companies",
-            "GET",
+            'GET',
             $this->fillSite($site, $parameters)
         );
     }
+
     /**
      * Create corporate customer company
      *
-     * @param string $id       corporate customer identifier
-     * @param array  $company  (default: array())
-     * @param string $by       (default: 'externalId')
-     * @param string $site     (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $company (default: array())
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1513,35 +1530,36 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateCompaniesCreate($id, array $company = array(), $by = 'externalId', $site = null)
+    public function customersCorporateCompaniesCreate($id, array $company = [], $by = 'externalId', $site = null)
     {
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/companies/create",
-            "POST",
-            $this->fillSite($site, array('company' => json_encode($company), 'by' => $by))
+            'POST',
+            $this->fillSite($site, ['company' => json_encode($company), 'by' => $by])
         );
     }
+
     /**
      * Edit corporate customer company
      *
      * @param string $customerId corporate customer identifier
-     * @param string $companyId  corporate customer identifier
-     * @param array  $company    (default: array())
+     * @param string $companyId corporate customer identifier
+     * @param array $company (default: array())
      * @param string $customerBy (default: 'externalId')
-     * @param string $companyBy  (default: 'externalId')
-     * @param string $site       (default: null)
+     * @param string $companyBy (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
      */
     public function customersCorporateCompaniesEdit(
         $customerId,
         $companyId,
-        array $company = array(),
+        array $company = [],
         $customerBy = 'externalId',
         $companyBy = 'externalId',
         $site = null
@@ -1549,23 +1567,24 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$customerId/companies/$companyId/edit",
-            "POST",
-            $this->fillSite($site, array(
+            'POST',
+            $this->fillSite($site, [
                 'company' => json_encode($company),
                 'by' => $customerBy,
-                'entityBy' => $companyBy
-            ))
+                'entityBy' => $companyBy,
+            ])
         );
     }
+
     /**
      * Get corporate customer contacts by id or externalId
      *
-     * @param string $id     corporate customer identifier
-     * @param array  $filter (default: array())
-     * @param int    $page   (default: null)
-     * @param int    $limit  (default: null)
-     * @param string $by     (default: 'externalId')
-     * @param string $site   (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $filter (default: array())
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1575,14 +1594,14 @@ class RetailcrmApiClientV5
      */
     public function customersCorporateContacts(
         $id,
-        array $filter = array(),
+        array $filter = [],
         $page = null,
         $limit = null,
         $by = 'externalId',
         $site = null
     ) {
         $this->checkIdParameter($by);
-        $parameters = array('by' => $by);
+        $parameters = ['by' => $by];
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
@@ -1595,53 +1614,55 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/contacts",
-            "GET",
+            'GET',
             $this->fillSite($site, $parameters)
         );
     }
+
     /**
      * Create corporate customer contact
      *
-     * @param string $id      corporate customer identifier
-     * @param array  $contact (default: array())
-     * @param string $by      (default: 'externalId')
-     * @param string $site    (default: null)
+     * @param string $id corporate customer identifier
+     * @param array $contact (default: array())
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
      * @throws \InvalidArgumentException
      */
-    public function customersCorporateContactsCreate($id, array $contact = array(), $by = 'externalId', $site = null)
+    public function customersCorporateContactsCreate($id, array $contact = [], $by = 'externalId', $site = null)
     {
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$id/contacts/create",
-            "POST",
-            $this->fillSite($site, array('contact' => json_encode($contact), 'by' => $by))
+            'POST',
+            $this->fillSite($site, ['contact' => json_encode($contact), 'by' => $by])
         );
     }
+
     /**
      * Edit corporate customer contact
      *
      * @param string $customerId corporate customer identifier
-     * @param string $contactId  corporate customer identifier
-     * @param array  $contact    (default: array())
+     * @param string $contactId corporate customer identifier
+     * @param array $contact (default: array())
      * @param string $customerBy (default: 'externalId')
-     * @param string $contactBy  (default: 'externalId')
-     * @param string $site       (default: null)
+     * @param string $contactBy (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
      */
     public function customersCorporateContactsEdit(
         $customerId,
         $contactId,
-        array $contact = array(),
+        array $contact = [],
         $customerBy = 'externalId',
         $contactBy = 'externalId',
         $site = null
@@ -1649,20 +1670,21 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             "/customers-corporate/$customerId/contacts/$contactId/edit",
-            "POST",
-            $this->fillSite($site, array(
+            'POST',
+            $this->fillSite($site, [
                 'contact' => json_encode($contact),
                 'by' => $customerBy,
-                'entityBy' => $contactBy
-            ))
+                'entityBy' => $contactBy,
+            ])
         );
     }
+
     /**
      * Edit a corporate customer
      *
-     * @param array  $customerCorporate corporate customer data
-     * @param string $by       (default: 'externalId')
-     * @param string $site     (default: null)
+     * @param array $customerCorporate corporate customer data
+     * @param string $by (default: 'externalId')
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1686,10 +1708,10 @@ class RetailcrmApiClientV5
         /* @noinspection PhpUndefinedMethodInspection */
         return $this->client->makeRequest(
             sprintf('/customers-corporate/%s/edit', $customerCorporate[$by]),
-            "POST",
+            'POST',
             $this->fillSite(
                 $site,
-                array('customerCorporate' => json_encode($customerCorporate), 'by' => $by)
+                ['customerCorporate' => json_encode($customerCorporate), 'by' => $by]
             )
         );
     }
@@ -1698,8 +1720,8 @@ class RetailcrmApiClientV5
      * Get orders assembly list
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1707,9 +1729,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersPacksList(array $filter = array(), $page = null, $limit = null)
+    public function ordersPacksList(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -1731,7 +1753,7 @@ class RetailcrmApiClientV5
     /**
      * Create orders assembly
      *
-     * @param array  $pack pack data
+     * @param array $pack pack data
      * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
@@ -1751,7 +1773,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/orders/packs/create',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('pack' => json_encode($pack)))
+            $this->fillSite($site, ['pack' => json_encode($pack)])
         );
     }
 
@@ -1759,8 +1781,8 @@ class RetailcrmApiClientV5
      * Get orders assembly history
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1768,9 +1790,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersPacksHistory(array $filter = array(), $page = null, $limit = null)
+    public function ordersPacksHistory(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -1838,7 +1860,7 @@ class RetailcrmApiClientV5
     /**
      * Edit orders assembly
      *
-     * @param array  $pack pack data
+     * @param array $pack pack data
      * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
@@ -1858,7 +1880,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/orders/packs/%s/edit', $pack['id']),
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('pack' => json_encode($pack)))
+            $this->fillSite($site, ['pack' => json_encode($pack)])
         );
     }
 
@@ -1866,14 +1888,14 @@ class RetailcrmApiClientV5
      * Get tasks list
      *
      * @param array $filter
-     * @param null  $limit
-     * @param null  $page
+     * @param null $limit
+     * @param null $page
      *
      * @return RetailcrmApiResponse
      */
-    public function tasksList(array $filter = array(), $limit = null, $page = null)
+    public function tasksList(array $filter = [], $limit = null, $page = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -1896,10 +1918,9 @@ class RetailcrmApiClientV5
      * Create task
      *
      * @param array $task
-     * @param null  $site
+     * @param null $site
      *
      * @return RetailcrmApiResponse
-     *
      */
     public function tasksCreate($task, $site = null)
     {
@@ -1910,11 +1931,11 @@ class RetailcrmApiClientV5
         }
 
         return $this->client->makeRequest(
-            "/tasks/create",
+            '/tasks/create',
             RetailcrmHttpClient::METHOD_POST,
             $this->fillSite(
                 $site,
-                array('task' => json_encode($task))
+                ['task' => json_encode($task)]
             )
         );
     }
@@ -1923,10 +1944,9 @@ class RetailcrmApiClientV5
      * Edit task
      *
      * @param array $task
-     * @param null  $site
+     * @param null $site
      *
      * @return RetailcrmApiResponse
-     *
      */
     public function tasksEdit($task, $site = null)
     {
@@ -1941,7 +1961,7 @@ class RetailcrmApiClientV5
             RetailcrmHttpClient::METHOD_POST,
             $this->fillSite(
                 $site,
-                array('task' => json_encode($task))
+                ['task' => json_encode($task)]
             )
         );
     }
@@ -1971,8 +1991,8 @@ class RetailcrmApiClientV5
      * Get products groups
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -1980,9 +2000,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function storeProductsGroups(array $filter = array(), $page = null, $limit = null)
+    public function storeProductsGroups(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -2005,8 +2025,8 @@ class RetailcrmApiClientV5
      * Get purchase prices & stock balance
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -2014,9 +2034,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function storeInventories(array $filter = array(), $page = null, $limit = null)
+    public function storeInventories(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -2041,6 +2061,7 @@ class RetailcrmApiClientV5
      * @param string $code get settings code
      *
      * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
@@ -2088,8 +2109,8 @@ class RetailcrmApiClientV5
     /**
      * Upload store inventories
      *
-     * @param array  $offers offers data
-     * @param string $site   (default: null)
+     * @param array $offers offers data
+     * @param string $site (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -2108,7 +2129,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/store/inventories/upload',
             RetailcrmHttpClient::METHOD_POST,
-            $this->fillSite($site, array('offers' => json_encode($offers)))
+            $this->fillSite($site, ['offers' => json_encode($offers)])
         );
     }
 
@@ -2116,8 +2137,8 @@ class RetailcrmApiClientV5
      * Get products
      *
      * @param array $filter (default: array())
-     * @param int   $page   (default: null)
-     * @param int   $limit  (default: null)
+     * @param int $page (default: null)
+     * @param int $limit (default: null)
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -2125,9 +2146,9 @@ class RetailcrmApiClientV5
      *
      * @return RetailcrmApiResponse
      */
-    public function storeProducts(array $filter = array(), $page = null, $limit = null)
+    public function storeProducts(array $filter = [], $page = null, $limit = null)
     {
-        $parameters = array();
+        $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
@@ -2191,7 +2212,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/delivery/generic/setting/%s/edit', $configuration['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('configuration' => json_encode($configuration))
+            ['configuration' => json_encode($configuration)]
         );
     }
 
@@ -2199,7 +2220,7 @@ class RetailcrmApiClientV5
      * Delivery tracking update
      *
      * @param string $code
-     * @param array  $statusUpdate
+     * @param array $statusUpdate
      *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
@@ -2282,7 +2303,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/delivery-services/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('deliveryService' => json_encode($data))
+            ['deliveryService' => json_encode($data)]
         );
     }
 
@@ -2325,7 +2346,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/delivery-types/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('deliveryType' => json_encode($data))
+            ['deliveryType' => json_encode($data)]
         );
     }
 
@@ -2368,7 +2389,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/order-methods/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('orderMethod' => json_encode($data))
+            ['orderMethod' => json_encode($data)]
         );
     }
 
@@ -2411,7 +2432,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/order-types/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('orderType' => json_encode($data))
+            ['orderType' => json_encode($data)]
         );
     }
 
@@ -2454,7 +2475,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/payment-statuses/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('paymentStatus' => json_encode($data))
+            ['paymentStatus' => json_encode($data)]
         );
     }
 
@@ -2497,7 +2518,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/payment-types/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('paymentType' => json_encode($data))
+            ['paymentType' => json_encode($data)]
         );
     }
 
@@ -2540,7 +2561,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/product-statuses/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('productStatus' => json_encode($data))
+            ['productStatus' => json_encode($data)]
         );
     }
 
@@ -2583,7 +2604,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/sites/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('site' => json_encode($data))
+            ['site' => json_encode($data)]
         );
     }
 
@@ -2643,7 +2664,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/statuses/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('status' => json_encode($data))
+            ['status' => json_encode($data)]
         );
     }
 
@@ -2692,7 +2713,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             sprintf('/reference/stores/%s/edit', $data['code']),
             RetailcrmHttpClient::METHOD_POST,
-            array('store' => json_encode($data))
+            ['store' => json_encode($data)]
         );
     }
 
@@ -2722,20 +2743,19 @@ class RetailcrmApiClientV5
     /**
      * Edit telephony settings
      *
-     * @param string  $code        symbolic code
-     * @param string  $clientId    client id
-     * @param boolean $active      telephony activity
-     * @param mixed   $name        service name
-     * @param mixed   $makeCallUrl service init url
-     * @param mixed   $image       service logo url(svg file)
-     *
-     * @param array   $additionalCodes
-     * @param array   $externalPhones
-     * @param bool    $allowEdit
-     * @param bool    $inputEventSupported
-     * @param bool    $outputEventSupported
-     * @param bool    $hangupEventSupported
-     * @param bool    $changeUserStatusUrl
+     * @param string $code symbolic code
+     * @param string $clientId client id
+     * @param bool $active telephony activity
+     * @param mixed $name service name
+     * @param mixed $makeCallUrl service init url
+     * @param mixed $image service logo url(svg file)
+     * @param array $additionalCodes
+     * @param array $externalPhones
+     * @param bool $allowEdit
+     * @param bool $inputEventSupported
+     * @param bool $outputEventSupported
+     * @param bool $hangupEventSupported
+     * @param bool $changeUserStatusUrl
      *
      * @return RetailcrmApiResponse
      */
@@ -2746,15 +2766,14 @@ class RetailcrmApiClientV5
         $name = false,
         $makeCallUrl = false,
         $image = false,
-        $additionalCodes = array(),
-        $externalPhones = array(),
+        $additionalCodes = [],
+        $externalPhones = [],
         $allowEdit = false,
         $inputEventSupported = false,
         $outputEventSupported = false,
         $hangupEventSupported = false,
         $changeUserStatusUrl = false
-    )
-    {
+    ) {
         if (!isset($code)) {
             throw new \InvalidArgumentException('Code must be set');
         }
@@ -2820,7 +2839,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/telephony/setting/$code/edit",
             RetailcrmHttpClient::METHOD_POST,
-            array('configuration' => json_encode($parameters))
+            ['configuration' => json_encode($parameters)]
         );
     }
 
@@ -2828,16 +2847,16 @@ class RetailcrmApiClientV5
      * Call event
      *
      * @param string $phone phone number
-     * @param string $type  call type
-     * @param array  $codes
+     * @param string $type call type
+     * @param array $codes
      * @param string $hangupStatus
      * @param string $externalPhone
-     * @param array  $webAnalyticsData
+     * @param array $webAnalyticsData
      *
      * @return RetailcrmApiResponse
+     *
      * @internal param string $code additional phone code
      * @internal param string $status call status
-     *
      */
     public function telephonyCallEvent(
         $phone,
@@ -2845,9 +2864,8 @@ class RetailcrmApiClientV5
         $codes,
         $hangupStatus,
         $externalPhone = null,
-        $webAnalyticsData = array()
-    )
-    {
+        $webAnalyticsData = []
+    ) {
         if (!isset($phone)) {
             throw new \InvalidArgumentException('Phone number must be set');
         }
@@ -2867,11 +2885,10 @@ class RetailcrmApiClientV5
         $parameters['callExternalId'] = $externalPhone;
         $parameters['webAnalyticsData'] = $webAnalyticsData;
 
-
         return $this->client->makeRequest(
             '/telephony/call/event',
             RetailcrmHttpClient::METHOD_POST,
-            array('event' => json_encode($parameters))
+            ['event' => json_encode($parameters)]
         );
     }
 
@@ -2897,15 +2914,15 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             '/telephony/calls/upload',
             RetailcrmHttpClient::METHOD_POST,
-            array('calls' => json_encode($calls))
+            ['calls' => json_encode($calls)]
         );
     }
 
     /**
      * Get call manager
      *
-     * @param string $phone   phone number
-     * @param bool   $details detailed information
+     * @param string $phone phone number
+     * @param bool $details detailed information
      *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
@@ -2970,7 +2987,7 @@ class RetailcrmApiClientV5
         return $this->client->makeRequest(
             "/integration-modules/$code/edit",
             RetailcrmHttpClient::METHOD_POST,
-            array('integrationModule' => json_encode($configuration))
+            ['integrationModule' => json_encode($configuration)]
         );
     }
 
@@ -2985,10 +3002,10 @@ class RetailcrmApiClientV5
      */
     protected function checkIdParameter($by)
     {
-        $allowedForBy = array(
+        $allowedForBy = [
             'externalId',
-            'id'
-        );
+            'id',
+        ];
 
         if (!in_array($by, $allowedForBy, false)) {
             throw new \InvalidArgumentException(
@@ -3006,8 +3023,8 @@ class RetailcrmApiClientV5
     /**
      * Fill params by site value
      *
-     * @param string $site   site code
-     * @param array  $params input parameters
+     * @param string $site site code
+     * @param array $params input parameters
      *
      * @return array
      */

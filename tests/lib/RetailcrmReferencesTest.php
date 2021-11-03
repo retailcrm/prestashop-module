@@ -4,7 +4,7 @@ class RetailcrmReferencesTest extends RetailcrmTestCase
 {
     private $retailcrmReferences;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 

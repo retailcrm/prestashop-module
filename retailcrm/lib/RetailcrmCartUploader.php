@@ -88,8 +88,8 @@ class RetailcrmCartUploader
      */
     public static function setSyncDelay($time)
     {
-        if (is_numeric($time) && $time > 0) {
-            static::$syncDelay = (int)$time;
+        if (is_numeric($time) && 0 < $time) {
+            static::$syncDelay = (int) $time;
         } else {
             static::$syncDelay = 0;
         }
@@ -101,12 +101,12 @@ class RetailcrmCartUploader
     public static function init()
     {
         static::$api = null;
-        static::$cartsIds = array();
-        static::$paymentTypes = array();
+        static::$cartsIds = [];
+        static::$paymentTypes = [];
         static::$syncDelay = 0;
         static::$allowedUpdateInterval = 86400;
         static::$syncStatus = '';
-        static::$now = new \DateTime();
+        static::$now = new \DateTimeImmutable();
         static::$context = Context::getContext();
     }
 
@@ -134,7 +134,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $cartLastUpdateDate = \DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
+                $cartLastUpdateDate = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
             }
 
             if (!static::isAbandonedCartShouldBeUpdated(
@@ -160,7 +160,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersCreate($order) !== false) {
+                if (false !== static::$api->ordersCreate($order)) {
                     $cart->date_upd = date('Y-m-d H:i:s');
                     $cart->save();
                 }
@@ -175,7 +175,7 @@ class RetailcrmCartUploader
                     continue;
                 }
 
-                if (static::$api->ordersEdit($order) !== false) {
+                if (false !== static::$api->ordersEdit($order)) {
                     static::registerAbandonedCartSync($cart->id);
                 }
             }
@@ -219,15 +219,15 @@ class RetailcrmCartUploader
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
-            if ($currentCartTotal == 0) {
+            if (0 == $currentCartTotal) {
                 $shouldBeUploaded = false;
             }
         } catch (\Exception $exception) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
-                sprintf("Failure while trying to get cart total (cart id=%d)", $cart->id)
+                sprintf('Failure while trying to get cart total (cart id=%d)', $cart->id)
             );
-            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
@@ -236,15 +236,15 @@ class RetailcrmCartUploader
 
         try {
             // Don't upload empty cartsIds.
-            if (count($cart->getProducts(true)) == 0 || !$shouldBeUploaded) {
+            if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
                 return true;
             }
         } catch (\Exception $exception) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
-                sprintf("Failure while trying to get cart products (cart id=%d)", $cart->id)
+                sprintf('Failure while trying to get cart products (cart id=%d)', $cart->id)
             );
-            RetailcrmLogger::writeCaller(__METHOD__, "Error message and stacktrace will be printed below");
+            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
@@ -264,7 +264,7 @@ class RetailcrmCartUploader
      */
     private static function buildCartOrder($cart, $cartExternalId)
     {
-        $order = array();
+        $order = [];
 
         try {
             $order = RetailcrmOrderBuilder::buildCrmOrderFromCart(
@@ -318,7 +318,7 @@ class RetailcrmCartUploader
             return null;
         }
 
-        return \DateTime::createFromFormat('Y-m-d H:i:s', $when);
+        return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
     }
 
     /**
@@ -326,12 +326,12 @@ class RetailcrmCartUploader
      */
     private static function loadAbandonedCartsIds()
     {
-        $sql = 'SELECT c.id_cart, c.date_upd 
+        $sql = 'SELECT c.id_cart, c.date_upd
                 FROM ' . _DB_PREFIX_ . 'cart AS c
                 LEFT JOIN ' . _DB_PREFIX_ . 'customer cus
                   ON
                     c.id_customer = cus.id_customer
-                WHERE c.id_customer != 0 
+                WHERE c.id_customer != 0
                   AND cus.is_guest = 0
                 ' . Shop::addSqlRestriction(false, 'c') . '
                   AND TIME_TO_SEC(TIMEDIFF(\'' . pSQL(static::$now->format('Y-m-d H:i:s'))
@@ -359,7 +359,7 @@ class RetailcrmCartUploader
         ob_clean();
         ob_end_flush();
 
-        if (is_null($lastUploadDate) || is_null($lastUpdatedDate)) {
+        if (null === $lastUploadDate || null === $lastUpdatedDate) {
             return true;
         }
 
@@ -374,8 +374,8 @@ class RetailcrmCartUploader
     private static function validateState()
     {
         if (empty(static::$syncStatus)
-            || (count(static::$paymentTypes) < 1)
-            || is_null(static::$now)
+            || (1 > count(static::$paymentTypes))
+            || null === static::$now
             || !static::$api
         ) {
             return false;

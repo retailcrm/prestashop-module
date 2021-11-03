@@ -57,14 +57,14 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
                 break;
         }
 
-        $this->data = array(
+        $this->data = [
             'assets' => $this->assets,
             'apiUrl' => RetailCRM::API_URL,
             'apiKey' => RetailCRM::API_KEY,
             'promoVideoUrl' => $promoVideoUrl,
             'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail
-        );
+            'supportEmail' => $supportEmail,
+        ];
     }
 
     /**
@@ -72,6 +72,6 @@ class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
      */
     protected function setTemplate()
     {
-        $this->template = "index.tpl";
+        $this->template = 'index.tpl';
     }
 }

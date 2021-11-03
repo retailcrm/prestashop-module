@@ -35,14 +35,13 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 if (function_exists('date_default_timezone_set') && function_exists('date_default_timezone_get')) {
     date_default_timezone_set(@date_default_timezone_get());
 }
 
-require_once(dirname(__FILE__) . '/../../../config/config.inc.php');
-require_once(dirname(__FILE__) . '/../../../init.php');
-require_once(dirname(__FILE__) . '/../bootstrap.php');
+require_once __DIR__ . '/../../../config/config.inc.php';
+require_once __DIR__ . '/../../../init.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -53,7 +52,8 @@ if (!defined('_PS_VERSION_')) {
  *
  * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
  * @license   GPL
- * @link      https://retailcrm.ru
+ *
+ * @see      https://retailcrm.ru
  */
 class RetailcrmJobManager
 {
@@ -82,14 +82,14 @@ class RetailcrmJobManager
      * DateInterval must be positive. Pass `null` instead of DateInterval to remove
      * any delay - in other words, jobs without interval will be executed every time.
      *
-     * @param array $jobs             Jobs list
+     * @param array $jobs Jobs list
      *
      * @throws \Exception
      */
     public static function startJobs(
-        $jobs = array()
+        $jobs = []
     ) {
-        RetailcrmLogger::writeDebug(__METHOD__,'starting JobManager');
+        RetailcrmLogger::writeDebug(__METHOD__, 'starting JobManager');
         static::execJobs($jobs);
     }
 
@@ -100,11 +100,11 @@ class RetailcrmJobManager
      *
      * @throws \Exception
      */
-    public static function execJobs($jobs = array())
+    public static function execJobs($jobs = [])
     {
-        $current = date_create('now');
-        $lastRuns = array();
-        $lastRunsDetails = array();
+        $current = date_create_immutable('now');
+        $lastRuns = [];
+        $lastRunsDetails = [];
 
         try {
             $lastRuns = static::getLastRuns();
@@ -140,13 +140,13 @@ class RetailcrmJobManager
         }
 
         uasort($jobs, function ($diff1, $diff2) {
-            $date1 = new \DateTime();
-            $date2 = new \DateTime();
+            $date1 = new \DateTimeImmutable();
+            $date2 = new \DateTimeImmutable();
 
-            if (!is_null($diff1)) {
+            if (null !== $diff1) {
                 $date1->add($diff1);
             }
-            if (!is_null($diff2)) {
+            if (null !== $diff2) {
                 $date2->add($diff2);
             }
 
@@ -159,21 +159,21 @@ class RetailcrmJobManager
 
         foreach ($jobs as $job => $diff) {
             try {
-                if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTime) {
+                if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTimeImmutable) {
                     $shouldRunAt = clone $lastRuns[$job];
 
                     if ($diff instanceof DateInterval) {
                         $shouldRunAt->add($diff);
                     }
                 } else {
-                    $shouldRunAt = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
+                    $shouldRunAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
                 }
 
                 RetailcrmLogger::writeDebug(__METHOD__, sprintf(
                     'Checking %s, interval %s, shouldRunAt: %s: %s',
                     $job,
-                    is_null($diff) ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
-                    isset($shouldRunAt) && $shouldRunAt instanceof \DateTime
+                    null === $diff ? 'NULL' : $diff->format('%R%Y-%m-%d %H:%i:%s:%F'),
+                    isset($shouldRunAt) && $shouldRunAt instanceof \DateTimeImmutable
                         ? $shouldRunAt->format(DATE_RFC3339)
                         : 'undefined',
                     (isset($shouldRunAt) && $shouldRunAt <= $current) ? 'true' : 'false'
@@ -186,7 +186,7 @@ class RetailcrmJobManager
                         __METHOD__,
                         sprintf('Executed job %s, result: %s', $job, $result ? 'true' : 'false')
                     );
-                    $lastRuns[$job] = new \DateTime('now');
+                    $lastRuns[$job] = new \DateTimeImmutable('now');
 
                     break;
                 }
@@ -199,7 +199,7 @@ class RetailcrmJobManager
 
                 $lastRunsDetails[$job] = [
                     'success' => false,
-                    'lastRun' => new \DateTime('now'),
+                    'lastRun' => new \DateTimeImmutable('now'),
                     'error' => [
                         'message' => $exception->getMessage(),
                         'trace' => $exception->getTraceAsString(),
@@ -220,7 +220,7 @@ class RetailcrmJobManager
         if (isset($result) && $result) {
             $lastRunsDetails[$job] = [
                 'success' => true,
-                'lastRun' =>  new \DateTime('now'),
+                'lastRun' => new \DateTimeImmutable('now'),
                 'error' => null,
             ];
 
@@ -243,12 +243,13 @@ class RetailcrmJobManager
         static::unlock();
     }
 
-
     /**
      * Run job in the force mode so it will run even if there's another job running
      *
      * @param $jobName
+     *
      * @return bool
+     *
      * @throws Exception
      */
     public static function execManualJob($jobName)
@@ -259,7 +260,7 @@ class RetailcrmJobManager
             if ($result) {
                 static::updateLastRunDetail($jobName, [
                     'success' => true,
-                    'lastRun' =>  new \DateTime('now'),
+                    'lastRun' => new \DateTimeImmutable('now'),
                     'error' => null,
                 ]);
             }
@@ -275,7 +276,7 @@ class RetailcrmJobManager
             RetailcrmLogger::printException($exception, '', false);
             self::updateLastRunDetail($jobName, [
                 'success' => false,
-                'lastRun' => new \DateTime('now'),
+                'lastRun' => new \DateTimeImmutable('now'),
                 'error' => [
                     'message' => $exception->getMessage(),
                     'trace' => $exception->getTraceAsString(),
@@ -286,32 +287,32 @@ class RetailcrmJobManager
         }
     }
 
-
     /**
      * Extracts jobs last runs from db
      *
      * @return array<string, \DateTime>
+     *
      * @throws \Exception
      */
     private static function getLastRuns()
     {
-        $lastRuns = json_decode((string)Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
+        $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
 
-        if (json_last_error() != JSON_ERROR_NONE) {
-            $lastRuns = array();
+        if (JSON_ERROR_NONE != json_last_error()) {
+            $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $ran) {
-                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $ran);
+                $lastRan = DateTimeImmutable::createFromFormat(DATE_RFC3339, $ran);
 
-                if ($lastRan instanceof DateTime) {
+                if ($lastRan instanceof DateTimeImmutable) {
                     $lastRuns[$job] = $lastRan;
                 } else {
-                    $lastRuns[$job] = new DateTime();
+                    $lastRuns[$job] = new DateTimeImmutable();
                 }
             }
         }
 
-        return (array)$lastRuns;
+        return (array) $lastRuns;
     }
 
     /**
@@ -321,16 +322,16 @@ class RetailcrmJobManager
      *
      * @throws \Exception
      */
-    private static function setLastRuns($lastRuns = array())
+    private static function setLastRuns($lastRuns = [])
     {
-        $now = new DateTime();
+        $now = new DateTimeImmutable();
 
         if (!is_array($lastRuns)) {
-            $lastRuns = array();
+            $lastRuns = [];
         }
 
         foreach ($lastRuns as $job => $ran) {
-            if ($ran instanceof DateTime) {
+            if ($ran instanceof DateTimeImmutable) {
                 $lastRuns[$job] = $ran->format(DATE_RFC3339);
             } else {
                 $lastRuns[$job] = $now->format(DATE_RFC3339);
@@ -342,12 +343,13 @@ class RetailcrmJobManager
             );
         }
 
-        Configuration::updateGlobalValue(self::LAST_RUN_NAME, (string)json_encode($lastRuns));
+        Configuration::updateGlobalValue(self::LAST_RUN_NAME, (string) json_encode($lastRuns));
     }
 
     /**
      * @param string $jobName
      * @param Datetime|null $data
+     *
      * @throws Exception
      */
     public static function updateLastRun($jobName, $data)
@@ -361,19 +363,20 @@ class RetailcrmJobManager
      * Extracts jobs last runs from db
      *
      * @return array<string, array>
+     *
      * @throws \Exception
      */
     public static function getLastRunDetails()
     {
-        $lastRuns = json_decode((string)Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
+        $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 
-        if (json_last_error() != JSON_ERROR_NONE) {
-            $lastRuns = array();
+        if (JSON_ERROR_NONE != json_last_error()) {
+            $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $details) {
-                $lastRan = DateTime::createFromFormat(DATE_RFC3339, $details['lastRun']);
+                $lastRan = DateTimeImmutable::createFromFormat(DATE_RFC3339, $details['lastRun']);
 
-                if ($lastRan instanceof DateTime) {
+                if ($lastRan instanceof DateTimeImmutable) {
                     $lastRuns[$job]['lastRun'] = $lastRan;
                 } else {
                     $lastRuns[$job]['lastRun'] = null;
@@ -381,7 +384,7 @@ class RetailcrmJobManager
             }
         }
 
-        return (array)$lastRuns;
+        return (array) $lastRuns;
     }
 
     /**
@@ -391,26 +394,27 @@ class RetailcrmJobManager
      *
      * @throws \Exception
      */
-    private static function setLastRunDetails($lastRuns = array())
+    private static function setLastRunDetails($lastRuns = [])
     {
         if (!is_array($lastRuns)) {
-            $lastRuns = array();
+            $lastRuns = [];
         }
 
         foreach ($lastRuns as $job => $details) {
-            if (isset($details['lastRun']) && $details['lastRun'] instanceof DateTime) {
+            if (isset($details['lastRun']) && $details['lastRun'] instanceof DateTimeImmutable) {
                 $lastRuns[$job]['lastRun'] = $details['lastRun']->format(DATE_RFC3339);
             } else {
                 $lastRuns[$job]['lastRun'] = null;
             }
         }
 
-        Configuration::updateGlobalValue(self::LAST_RUN_DETAIL_NAME, (string)json_encode($lastRuns));
+        Configuration::updateGlobalValue(self::LAST_RUN_DETAIL_NAME, (string) json_encode($lastRuns));
     }
 
     /**
      * @param string $jobName
      * @param array $data
+     *
      * @throws Exception
      */
     public static function updateLastRunDetail($jobName, $data)
@@ -424,12 +428,13 @@ class RetailcrmJobManager
      * Runs job
      *
      * @param string $job
-     * @param bool   $once
-     * @param bool   $cliMode
-     * @param bool   $force
-     * @param int   $shopId
+     * @param bool $once
+     * @param bool $cliMode
+     * @param bool $force
+     * @param int $shopId
      *
      * @return bool
+     *
      * @throws \RetailcrmJobManagerException
      */
     public static function runJob($job, $cliMode = false, $force = false, $shopId = null)
@@ -441,7 +446,7 @@ class RetailcrmJobManager
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
         } catch (\Exception $exception) {
-            throw new RetailcrmJobManagerException($exception->getMessage(), $job, array(), 0, $exception);
+            throw new RetailcrmJobManagerException($exception->getMessage(), $job, [], 0, $exception);
         }
     }
 
@@ -458,7 +463,7 @@ class RetailcrmJobManager
             $jobs[$name] = serialize($interval);
         }
 
-        return (string)base64_encode(json_encode($jobs));
+        return (string) base64_encode(json_encode($jobs));
     }
 
     /**
@@ -472,7 +477,7 @@ class RetailcrmJobManager
      */
     public static function setCurrentJob($job)
     {
-        return (bool)Configuration::updateGlobalValue(self::CURRENT_TASK, $job);
+        return (bool) Configuration::updateGlobalValue(self::CURRENT_TASK, $job);
     }
 
     /**
@@ -482,7 +487,7 @@ class RetailcrmJobManager
      */
     public static function getCurrentJob()
     {
-        return (string)Configuration::getGlobalValue(self::CURRENT_TASK);
+        return (string) Configuration::getGlobalValue(self::CURRENT_TASK);
     }
 
     /**
@@ -494,7 +499,7 @@ class RetailcrmJobManager
      */
     public static function clearCurrentJob($job)
     {
-        if (is_null($job) || self::getCurrentJob() == $job) {
+        if (null === $job || self::getCurrentJob() == $job) {
             return Configuration::deleteByName(self::CURRENT_TASK);
         }
 
@@ -505,6 +510,7 @@ class RetailcrmJobManager
      * Resets JobManager internal state. Doesn't work if JobManager is active.
      *
      * @return bool
+     *
      * @throws \Exception
      */
     public static function reset()
@@ -536,7 +542,7 @@ class RetailcrmJobManager
     {
         $error = error_get_last();
 
-        if(null !== $error && $error['type'] === E_ERROR) {
+        if (null !== $error && E_ERROR === $error['type']) {
             self::defaultShutdownHandler($error);
         }
     }
@@ -547,7 +553,7 @@ class RetailcrmJobManager
     private static function registerShutdownHandler()
     {
         if (!self::$shutdownHandlerRegistered) {
-            register_shutdown_function(array('RetailcrmJobManager', 'shutdownHandlerWrapper'));
+            register_shutdown_function(['RetailcrmJobManager', 'shutdownHandlerWrapper']);
             self::$shutdownHandlerRegistered = true;
         }
     }
@@ -560,16 +566,16 @@ class RetailcrmJobManager
     private static function defaultShutdownHandler($error)
     {
         if (is_callable(self::$customShutdownHandler)) {
-            call_user_func_array(self::$customShutdownHandler, array($error));
+            call_user_func_array(self::$customShutdownHandler, [$error]);
         } else {
             if (null !== $error) {
                 $job = self::getCurrentJob();
-                if(!empty($job)) {
+                if (!empty($job)) {
                     $lastRunsDetails = self::getLastRunDetails();
 
                     $lastRunsDetails[$job] = [
                         'success' => false,
-                        'lastRun' => new \DateTime('now'),
+                        'lastRun' => new \DateTimeImmutable('now'),
                         'error' => [
                             'message' => (isset($error['message']) ? $error['message'] : print_r($error, true)),
                             'trace' => print_r($error, true),
@@ -607,17 +613,17 @@ class RetailcrmJobManager
      * @param string $msg
      * @param string $trace
      * @param string $currentJob
-     * @param array  $jobs
+     * @param array $jobs
      */
-    private static function handleError($file, $msg, $trace, $currentJob = '', $jobs = array())
+    private static function handleError($file, $msg, $trace, $currentJob = '', $jobs = [])
     {
-        $data = array();
+        $data = [];
 
         if (!empty($currentJob)) {
             $data[] = 'current job: ' . $currentJob;
         }
 
-        if (count($jobs) > 0) {
+        if (0 < count($jobs)) {
             $data[] = 'jobs list: ' . self::serializeJobs($jobs);
         }
 
@@ -635,12 +641,13 @@ class RetailcrmJobManager
      *
      * @param string $jobName
      * @param string $phpScript
-     * @param bool   $once
-     * @param bool   $cliMode
-     * @param bool   $force
-     * @param int   $shopId
+     * @param bool $once
+     * @param bool $cliMode
+     * @param bool $force
+     * @param int $shopId
      *
      * @return bool
+     *
      * @throws \RetailcrmJobManagerException
      */
     private static function execHere($jobName, $cliMode = false, $force = false, $shopId = null)
@@ -650,8 +657,8 @@ class RetailcrmJobManager
         if (!$cliMode && !$force) {
             ignore_user_abort(true);
 
-            if (version_compare(phpversion(), '7.0.16', '>=') &&
-                function_exists('fastcgi_finish_request')
+            if (version_compare(phpversion(), '7.0.16', '>=')
+                && function_exists('fastcgi_finish_request')
             ) {
                 if (!headers_sent()) {
                     header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
@@ -719,7 +726,7 @@ class RetailcrmJobManager
         $lastRuns = array_values(static::getLastRuns());
 
         if (empty($lastRuns)) {
-            return \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
+            return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
         }
 
         usort(
@@ -727,7 +734,7 @@ class RetailcrmJobManager
             function ($first, $second) {
                 if ($first < $second) {
                     return 1;
-                } else if ($first > $second) {
+                } elseif ($first > $second) {
                     return -1;
                 } else {
                     return 0;
@@ -742,11 +749,12 @@ class RetailcrmJobManager
      * Returns true if lock is present and it's not expired
      *
      * @return bool
+     *
      * @throws \Exception
      */
     private static function isLocked()
     {
-        $inProcess = (bool)Configuration::getGlobalValue(self::IN_PROGRESS_NAME);
+        $inProcess = (bool) Configuration::getGlobalValue(self::IN_PROGRESS_NAME);
         $lastRan = static::getLastRun();
         $lastRanSeconds = $lastRan->format('U');
 
@@ -764,6 +772,7 @@ class RetailcrmJobManager
      * Installs lock
      *
      * @return bool
+     *
      * @throws \Exception
      */
     private static function lock()

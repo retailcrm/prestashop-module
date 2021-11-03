@@ -50,7 +50,7 @@ class RetailcrmIcml
         $this->shop = $shop;
         $this->file = $file;
 
-        $this->properties = array(
+        $this->properties = [
             'name',
             'productName',
             'price',
@@ -62,14 +62,14 @@ class RetailcrmIcml
             'productActivity',
             'dimensions',
             'vatRate',
-        );
+        ];
 
-        $this->params = array(
+        $this->params = [
             'article' => 'Артикул',
             'color' => 'Цвет',
             'weight' => 'Вес',
-            'tax' => 'Наценка'
-        );
+            'tax' => 'Наценка',
+        ];
     }
 
     public function generate($categories, $offers)
@@ -121,7 +121,7 @@ class RetailcrmIcml
                 $e->appendChild($this->dd->createElement('picture', $category['picture']));
             }
 
-            if ($category['parentId'] > 0) {
+            if (0 < $category['parentId']) {
                 $e->setAttribute('parentId', $category['parentId']);
             }
         }
@@ -152,11 +152,13 @@ class RetailcrmIcml
             $offerKeys = array_keys($offer);
 
             foreach ($offerKeys as $key) {
-                if ($offer[$key] == null) continue;
+                if (null == $offer[$key]) {
+                    continue;
+                }
 
                 if (in_array($key, $this->properties)) {
-                    if(is_array($offer[$key])) {
-                        foreach($offer[$key] as $property) {
+                    if (is_array($offer[$key])) {
+                        foreach ($offer[$key] as $property) {
                             $e->appendChild(
                                 $this->dd->createElement($key)
                             )->appendChild(

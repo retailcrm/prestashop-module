@@ -5,7 +5,7 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
     protected $customerAddress;
     protected $customer;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
     }
@@ -16,7 +16,8 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
 
         $this->customerAddress
             ->setDataCrm($this->getDataBuilder())
-            ->build();
+            ->build()
+        ;
 
         $this->assertNotEmpty($this->customerAddress->getData());
     }
@@ -27,7 +28,8 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
 
         $this->customerAddress
             ->setCustomerAddress(new AddressCore(9999))
-            ->build();
+            ->build()
+        ;
 
         $this->assertNotEmpty($this->customerAddress->getData());
     }
@@ -41,7 +43,8 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
             ->setFirstName('Test')
             ->setLastName('Test2')
             ->setPhone('+7999999999')
-            ->build();
+            ->build()
+        ;
 
         $addressResult = $this->customerAddress->getData();
         $this->assertEquals('Test', $addressResult->firstname);
@@ -61,7 +64,8 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
             ->setFirstName('Test')
             ->setLastName('Test2')
             ->setPhone('+7999999999')
-            ->build();
+            ->build()
+        ;
         $addressResult = $this->customerAddress->getData();
 
         $this->customerAddress
@@ -69,7 +73,8 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
             ->setDataCrm($this->getDataBuilderOverride())
             ->setFirstName('Test override')
             ->setPhone('+7111111111')
-            ->build();
+            ->build()
+        ;
 
         $addressResultOverridden = $this->customerAddress->getData();
         $this->assertEquals('Test override', $addressResultOverridden->firstname);
@@ -81,24 +86,24 @@ class RetailcrmCustomerAddressBuilderTest extends RetailcrmTestCase
         $this->assertEquals('+7111111111', $addressResultOverridden->phone);
     }
 
-    private function getDataBuilder() {
-        return array(
+    private function getDataBuilder()
+    {
+        return [
             'id' => 9718,
             'countryIso' => 'RU',
             'region' => 'Moscow',
             'city' => 'г. Москва',
             'index' => '344004',
-            'text' => 'MAY'
-        );
+            'text' => 'MAY',
+        ];
     }
 
     private function getDataBuilderOverride()
     {
-        return array(
+        return [
             'id' => 9718,
             'city' => 'г. Москва Override',
             'index' => '444444',
-        );
+        ];
     }
 }
-

@@ -44,32 +44,32 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     private $customerAddress;
 
     /**
-     * @var array $dataCrm
+     * @var array
      */
     private $dataCrm;
 
     /**
-     * @var int $idCustomer
+     * @var int
      */
     private $idCustomer;
 
     /**
-     * @var string $firstName
+     * @var string
      */
     private $firstName;
 
     /**
-     * @var string $lastName
+     * @var string
      */
     private $lastName;
 
     /**
-     * @var string $phone
+     * @var string
      */
     private $phone;
 
     /**
-     * @var string $alias
+     * @var string
      */
     private $alias;
 
@@ -83,6 +83,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param Address|AddressCore $customerAddress
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setCustomerAddress($customerAddress)
@@ -101,6 +102,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param int $idCustomer
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setIdCustomer($idCustomer)
@@ -112,6 +114,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param string $alias
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setAlias($alias)
@@ -123,6 +126,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param string $firstName
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setFirstName($firstName)
@@ -134,6 +138,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param string $lastName
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setLastName($lastName)
@@ -145,6 +150,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
     /**
      * @param string $phone
+     *
      * @return RetailcrmCustomerAddressBuilder
      */
     public function setPhone($phone)
@@ -160,7 +166,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             return $this->customerAddress;
         }
 
-        return array();
+        return [];
     }
 
     public function reset()
@@ -211,9 +217,9 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
         $this->customerAddress = RetailcrmTools::filter(
             'RetailcrmFilterSaveCustomerAddress',
             $this->customerAddress,
-            array(
-                'dataCrm' => $this->dataCrm
-            )
+            [
+                'dataCrm' => $this->dataCrm,
+            ]
         );
 
         return $this;
@@ -225,7 +231,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             throw new InvalidArgumentException("Property $field not exist in the object");
         }
 
-        if ($value !== null) {
+        if (null !== $value) {
             $this->customerAddress->$field = $value;
         } else {
             $this->customerAddress->$field = $default;
@@ -243,7 +249,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $text, 2);
 
             $this->setAddressField('address1', $addressLine[0], '--');
-            if (count($addressLine) == 1) {
+            if (1 == count($addressLine)) {
                 $this->setAddressField('address2', '');
             } else {
                 $this->setAddressField('address2', $addressLine[1], '');

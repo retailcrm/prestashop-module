@@ -47,6 +47,6 @@ abstract class RetailcrmAbstractBuilder
      */
     protected function arrayValue($key, $default = '--')
     {
-        return isset($this->dataCrm[$key]) && !empty($this->dataCrm[$key]) ?  $this->dataCrm[$key] : $default;
+        return isset($this->dataCrm[$key]) && !empty($this->dataCrm[$key]) ? $this->dataCrm[$key] : $default;
     }
 }

@@ -35,13 +35,12 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php');
+require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function execute()
     {
@@ -54,7 +53,7 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext(intval($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
 
             if (!Configuration::get(RetailCRM::ENABLE_BALANCES_RECEIVING)) {
                 RetailcrmLogger::writeDebug(
@@ -83,7 +82,7 @@ class RetailcrmInventoriesEvent extends RetailcrmAbstractEvent implements Retail
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName()
     {

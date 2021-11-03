@@ -2,7 +2,7 @@
 
 class RetailcrmOrderBuilderTest extends RetailcrmTestCase
 {
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
     }
@@ -39,22 +39,22 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
      */
     private function getDataItemInitialPriceZero()
     {
-        return array(
+        return [
             'id' => 160,
             'initialPrice' => 0,
             'createdAt' => '2018-01-01 00:00:00',
             'quantity' => 1,
             'status' => 'new',
-            'offer' => array(
+            'offer' => [
                 'id' => 1,
                 'externalId' => 1,
                 'xmlId' => '1',
                 'name' => 'Test name',
-                'vatRate' => 'none'
-            ),
-            'properties' => array(),
-            'purchasePrice' => 50
-        );
+                'vatRate' => 'none',
+            ],
+            'properties' => [],
+            'purchasePrice' => 50,
+        ];
     }
 
     /**
@@ -62,7 +62,7 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
      */
     private function getDataOrder()
     {
-        $order = array(
+        $order = [
             'slug' => 1,
             'id' => 1,
             'number' => '1C',
@@ -81,38 +81,38 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
             'phone' => '80000000000',
             'call' => false,
             'expired' => false,
-            'customer' => array(
-                'segments' => array(),
+            'customer' => [
+                'segments' => [],
                 'id' => 1,
                 'externalId' => '777',
                 'type' => 'customer',
                 'firstName' => 'Test',
                 'lastName' => 'Test',
                 'email' => 'email@test.ru',
-                'phones' => array(
-                    array(
-                        'number' => '111111111111111'
-                    ),
-                    array(
-                        'number' => '+7111111111'
-                    )
-                ),
-                'address' => array(
+                'phones' => [
+                    [
+                        'number' => '111111111111111',
+                    ],
+                    [
+                        'number' => '+7111111111',
+                    ],
+                ],
+                'address' => [
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Test region',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                ),
+                    'text' => 'Test text address',
+                ],
                 'createdAt' => '2018-01-01 00:00:00',
                 'managerId' => 1,
                 'vip' => false,
                 'bad' => false,
                 'site' => 'test-com',
-                'contragent' => array(
-                    'contragentType' => 'individual'
-                ),
+                'contragent' => [
+                    'contragentType' => 'individual',
+                ],
                 'personalDiscount' => 0,
                 'cumulativeDiscount' => 0,
                 'marginSumm' => 58654,
@@ -120,61 +120,60 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
                 'averageSumm' => 15387.25,
                 'ordersCount' => 4,
                 'costSumm' => 101,
-                'customFields' => array(
-                    'custom' => 'test'
-                )
-            ),
-            'contragent' => array(),
-            'delivery' => array(
+                'customFields' => [
+                    'custom' => 'test',
+                ],
+            ],
+            'contragent' => [],
+            'delivery' => [
                 'code' => 'delivery',
                 'cost' => 100,
                 'netCost' => 0,
-                'address' => array(
+                'address' => [
                     'id_customer' => 2222,
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Test region',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                )
-            ),
+                    'text' => 'Test text address',
+                ],
+            ],
             'site' => 'test-com',
             'status' => 'new',
-            'items' => array(
-                array(
+            'items' => [
+                [
                     'id' => 160,
                     'initialPrice' => 100,
                     'createdAt' => '2018-01-01 00:00:00',
                     'quantity' => 1,
                     'status' => 'new',
-                    'offer' => array(
+                    'offer' => [
                         'id' => 1,
                         'externalId' => 1,
                         'xmlId' => '1',
                         'name' => 'Test name',
-                        'vatRate' => 'none'
-                    ),
-                    'properties' => array(),
-                    'purchasePrice' => 50
-                ),
-            ),
+                        'vatRate' => 'none',
+                    ],
+                    'properties' => [],
+                    'purchasePrice' => 50,
+                ],
+            ],
             'fromApi' => false,
             'length' => 0,
             'width' => 0,
             'height' => 0,
             'shipmentStore' => 'main',
             'shipped' => false,
-            'customFields' => array(),
-            'uploadedToExternalStoreSystem' => false
-        );
+            'customFields' => [],
+            'uploadedToExternalStoreSystem' => false,
+        ];
 
-        $order['payments'][] = array(
+        $order['payments'][] = [
             'id' => 97,
             'type' => 'cheque',
-            'amount' => 210
-        );
+            'amount' => 210,
+        ];
 
         return $order;
     }
 }
-

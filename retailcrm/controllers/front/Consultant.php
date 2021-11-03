@@ -35,7 +35,6 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 class RetailcrmConsultantModuleFrontController extends ModuleFrontController
 {
     /**
@@ -80,7 +79,8 @@ class RetailcrmConsultantModuleFrontController extends ModuleFrontController
         $rcctExtractor = new RetailcrmCachedSettingExtractor();
         $rcct = $rcctExtractor
             ->setCachedAndConfigKey(RetailCRM::CONSULTANT_RCCT)
-            ->getData();
+            ->getData()
+        ;
 
         if (empty($rcct)) {
             $script = trim(Configuration::get(RetailCRM::CONSULTANT_SCRIPT));
@@ -95,6 +95,6 @@ class RetailcrmConsultantModuleFrontController extends ModuleFrontController
             }
         }
 
-        return array('rcct' => empty($rcct) ? '' : $rcct);
+        return ['rcct' => empty($rcct) ? '' : $rcct];
     }
 }
