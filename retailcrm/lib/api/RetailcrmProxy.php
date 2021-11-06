@@ -82,4 +82,16 @@ class RetailcrmProxy
 
         return $this->pipeline->run($request);
     }
+
+    public function setClient($client)
+    {
+        $this->client = $client;
+
+        $this->pipeline
+            ->setAction(function ($request) {
+                return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
+            })
+            ->build()
+        ;
+    }
 }

@@ -367,7 +367,8 @@ class RetailcrmExport
     }
 
     /**
-     * @param int   $id
+     * @param int $id
+     *
      * @return bool
      *
      * @throws PrestaShopObjectNotFoundExceptionCore

@@ -1,50 +1,20 @@
 <?php
 
-
 class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
 {
     private $apiMock;
 
-    private $apiProxy;
-
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 
-        $this->apiMock = $this->apiMockBuilder()->getMock();
-        $this->setMethods();
-
-        $this->apiProxy = new RetailcrmProxy('https://test.test', 'test_key');
-
-        $reflector = new ReflectionClass($this->apiProxy);
-
-        $clientProp = $reflector->getProperty('client');
-        $clientProp->setAccessible(true);
-        $clientProp->setValue($this->apiProxy, $this->apiMock);
-
-        $pipelineProp = $reflector->getProperty('pipeline');
-        $pipelineProp->setAccessible(true);
-        $pipeline = $pipelineProp->getValue($this->apiProxy);
-        $pipeline
-            ->setAction(function ($request) {
-                return call_user_func_array([$this->apiMock, $request->getMethod()], $request->getData());
-            })
-            ->build();
-        $pipelineProp->setValue($this->apiProxy, $pipeline);
-
-    }
-
-    private function apiMockBuilder()
-    {
-        return $this->getMockBuilder('RetailcrmApiClientV5')
-            ->disableOriginalConstructor()
-            ->setMethods(
-                array(
-                    'ordersCreate',
-                    'ordersEdit',
-                    'ordersGet'
-                )
-            );
+        $this->apiMock = $this->getApiMock(
+            [
+                'ordersCreate',
+                'ordersEdit',
+                'ordersGet',
+            ]
+        );
     }
 
     public function getRequests()
@@ -73,6 +43,37 @@ class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
      */
     public function testRequest($method, $params, $reference)
     {
+        $this->apiClientMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode([
+                'success' => true,
+                'order' => [
+                    'number' => 'test',
+                    'externalId' => 1,
+                ],
+            ])
+        ));
+        $this->apiClientMock->expects($this->any())->method('ordersEdit')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode([
+                'success' => true,
+                'order' => [
+                    'number' => 'test',
+                    'externalId' => 1,
+                ],
+            ])
+        ));
+        $this->apiClientMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode([
+                'success' => true,
+                'order' => [
+                    'number' => 'test',
+                    'externalId' => 1,
+                ],
+            ])
+        ));
+
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, true);
 
         $order = new Order(1);
@@ -81,7 +82,7 @@ class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
         unset($order);
 
         /** @var RetailcrmApiResponse $response */
-        $response = $this->apiProxy->$method($params);
+        $response = $this->apiMock->$method($params);
 
         $this->assertInstanceOf(RetailcrmApiResponse::class, $response);
         $this->assertTrue($response->isSuccessful());
@@ -89,40 +90,5 @@ class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
         $order = new Order(1);
 
         $this->assertEquals($reference, $order->reference);
-    }
-
-    private function setMethods()
-    {
-        $this->apiMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode(array(
-                'success' => true,
-                'order' => array(
-                    'number' => 'test',
-                    'externalId' => 1,
-                ),
-            ))
-        ));
-        $this->apiMock->expects($this->any())->method('ordersEdit')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode(array(
-                'success' => true,
-                'order' => array(
-                    'number' => 'test',
-                    'externalId' => 1,
-                ),
-            ))
-        ));
-        $this->apiMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode(array(
-                'success' => true,
-                'order' => array(
-                    'number' => 'test',
-                    'externalId' => 1,
-                ),
-            ))
-        ));
-
     }
 }

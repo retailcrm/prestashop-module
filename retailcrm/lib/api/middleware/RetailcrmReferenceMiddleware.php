@@ -36,12 +36,10 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-
 class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
@@ -51,20 +49,17 @@ class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
         if (
             $response->isSuccessful()
             && (
-                $request->getMethod() === 'ordersCreate'
-                || $request->getMethod() === 'ordersEdit'
+                'ordersCreate' === $request->getMethod()
+                || 'ordersEdit' === $request->getMethod()
             )
         ) {
-
-            $receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+            $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
             $crmOrder = $response->order;
 
             if (
                 $receiveOrderNumber
-                && isset($crmOrder['externalId'])
-                && isset($crmOrder['number'])
+                && isset($crmOrder['externalId'], $crmOrder['number'])
             ) {
-
                 $object = new Order($crmOrder['externalId']);
                 $object->reference = $crmOrder['number'];
                 $object->update();
