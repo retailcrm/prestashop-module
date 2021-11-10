@@ -125,22 +125,25 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
             return $response;
         }
 
-        $id_order = $request->getData()[0]['externalId'];
+        $order = $request->getData()[0];
 
         try {
             /** @var RetailcrmApiResponse $response */
             $response = $next($request);
 
             if ($response->isSuccessful()) {
-                RetailcrmExportOrdersHelper::updateExportState($id_order, $response['id']);
+                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $response['id']);
             } else {
                 $errors = $response->offsetExists('errors') ? $response['errors'] : [$response['errorMsg']];
-                RetailcrmExportOrdersHelper::updateExportState($id_order, null, $errors);
+                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], null, $errors);
             }
 
             return $response;
         } catch (Exception $e) {
-            RetailcrmExportOrdersHelper::updateExportState($id_order, null, [$e->getMessage()]);
+            if (isset($order['externalId'])) {
+                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], null, [$e->getMessage()]);
+            }
+
             throw $e;
         }
     }
