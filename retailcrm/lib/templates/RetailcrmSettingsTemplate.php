@@ -95,6 +95,17 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['catalogInfoMultistore'] = RetailcrmCatalogHelper::getIcmlFileInfoMultistore();
             $params['shopsInfo'] = RetailcrmContextSwitcher::getShops();
             $params['errorTabs'] = $this->module->validateStoredSettings();
+
+            $params['retailControllerOrders'] = RetailcrmTools::getAdminControllerUrl(
+                RetailcrmOrdersController::class
+            );
+            $params['retailControllerOrdersUpload'] = RetailcrmTools::getAdminControllerUrl(
+                RetailcrmOrdersUploadController::class
+            );
+            $params['adminControllerOrders'] = RetailcrmTools::getAdminControllerUrl(
+                AdminOrdersController::class
+            );
+
         }
 
         return $params;

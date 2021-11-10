@@ -862,4 +862,18 @@ class RetailcrmTools
 
         return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $config['date_add']);
     }
+
+    /**
+     * @return string
+     */
+    public static function getAdminControllerUrl($className)
+    {
+        $controllerName = str_replace('Controller', '', $className);
+
+        return sprintf('%s%s/index.php?controller=%s&token=%s',
+            Tools::getAdminUrl(),
+            basename(_PS_ADMIN_DIR_),
+            $controllerName,
+            Tools::getAdminTokenLite($controllerName));
+    }
 }

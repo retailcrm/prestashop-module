@@ -233,6 +233,9 @@ $(function(){
                 if (!(typeof RetailcrmUploadForm === 'undefined')) {
                     new RetailcrmUploadForm(tabController);
                 }
+                if (!(typeof RetailcrmOrdersForm === 'undefined')) {
+                    new RetailcrmOrdersForm();
+                }
                 if (!(typeof RetailcrmIcmlForm === 'undefined')) {
                     new RetailcrmIcmlForm(tabController);
                 }

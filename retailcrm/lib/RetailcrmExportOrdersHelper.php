@@ -38,7 +38,7 @@
  */
 class RetailcrmExportOrdersHelper
 {
-    const ROWS_PER_PAGE = 4;
+    const ROWS_PER_PAGE = 10;
 
     /**
      * @param int $id_order
@@ -56,7 +56,9 @@ class RetailcrmExportOrdersHelper
                 WHERE `id_order` = \'' . pSQL($id_order) . '\';';
 
             $orderInfo = Db::getInstance()->executeS($sql);
-            $id_order_crm = $orderInfo[0]['id_order_crm'];
+            if (count($orderInfo) > 0 && isset($orderInfo[0]['id_order_crm'])) {
+                $id_order_crm = $orderInfo[0]['id_order_crm'];
+            }
         }
 
         if (null !== $errors && count($errors) > 0) {

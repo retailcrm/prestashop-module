@@ -99,6 +99,13 @@ class RetailCRM extends Module
         'paymentDefault' => self::PAYMENT_DEFAULT,
     ];
 
+    // todo dynamically define controller classes
+    const ADMIN_CONTROLLERS = [
+        RetailcrmSettingsController::class,
+        RetailcrmOrdersController::class,
+        RetailcrmOrdersUploadController::class,
+    ];
+
     /**
      * @var array
      */
@@ -143,7 +150,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.3.4';
+        $this->version = '3.3.5';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('Simla.com');
         $this->description = $this->l('Integration module for Simla.com');
@@ -195,7 +202,60 @@ class RetailCRM extends Module
             && ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
             && ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
             && $this->installDB()
-        ;
+            && $this->installTab()
+            ;
+    }
+
+    /**
+     * Installs the tab for the admin controller
+     *
+     * @return bool
+     *
+     */
+    public function installTab()
+    {
+        /** @var RetailcrmAdminAbstractController $controller */
+        foreach (self::ADMIN_CONTROLLERS as $controller) {
+            $tab = new Tab();
+            $tab->id = $controller::getId();
+            $tab->id_parent = $controller::getParentId();
+            $tab->class_name = $controller::getClassName();
+            $tab->name = $controller::getName();
+            $tab->icon = $controller::getIcon();
+            $tab->position = $controller::getPosition();
+            $tab->active = 1;
+            $tab->module = $this->name;
+
+            if (!$tab->save()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return bool
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    public function uninstallTab()
+    {
+        /** @var RetailcrmAdminAbstractController $controller */
+        foreach (self::ADMIN_CONTROLLERS as $controller) {
+            $tabId = $controller::getId();
+            if (!$tabId) {
+                continue;
+            }
+
+            $tab = new Tab($tabId);
+
+            if(!$tab->delete()) {
+                return false;
+            };
+        }
+
+        return true;
     }
 
     public function hookHeader()
@@ -258,7 +318,23 @@ class RetailCRM extends Module
             && Configuration::deleteByName(RetailcrmJobManager::IN_PROGRESS_NAME)
             && Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK)
             && Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI)
-            && $this->uninstallDB();
+            && $this->uninstallDB()
+            && $this->uninstallTab()
+            ;
+    }
+
+    public function enable($force_all = false)
+    {
+        return parent::enable($force_all)
+            && $this->installTab()
+            ;
+    }
+
+    public function disable($force_all = false)
+    {
+        return parent::disable($force_all)
+            && $this->uninstallTab()
+            ;
     }
 
     public function installDB()
@@ -271,12 +347,12 @@ class RetailCRM extends Module
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;
-                CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'retailcrm_exported_orders` (
+                CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders` (
                     `id_order` INT UNSIGNED UNIQUE NULL,
                     `id_order_crm` INT UNSIGNED UNIQUE NULL,
                     `errors` TEXT NULL,
                     `last_uploaded` DATETIME,
-                    FOREIGN KEY (id_order) REFERENCES '._DB_PREFIX_.'orders (id_order)
+                    FOREIGN KEY (id_order) REFERENCES ' . _DB_PREFIX_ . 'orders (id_order)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'
@@ -355,11 +431,9 @@ class RetailCRM extends Module
         }
 
         if (!($this->api instanceof RetailcrmProxy)) {
-            $apiUrl = Configuration::get(static::API_URL);
-            $apiKey = Configuration::get(static::API_KEY);
-            if (!empty($apiUrl) && !empty($apiKey)) {
-                $this->api = new RetailcrmProxy($apiUrl, $apiKey, _PS_ROOT_DIR_ . '/retailcrm.log');
-            } else {
+            $this->api = RetailcrmTools::getApiClient();
+
+            if (!($this->api instanceof RetailcrmProxy)) {
                 return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
             }
         }

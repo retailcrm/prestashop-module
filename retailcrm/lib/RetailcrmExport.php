@@ -374,6 +374,7 @@ class RetailcrmExport
      * @throws PrestaShopObjectNotFoundExceptionCore
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
+     * @throws Exception
      */
     public static function exportOrder($id)
     {
@@ -418,6 +419,18 @@ class RetailcrmExport
                 ]);
                 static::$api->ordersPaymentCreate($payment);
             }
+        }
+
+        if (!$response->isSuccessful()) {
+            $errorMsg = '';
+            if ($response->offsetExists('errorMsg')) {
+                $errorMsg = $response['errorMsg'] . ': ';
+            }
+            if ($response->offsetExists('errors')) {
+                $errorMsg .= implode('; ', $response['errors']);
+            }
+
+            throw new Exception($errorMsg);
         }
 
         return $response->isSuccessful();
