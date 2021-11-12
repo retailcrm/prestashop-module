@@ -61,13 +61,13 @@ $(function () {
 
         this.partitionId = this.partitionId.bind(this);
         this.setLoading = this.setLoading.bind(this);
+        this.showMessage = this.showMessage.bind(this);
 
         this.orders = [];
         this.filter = null;
         this.page = null;
 
         $(this.submitButton).click(this.submitAction);
-        this.searchOrders();
 
         $('.retail-table-filter-btn').click(function (e) {
             $('.retail-table-filter-btn').removeClass('retail-menu__btn_active');
@@ -122,17 +122,23 @@ $(function () {
                 }
                 _this.setLoading(false);
             })
+            .fail(function (response) {
+                _this.setLoading(false);
+                _this.showMessage('orders-table.error');
+                console.warn(response);
+            })
     }
     RetailcrmOrdersForm.prototype.loadOrders = function (orders) {
         $(this.ordersTable).empty();
-        let _this = this;
-        let crmOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-crm a').attr('href')
-        let cmsOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-cms a').attr('href')
 
         if (orders.length === 0) {
-            $(_this.ordersTable).append('<tr><td colspan="5">' + retailcrmTranslates['orders-table.empty'] + '</td></tr>');
+            this.showMessage('orders-table.empty');
             return;
         }
+
+        let _this = this;
+        let crmOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-crm a').attr('href');
+        let cmsOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-cms a').attr('href');
 
         $.each(orders, function (key, item) {
             let newRow = _this.rowSample.clone().get(0);
@@ -217,6 +223,7 @@ $(function () {
                 alert(message);
             })
     }
+
     RetailcrmOrdersForm.prototype.loadPagination = function (pagination) {
         $(this.pagesMenu).empty();
         let _this = this;
@@ -282,6 +289,12 @@ $(function () {
                     _this.searchOrders(pagination.totalPageCount)
                 }));
         }
+    }
+
+    RetailcrmOrdersForm.prototype.showMessage = function (message) {
+        $(this.ordersTable)
+            .empty()
+            .append('<tr class="alert"><td colspan="5">' + retailcrmTranslates[message] + '</td></tr>');
     }
 
     RetailcrmOrdersForm.prototype.setLoading = function (loading) {

@@ -36,6 +36,7 @@
  *}
 <script>
     const retailcrmTranslates = {
-        'orders-table.empty': '{l s='No orders found' mod='retailcrm'}'
+        'orders-table.empty': '{l s='No orders found' mod='retailcrm'}',
+        'orders-table.error': '{l s='An error occured while searching for the orders. Please try again' mod='retailcrm'}'
     };
 </script>

@@ -31,15 +31,28 @@ body, html {
   visibility: hidden;
 }
 
+.icon-RetailcrmSettings:before {
+  content: "\f07a";
+}
+
 .retail {
   &-wrap {
     font-family: OpenSans, Arial, sans-serif;
     padding: 0 15px;
     height: 100%;
+    background: white;
 
     *, *::before, *::after {
       box-sizing: border-box;
     }
+  }
+
+  input[type=file], input[type=password], input[type=text], input[readonly][type=text], textarea {
+    -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, .1) inset;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1);
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 2px 4px;
   }
 
   &-container {
@@ -222,6 +235,7 @@ body, html {
       padding: 0 28px !important;
       line-height: normal;
       color: @gray !important;
+      background-color: white!important;
       font-size: 16px !important;
       appearance: none;
 
@@ -494,13 +508,16 @@ body, html {
       width: 253px;
       background: @grayBg;
       min-height: 300px;
+
+      #content.bootstrap & {
+        margin: 10px 0;
+      }
     }
 
     &__content {
       flex: 1 0 auto;
       padding: 0 58px;
       min-height: 300px;
-
     }
   }
 
@@ -661,6 +678,11 @@ body, html {
 
     tbody {
       tr {
+        &.alert,
+        &.alert td{
+          line-height: 120px;
+          font-size: 16px;
+        }
         td {
           border-bottom: 1px solid #ccc;
         }
@@ -674,6 +696,7 @@ body, html {
       padding: 4px 6px;
       max-width: 300px;
       vertical-align: middle;
+
     }
 
     &-wrapper {
@@ -694,7 +717,9 @@ body, html {
     }
 
     &-center {
-      text-align: center;
+      &, & th {
+        text-align: center;
+      }
     }
 
     &-right {
@@ -844,6 +869,8 @@ body, html {
 
   &-btn-svg {
     width: 15px;
+    height: 15px;
+    display: inline-block;
     cursor: pointer;
     //transition: transform .3s ease-out;
     &_wrapper {
