@@ -151,6 +151,10 @@ class RetailcrmIcml
 
             $offerKeys = array_keys($offer);
 
+            if (isset($offer['weight'])) {
+                $offer['weight'] = $this->getWeightInKg($offer['weight']);
+            }
+
             foreach ($offerKeys as $key) {
                 if (null == $offer[$key]) {
                     continue;
@@ -197,5 +201,28 @@ class RetailcrmIcml
                 }
             }
         }
+    }
+
+    private function getWeightInKg($weight)
+    {
+        $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
+
+        switch ($weightUnit) {
+            case 'mg':
+                return $weight / 1000 / 1000;
+            case 'g':
+                return $weight / 1000;
+            case 'kg':
+                return $weight;
+            case 'ton':
+                return $weight * 1000;
+            case 'oz':
+                return $weight / 35.3;
+            case 'pd':
+                return $weight * 2.2;
+            case 'st':
+                return $weight * 6.35;
+        }
+        throw new Exception('Change your local units');
     }
 }
