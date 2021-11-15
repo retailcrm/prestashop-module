@@ -62,6 +62,7 @@ class RetailcrmIcml
             'productActivity',
             'dimensions',
             'vatRate',
+            'weight'
         ];
 
         $this->params = [
@@ -205,24 +206,56 @@ class RetailcrmIcml
 
     private function getWeightInKg($weight)
     {
-        $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
+        $mg = $weight / 1000 / 1000;
+        $g = $weight / 1000;
+        $ton = $weight * 1000;
+        $oz = $weight / 35.3;
+        $pd = $weight * 2.2;
+        $st = $weight * 6.35;
 
-        switch ($weightUnit) {
-            case 'mg':
-                return $weight / 1000 / 1000;
-            case 'g':
-                return $weight / 1000;
-            case 'kg':
-                return $weight;
-            case 'ton':
-                return $weight * 1000;
-            case 'oz':
-                return $weight / 35.3;
-            case 'pd':
-                return $weight * 2.2;
-            case 'st':
-                return $weight * 6.35;
-        }
-        throw new Exception('Change your local units');
+        $weightUnits = [
+            'mg' => $mg,
+            'мг' => $mg,
+            'miligramo' => $mg,
+            'миллиграмм' => $mg,
+            'milligram' => $mg,
+
+            'g' => $g,
+            'gram' => $g,
+            'grammo' => $g,
+            'г' => $g,
+            'гр' => $g,
+            'грамм' => $g,
+
+            'kg' => $weight,
+            'kilogram' => $weight,
+            'kilogramme' => $weight,
+            'kilo' => $weight,
+            'kilogramo' => $weight,
+
+            'ton' => $ton,
+            'т' => $ton,
+            'тонна' => $ton,
+            'tonelada' => $ton,
+            'toneladas' => $ton,
+
+            'oz' => $oz,
+            'унция' => $oz,
+            'ounce' => $oz,
+            'onza' => $oz,
+
+            'pd' => $pd,
+            'фунт' => $pd,
+            'pound' => $pd,
+            'lb' => $pd,
+            'libra' => $pd,
+            'paladio' => $pd,
+
+            'st' => $st,
+            'стоун' => $st,
+            'stone' => $st
+        ];
+
+        return RetailcrmTools::filter('RetailcrmFilterWeight', $weight, $weightUnits);
     }
 }
