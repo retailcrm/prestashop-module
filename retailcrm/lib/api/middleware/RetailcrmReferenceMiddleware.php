@@ -29,69 +29,43 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- *  @license   https://opensource.org/licenses/MIT  The MIT License
+ * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ * @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ * @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-class RetailcrmProxy
+class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @var RetailcrmApiClientV5
+     * {@inheritDoc}
      */
-    private $client;
-
-    /**
-     * @var RetailcrmPipeline
-     */
-    private $pipeline;
-
-    public function __construct($url, $key)
+    public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
-        $this->client = new RetailcrmApiClientV5($url, $key);
+        /** @var RetailcrmApiResponse $response */
+        $response = $next($request);
 
-        $this->buildPipeline();
-    }
-
-    public function __call($method, $arguments)
-    {
-        $request = new RetailcrmApiRequest();
-
-        $request->setApi($this->client)
-            ->setMethod($method)
-            ->setData($arguments)
-        ;
-
-        return $this->pipeline->run($request);
-    }
-
-    public function setClient($client)
-    {
-        $this->client = $client;
-
-        $this->buildPipeline();
-    }
-
-    private function buildPipeline()
-    {
-        $this->pipeline = new RetailcrmPipeline();
-        $this->pipeline
-            ->setMiddlewares(
-                RetailcrmTools::filter(
-                    'RetailcrmFilterMiddlewares',
-                    [
-                        RetailcrmExceptionMiddleware::class,
-                        RetailcrmLoggerMiddleware::class,
-                        RetailcrmReferenceMiddleware::class,
-                    ]
-                )
+        if (
+            $response->isSuccessful()
+            && (
+                'ordersCreate' === $request->getMethod()
+                || 'ordersEdit' === $request->getMethod()
             )
-            ->setAction(function ($request) {
-                return call_user_func_array([$this->client, $request->getMethod()], $request->getData());
-            })
-            ->build()
-        ;
+        ) {
+            $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+            $crmOrder = $response->order;
+
+            if (
+                $receiveOrderNumber
+                && isset($crmOrder['externalId'], $crmOrder['number'])
+            ) {
+                $object = new Order($crmOrder['externalId']);
+                $object->reference = $crmOrder['number'];
+                $object->update();
+            }
+        }
+
+        return $response;
     }
 }

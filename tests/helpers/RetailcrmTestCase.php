@@ -6,6 +6,10 @@ if (class_exists('LegacyTests\Unit\ContextMocker')) {
 
 abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
 {
+    private $apiMock;
+
+    protected $apiClientMock;
+
     protected $contextMock;
 
     protected function setUp()
@@ -16,6 +20,16 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
             $contextMocker = new \Tests\Unit\ContextMocker();
             $this->contextMock = $contextMocker->mockContext();
         }
+    }
+
+    protected function getApiMock(array $methods)
+    {
+        $this->apiClientMock = $this->apiMockBuilder($methods)->getMock();
+
+        $this->apiMock = new RetailcrmProxy('https://test.test', 'test_key');
+        $this->apiMock->setClient($this->apiClientMock);
+
+        return $this->apiMock;
     }
 
     protected function setConfig()
@@ -45,5 +59,13 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
         Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
         Configuration::updateValue('RETAILCRM_API_STATUS', $status);
         Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
+    }
+
+    private function apiMockBuilder(array $methods)
+    {
+        return $this->getMockBuilder('RetailcrmApiClientV5')
+            ->disableOriginalConstructor()
+            ->setMethods($methods)
+        ;
     }
 }

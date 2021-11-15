@@ -368,7 +368,6 @@ class RetailcrmExport
 
     /**
      * @param int $id
-     * @param false $receiveOrderNumber
      *
      * @return bool
      *
@@ -376,7 +375,7 @@ class RetailcrmExport
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
-    public static function exportOrder($id, $receiveOrderNumber = false)
+    public static function exportOrder($id)
     {
         if (!static::$api) {
             return false;
@@ -410,12 +409,6 @@ class RetailcrmExport
 
         if (empty($existingOrder)) {
             $response = static::$api->ordersCreate($crmOrder);
-
-            if ($receiveOrderNumber && $response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
-                $crmOrder = $response->order;
-                $object->reference = $crmOrder['number'];
-                $object->update();
-            }
         } else {
             $response = static::$api->ordersEdit($crmOrder);
 
