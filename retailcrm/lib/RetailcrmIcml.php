@@ -62,7 +62,7 @@ class RetailcrmIcml
             'productActivity',
             'dimensions',
             'vatRate',
-            'weight'
+            'weight',
         ];
 
         $this->params = [
@@ -253,7 +253,7 @@ class RetailcrmIcml
 
             'st' => $st,
             'стоун' => $st,
-            'stone' => $st
+            'stone' => $st,
         ];
 
         return RetailcrmTools::filter('RetailcrmFilterWeight', $weight, $weightUnits);
