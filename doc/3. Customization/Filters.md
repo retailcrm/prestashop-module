@@ -60,3 +60,4 @@ There are list of available filters:
 
 * *RetailcrmFilterJobManagerIntervals* - array with jobs as keys and intervals as values
 * *RetailcrmFilterWeight* - array with weight units for orders in ICML
+* *RetailcrmFilterMiddlewares* - array with middlewares, which running before and after request
