@@ -59,3 +59,4 @@ There are list of available filters:
 * *RetailcrmFilterSaveCorporateCustomerAddress* - built corporate customer address object, which will be saved to CMS
 
 * *RetailcrmFilterJobManagerIntervals* - array with jobs as keys and intervals as values
+* *RetailcrmFilterWeight* - array with weight units for orders in ICML
