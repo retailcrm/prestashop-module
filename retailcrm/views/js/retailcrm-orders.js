@@ -113,13 +113,23 @@ $(function () {
             data: data
         })
             .done(function (response) {
-                if (response.orders !== undefined) {
+                if (response.success !== undefined && response.success === false) {
+                    _this.setLoading(false);
+                    _this.showMessage('orders-table.error');
+                    console.warn(response);
+                    return;
+                }
+
+                if (response.orders !== undefined && response.orders.length > 0) {
                     _this.loadOrders(response.orders);
+                } else {
+                    this.showMessage('orders-table.empty');
                 }
 
                 if (response.pagination !== undefined) {
                     _this.loadPagination(response.pagination);
                 }
+
                 _this.setLoading(false);
             })
             .fail(function (response) {
@@ -130,11 +140,6 @@ $(function () {
     }
     RetailcrmOrdersForm.prototype.loadOrders = function (orders) {
         $(this.ordersTable).empty();
-
-        if (orders.length === 0) {
-            this.showMessage('orders-table.empty');
-            return;
-        }
 
         let _this = this;
         let crmOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-crm a').attr('href');
@@ -222,6 +227,11 @@ $(function () {
                 _this.setLoading(false);
                 alert(message);
             })
+            .fail(function (response) {
+                console.warn(response);
+                _this.setLoading(false);
+                alert(retailcrmTranslates['orders-table.error'])
+            });
     }
 
     RetailcrmOrdersForm.prototype.loadPagination = function (pagination) {

@@ -438,7 +438,7 @@
                                             </label>
                                             <label for="retail-table-filter-status-fail"
                                                    class="retail-table-filter-btn">
-                                                <span>{l s='With errors' mod='retailcrm'}</span>
+                                                <span>{l s='Error' mod='retailcrm'}</span>
                                                 <input type="radio" name="search-orders-filter"
                                                        id="retail-table-filter-status-fail"
                                                        value="2" class="search-orders-filter">
