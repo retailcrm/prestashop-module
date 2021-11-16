@@ -36,14 +36,13 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(__DIR__ . '/../../bootstrap.php');
+require_once __DIR__ . '/../../bootstrap.php';
 
 class RetailcrmSettingsController extends RetailcrmAdminAbstractController
 {
     public static function getParentId()
     {
-        return (int)Tab::getIdFromClassName('IMPROVE');
+        return (int) Tab::getIdFromClassName('IMPROVE');
     }
 
     public static function getIcon()

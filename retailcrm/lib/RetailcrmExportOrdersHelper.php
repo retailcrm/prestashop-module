@@ -52,28 +52,28 @@ class RetailcrmExportOrdersHelper
         }
 
         if (null === $id_order_crm) {
-            $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` 
+            $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders`
                 WHERE `id_order` = \'' . pSQL($id_order) . '\';';
 
             $orderInfo = Db::getInstance()->executeS($sql);
-            if (count($orderInfo) > 0 && isset($orderInfo[0]['id_order_crm'])) {
+            if (0 < count($orderInfo) && isset($orderInfo[0]['id_order_crm'])) {
                 $id_order_crm = $orderInfo[0]['id_order_crm'];
             }
         }
 
-        if (null !== $errors && count($errors) > 0) {
+        if (null !== $errors && 0 < count($errors)) {
             $errors = json_encode($errors);
         }
 
-        $sql = 'INSERT INTO `' . _DB_PREFIX_ . 'retailcrm_exported_orders` 
+        $sql = 'INSERT INTO `' . _DB_PREFIX_ . 'retailcrm_exported_orders`
                 (`id_order`, `id_order_crm`, `errors`, `last_uploaded`)
                 VALUES(
-                    ' . ($id_order ? '\'' . pSQL($id_order) . '\'' : 'NULL') . ', 
-            ' . ($id_order_crm ? '\'' . pSQL($id_order_crm) . '\'' : 'NULL') . ', 
-            ' . ($errors ? '\'' . pSQL($errors) . '\'' : 'NULL') . ', 
+                    ' . ($id_order ? '\'' . pSQL($id_order) . '\'' : 'NULL') . ',
+            ' . ($id_order_crm ? '\'' . pSQL($id_order_crm) . '\'' : 'NULL') . ',
+            ' . ($errors ? '\'' . pSQL($errors) . '\'' : 'NULL') . ',
             \'' . pSQL(date('Y-m-d H:i:s')) .
             '\')
-            ON DUPLICATE KEY UPDATE 
+            ON DUPLICATE KEY UPDATE
             `id_order` = ' . ($id_order ? '\'' . pSQL($id_order) . '\'' : 'NULL') . ',
             `id_order_crm` = ' . ($id_order_crm ? '\'' . pSQL($id_order_crm) . '\'' : 'NULL') . ',
             `errors` = ' . ($errors ? '\'' . pSQL($errors) . '\'' : 'NULL') . ',
@@ -84,14 +84,14 @@ class RetailcrmExportOrdersHelper
 
     public static function getOrders($ordersIds = [], $withErrors = null, $page = 1)
     {
-        if ($page < 0) {
+        if (0 > $page) {
             return [];
         }
 
         $sqlOrdersInfo = 'SELECT * FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` WHERE 1';
         $sqlPagination = 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` WHERE 1';
 
-        if (count($ordersIds) > 0) {
+        if (0 < count($ordersIds)) {
             $sqlOrdersInfo .= ' AND (`id_order` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
                     OR `id_order_crm` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
                 )';
@@ -100,7 +100,7 @@ class RetailcrmExportOrdersHelper
                 )';
         }
 
-        if ($withErrors !== null) {
+        if (null !== $withErrors) {
             $sqlOrdersInfo .= ' AND errors IS ' . ($withErrors ? 'NOT' : '') . ' NULL';
             $sqlPagination .= ' AND errors IS ' . ($withErrors ? 'NOT' : '') . ' NULL';
         }
@@ -110,7 +110,7 @@ class RetailcrmExportOrdersHelper
         $pagination = [
             'totalCount' => $totalCount,
             'currentPage' => $page,
-            'totalPageCount' => ceil($totalCount / self::ROWS_PER_PAGE)
+            'totalPageCount' => ceil($totalCount / self::ROWS_PER_PAGE),
         ];
 
         if ($page > $pagination['totalPageCount']) {
@@ -122,7 +122,7 @@ class RetailcrmExportOrdersHelper
 
         return [
             'orders' => $orderInfo,
-            'pagination' => $pagination
+            'pagination' => $pagination,
         ];
     }
 }

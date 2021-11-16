@@ -36,8 +36,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-require_once(__DIR__ . '/../../bootstrap.php');
+require_once __DIR__ . '/../../bootstrap.php';
 
 class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
 {
@@ -49,7 +48,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
         parent::__construct();
 
         $this->api = RetailcrmTools::getApiClient();
-        $this->receiveOrderNumber = (bool)(Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+        $this->receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
     }
 
     public function postProcess()
@@ -62,7 +61,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
         if (!($this->api instanceof RetailcrmProxy)) {
             return [
                 'success' => false,
-                'errorMsg' => "Can't upload orders - set API key and API URL first!"
+                'errorMsg' => "Can't upload orders - set API key and API URL first!",
             ];
         }
 
@@ -75,7 +74,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
 
             RetailcrmExport::$api = $this->api;
             foreach ($orderIds as $orderId) {
-                $id_order = intval($orderId);
+                $id_order = (int) $orderId;
                 $response = false;
 
                 try {
@@ -100,7 +99,6 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
                 'skippedOrders' => $skippedOrders,
                 'errors' => $errors,
             ];
-
         } catch (Exception $e) {
             return [
                 'success' => false,

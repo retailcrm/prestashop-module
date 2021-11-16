@@ -35,12 +35,11 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
-
 class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
      * @throws Exception
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
@@ -53,7 +52,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
             return $next($request);
         }
 
-        if ($request->getMethod() === 'ordersUpload') {
+        if ('ordersUpload' === $request->getMethod()) {
             /** @var RetailcrmApiResponse $response */
             $response = $next($request);
 
@@ -66,8 +65,8 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
                 if ($response->offsetExists('errors')) {
                     foreach ($response['errors'] as $error) {
                         if (preg_match('/Order with externalId=(\d+) already exists\./i', $error, $matches)) {
-                            RetailcrmExportOrdersHelper::updateExportState(intval($matches[1]));
-                            $uploadedOrders[] = intval($matches[1]);
+                            RetailcrmExportOrdersHelper::updateExportState((int) ($matches[1]));
+                            $uploadedOrders[] = (int) ($matches[1]);
                         }
                     }
                 }
@@ -79,7 +78,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
                 });
 
                 $orders = [];
-                if (count($notUploadedOrders) > 0) {
+                if (0 < count($notUploadedOrders)) {
                     $getRequest = new RetailcrmApiRequest();
                     $getRequest->setApi($request->getApi())
                         ->setMethod('ordersList')
@@ -89,7 +88,8 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
                             ],
                             'page' => 1,
                             'limit' => 50,
-                        ]);
+                        ])
+                    ;
 
                     /** @var RetailcrmApiResponse $getResponse */
                     $getResponse = $next($getRequest);
@@ -99,7 +99,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
 
                         foreach ($orders as $order) {
                             RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $order['id']);
-                            $uploadedOrders[] = intval($order['externalId']);
+                            $uploadedOrders[] = (int) ($order['externalId']);
                         }
                     }
                 }
@@ -117,7 +117,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
                     [
                         'orders' => $orders,
                         'uploadedOrders' => $uploadedOrders,
-                        'notUploadedOrders' => $notUploadedOrders
+                        'notUploadedOrders' => $notUploadedOrders,
                     ]
                 )));
             }

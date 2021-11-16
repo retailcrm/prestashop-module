@@ -105,7 +105,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['adminControllerOrders'] = RetailcrmTools::getAdminControllerUrl(
                 AdminOrdersController::class
             );
-
         }
 
         return $params;

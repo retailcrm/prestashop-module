@@ -210,7 +210,6 @@ class RetailCRM extends Module
      * Installs the tab for the admin controller
      *
      * @return bool
-     *
      */
     public function installTab()
     {
@@ -236,6 +235,7 @@ class RetailCRM extends Module
 
     /**
      * @return bool
+     *
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
@@ -250,9 +250,9 @@ class RetailCRM extends Module
 
             $tab = new Tab($tabId);
 
-            if(!$tab->delete()) {
+            if (!$tab->delete()) {
                 return false;
-            };
+            }
         }
 
         return true;

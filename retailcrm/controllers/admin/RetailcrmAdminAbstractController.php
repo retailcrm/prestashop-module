@@ -36,12 +36,11 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-
 class RetailcrmAdminAbstractController extends ModuleAdminController
 {
     public static function getId()
     {
-        $tabId = (int)Tab::getIdFromClassName(static::getClassName());
+        $tabId = (int) Tab::getIdFromClassName(static::getClassName());
 
         if (!$tabId) {
             $tabId = null;
@@ -80,5 +79,4 @@ class RetailcrmAdminAbstractController extends ModuleAdminController
     {
         return null;
     }
-
 }
