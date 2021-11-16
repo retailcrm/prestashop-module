@@ -85,6 +85,7 @@ class RetailcrmProxy
                         RetailcrmExceptionMiddleware::class,
                         RetailcrmLoggerMiddleware::class,
                         RetailcrmReferenceMiddleware::class,
+                        RetailcrmExportOrdersMiddleware::class,
                     ]
                 )
             )

@@ -270,13 +270,25 @@ class RetailCRM extends Module
                     FOREIGN KEY (id_cart) REFERENCES ' . _DB_PREFIX_ . 'cart (id_cart)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
+                ) DEFAULT CHARSET=utf8;
+                CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'retailcrm_exported_orders` (
+                    `id_order` INT UNSIGNED UNIQUE NULL,
+                    `id_order_crm` INT UNSIGNED UNIQUE NULL,
+                    `errors` TEXT NULL,
+                    `last_uploaded` DATETIME,
+                    FOREIGN KEY (id_order) REFERENCES '._DB_PREFIX_.'orders (id_order)
+                        ON DELETE CASCADE
+                        ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'
         );
     }
 
     public function uninstallDB()
     {
-        return Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`;');
+        return Db::getInstance()->execute(
+            'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`;
+            DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders`;'
+        );
     }
 
     public function getContent()
