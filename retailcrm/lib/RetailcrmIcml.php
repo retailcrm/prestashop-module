@@ -68,7 +68,6 @@ class RetailcrmIcml
         $this->params = [
             'article' => 'Артикул',
             'color' => 'Цвет',
-            'weight' => 'Вес',
             'tax' => 'Наценка',
         ];
     }
@@ -206,12 +205,12 @@ class RetailcrmIcml
 
     private function getWeightInKg($weight)
     {
-        $mg = $weight / 1000 / 1000;
-        $g = $weight / 1000;
-        $ton = $weight * 1000;
-        $oz = $weight / 35.3;
-        $pd = $weight * 2.2;
-        $st = $weight * 6.35;
+        $mg = 1 / 1000 / 1000;
+        $g = 1 / 1000;
+        $ton = 1 * 1000;
+        $oz = 1 / 35.3;
+        $pd = 1 * 2.2;
+        $st = 1 * 6.35;
 
         $weightUnits = [
             'mg' => $mg,
@@ -227,11 +226,11 @@ class RetailcrmIcml
             'гр' => $g,
             'грамм' => $g,
 
-            'kg' => $weight,
-            'kilogram' => $weight,
-            'kilogramme' => $weight,
-            'kilo' => $weight,
-            'kilogramo' => $weight,
+            'kg' => 1,
+            'kilogram' => 1,
+            'kilogramme' => 1,
+            'kilo' => 1,
+            'kilogramo' => 1,
 
             'ton' => $ton,
             'т' => $ton,
@@ -256,6 +255,13 @@ class RetailcrmIcml
             'stone' => $st,
         ];
 
-        return RetailcrmTools::filter('RetailcrmFilterWeight', $weight, $weightUnits);
+        $weightUnits = RetailcrmTools::filter('RetailcrmFilterWeight', $weightUnits);
+
+        $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
+
+        if (isset($weightUnits[$weightUnit])) {
+            return $weight * $weightUnits[$weightUnit];
+        }
+        return $weight;
     }
 }
