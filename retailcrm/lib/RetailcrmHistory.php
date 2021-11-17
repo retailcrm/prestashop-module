@@ -1486,6 +1486,7 @@ class RetailcrmHistory
 
     private static function checkDeliveryChanges($order, $orderToUpdate)
     {
+
         if (isset($order['delivery']['address'])
             || isset($order['firstName'])
             || isset($order['lastName'])
@@ -1499,10 +1500,20 @@ class RetailcrmHistory
 
                 if ($address->id === null) {
                     if ($orderToUpdate->id_address_delivery < 1) {
-                        RetailcrmHistory::setNewAddressInOrder($orderToUpdate, $address);
+                        self::loadInCMS($address, 'add');
+                        $orderToUpdate->id_address_delivery = $address->id;
+                        self::loadInCMS($order, 'update');
+
                     } else {
-                        $address->id = $orderToUpdate->id_address_delivery;
-                        self::loadInCMS($address, 'update');
+                        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                            self::loadInCMS($address, 'add');
+
+                            $orderToUpdate->id_address_delivery = $address->id;
+                            self::loadInCMS($orderToUpdate, 'update');
+                        } else {
+                            $address->id = $orderToUpdate->id_address_delivery;
+                            self::loadInCMS($address, 'update');
+                        }
                     }
                 } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf(
@@ -1919,12 +1930,6 @@ class RetailcrmHistory
         return $paymentId;
     }
 
-    private static function setNewAddressInOrder($order, $address)
-    {
-        self::loadInCMS($address, 'add');
-        $order->id_address_delivery = $address->id;
-        self::loadInCMS($order, 'update');
-    }
 
     private static function saveCarrier($orderId, $deliveryType, $cost)
     {

@@ -442,9 +442,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderAfter = new Order($orderId);
         $idAddressAfter = $orderAfter->id_address_delivery;
 
-//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-//            $this->assertNotEquals($idAddress, $idAddressAfter);
-//        }
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
 
         $builder = new RetailcrmAddressBuilder();
         $result = $builder
@@ -488,9 +488,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $idAddressAfter = $orderAfter->id_address_delivery;
         $addressAfter = $this->createAddress($idAddressAfter, $crmOrder['firstName'], $crmOrder['lastName'], $crmOrder['phone']);
 
-//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-//            $this->assertNotEquals($idAddress, $idAddressAfter);
-//        }
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
 
         $this->assertEquals($crmOrder['firstName'], $addressAfter->firstname);
         $this->assertEquals($crmOrder['lastName'], $addressAfter->lastname);
@@ -517,7 +517,19 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'newValue' => array(
                         'id' => 7777,
                         'externalId' => '777',
-                        'site' => '127.0.0.1:8000'
+                        'site' => '127.0.0.1:8000',
+                        'delivery' => array(
+                            'code' => 'delivery',
+                            'cost' => 100,
+                            'netCost' => 0,
+                            'address' => array(
+                                'index' => '111111',
+                                'countryIso' => 'RU',
+                                'region' => 'Buenos Aires',
+                                'city' => 'Test',
+                                'text' => 'Test text address'
+                            )
+                        ),
                     ),
                     'order' => array(
                         'id' => 6025,
