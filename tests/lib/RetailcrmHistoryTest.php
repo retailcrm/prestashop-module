@@ -511,7 +511,19 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'newValue' => array(
                         'id' => 7777,
                         'externalId' => '777',
-                        'site' => '127.0.0.1:8000'
+                        'site' => '127.0.0.1:8000',
+                        'delivery' => array(
+                            'code' => 'delivery',
+                            'cost' => 100,
+                            'netCost' => 0,
+                            'address' => array(
+                                'index' => '111111',
+                                'countryIso' => 'RU',
+                                'region' => 'Buenos Aires',
+                                'city' => 'Test',
+                                'text' => 'Test text address'
+                            )
+                        ),
                     ),
                     'order' => array(
                         'id' => 6025,
