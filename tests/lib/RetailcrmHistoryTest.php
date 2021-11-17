@@ -5,14 +5,14 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     private $apiMock;
     private $product;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
 
         $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
             ->disableOriginalConstructor()
             ->setMethods(
-                array(
+                [
                     'customersHistory',
                     'ordersHistory',
                     'ordersGet',
@@ -20,10 +20,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'customersGet',
                     'customersFixExternalIds',
                     'ordersFixExternalIds',
-                    'customersCorporateAddressesEdit'
-                )
+                    'customersCorporateAddressesEdit',
+                ]
             )
-            ->getMock();
+            ->getMock()
+        ;
 
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
@@ -46,7 +47,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryDataNewCustomer()
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('customersGet')
@@ -54,20 +56,20 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'customer' => $this->getApiCustomer()
-                        )
+                        [
+                            'customer' => $this->getApiCustomer(),
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         $externalId = isset($this->getApiCustomer()['externalId']) ? $this->getApiCustomer()['externalId'] : null;
 
-        if (!empty($externalId))
-        {
+        if (!empty($externalId)) {
             $oldCustomer = new Customer($externalId);
             RetailcrmHistory::customersHistory();
             $newCustomer = new Customer($externalId);
@@ -81,12 +83,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             $this->assertTrue($newLastId > $oldLastId);
         }
 
-        $this->assertEquals(true, RetailcrmHistory::customersHistory());
+        $this->assertTrue(RetailcrmHistory::customersHistory());
     }
 
     public function testOrdersHistory()
     {
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         $order = new Order(1);
@@ -94,10 +96,10 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $updReference = 'test';
         $crmOrder = $this->getApiOrder();
         $crmOrder['number'] = $updReference;
-        $checkArgs = array(
-            'externalId' => 1, 
+        $checkArgs = [
+            'externalId' => 1,
             'number' => $reference,
-        );
+        ];
 
         $this->apiMock->expects($this->any())
             ->method('ordersHistory')
@@ -108,7 +110,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryExistOrder($crmOrder)
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -116,12 +119,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
+                        [
                             'order' => $crmOrder,
-                        )
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->once())
             ->method('ordersEdit')
@@ -130,12 +134,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => array(),
-                        )
+                        [
+                            'order' => [],
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, false);
@@ -154,7 +159,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     private function orderCreate($apiMock, $orderData)
     {
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $apiMock;
 
         $oldLastId = RetailcrmTestHelper::getMaxOrderId();
@@ -198,8 +203,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             $orderData['customer']['phones'][0]['number']
         );
 
-        $this->assertEquals($orderData['customer']['firstName'],$address->firstname);
-        $this->assertEquals($orderData['customer']['lastName'],$address->lastname);
+        $this->assertEquals($orderData['customer']['firstName'], $address->firstname);
+        $this->assertEquals($orderData['customer']['lastName'], $address->lastname);
 
         $addressInvoice = $builder
             ->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER)
@@ -208,7 +213,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             ->getDataArray()
         ;
 
-        if(isset($orderData['customer']['address']['id'])) {
+        if (isset($orderData['customer']['address']['id'])) {
             unset($orderData['customer']['address']['id']);
         }
         $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
@@ -223,7 +228,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     private function switchCustomer()
     {
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         $history = $this->getHistoryExistOrder();
@@ -248,7 +253,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryExistOrder()
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -256,16 +262,16 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => $this->getApiOrder()
-                        )
+                        [
+                            'order' => $this->getApiOrder(),
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         $this->switchCustomer();
     }
-
 
     public function testOrderSwitchCorporateCustomer()
     {
@@ -278,7 +284,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryExistOrder()
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -286,12 +293,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => $this->getApiOrderWitchCorporateCustomer()
-                        )
+                        [
+                            'order' => $this->getApiOrderWitchCorporateCustomer(),
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         $this->switchCustomer();
     }
@@ -309,7 +317,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryDataNewOrder($orderData)
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -317,12 +326,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => $orderData
-                        )
+                        [
+                            'order' => $orderData,
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersEdit')
@@ -333,7 +343,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getEditedOrder($orderData)
                     )
                 )
-            );
+            )
+        ;
 
         $this->orderCreate($this->apiMock, $orderData);
     }
@@ -351,7 +362,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryDataNewOrder($orderData)
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -359,12 +371,13 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => $orderData
-                        )
+                        [
+                            'order' => $orderData,
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersEdit')
@@ -375,7 +388,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getEditedOrder($orderData)
                     )
                 )
-            );
+            )
+        ;
 
         $this->orderCreate($this->apiMock, $orderData);
     }
@@ -393,14 +407,14 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getUpdatePaymentStatus($lastId)
                     )
                 )
-            );
+            )
+        ;
 
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         RetailcrmHistory::ordersHistory();
     }
-
 
     public function testOrderAddressUpdate()
     {
@@ -416,7 +430,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryAddressUpdated($orderId)
                     )
                 )
-            );
+            )
+        ;
 
         $this->apiMock->expects($this->any())
             ->method('ordersGet')
@@ -424,14 +439,15 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
-                        array(
-                            'order' => $crmOrder
-                        )
+                        [
+                            'order' => $crmOrder,
+                        ]
                     )
                 )
-            );
+            )
+        ;
 
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         $order = new Order($orderId);
@@ -451,14 +467,14 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             ->setMode(RetailcrmAddressBuilder::MODE_ORDER_DELIVERY)
             ->setAddressId($idAddressAfter)
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         $this->assertEquals($crmOrder['delivery']['address']['countryIso'], $result['countryIso']);
         unset($crmOrder['delivery']['address']['countryIso']);
 
         $this->assertEquals($crmOrder['delivery']['address'], $result['delivery']['address']);
     }
-
 
     public function testOrderNameUpdate()
     {
@@ -474,9 +490,10 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         $this->getHistoryNameAndPhoneUpdated($orderId)
                     )
                 )
-            );
+            )
+        ;
 
-        RetailcrmHistory::$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
 
         $order = new Order($orderId);
@@ -497,99 +514,98 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($crmOrder['phone'], $addressAfter->phone);
     }
 
-
     private function getHistoryExistOrder()
     {
-        return array(
+        return [
             'success' => true,
-            'history'  => array(
-                array(
+            'history' => [
+                [
                     'id' => 19752,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'customer',
-                    'apiKey' => array('current' => false),
-                    'oldValue' => array(
+                    'apiKey' => ['current' => false],
+                    'oldValue' => [
                         'id' => 7778,
                         'externalId' => '1',
-                        'site' => '127.0.0.1:8000'
-                    ),
-                    'newValue' => array(
+                        'site' => '127.0.0.1:8000',
+                    ],
+                    'newValue' => [
                         'id' => 7777,
                         'externalId' => '777',
                         'site' => '127.0.0.1:8000',
-                        'delivery' => array(
+                        'delivery' => [
                             'code' => 'delivery',
                             'cost' => 100,
                             'netCost' => 0,
-                            'address' => array(
+                            'address' => [
                                 'index' => '111111',
                                 'countryIso' => 'RU',
                                 'region' => 'Buenos Aires',
                                 'city' => 'Test',
-                                'text' => 'Test text address'
-                            )
-                        ),
-                    ),
-                    'order' => array(
+                                'text' => 'Test text address',
+                            ],
+                        ],
+                    ],
+                    'order' => [
                         'id' => 6025,
                         'externalId' => '1',
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                )
-            ),
-            'pagination' => array(
+                        'status' => 'new',
+                    ],
+                ],
+            ],
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 1,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            )
-        );
+                'totalPageCount' => 1,
+            ],
+        ];
     }
 
     private function getHistoryDataNewOrder($orderData)
     {
-        return array(
+        return [
             'success' => true,
-            'history'  => array(
-                array(
+            'history' => [
+                [
                     'id' => 1,
                     'createdAt' => '2018-01-01 00:00:00',
                     'created' => true,
                     'source' => 'user',
-                    'user' => array(
-                        'id' => 1
-                    ),
+                    'user' => [
+                        'id' => 1,
+                    ],
                     'field' => 'status',
                     'oldValue' => null,
-                    'newValue' => array(
-                        'code' => 'new'
-                    ),
-                    'order' => $orderData
-                )
-            ),
-            'pagination' => array(
+                    'newValue' => [
+                        'code' => 'new',
+                    ],
+                    'order' => $orderData,
+                ],
+            ],
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 1,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            )
-        );
+                'totalPageCount' => 1,
+            ],
+        ];
     }
 
     private function getEditedOrder($orderData)
     {
-        return array(
+        return [
             'success' => true,
             'id' => $orderData['id'],
-            'order' => $orderData
-        );
+            'order' => $orderData,
+        ];
     }
 
     private function getApiOrder()
     {
-        $order = array(
+        $order = [
             'slug' => 1,
             'id' => 1,
             'number' => '1C',
@@ -608,37 +624,37 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'phone' => '80000000000',
             'call' => false,
             'expired' => false,
-            'customer' => array(
-                'segments' => array(),
+            'customer' => [
+                'segments' => [],
                 'id' => 1,
                 'externalId' => '777',
                 'type' => 'customer',
                 'firstName' => 'Test',
                 'lastName' => 'Test',
                 'email' => 'email@test.ru',
-                'phones' => array(
-                    array(
-                        'number' => '111111111111111'
-                    ),
-                    array(
-                        'number' => '+7111111111'
-                    )
-                ),
-                'address' => array(
+                'phones' => [
+                    [
+                        'number' => '111111111111111',
+                    ],
+                    [
+                        'number' => '+7111111111',
+                    ],
+                ],
+                'address' => [
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Buenos Aires',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                ),
+                    'text' => 'Test text address',
+                ],
                 'createdAt' => '2018-01-01 00:00:00',
                 'managerId' => 1,
                 'vip' => false,
                 'bad' => false,
                 'site' => 'test-com',
-                'contragent' => array(
-                    'contragentType' => 'individual'
-                ),
+                'contragent' => [
+                    'contragentType' => 'individual',
+                ],
                 'personalDiscount' => 0,
                 'cumulativeDiscount' => 0,
                 'marginSumm' => 58654,
@@ -646,66 +662,66 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 'averageSumm' => 15387.25,
                 'ordersCount' => 4,
                 'costSumm' => 101,
-                'customFields' => array(
-                    'custom' => 'test'
-                )
-            ),
-            'contragent' => array(),
-            'delivery' => array(
+                'customFields' => [
+                    'custom' => 'test',
+                ],
+            ],
+            'contragent' => [],
+            'delivery' => [
                 'code' => 'delivery',
                 'cost' => 100,
                 'netCost' => 0,
-                'address' => array(
+                'address' => [
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Buenos Aires',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                )
-            ),
+                    'text' => 'Test text address',
+                ],
+            ],
             'site' => 'test-com',
             'status' => 'new',
-            'items' => array(
-                array(
+            'items' => [
+                [
                     'id' => 160,
                     'initialPrice' => 100,
                     'createdAt' => '2018-01-01 00:00:00',
                     'quantity' => 1,
                     'status' => 'new',
-                    'offer' => array(
+                    'offer' => [
                         'id' => 1,
                         'externalId' => $this->product['id'],
                         'xmlId' => '1',
                         'name' => 'Test name',
-                        'vatRate' => 'none'
-                    ),
-                    'properties' => array(),
-                    'purchasePrice' => 50
-                ),
-                array_merge(RetailcrmOrderBuilder::getGiftItem(10), array('id' => 25919))
-            ),
+                        'vatRate' => 'none',
+                    ],
+                    'properties' => [],
+                    'purchasePrice' => 50,
+                ],
+                array_merge(RetailcrmOrderBuilder::getGiftItem(10), ['id' => 25919]),
+            ],
             'fromApi' => false,
             'length' => 0,
             'width' => 0,
             'height' => 0,
             'shipmentStore' => 'main',
             'shipped' => false,
-            'customFields' => array(),
-            'uploadedToExternalStoreSystem' => false
-        );
+            'customFields' => [],
+            'uploadedToExternalStoreSystem' => false,
+        ];
 
-        $order['payments'][] = array(
+        $order['payments'][] = [
             'id' => 97,
             'type' => 'cheque',
-            'amount' => 210
-        );
+            'amount' => 210,
+        ];
 
         return $order;
     }
 
     private function getApiOrderWitchCorporateCustomer()
     {
-        $orderWithCorporateCustomer = array(
+        $orderWithCorporateCustomer = [
             'slug' => 1,
             'id' => 2,
             'number' => '1C',
@@ -724,38 +740,38 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'phone' => '80000000000',
             'call' => false,
             'expired' => false,
-            'customer' => array(
-                'segments' => array(),
+            'customer' => [
+                'segments' => [],
                 'id' => 1,
                 'externalId' => '777',
                 'type' => 'customer_corporate',
                 'firstName' => 'Test',
                 'lastName' => 'Test',
                 'email' => 'email@test.ru',
-                'phones' => array(
-                    array(
-                        'number' => '111111111111111'
-                    ),
-                    array(
-                        'number' => '+7111111111'
-                    )
-                ),
-                'address' => array(
+                'phones' => [
+                    [
+                        'number' => '111111111111111',
+                    ],
+                    [
+                        'number' => '+7111111111',
+                    ],
+                ],
+                'address' => [
                     'id' => 2345,
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Buenos Aires',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                ),
+                    'text' => 'Test text address',
+                ],
                 'createdAt' => '2018-01-01 00:00:00',
                 'managerId' => 1,
                 'vip' => false,
                 'bad' => false,
                 'site' => 'test-com',
-                'contragent' => array(
-                    'contragentType' => 'individual'
-                ),
+                'contragent' => [
+                    'contragentType' => 'individual',
+                ],
                 'personalDiscount' => 0,
                 'cumulativeDiscount' => 0,
                 'marginSumm' => 58654,
@@ -763,11 +779,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 'averageSumm' => 15387.25,
                 'ordersCount' => 4,
                 'costSumm' => 101,
-                'customFields' => array(
-                    'custom' => 'test'
-                )
-            ),
-            'contact' => array(
+                'customFields' => [
+                    'custom' => 'test',
+                ],
+            ],
+            'contact' => [
                 'id' => 1,
                 'externalId' => '7777',
                 'type' => 'customer_corporate',
@@ -775,161 +791,161 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                 'isContact' => true,
                 'vip' => false,
                 'bad' => false,
-            ),
-            'contragent' => array(),
-            'delivery' => array(
+            ],
+            'contragent' => [],
+            'delivery' => [
                 'code' => 'delivery',
                 'cost' => 100,
                 'netCost' => 0,
-                'address' => array(
+                'address' => [
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Buenos Aires',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                )
-            ),
-            'company' => array(
+                    'text' => 'Test text address',
+                ],
+            ],
+            'company' => [
                 'id' => 7777,
-                'contragent' => array(
+                'contragent' => [
                     'legalName' => 'test',
-                    'INN' => '255222'
-                ),
-                'address' => array(
+                    'INN' => '255222',
+                ],
+                'address' => [
                     'id' => 1,
                     'index' => '111111',
                     'countryIso' => 'RU',
                     'region' => 'Buenos Aires',
                     'city' => 'Test',
-                    'text' => 'Test text address'
-                )
-            ),
+                    'text' => 'Test text address',
+                ],
+            ],
             'site' => 'test-com',
             'status' => 'new',
-            'items' => array(
-                array(
+            'items' => [
+                [
                     'id' => 160,
                     'initialPrice' => 100,
                     'createdAt' => '2018-01-01 00:00:00',
                     'quantity' => 1,
                     'status' => 'new',
-                    'offer' => array(
+                    'offer' => [
                         'id' => 1,
                         'externalId' => $this->product['id'],
                         'xmlId' => '1',
                         'name' => 'Test name',
-                        'vatRate' => 'none'
-                    ),
-                    'properties' => array(),
-                    'purchasePrice' => 50
-                ),
-                array_merge(RetailcrmOrderBuilder::getGiftItem(10), array('id' => 25919))
-            ),
+                        'vatRate' => 'none',
+                    ],
+                    'properties' => [],
+                    'purchasePrice' => 50,
+                ],
+                array_merge(RetailcrmOrderBuilder::getGiftItem(10), ['id' => 25919]),
+            ],
             'fromApi' => false,
             'length' => 0,
             'width' => 0,
             'height' => 0,
             'shipmentStore' => 'main',
             'shipped' => false,
-            'customFields' => array(),
-            'uploadedToExternalStoreSystem' => false
-        );
+            'customFields' => [],
+            'uploadedToExternalStoreSystem' => false,
+        ];
 
-        $orderWithCorporateCustomer['payments'][] = array(
+        $orderWithCorporateCustomer['payments'][] = [
             'id' => 97,
             'type' => 'cheque',
-            'amount' => 210
-        );
+            'amount' => 210,
+        ];
 
         return $orderWithCorporateCustomer;
     }
 
     private function getUpdatePaymentStatus($orderId)
     {
-        return array(
+        return [
             'success' => true,
-            'pagination' => array(
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 1,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            ),
-            'history' => array(
-                array(
+                'totalPageCount' => 1,
+            ],
+            'history' => [
+                [
                     'id' => 654,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'user',
-                    'user' => array(
-                        'id' => 1
-                    ),
+                    'user' => [
+                        'id' => 1,
+                    ],
                     'field' => 'full_paid_at',
                     'oldValue' => null,
                     'newValue' => '2018-01-01 00:00:00',
-                    'order' => array(
+                    'order' => [
                         'id' => 1,
                         'externalId' => $orderId,
                         'site' => 'test-com',
-                        'status' => 'new'
-                    )
-                ),
-                array(
-                    'id'=> 655,
+                        'status' => 'new',
+                    ],
+                ],
+                [
+                    'id' => 655,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'user',
-                    'user' => array(
-                        'id' => 1
-                    ),
+                    'user' => [
+                        'id' => 1,
+                    ],
                     'field' => 'payments.paid_at',
                     'oldValue' => null,
                     'newValue' => '2018-01-01 00:00:00',
-                    'order' => array(
+                    'order' => [
                         'id' => 1,
                         'externalId' => $orderId,
                         'site' => 'test-com',
-                        'status' => 'new'
-                    ),
-                    'payment'=> array(
-                        'id'=> 102,
-                        'type'=> 'cheque',
-                        'externalId' => 1
-                    )
-                ),
-                array(
+                        'status' => 'new',
+                    ],
+                    'payment' => [
+                        'id' => 102,
+                        'type' => 'cheque',
+                        'externalId' => 1,
+                    ],
+                ],
+                [
                     'id' => 656,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'user',
-                    'user' => array(
-                        'id' => 1
-                    ),
+                    'user' => [
+                        'id' => 1,
+                    ],
                     'field' => 'payments.status',
-                    'oldValue' => array(
-                        'code' => 'not-paid'
-                    ),
-                    'newValue' => array(
-                        'code' => 'paid'
-                    ),
-                    'order' => array(
+                    'oldValue' => [
+                        'code' => 'not-paid',
+                    ],
+                    'newValue' => [
+                        'code' => 'paid',
+                    ],
+                    'order' => [
                         'id' => 1,
                         'externalId' => $orderId,
                         'site' => 'test-com',
-                        'status' => 'new'
-                    ),
-                    'payment' => array(
+                        'status' => 'new',
+                    ],
+                    'payment' => [
                         'id' => 102,
                         'type' => 'cheque',
-                        'externalId' => 1
-                    )
-                )
-            )
-        );
+                        'externalId' => 1,
+                    ],
+                ],
+            ],
+        ];
     }
 
     private function getHistoryDataNewCustomer()
     {
-        return array(
+        return [
             'success' => true,
-            'history' => array(
-                array(
+            'history' => [
+                [
                     'id' => 1,
                     'createdAt' => '2018-01-01 00:00:00',
                     'created' => true,
@@ -937,21 +953,21 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     'field' => 'id',
                     'oldValue' => null,
                     'newValue' => 4949,
-                    'customer' => $this->getApiCustomer()
-                )
-            ),
-            'pagination' => array(
+                    'customer' => $this->getApiCustomer(),
+                ],
+            ],
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 1,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            )
-        );
+                'totalPageCount' => 1,
+            ],
+        ];
     }
 
     private function getApiCustomer()
     {
-        return array(
+        return [
             'type' => 'customer',
             'id' => 1,
             'externalId' => '1',
@@ -960,10 +976,10 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'vip' => false,
             'bad' => false,
             'site' => 'example.com',
-            'contragent'=> array(
-                'contragentType'=> 'individual'
-            ),
-            'tags' => array(),
+            'contragent' => [
+                'contragentType' => 'individual',
+            ],
+            'tags' => [],
             'marginSumm' => 0,
             'totalSumm' => 0,
             'averageSumm' => 0,
@@ -971,136 +987,135 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'costSumm' => 0,
             'customFields' => [],
             'personalDiscount' => 0,
-            'address' => array(
+            'address' => [
                 'id' => 4053,
                 'countryIso' => 'RU',
                 'index' => '2170',
                 'city' => 'Buenos Aires',
                 'street' => 'Good',
                 'building' => '17',
-                'text' => 'Good, д. 17'
-            ),
-            'segments' => array(),
+                'text' => 'Good, д. 17',
+            ],
+            'segments' => [],
             'email' => 'test@example.com',
             'firstName' => 'Test',
             'lastName' => 'Test',
-            'phones' => array(
-                'number' => '+79999999999'
-            )
-        );
+            'phones' => [
+                'number' => '+79999999999',
+            ],
+        ];
     }
 
     private function getHistoryAddressUpdated($orderId)
     {
-        return array(
+        return [
             'success' => true,
-            'history'  => array(
-                array(
+            'history' => [
+                [
                     'id' => 19752,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'delivery_address.city',
-                    'apiKey' => array('current' => false),
+                    'apiKey' => ['current' => false],
                     'oldValue' => 'Order City old',
                     'newValue' => 'Order City new',
-                    'order' => array(
+                    'order' => [
                         'id' => 6025,
-                        'externalId' => (string)$orderId,
+                        'externalId' => (string) $orderId,
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                ),
-                array(
+                        'status' => 'new',
+                    ],
+                ],
+                [
                     'id' => 19753,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'delivery_address.index',
-                    'apiKey' => array('current' => false),
+                    'apiKey' => ['current' => false],
                     'oldValue' => '111',
                     'newValue' => '222',
-                    'order' => array(
+                    'order' => [
                         'id' => 6025,
-                        'externalId' => (string)$orderId,
+                        'externalId' => (string) $orderId,
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                ),
-                array(
+                        'status' => 'new',
+                    ],
+                ],
+                [
                     'id' => 19754,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'delivery_address.street',
-                    'apiKey' => array('current' => false),
+                    'apiKey' => ['current' => false],
                     'oldValue' => null,
                     'newValue' => 'Test updated address',
-                    'order' => array(
+                    'order' => [
                         'id' => 6025,
-                        'externalId' => (string)$orderId,
+                        'externalId' => (string) $orderId,
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                )
-            ),
-            'pagination' => array(
+                        'status' => 'new',
+                    ],
+                ],
+            ],
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 3,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            )
-        );
+                'totalPageCount' => 1,
+            ],
+        ];
     }
-
 
     private function getHistoryNameAndPhoneUpdated($orderId)
     {
-        return array(
+        return [
             'success' => true,
-            'history'  => array(
-                array(
+            'history' => [
+                [
                     'id' => 19752,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'first_name',
-                    'apiKey' => array('current' => false),
+                    'apiKey' => ['current' => false],
                     'oldValue' => 'name old',
                     'newValue' => 'name new',
-                    'order' => array(
+                    'order' => [
                         'id' => 6025,
-                        'externalId' => (string)$orderId,
+                        'externalId' => (string) $orderId,
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                ),
-                array(
+                        'status' => 'new',
+                    ],
+                ],
+                [
                     'id' => 19753,
                     'createdAt' => '2018-01-01 00:00:00',
                     'source' => 'api',
                     'field' => 'phone',
-                    'apiKey' => array('current' => false),
+                    'apiKey' => ['current' => false],
                     'oldValue' => '111',
                     'newValue' => '222222',
-                    'order' => array(
+                    'order' => [
                         'id' => 6025,
-                        'externalId' => (string)$orderId,
+                        'externalId' => (string) $orderId,
                         'site' => '127.0.0.1:8000',
-                        'status' => 'new'
-                    )
-                )
-            ),
-            'pagination' => array(
+                        'status' => 'new',
+                    ],
+                ],
+            ],
+            'pagination' => [
                 'limit' => 20,
                 'totalCount' => 2,
                 'currentPage' => 1,
-                'totalPageCount' => 1
-            )
-        );
+                'totalPageCount' => 1,
+            ],
+        ];
     }
 
     private function getApiOrderAddressUpdate($orderId)
     {
         $order = $this->getApiOrder();
 
-        $order['externalId'] = (string)$orderId;
+        $order['externalId'] = (string) $orderId;
         $order['delivery']['address']['city'] = 'Order City new';
         $order['delivery']['address']['index'] = '222';
         $order['delivery']['address']['text'] = 'Test updated address';
@@ -1109,12 +1124,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         return $order;
     }
 
-
     private function getApiOrderNameAndPhoneUpdate($orderId)
     {
         $order = $this->getApiOrder();
 
-        $order['externalId'] = (string)$orderId;
+        $order['externalId'] = (string) $orderId;
         $order['firstName'] = 'name new';
         $order['phone'] = '222222';
 
@@ -1128,7 +1142,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $address->lastname = $lastname;
         $address->id_country = 177; //RU
         $address->phone = $phone;
+
         return $address;
     }
 }
-
