@@ -262,6 +262,7 @@ class RetailcrmIcml
         if (isset($weightUnits[$weightUnit])) {
             return $weight * $weightUnits[$weightUnit];
         }
+
         return $weight;
     }
 }
