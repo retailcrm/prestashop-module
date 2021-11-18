@@ -25,29 +25,17 @@ class RetailCRMTest extends RetailcrmTestCase
         );
     }
 
-    public function testUploadOrders()
+    private function mockMethodsForOrderUpload($crmId, $cmsId, $reference)
     {
-        Configuration::updateValue(RetailCRM::API_URL, 'https://test.test');
-        Configuration::updateValue(RetailCRM::API_KEY, 'test_key');
-
-        $order = new Order(1);
-        $reference = $order->reference;
-        $updReference = 'test';
-
-        $this->apiClientMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [],
-            ])
-        ));
         $this->apiClientMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
             200,
             json_encode([
                 'success' => true,
+                'id' => $crmId,
                 'order' => [
-                    'externalId' => 1,
-                    'number' => $updReference,
+                    'externalId' => $cmsId,
+                    'id' => $crmId,
+                    'number' => $reference,
                 ],
             ])
         ));
@@ -55,9 +43,11 @@ class RetailCRMTest extends RetailcrmTestCase
             200,
             json_encode([
                 'success' => true,
+                'id' => $crmId,
                 'order' => [
-                    'externalId' => 1,
-                    'number' => $updReference,
+                    'externalId' => $cmsId,
+                    'id' => $crmId,
+                    'number' => $reference,
                 ],
             ])
         ));
@@ -82,6 +72,26 @@ class RetailCRMTest extends RetailcrmTestCase
                 'payment' => [],
             ])
         ));
+    }
+
+    public function testUploadOrders()
+    {
+        Configuration::updateValue(RetailCRM::API_URL, 'https://test.test');
+        Configuration::updateValue(RetailCRM::API_KEY, 'test_key');
+
+        $order = new Order(1);
+        $reference = $order->reference;
+        $updReference = 'test';
+
+        $this->apiClientMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
+            200,
+            json_encode([
+                'success' => true,
+                'order' => [],
+            ])
+        ));
+
+        $this->mockMethodsForOrderUpload(1, 1, $updReference);
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
         $this->retailcrmModule->uploadOrders([1]);
@@ -161,45 +171,8 @@ class RetailCRMTest extends RetailcrmTestCase
                 ],
             ])
         ));
-        $this->apiClientMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'number' => $updReference,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersEdit')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'number' => $updReference,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('customersGet')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'customer' => [],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('customersCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'customer' => [],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersPaymentCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'payment' => [],
-            ])
-        ));
+
+        $this->mockMethodsForOrderUpload(1, 1, $updReference);
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
 
@@ -255,47 +228,7 @@ class RetailCRMTest extends RetailcrmTestCase
             ));
         }
 
-        $this->apiClientMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'externalId' => 1,
-                    'number' => $updReference,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersEdit')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'externalId' => 1,
-                    'number' => $updReference,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('customersGet')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'customer' => [],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('customersCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'customer' => [],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersPaymentCreate')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'payment' => [],
-            ])
-        ));
+        $this->mockMethodsForOrderUpload(1, 1, $updReference);
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
 

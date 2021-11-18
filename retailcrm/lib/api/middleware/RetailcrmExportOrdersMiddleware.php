@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MIT License
  *
@@ -132,7 +133,8 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
             $response = $next($request);
 
             if ($response->isSuccessful()) {
-                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $response['id']);
+                $crmOrderId = isset($response['id']) ? $response['id'] : null;
+                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $crmOrderId);
             } else {
                 $errors = $response->offsetExists('errors') ? $response['errors'] : [$response['errorMsg']];
                 RetailcrmExportOrdersHelper::updateExportState($order['externalId'], null, $errors);

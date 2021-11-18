@@ -22,17 +22,17 @@ class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
         return [
             [
                 'method' => 'ordersGet',
-                'params' => [[]],
+                'params' => [],
                 'reference' => 'reference',
             ],
             [
                 'method' => 'ordersEdit',
-                'params' => [['number' => 'test', 'externalId' => 1]],
+                'params' => ['number' => 'test', 'externalId' => 1],
                 'reference' => 'test',
             ],
             [
                 'method' => 'ordersCreate',
-                'params' => [['number' => 'test', 'externalId' => 1]],
+                'params' => ['number' => 'test', 'externalId' => 1],
                 'reference' => 'test',
             ],
         ];
@@ -43,32 +43,14 @@ class RetailcrmReferenceMiddlewareTest extends RetailcrmTestCase
      */
     public function testRequest($method, $params, $reference)
     {
-        $this->apiClientMock->expects($this->any())->method('ordersCreate')->willReturn(new RetailcrmApiResponse(
+        $this->apiClientMock->expects($this->any())->method($method)->willReturn(new RetailcrmApiResponse(
             200,
             json_encode([
                 'success' => true,
+                'id' => 1,
                 'order' => [
                     'number' => 'test',
-                    'externalId' => 1,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersEdit')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'number' => 'test',
-                    'externalId' => 1,
-                ],
-            ])
-        ));
-        $this->apiClientMock->expects($this->any())->method('ordersGet')->willReturn(new RetailcrmApiResponse(
-            200,
-            json_encode([
-                'success' => true,
-                'order' => [
-                    'number' => 'test',
+                    'id' => 1,
                     'externalId' => 1,
                 ],
             ])

@@ -9,22 +9,18 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         parent::setUp();
 
-        $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
-            ->disableOriginalConstructor()
-            ->setMethods(
-                [
-                    'customersHistory',
-                    'ordersHistory',
-                    'ordersGet',
-                    'ordersEdit',
-                    'customersGet',
-                    'customersFixExternalIds',
-                    'ordersFixExternalIds',
-                    'customersCorporateAddressesEdit',
-                ]
-            )
-            ->getMock()
-        ;
+        $this->apiMock = $this->getApiMock(
+            [
+                'customersHistory',
+                'ordersHistory',
+                'ordersGet',
+                'ordersEdit',
+                'customersGet',
+                'customersFixExternalIds',
+                'ordersFixExternalIds',
+                'customersCorporateAddressesEdit',
+            ]
+        );
 
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
@@ -38,7 +34,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     public function testCustomersHistory()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('customersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -50,7 +46,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('customersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -101,7 +97,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'number' => $reference,
         ];
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -113,7 +109,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -127,7 +123,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->once())
+        $this->apiClientMock->expects($this->once())
             ->method('ordersEdit')
             ->with($checkArgs)
             ->willReturn(
@@ -136,6 +132,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     json_encode(
                         [
                             'success' => true,
+                            'id' => $crmOrder['id'],
                             'order' => [
                                 'externalId' => $order->id,
                                 'number' => $updReference,
@@ -161,10 +158,75 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($updReference, $secondUpdOrder->reference);
     }
 
-    private function orderCreate($apiMock, $orderData)
+    public function orderCreateDataProvider()
     {
+        return [
+            [
+                'orderData' => $this->getApiOrder(), ],
+            [
+                'orderData' => $this->getApiOrderWitchCorporateCustomer(),
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider orderCreateDataProvider
+     */
+    public function testOrderCreate($orderData)
+    {
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryDataNewOrder($orderData)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'order' => $orderData,
+                        ]
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($orderData)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersFixExternalIds')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode([
+                        'success' => true,
+                    ]
+                    )
+                )
+            )
+        ;
+
         RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        RetailcrmHistory::$api = $apiMock;
+        RetailcrmHistory::$api = $this->apiMock;
 
         $oldLastId = RetailcrmTestHelper::getMaxOrderId();
         RetailcrmHistory::ordersHistory();
@@ -238,7 +300,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     public function testOrderSwitchCustomer()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -250,7 +312,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -264,12 +326,24 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
+                    )
+                )
+            )
+        ;
+
         $this->switchCustomer();
     }
 
     public function testOrderSwitchCorporateCustomer()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -281,7 +355,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -295,110 +369,44 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrderWitchCorporateCustomer())
+                    )
+                )
+            )
+        ;
+
         $this->switchCustomer();
-    }
-
-    public function testOrderCreate()
-    {
-        $orderData = $this->getApiOrder();
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersHistory')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getHistoryDataNewOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersGet')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        [
-                            'order' => $orderData,
-                        ]
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersEdit')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getEditedOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->orderCreate($this->apiMock, $orderData);
-    }
-
-    public function testOrderCreateWithCorporateCustomer()
-    {
-        $orderData = $this->getApiOrderWitchCorporateCustomer();
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersHistory')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getHistoryDataNewOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersGet')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        [
-                            'order' => $orderData,
-                        ]
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersEdit')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getEditedOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->orderCreate($this->apiMock, $orderData);
     }
 
     public function testPaymentStatusUpdate()
     {
         $lastId = RetailcrmTestHelper::getMaxOrderId();
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
                         $this->getUpdatePaymentStatus($lastId)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
                     )
                 )
             )
@@ -415,7 +423,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderId = RetailcrmTestHelper::getMaxOrderId();
         $crmOrder = $this->getApiOrderAddressUpdate($orderId);
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -427,7 +435,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -436,6 +444,18 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         [
                             'order' => $crmOrder,
                         ]
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
                     )
                 )
             )
@@ -475,13 +495,25 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderId = RetailcrmTestHelper::getMaxOrderId();
         $crmOrder = $this->getApiOrderNameAndPhoneUpdate($orderId);
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
                         $this->getHistoryNameAndPhoneUpdated($orderId)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($crmOrder)
                     )
                 )
             )
