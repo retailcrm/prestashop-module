@@ -125,4 +125,11 @@ class RetailcrmExportOrdersHelper
             'pagination' => $pagination,
         ];
     }
+
+    public static function removeOrders()
+    {
+        $sql = 'DELETE FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` WHERE 1';
+
+        return Db::getInstance()->execute($sql);
+    }
 }
