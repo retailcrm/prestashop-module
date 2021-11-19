@@ -48,7 +48,6 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
         parent::__construct();
 
         $this->api = RetailcrmTools::getApiClient();
-        $this->receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
     }
 
     public function postProcess()
@@ -78,7 +77,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
                 $response = false;
 
                 try {
-                    $response = RetailcrmExport::exportOrder($id_order, $this->receiveOrderNumber);
+                    $response = RetailcrmExport::exportOrder($id_order);
 
                     if ($response) {
                         $uploadedOrders[] = $id_order;

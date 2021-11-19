@@ -45,91 +45,32 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
-        if (!in_array($request->getMethod(), [
-            'ordersUpload',
-            'ordersCreate',
-            'ordersEdit',
-        ])) {
-            return $next($request);
+        if ('ordersCreate' === $request->getMethod()
+            || 'ordersEdit' === $request->getMethod()
+        ) {
+            return $this->handleOrdersCreateAndEdit($request, $next);
         }
 
         if ('ordersUpload' === $request->getMethod()) {
-            /** @var RetailcrmApiResponse $response */
-            $response = $next($request);
-
-            if ($response->isSuccessful() && $response->offsetExists('uploadedOrders')) {
-                foreach ($response['uploadedOrders'] as $uploadedOrder) {
-                    RetailcrmExportOrdersHelper::updateExportState($uploadedOrder['externalId'], $uploadedOrder['id']);
-                }
-            } else {
-                $uploadedOrders = [];
-                if ($response->offsetExists('errors')) {
-                    foreach ($response['errors'] as $error) {
-                        if (preg_match('/Order with externalId=(\d+) already exists\./i', $error, $matches)) {
-                            RetailcrmExportOrdersHelper::updateExportState((int) ($matches[1]));
-                            $uploadedOrders[] = (int) ($matches[1]);
-                        }
-                    }
-                }
-
-                $notUploadedOrders = array_filter(array_map(function ($order) {
-                    return $order['externalId'];
-                }, $request->getData()[0]), function ($orderId) use ($uploadedOrders) {
-                    return !in_array($orderId, $uploadedOrders);
-                });
-
-                $orders = [];
-                if (0 < count($notUploadedOrders)) {
-                    $getRequest = new RetailcrmApiRequest();
-                    $getRequest->setApi($request->getApi())
-                        ->setMethod('ordersList')
-                        ->setData([
-                            'filter' => [
-                                'externalIds' => $notUploadedOrders,
-                            ],
-                            'page' => 1,
-                            'limit' => 50,
-                        ])
-                    ;
-
-                    /** @var RetailcrmApiResponse $getResponse */
-                    $getResponse = $next($getRequest);
-
-                    if ($getResponse->isSuccessful() && $getResponse->offsetExists('orders')) {
-                        $orders = $getResponse['orders'];
-
-                        foreach ($orders as $order) {
-                            RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $order['id']);
-                            $uploadedOrders[] = (int) ($order['externalId']);
-                        }
-                    }
-                }
-
-                $notUploadedOrders = array_filter($notUploadedOrders, function ($orderId) use ($uploadedOrders) {
-                    return !in_array($orderId, $uploadedOrders);
-                });
-
-                foreach ($notUploadedOrders as $id_order) {
-                    RetailcrmExportOrdersHelper::updateExportState($id_order, null, ['Unknown error']);
-                }
-
-                return new RetailcrmApiResponse($response->getStatusCode(), json_encode(array_merge(
-                    json_decode($response->getRawResponse(), true),
-                    [
-                        'orders' => $orders,
-                        'uploadedOrders' => $uploadedOrders,
-                        'notUploadedOrders' => $notUploadedOrders,
-                    ]
-                )));
-            }
-
-            return $response;
+            return $this->handleOrdersUpload($request, $next);
         }
 
+        return $next($request);
+    }
+
+    /**
+     * @param RetailcrmApiRequest $request
+     * @param callable $next
+     *
+     * @return RetailcrmApiResponse
+     *
+     * @throws Exception
+     */
+    private function handleOrdersCreateAndEdit(RetailcrmApiRequest $request, callable $next)
+    {
         $order = $request->getData()[0];
 
         try {
-            /** @var RetailcrmApiResponse $response */
             $response = $next($request);
 
             if ($response->isSuccessful()) {
@@ -148,5 +89,84 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
 
             throw $e;
         }
+    }
+
+    /**
+     * @param RetailcrmApiRequest $request
+     * @param callable $next
+     *
+     * @return RetailcrmApiResponse
+     *
+     * @throws Exception
+     */
+    private function handleOrdersUpload(RetailcrmApiRequest $request, callable $next)
+    {
+        $requestedOrders = array_map(function ($order) {
+            return $order['externalId'];
+        }, $request->getData()[0]);
+
+        try {
+            $response = $next($request);
+        } catch (Exception $e) {
+            foreach ($requestedOrders as $id_order) {
+                RetailcrmExportOrdersHelper::updateExportState($id_order, null, [$e->getMessage()]);
+            }
+
+            throw $e;
+        }
+
+        if ($response->isSuccessful() && $response->offsetExists('uploadedOrders')) {
+            foreach ($response['uploadedOrders'] as $uploadedOrder) {
+                RetailcrmExportOrdersHelper::updateExportState($uploadedOrder['externalId'], $uploadedOrder['id']);
+            }
+
+            return $response;
+        }
+
+        $orders = $this->getUploadedOrders($request->getApi(), $requestedOrders);
+
+        $uploadedOrders = [];
+        foreach ($orders as $order) {
+            RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $order['id']);
+            $uploadedOrders[] = (int) ($order['externalId']);
+        }
+
+        $notUploadedOrders = array_filter($requestedOrders, function ($orderId) use ($uploadedOrders) {
+            return !in_array($orderId, $uploadedOrders);
+        });
+
+        foreach ($notUploadedOrders as $id_order) {
+            RetailcrmExportOrdersHelper::updateExportState($id_order, null, ['Unknown error']);
+        }
+
+        return new RetailcrmApiResponse($response->getStatusCode(), json_encode(array_merge(
+            json_decode($response->getRawResponse(), true),
+            [
+                'orders' => $orders,
+                'uploadedOrders' => $uploadedOrders,
+                'notUploadedOrders' => $notUploadedOrders,
+            ]
+        )));
+    }
+
+    /**
+     * @param RetailcrmApiClientV5 $api
+     * @param array $requestedOrders
+     *
+     * @return array
+     */
+    private function getUploadedOrders(RetailcrmApiClientV5 $api, array $requestedOrders)
+    {
+        $orders = [];
+
+        if (0 < count($requestedOrders)) {
+            $getResponse = $api->ordersList(['externalIds' => $requestedOrders], 1, 50);
+
+            if ($getResponse->isSuccessful() && $getResponse->offsetExists('orders')) {
+                return $getResponse['orders'];
+            }
+        }
+
+        return $orders;
     }
 }

@@ -100,11 +100,7 @@ class RetailcrmExportOrdersMiddlewareTest extends RetailcrmTestCase
         ));
         $this->makeRequestAndCheckResponse($method, ['externalId' => $orderIdCMS], $result);
 
-        $orders = RetailcrmExportOrdersHelper::getOrders([$orderIdCMS]);
-
-        $this->assertArrayHasKey('orders', $orders);
-        $this->assertArrayHasKey('pagination', $orders);
-        $this->assertNotEmpty($orders['orders'][0]);
+        $orders = $this->getOrders([$orderIdCMS]);
 
         $exportResult = $orders['orders'][0];
 
@@ -128,163 +124,143 @@ class RetailcrmExportOrdersMiddlewareTest extends RetailcrmTestCase
         }
     }
 
-    public function testRequestUploadSuccessful()
+    public function dataRequestsUpload()
     {
-        $result = true;
-        $uploadRequest = [
-            1 => [
-                'externalId' => 1,
+        return [
+            [
+                'result' => true,
+                'uploadRequest' => [
+                    1 => [
+                        'externalId' => 1,
+                    ],
+                    2 => [
+                        'externalId' => 2,
+                    ],
+                    3 => [
+                        'externalId' => 3,
+                    ],
+                ],
+                'uploadedOrders' => [
+                    1 => [
+                        'externalId' => 1,
+                        'id' => 111,
+                    ],
+                    2 => [
+                        'externalId' => 2,
+                        'id' => 222,
+                    ],
+                    3 => [
+                        'externalId' => 3,
+                        'id' => 333,
+                    ],
+                ],
+                'errors' => null,
             ],
-            2 => [
-                'externalId' => 2,
+            [
+                'result' => false,
+                'uploadRequest' => [
+                    1 => [
+                        'externalId' => 1,
+                    ],
+                    2 => [
+                        'externalId' => 2,
+                    ],
+                    3 => [
+                        'externalId' => 3,
+                    ],
+                ],
+                'uploadedOrders' => null,
+                'errors' => [
+                    1 => 'Order with externalId=1 already exists.',
+                    2 => 'Order with externalId=2 already exists.',
+                    3 => 'Order with externalId=3 already exists.',
+                ],
             ],
-            3 => [
-                'externalId' => 3,
+            [
+                'result' => false,
+                'uploadRequest' => [
+                    1 => [
+                        'externalId' => 1,
+                    ],
+                    2 => [
+                        'externalId' => 2,
+                    ],
+                    3 => [
+                        'externalId' => 3,
+                    ],
+                ],
+                'uploadedOrders' => [
+                    1 => [
+                        'externalId' => 1,
+                        'id' => 111,
+                    ],
+                    3 => [
+                        'externalId' => 3,
+                        'id' => 333,
+                    ],
+                ],
+                'errors' => [
+                    1 => 'Order with externalId=1 already exists.',
+                    2 => 'Test error #2',
+                ],
             ],
         ];
-        $uploadedOrders = [
-            1 => [
-                'externalId' => 1,
-                'id' => 111,
-            ],
-            2 => [
-                'externalId' => 2,
-                'id' => 222,
-            ],
-            3 => [
-                'externalId' => 3,
-                'id' => 333,
-            ],
-        ];
-        $errors = null;
-        $ordersList = null;
-
-        $this->apiClientMock->expects($this->any())->method('ordersUpload')->willReturn(new RetailcrmApiResponse(
-            $result ? 200 : 400,
-            json_encode([
-                'success' => $result,
-                'uploadedOrders' => $uploadedOrders,
-                'errors' => $errors,
-            ])
-        ));
-
-        if (null !== $ordersList) {
-            $this->apiClientMock->expects($this->any())->method('ordersList')->willReturn(new RetailcrmApiResponse(
-                200,
-                json_encode([
-                    'success' => true,
-                    'orders' => $ordersList,
-                ])
-            ));
-        }
-        $this->makeRequestAndCheckResponse('ordersUpload', $uploadRequest, $result);
-
-        $orders = RetailcrmExportOrdersHelper::getOrders(array_keys($uploadRequest));
-
-        $this->assertArrayHasKey('orders', $orders);
-        $this->assertArrayHasKey('pagination', $orders);
-
-        foreach ($orders['orders'] as $exportResult) {
-            $this->assertNotEmpty($exportResult);
-            $this->assertArrayHasKey($exportResult['id_order'], $uploadedOrders);
-            $orderFromCRM = $uploadedOrders[$exportResult['id_order']];
-
-            $this->assertEquals($exportResult['id_order'], $orderFromCRM['externalId']);
-            $this->assertEquals($exportResult['id_order_crm'], $orderFromCRM['id']);
-            $this->assertNull($exportResult['errors']);
-        }
     }
 
-    public function testRequestUploadUnsuccessful()
+    /**
+     * @dataProvider dataRequestsUpload
+     */
+    public function testRequestUploadUnsuccessful($result, $uploadRequest, $uploadedOrders, $errors)
     {
-        $result = false;
-        $uploadRequest = [
-            1 => [
-                'externalId' => 1,
-            ],
-            2 => [
-                'externalId' => 2,
-            ],
-            3 => [
-                'externalId' => 3,
-            ],
-        ];
-        $uploadedOrders = null;
-        $errors = [
-            1 => 'Order with externalId=1 already exists.',
-            2 => 'Test error #2',
-        ];
-        $ordersList = [
-            3 => [
-                'externalId' => 3,
-                'id' => 333,
-            ],
-        ];
-
         $this->apiClientMock->expects($this->any())->method('ordersUpload')->willReturn(new RetailcrmApiResponse(
             $result ? 200 : 400,
             json_encode([
                 'success' => $result,
-                'uploadedOrders' => $uploadedOrders,
+                'uploadedOrders' => $result ? $uploadedOrders : null,
                 'errors' => $errors,
             ])
         ));
 
-        if (null !== $ordersList) {
+        if (!$result) {
             $this->apiClientMock->expects($this->any())->method('ordersList')->willReturn(new RetailcrmApiResponse(
                 200,
                 json_encode([
                     'success' => true,
-                    'orders' => $ordersList,
+                    'orders' => $uploadedOrders,
                 ])
             ));
         }
+
         $this->makeRequestAndCheckResponse('ordersUpload', $uploadRequest, $result);
 
-        $orders = RetailcrmExportOrdersHelper::getOrders(array_keys($uploadRequest));
+        $orders = $this->getOrders(array_keys($uploadRequest));
 
-        $this->assertArrayHasKey('orders', $orders);
-        $this->assertArrayHasKey('pagination', $orders);
-        $this->assertCount(count($uploadRequest), $orders['orders']);
+        foreach ($orders['orders'] as $order) {
+            $this->assertNotEmpty($order);
 
-        foreach ($orders['orders'] as $exportResult) {
-            $this->assertNotEmpty($exportResult);
+            $orderFromCRM = null;
+            if (null !== $uploadedOrders && array_key_exists($order['id_order'], $uploadedOrders)) {
+                $orderFromCRM = $uploadedOrders[$order['id_order']];
 
-            if (null !== $uploadedOrders && array_key_exists($exportResult['id_order'], $uploadedOrders)) {
-                $orderFromCRM = $uploadedOrders[$exportResult['id_order']];
+                $this->assertEquals($order['id_order'], $orderFromCRM['externalId']);
+                $this->assertEquals($order['id_order_crm'], $orderFromCRM['id']);
+                $this->assertNull($order['errors']);
 
-                $this->assertEquals($exportResult['id_order'], $orderFromCRM['externalId']);
-                $this->assertEquals($exportResult['id_order_crm'], $orderFromCRM['id']);
-                $this->assertNull($exportResult['errors']);
-            }
-
-            if (null === $errors) {
                 continue;
             }
 
-            if (null !== $ordersList && array_key_exists($exportResult['id_order'], $ordersList)) {
-                $orderFromCRM = $ordersList[$exportResult['id_order']];
-
-                $this->assertEquals($exportResult['id_order'], $orderFromCRM['externalId']);
-                $this->assertEquals($exportResult['id_order_crm'], $orderFromCRM['id']);
-                $this->assertNull($exportResult['errors']);
-            }
-
-            if (array_key_exists($exportResult['id_order'], $errors)) {
-                $error = $errors[$exportResult['id_order']];
-
-                if (false === strpos($error, 'Order with externalId')) {
-                    $exportResultErrors = json_decode($exportResult['errors'], true);
-                    $this->assertNotNull($exportResultErrors);
-
-                    $this->assertNull($exportResult['id_order_crm']);
-                    $this->assertNotNull($exportResult['errors']);
-                    $this->assertCount(1, $exportResultErrors);
-                    $this->assertEquals('Unknown error', $exportResultErrors[0]);
-                } else {
-                    $this->assertNull($exportResult['id_order_crm']);
-                    $this->assertNull($exportResult['errors']);
+            if (null !== $errors && array_key_exists($order['id_order'], $errors)) {
+                if (false !== strpos($errors[$order['id_order']], 'Order with externalId')) {
+                    continue;
                 }
+
+                $exportResultErrors = json_decode($order['errors'], true);
+                $this->assertNotNull($exportResultErrors);
+
+                $this->assertNull($order['id_order_crm']);
+                $this->assertNotNull($order['errors']);
+                $this->assertCount(1, $exportResultErrors);
+                $this->assertEquals('Unknown error', $exportResultErrors[0]);
             }
         }
     }
@@ -301,5 +277,21 @@ class RetailcrmExportOrdersMiddlewareTest extends RetailcrmTestCase
 
         $this->assertInstanceOf(RetailcrmApiResponse::class, $response);
         $this->assertEquals($response->isSuccessful(), $result);
+    }
+
+    /**
+     * @param $ordersIds
+     *
+     * @return array
+     */
+    private function getOrders($ordersIds)
+    {
+        $orders = RetailcrmExportOrdersHelper::getOrders($ordersIds);
+
+        $this->assertArrayHasKey('orders', $orders);
+        $this->assertArrayHasKey('pagination', $orders);
+        $this->assertCount(count($ordersIds), $orders['orders']);
+
+        return $orders;
     }
 }
