@@ -369,7 +369,8 @@ class RetailcrmCatalog
         return $pictures;
     }
 
-    private static function getProductsCount($id_lang, Context $context = null) {
+    private static function getProductsCount($id_lang, Context $context = null)
+    {
         if (!$context) {
             $context = Context::getContext();
         }
@@ -453,7 +454,6 @@ class RetailcrmCatalog
 
     private function getWeightInKg($weight)
     {
-
         $mg = 1 / 1000 / 1000;
         $g = 1 / 1000;
         $ton = 1 * 1000;
