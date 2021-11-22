@@ -151,10 +151,6 @@ class RetailcrmIcml
 
             $offerKeys = array_keys($offer);
 
-            if (isset($offer['weight'])) {
-                $offer['weight'] = $this->getWeightInKg($offer['weight']);
-            }
-
             foreach ($offerKeys as $key) {
                 if (null == $offer[$key]) {
                     continue;
@@ -201,68 +197,5 @@ class RetailcrmIcml
                 }
             }
         }
-    }
-
-    private function getWeightInKg($weight)
-    {
-        $mg = 1 / 1000 / 1000;
-        $g = 1 / 1000;
-        $ton = 1 * 1000;
-        $oz = 1 / 35.3;
-        $pd = 1 * 2.2;
-        $st = 1 * 6.35;
-
-        $weightUnits = [
-            'mg' => $mg,
-            'мг' => $mg,
-            'miligramo' => $mg,
-            'миллиграмм' => $mg,
-            'milligram' => $mg,
-
-            'g' => $g,
-            'gram' => $g,
-            'grammo' => $g,
-            'г' => $g,
-            'гр' => $g,
-            'грамм' => $g,
-
-            'kg' => 1,
-            'kilogram' => 1,
-            'kilogramme' => 1,
-            'kilo' => 1,
-            'kilogramo' => 1,
-
-            'ton' => $ton,
-            'т' => $ton,
-            'тонна' => $ton,
-            'tonelada' => $ton,
-            'toneladas' => $ton,
-
-            'oz' => $oz,
-            'унция' => $oz,
-            'ounce' => $oz,
-            'onza' => $oz,
-
-            'pd' => $pd,
-            'фунт' => $pd,
-            'pound' => $pd,
-            'lb' => $pd,
-            'libra' => $pd,
-            'paladio' => $pd,
-
-            'st' => $st,
-            'стоун' => $st,
-            'stone' => $st,
-        ];
-
-        $weightUnits = RetailcrmTools::filter('RetailcrmFilterWeight', $weightUnits);
-
-        $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
-
-        if (isset($weightUnits[$weightUnit])) {
-            return $weight * $weightUnits[$weightUnit];
-        }
-
-        return $weight;
     }
 }
