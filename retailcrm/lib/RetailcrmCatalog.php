@@ -191,13 +191,7 @@ class RetailcrmCatalog
                         $article = null;
                     }
 
-                    $weight = round($product['weight'], 2);
-
-                    if (0.0 === $weight) {
-                        $weight = null;
-                    } else {
-                        $weight = $this->getWeightInKg($weight);
-                    }
+                    $weight = $this->getWeightInKg($product['weight']);
 
                     $width = round($product['width'], 3);
                     $height = round($product['height'], 3);
@@ -454,6 +448,10 @@ class RetailcrmCatalog
 
     private function getWeightInKg($weight)
     {
+        if (0 == $weight) {
+            return null;
+        }
+
         $mg = 1 / 1000 / 1000;
         $g = 1 / 1000;
         $ton = 1 * 1000;
@@ -509,9 +507,9 @@ class RetailcrmCatalog
         $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
 
         if (isset($weightUnits[$weightUnit])) {
-            return $weight * $weightUnits[$weightUnit];
+            return round($weight * $weightUnits[$weightUnit], 2);
         }
 
-        return $weight;
+        return round($weight, 2);
     }
 }
