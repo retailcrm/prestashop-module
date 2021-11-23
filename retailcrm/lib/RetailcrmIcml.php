@@ -62,12 +62,12 @@ class RetailcrmIcml
             'productActivity',
             'dimensions',
             'vatRate',
+            'weight',
         ];
 
         $this->params = [
             'article' => 'Артикул',
             'color' => 'Цвет',
-            'weight' => 'Вес',
             'tax' => 'Наценка',
         ];
     }
