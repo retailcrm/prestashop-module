@@ -507,9 +507,9 @@ class RetailcrmCatalog
         $weightUnit = Configuration::get('PS_WEIGHT_UNIT');
 
         if (isset($weightUnits[$weightUnit])) {
-            return round($weight * $weightUnits[$weightUnit], 2);
+            return $weight * $weightUnits[$weightUnit];
         }
 
-        return round($weight, 2);
+        return $weight;
     }
 }
