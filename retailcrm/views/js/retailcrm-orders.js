@@ -123,7 +123,7 @@ $(function () {
                 if (response.orders !== undefined && response.orders.length > 0) {
                     _this.loadOrders(response.orders);
                 } else {
-                    this.showMessage('orders-table.empty');
+                    _this.showMessage('orders-table.empty');
                 }
 
                 if (response.pagination !== undefined) {
