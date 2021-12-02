@@ -407,7 +407,7 @@
                                 </form>
                             </div>
                         </div>
-                        <div class="retail-row--foldable">
+                        <div class="retail-row--foldable" id="retail-uploaded-orders-tab">
                             <div class="retail-form__title retail-row__title">{l s='Uploaded orders' mod='retailcrm'}</div>
                             <div class="retail-form__row retail-row__content">
                                 <div class="retail-form__label">{l s='In this section you can check the orders export results and manualy upload order to' mod='retailcrm'} {$systemName|escape:'htmlall':'UTF-8'}</div>

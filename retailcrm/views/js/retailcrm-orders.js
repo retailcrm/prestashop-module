@@ -42,6 +42,9 @@ $(function () {
             return false;
         }
 
+        this.isInitiated = false;
+        this.initAction = this.initAction.bind(this);
+
         this.submitButton = $(this.form).find('button[id="search-orders-submit"]').get(0);
         this.submitAction = this.submitAction.bind(this);
 
@@ -75,11 +78,23 @@ $(function () {
             $(this).addClass('active');
         });
 
+        // todo move to retailcrm.js
         let foldableContainer = $('.retail-container--foldable');
         $(foldableContainer).find('.retail-row--foldable').find('.retail-row__title').click(function (e) {
             $(foldableContainer).find('.retail-row--foldable').removeClass('active');
             $(this).parent().addClass('active');
         })
+
+        $('#retail-uploaded-orders-tab .retail-row__title').click(this.initAction);
+    }
+
+    RetailcrmOrdersForm.prototype.initAction = function (event) {
+        event.preventDefault();
+
+        if (!this.isInitiated) {
+            this.searchOrders();
+            this.isInitiated = true;
+        }
     }
 
     RetailcrmOrdersForm.prototype.submitAction = function (event) {
