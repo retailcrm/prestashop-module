@@ -862,8 +862,7 @@ class RetailCRM extends Module
         $externalId = false;
 
         foreach ($this->reference->getSystemPaymentModules() as $paymentCMS) {
-            if (
-                $paymentCMS['name'] === $params['paymentCC']->payment_method
+            if ($paymentCMS['name'] === $params['paymentCC']->payment_method
                 && array_key_exists($paymentCMS['code'], $payments)
                 && !empty($payments[$paymentCMS['code']])
             ) {

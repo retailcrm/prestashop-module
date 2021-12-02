@@ -46,6 +46,7 @@ $(function(){
             this.advancedSettings.init();
             this.popup.init();
             this.toggleBox();
+            this.foldableBox();
             this.trimConsultant();
             this.showSettings();
         },
@@ -322,6 +323,16 @@ $(function(){
 
                 $hideBox.addClass('retail-btns_hide').slideUp(100);
                 $box.slideDown(100);
+            })
+        },
+        foldableBox: function () {
+            let foldableContainer = $('.retail-container--foldable');
+
+            $(foldableContainer).find('.retail-row--foldable').find('.retail-row__title').on('click', function (e) {
+                e.preventDefault();
+
+                $(foldableContainer).find('.retail-row--foldable').removeClass('active');
+                $(this).parent().addClass('active');
             })
         },
         trimConsultant: function () {

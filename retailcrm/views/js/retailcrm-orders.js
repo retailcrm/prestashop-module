@@ -43,6 +43,7 @@ $(function () {
         }
 
         this.isInitiated = false;
+        this.initButton = $('#retail-uploaded-orders-tab .retail-row__title').get(0);
         this.initAction = this.initAction.bind(this);
 
         this.submitButton = $(this.form).find('button[id="search-orders-submit"]').get(0);
@@ -51,12 +52,10 @@ $(function () {
         this.ordersTable = $('#retail-orders-table').get(0);
         this.ordersTableBody = $(this.ordersTable).find('tbody').get(0);
         this.rowSample = $(this.ordersTableBody).find('tr').clone();
-        $(this.ordersTableBody).empty();
         this.loadOrders = this.loadOrders.bind(this);
         this.searchOrders = this.searchOrders.bind(this);
 
         this.pagesMenu = $('.retail-table-pagination').get(0);
-        $(this.pagesMenu).empty();
         this.loadPagination = this.loadPagination.bind(this);
 
         this.uploadLink = $('#retail-controller-orders-upload').attr('href');
@@ -72,26 +71,21 @@ $(function () {
         this.page = null;
 
         $(this.submitButton).click(this.submitAction);
-
-        $('.retail-table-filter-btn').click(function (e) {
-            $('.retail-table-filter-btn').removeClass('active');
-            $(this).addClass('active');
-        });
-
-        // todo move to retailcrm.js
-        let foldableContainer = $('.retail-container--foldable');
-        $(foldableContainer).find('.retail-row--foldable').find('.retail-row__title').click(function (e) {
-            $(foldableContainer).find('.retail-row--foldable').removeClass('active');
-            $(this).parent().addClass('active');
-        })
-
-        $('#retail-uploaded-orders-tab .retail-row__title').click(this.initAction);
+        $(this.initButton).click(this.initAction);
     }
 
     RetailcrmOrdersForm.prototype.initAction = function (event) {
         event.preventDefault();
 
         if (!this.isInitiated) {
+            $(this.ordersTableBody).empty();
+            $(this.pagesMenu).empty();
+
+            $('.retail-table-filter-btn').click(function (e) {
+                $('.retail-table-filter-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+
             this.searchOrders();
             this.isInitiated = true;
         }
