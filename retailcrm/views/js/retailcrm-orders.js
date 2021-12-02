@@ -45,9 +45,10 @@ $(function () {
         this.submitButton = $(this.form).find('button[id="search-orders-submit"]').get(0);
         this.submitAction = this.submitAction.bind(this);
 
-        this.ordersTable = $('#retail-orders-table tbody').get(0);
-        this.rowSample = $(this.ordersTable).find('tr').clone();
-        $(this.ordersTable).empty();
+        this.ordersTable = $('#retail-orders-table').get(0);
+        this.ordersTableBody = $(this.ordersTable).find('tbody').get(0);
+        this.rowSample = $(this.ordersTableBody).find('tr').clone();
+        $(this.ordersTableBody).empty();
         this.loadOrders = this.loadOrders.bind(this);
         this.searchOrders = this.searchOrders.bind(this);
 
@@ -70,8 +71,8 @@ $(function () {
         $(this.submitButton).click(this.submitAction);
 
         $('.retail-table-filter-btn').click(function (e) {
-            $('.retail-table-filter-btn').removeClass('retail-menu__btn_active');
-            $(this).addClass('retail-menu__btn_active');
+            $('.retail-table-filter-btn').removeClass('active');
+            $(this).addClass('active');
         });
 
         let foldableContainer = $('.retail-container--foldable');
@@ -139,7 +140,8 @@ $(function () {
             })
     }
     RetailcrmOrdersForm.prototype.loadOrders = function (orders) {
-        $(this.ordersTable).empty();
+        $(this.ordersTableBody).empty();
+        $(this.ordersTable).removeClass('hidden');
 
         let _this = this;
         let crmOrderUrlTemplate = $(this.rowSample).find('td.retail-orders-table__id-crm a').attr('href');
@@ -183,7 +185,7 @@ $(function () {
                 }
             )
 
-            $(_this.ordersTable).append(newRow);
+            $(_this.ordersTableBody).append(newRow);
         })
     }
 
@@ -302,9 +304,10 @@ $(function () {
     }
 
     RetailcrmOrdersForm.prototype.showMessage = function (message) {
-        $(this.ordersTable)
+        $(this.ordersTableBody)
             .empty()
             .append('<tr class="alert"><td colspan="5">' + retailcrmTranslates[message] + '</td></tr>');
+        $(this.ordersTable).removeClass('hidden');
     }
 
     RetailcrmOrdersForm.prototype.setLoading = function (loading) {

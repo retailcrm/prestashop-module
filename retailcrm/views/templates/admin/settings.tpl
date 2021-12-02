@@ -423,11 +423,11 @@
 
                                         <div class="retail-table-filter">
                                             <label for="retail-table-filter-status-all"
-                                                   class="retail-table-filter-btn">
+                                                   class="retail-table-filter-btn active">
                                                 <span>{l s='All' mod='retailcrm'}</span>
                                                 <input type="radio" name="search-orders-filter"
                                                        id="retail-table-filter-status-all"
-                                                       value="0" class="search-orders-filter">
+                                                       value="0" class="search-orders-filter" checked>
                                             </label>
                                             <label for="retail-table-filter-status-ok"
                                                    class="retail-table-filter-btn">
@@ -450,7 +450,7 @@
                                 <div class="retail-table-wrapper">
                                     <a href="{$retailControllerOrdersUpload|escape:'htmlall':'UTF-8'}"
                                        id="retail-controller-orders-upload" class="retail-controller-link"></a>
-                                    <table class="retail-table retail-table-sort retail-table-center"
+                                    <table class="retail-table retail-table-sort retail-table-center hidden"
                                            id="retail-orders-table">
                                         <thead>
                                         <tr>

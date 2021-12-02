@@ -33,7 +33,7 @@
     margin-left: 9%;
 
     label.retail-table-filter-btn {
-      width: 33%;
+      width: 33.333333%;
       height: 60px;
       margin: 0;
       padding: 0;
@@ -46,9 +46,17 @@
       transition-property: color, background-color;
       transition-duration: .3s;
 
-      &:hover, &.active {
+      &.active, &:hover {
         color: white;
+      }
+
+      &.active {
         background: #0068FF;
+      }
+
+      &:hover:not(.active) {
+        color: white;
+        background: #005add !important;
       }
 
       &:first-child {
