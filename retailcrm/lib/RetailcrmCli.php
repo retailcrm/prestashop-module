@@ -256,7 +256,7 @@ class RetailcrmCli
             return;
         }
 
-        RetailcrmTools::setShopContext($shopId);
+        RetailcrmContextSwitcher::setShopContext($shopId);
         $this->loadConfiguration();
 
         Configuration::updateValue(RetailCRM::ENABLE_WEB_JOBS, $state ? '1' : '0');
@@ -277,7 +277,7 @@ class RetailcrmCli
             return;
         }
 
-        RetailcrmTools::setShopContext($shopId);
+        RetailcrmContextSwitcher::setShopContext($shopId);
         $this->loadConfiguration();
 
         RetailcrmLogger::output(sprintf(
