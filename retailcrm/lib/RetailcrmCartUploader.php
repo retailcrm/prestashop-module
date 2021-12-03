@@ -107,7 +107,7 @@ class RetailcrmCartUploader
         static::$syncDelay = 0;
         static::$allowedUpdateInterval = 86400;
         static::$syncStatus = '';
-        static::$now = new \DateTimeImmutable();
+        static::$now = new DateTimeImmutable();
         static::$context = Context::getContext();
     }
 
@@ -135,7 +135,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $cartLastUpdateDate = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
+                $cartLastUpdateDate = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
             }
 
             if (!static::isAbandonedCartShouldBeUpdated(
@@ -307,7 +307,7 @@ class RetailcrmCartUploader
      *
      * @param int $cartId
      *
-     * @return \DateTime|false
+     * @return DateTimeImmutable|false|null
      */
     private static function getAbandonedCartLastSync($cartId)
     {
@@ -319,7 +319,7 @@ class RetailcrmCartUploader
             return null;
         }
 
-        return \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
+        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
     }
 
     /**
@@ -346,8 +346,8 @@ class RetailcrmCartUploader
     /**
      * Returns true if abandoned cart should be uploaded
      *
-     * @param \DateTime|null $lastUploadDate
-     * @param \DateTime|null $lastUpdatedDate
+     * @param DateTimeImmutable|null $lastUploadDate
+     * @param DateTimeImmutable|null $lastUpdatedDate
      *
      * @return bool
      */

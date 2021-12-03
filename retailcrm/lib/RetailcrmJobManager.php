@@ -145,10 +145,10 @@ class RetailcrmJobManager
             $date2 = new \DateTimeImmutable();
 
             if (null !== $diff1) {
-                $date1->add($diff1);
+                $date1 = $date1->add($diff1);
             }
             if (null !== $diff2) {
-                $date2->add($diff2);
+                $date2 = $date2->add($diff2);
             }
 
             if ($date1 == $date2) {
@@ -164,7 +164,7 @@ class RetailcrmJobManager
                     $shouldRunAt = clone $lastRuns[$job];
 
                     if ($diff instanceof DateInterval) {
-                        $shouldRunAt->add($diff);
+                        $shouldRunAt = $shouldRunAt->add($diff);
                     }
                 } else {
                     $shouldRunAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');
