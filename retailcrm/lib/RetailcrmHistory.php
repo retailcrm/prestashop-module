@@ -1004,7 +1004,6 @@ class RetailcrmHistory
         $newOrder->valid = 1;
         $newOrder->secure_key = md5(time());
 
-        // save order
         try {
             RetailcrmLogger::writeDebug(__METHOD__, sprintf(
                     '<Customer ID: %d> %s::%s',
@@ -1497,54 +1496,57 @@ class RetailcrmHistory
 
     private static function createPayments($order, $newOrder)
     {
+        if (empty($order['payments'])) {
+            return;
+        }
+
         $references = new RetailcrmReferences(self::$api);
         $paymentsCMS = self::getPaymentsCms($references);
 
-        $paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
+        foreach ($order['payments'] as $payment) {
+            if (isset($payment['externalId']) || !isset($payment['status']) || 'paid' !== $payment['status']) {
+                continue;
+            }
 
-        if (isset($order['payments']) && !empty($order['payments'])) {
-            foreach ($order['payments'] as $payment) {
-                if (!isset($payment['externalId'])
-                    && isset($payment['status'])
-                    && 'paid' === $payment['status']
-                ) {
-                    $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
-                    $paymentType = null;
-                    $paymentId = null;
+            $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
+            $paymentType = null;
+            $paymentId = null;
 
-                    if ($paymentTypeCRM) {
-                        if (isset(self::$payments[$paymentTypeCRM]) && !empty(self::$payments[$paymentTypeCRM])) {
-                            $paymentId = self::$payments[$paymentTypeCRM];
-                        } else {
-                            continue;
-                        }
-                    } elseif ($paymentDefault) {
-                        $paymentId = $paymentDefault;
-                    } else {
-                        continue;
-                    }
-
-                    $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
-
-                    $orderPayment = new OrderPayment();
-                    $orderPayment->payment_method = $paymentType;
-                    $orderPayment->order_reference = $newOrder->reference;
-                    $orderPayment->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
-                    $orderPayment->amount = $payment['amount'];
-                    $orderPayment->date_add = $payment['paidAt'];
-
-                    RetailcrmLogger::writeDebug(
-                        __METHOD__,
-                        sprintf(
-                            '<Order Reference: %s> %s::%s',
-                            $newOrder->reference,
-                            get_class($orderPayment),
-                            'save'
-                        )
-                    );
-
-                    $orderPayment->save();
+            if ($paymentTypeCRM) {
+                if (!isset(self::$payments[$paymentTypeCRM]) || empty(self::$payments[$paymentTypeCRM])) {
+                    continue;
                 }
+
+                $paymentId = self::$payments[$paymentTypeCRM];
+            } elseif (self::$paymentDefault) {
+                $paymentId = self::$paymentDefault;
+            } else {
+                continue;
+            }
+
+            $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
+
+            $orderPayment = new OrderPayment();
+            $orderPayment->payment_method = $paymentType;
+            $orderPayment->order_reference = $newOrder->reference;
+            $orderPayment->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+            $orderPayment->amount = $payment['amount'];
+            $orderPayment->date_add = $payment['paidAt'];
+
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
+                sprintf(
+                    '<Order Reference: %s> %s::%s',
+                    $newOrder->reference,
+                    get_class($orderPayment),
+                    'save'
+                )
+            );
+
+            try {
+                $orderPayment->save();
+            } catch (PrestaShopException $exception) {
+                RetailcrmLogger::writeDebug(__METHOD__, $exception->getMessage());
             }
         }
     }
@@ -1775,7 +1777,7 @@ class RetailcrmHistory
 
         $orderStatus = self::getInternalOrderStatus($order['status']);
 
-        if ($orderStatus == self::$cartStatus) {
+        if (self::$cartStatus && (string) $orderStatus === (string) self::$cartStatus) {
             return;
         }
 
