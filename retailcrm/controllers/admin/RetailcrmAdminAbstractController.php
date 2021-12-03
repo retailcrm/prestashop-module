@@ -1,5 +1,4 @@
 <?php
-
 /**
  * MIT License
  *
@@ -36,6 +35,7 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
+
 class RetailcrmAdminAbstractController extends ModuleAdminController
 {
     public static function getId()

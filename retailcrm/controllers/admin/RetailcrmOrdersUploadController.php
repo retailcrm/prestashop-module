@@ -1,5 +1,4 @@
 <?php
-
 /**
  * MIT License
  *
@@ -36,12 +35,12 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once __DIR__ . '/../../bootstrap.php';
+
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
 class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
 {
     private $api;
-    private $receiveOrderNumber;
 
     public function __construct()
     {
