@@ -616,7 +616,6 @@ class RetailcrmHistory
      * @param $product_id
      * @param $product_attribute_id
      * @param $id_order_detail
-     *
      * @return void
      */
     private static function deleteOrderDetailByProduct($order_id, $product_id, $product_attribute_id, $id_order_detail)
@@ -1002,6 +1001,8 @@ class RetailcrmHistory
         $newOrder->valid = 1;
         $newOrder->secure_key = md5(time());
 
+
+
         // save order
         try {
             RetailcrmLogger::writeDebug(__METHOD__, sprintf(
@@ -1022,6 +1023,7 @@ class RetailcrmHistory
             $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
 
             self::loadInPrestashop($newOrderHistoryRecord, 'add');
+
         } catch (\Exception $e) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
@@ -1034,7 +1036,7 @@ class RetailcrmHistory
         return $newOrder;
     }
 
-    private static function createOrderDetails($newOrder, $order)
+    private static function createOrderDetails($order, $newOrder)
     {
         $newItemsIds = [];
         foreach ($order['items'] as $item) {
@@ -1086,17 +1088,9 @@ class RetailcrmHistory
 
             $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
 
-//            if (!$product->checkQty($orderDetail->product_quantity)) {
-//                self::$api->ordersFixExternalIds([[
-//                    'id' => $order['id'],
-//                    'externalId' => $newOrder->id,
-//                ]]);
-//
-//                self::setOutOfStockStatus(
-//                    $order,
-//                    $newOrder
-//                );
-//            }
+            if (!$product->checkQty($orderDetail->product_quantity)) {
+                self::setOutOfStockStatus($order,$newOrder);
+            }
 
             StockAvailable::updateQuantity(
                 $product_id,
@@ -1158,10 +1152,7 @@ class RetailcrmHistory
             return;
         }
 
-        $order = RetailcrmTools::filter(
-            'RetailcrmFilterOrdersHistoryUpdate',
-            $order,
-            [
+        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $order, [
                 'orderToUpdate' => $orderToUpdate,
             ]
         );
@@ -1366,15 +1357,7 @@ class RetailcrmHistory
                 )
                 || null !== $orderDeliveryCost
             ) {
-                if (property_exists($orderToUpdate, 'id_order_carrier')) {
-                    $idOrderCarrier = $orderToUpdate->id_order_carrier;
-                } elseif (method_exists($orderToUpdate, 'getIdOrderCarrier')) {
-                    $idOrderCarrier = $orderToUpdate->getIdOrderCarrier();
-                } else {
-                    $idOrderCarrier = null;
-                }
-
-                $orderCarrier = new OrderCarrier($idOrderCarrier);
+                $orderCarrier = self::getOrderCarrier($orderToUpdate);
 
                 if (null != $orderDeliveryCode) {
                     $orderCarrier->id_carrier = self::$deliveries[$orderDeliveryCode];
@@ -1601,7 +1584,7 @@ class RetailcrmHistory
             $customerBuilder->setCustomer(new Customer($customerId));
         }
 
-        return $customerBuilder->getData()->getCustomerAddress();
+        return $customerBuilder;
     }
 
     private static function cleanDeletedItems($order, $orderToUpdate)
@@ -1657,6 +1640,7 @@ class RetailcrmHistory
                 if (!$isExistingItem || $product_id != $orderItem['product_id'] || $product_attribute_id != $orderItem['product_attribute_id']) {
                     continue;
                 }
+
 
                 $orderDetailId = !empty($parsedExtId['id_order_detail'])
                     ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
@@ -1788,11 +1772,7 @@ class RetailcrmHistory
     private static function createNewOrder($orderHistory)
     {
         $order = self::getOrderFromCrm($orderHistory['id'], 'id');
-
-        $order = RetailcrmTools::filter(
-            'RetailcrmFilterOrdersHistoryCreate',
-            $order
-        );
+        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $order);
 
         $orderStatus = self::getInternalOrderStatus($order['status']);
 
@@ -1805,66 +1785,19 @@ class RetailcrmHistory
 
         $deliveryType = self::getDeliveryType($order);
 
-        $customerId = null;
-        $isCorporateCustomer =
-            'customer_corporate' === $order['customer']['type']
-            && RetailcrmTools::isCorporateEnabled()
-            && !empty($order['contact'])
-            && isset($order['contact']['externalId']);
+        $customerId = self::getCustomerId($order);
 
-        if ($isCorporateCustomer) {
-            if (isset($order['contact']['externalId'])) {
-                $customerId = Customer::customerIdExistsStatic($order['contact']['externalId']);
-            }
+        $customerBuilder = self::getCustomerById($order, $customerId);
 
-            if (empty($customerId) && !empty($order['contact']['email'])) {
-                $customer = Customer::getCustomersByEmail($order['contact']['email']);
-                $customer = is_array($customer) ? reset($customer) : [];
-
-                if (isset($customer['id_customer'])) {
-                    $customerId = $customer['id_customer'];
-                }
-            }
-        } elseif (isset($order['customer']['externalId'])) {
-            $customerId = Customer::customerIdExistsStatic($order['customer']['externalId']);
-        }
-
-        // address invoice
-        if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
-            $corporateCustomerBuilder = new RetailcrmCorporateCustomerBuilder();
-            $dataOrder = array_merge(
-                $order['contact'],
-                ['address' => $order['company']['address']]
-            );
-
-            $corporateCustomerBuilder
-                ->setCustomer(new Customer($customerId))
-                ->setDataCrm($dataOrder)
-                ->extractCompanyDataFromOrder($order)
-                ->build()
-            ;
-
-            $customer = $corporateCustomerBuilder->getData()->getCustomer();
-            $addressInvoice = $corporateCustomerBuilder->getData()->getCustomerAddress();
-        } else {
-            $customerBuilder = new RetailcrmCustomerBuilder();
-            $customerBuilder
-                ->setDataCrm($order['customer'])
-                ->build()
-            ;
-
-            $addressInvoice = self::createAddressInvoiceForCustomer($customerBuilder, $customerId);
-
-            $customer = $customerBuilder->getData()->getCustomer();
-        }
+        $customer = $customerBuilder->getData()->getCustomer();
+        $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
 
         if (empty($customer->id) && !empty($customer->email)) {
             $customer->id = self::getCustomerIdByEmail($customer->email);
         }
-
         self::loadInPrestashop($customer, 'save');
 
-        if (null !== $addressInvoice) {
+        if (!is_null($addressInvoice)) {
             self::updateAddressInvoice($addressInvoice, $customer, $order);
         }
 
@@ -1899,18 +1832,10 @@ class RetailcrmHistory
         self::saveCarrier($newOrder->id, $deliveryType, $order['delivery']['cost']);
 
         if (!empty($order['items'])) {
-            self::createOrderDetails($newOrder, $order);
+            self::createOrderDetails($order, $newOrder);
         }
 
-        // collect order ids for single fix request
-        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
-
-        if (!empty(self::$orderFix)) {
-            $response = self::$api->ordersFixExternalIds(self::$orderFix);
-            if (!$response->isSuccessful()) {
-                throw new BadRequestHttpException(json_decode($response->getRawResponse())->errorMsg);
-            }
-        }
+        self::sendExternalIdsToCrm($order, $newOrder);
 
         // collect orders id and reference if option sendOrderNumber enabled
         if (self::$sendOrderNumber) {
@@ -1927,7 +1852,6 @@ class RetailcrmHistory
         if (isset(self::$statuses[$state]) && '' != self::$statuses[$state]) {
             $status = self::$statuses[$state];
         }
-
         return $status;
     }
 
@@ -1940,6 +1864,7 @@ class RetailcrmHistory
                 $paymentFromCRM = end($order['payments']);
                 $paymentType = $paymentFromCRM['type'];
             } elseif (1 < count($order['payments'])) {
+
                 foreach ($order['payments'] as $paymentFromCRM) {
                     if (isset($paymentFromCRM['status']) && 'paid' !== $paymentFromCRM['status']) {
                         $paymentType = $paymentFromCRM['type'];
@@ -1960,11 +1885,12 @@ class RetailcrmHistory
             $paymentId = self::$payments[$paymentTypeCRM];
         }
 
-        if (null === $paymentId) {
+        if (is_null($paymentId)) {
             return null;
         }
 
         return self::getModulePaymentType($paymentId);
+
     }
 
     private static function getModulePaymentType($paymentId)
@@ -2044,7 +1970,7 @@ class RetailcrmHistory
 
             $parsedExtId = static::parseItemExternalId($item);
             $product_id = $parsedExtId['product_id'];
-            $product = new Product((int) $product_id, false, self::$default_lang);
+            $product = new Product((int)$product_id, false, self::$default_lang);
 
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 $orderDetailId = !empty($parsedExtId['id_order_detail'])
@@ -2072,5 +1998,90 @@ class RetailcrmHistory
         }
 
         return $updateOrderStatuses;
+    }
+
+    private static function getCustomerId($order)
+    {
+        $customerId = null;
+        $isCorporateCustomer =
+            'customer_corporate' === $order['customer']['type']
+            && RetailcrmTools::isCorporateEnabled()
+            && !empty($order['contact'])
+            && isset($order['contact']['externalId']);
+
+        if ($isCorporateCustomer) {
+            if (isset($order['contact']['externalId'])) {
+                $customerId = Customer::customerIdExistsStatic($order['contact']['externalId']);
+            }
+
+            if (empty($customerId) && !empty($order['contact']['email'])) {
+                $customer = Customer::getCustomersByEmail($order['contact']['email']);
+                $customer = is_array($customer) ? reset($customer) : [];
+
+                if (isset($customer['id_customer'])) {
+                    $customerId = $customer['id_customer'];
+                }
+            }
+        } elseif (isset($order['customer']['externalId'])) {
+            $customerId = Customer::customerIdExistsStatic($order['customer']['externalId']);
+        }
+
+        return $customerId;
+    }
+
+    private static function getCustomerById($order, $customerId)
+    {
+        // address invoice
+        if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
+
+            $dataOrder = array_merge(
+                $order['contact'],
+                ['address' => $order['company']['address']]
+            );
+
+            $customerBuilder = new RetailcrmCorporateCustomerBuilder();
+            $customerBuilder
+                ->setCustomer(new Customer($customerId))
+                ->setDataCrm($dataOrder)
+                ->extractCompanyDataFromOrder($order)
+                ->build()
+            ;
+        } else {
+
+            $customerBuilder = new RetailcrmCustomerBuilder();
+            $customerBuilder
+                ->setDataCrm($order['customer'])
+                ->build()
+            ;
+
+            $customerBuilder = self::createAddressInvoiceForCustomer($customerBuilder, $customerId);
+        }
+        return $customerBuilder;
+    }
+
+    private static function sendExternalIdsToCrm($order, $newOrder)
+    {
+        // collect order ids for single fix request
+        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
+
+        if (!empty(self::$orderFix)) {
+            $response = self::$api->ordersFixExternalIds(self::$orderFix);
+            if(!$response->isSuccessful()) {
+                throw new BadRequestHttpException(json_decode($response->getRawResponse())->errorMsg);
+            }
+        }
+    }
+
+    private static function getOrderCarrier($orderToUpdate)
+    {
+        if (property_exists($orderToUpdate, 'id_order_carrier')) {
+            $idOrderCarrier = $orderToUpdate->id_order_carrier;
+        } elseif (method_exists($orderToUpdate, 'getIdOrderCarrier')) {
+            $idOrderCarrier = $orderToUpdate->getIdOrderCarrier();
+        } else {
+            $idOrderCarrier = null;
+        }
+
+        return new OrderCarrier($idOrderCarrier);
     }
 }
