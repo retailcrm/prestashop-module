@@ -47,6 +47,7 @@ class RetailcrmHistory
     private static $receiveOrderNumber;
     private static $sendOrderNumber;
     private static $statuses;
+    private static $cartStatus;
     private static $deliveries;
     private static $payments;
     private static $deliveryDefault;
@@ -59,6 +60,7 @@ class RetailcrmHistory
     {
         self::$receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
         self::$sendOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
+        self::$cartStatus = (string) (Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
         self::$statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
         self::$deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
         self::$payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
@@ -924,10 +926,10 @@ class RetailcrmHistory
         }
     }
 
-    private static function createProducts($orderItems)
+    private static function createProducts($crmOrderItems, $addressDelivery)
     {
         $products = [];
-        foreach ($orderItems as $item) {
+        foreach ($crmOrderItems as $item) {
             if (RetailcrmOrderBuilder::isGiftItem($item)) {
                 continue;
             }
@@ -1773,14 +1775,16 @@ class RetailcrmHistory
 
         $orderStatus = self::getInternalOrderStatus($order['status']);
 
+        if ($orderStatus == self::$cartStatus) {
+            return;
+        }
+
         $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
 
         $paymentType = null;
         if ($paymentTypeCRM) {
             $paymentType = self::getModulePaymentId($paymentTypeCRM);
         }
-
-        $deliveryType = self::getDeliveryType($order);
 
         $customerId = self::getCustomerId($order);
 
@@ -1800,17 +1804,16 @@ class RetailcrmHistory
 
         $addressDelivery = self::createAddress($order, $customer);
 
+        $deliveryType = self::getDeliveryType($order);
+
         $cart = self::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
 
         $products = [];
         if (!empty($order['items'])) {
-            $products = self::createProducts($order['items']);
+            $products = self::createProducts($order['items'], $addressDelivery);
         }
 
-        if (0 < count($products)) {
-            $cart->setWsCartRows($products);
-            self::loadInPrestashop($cart, 'update');
-        }
+        $cart = self::addProductsToCart($cart, $products);
 
         $newOrder = self::createOrder(
             $cart,
@@ -2078,5 +2081,15 @@ class RetailcrmHistory
         }
 
         return new OrderCarrier($idOrderCarrier);
+    }
+
+    private static function addProductsToCart(Cart $cart, array $products)
+    {
+        if (0 < count($products)) {
+            $cart->setWsCartRows($products);
+            self::loadInPrestashop($cart, 'update');
+        }
+
+        return $cart;
     }
 }
