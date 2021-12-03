@@ -616,6 +616,7 @@ class RetailcrmHistory
      * @param $product_id
      * @param $product_attribute_id
      * @param $id_order_detail
+     *
      * @return void
      */
     private static function deleteOrderDetailByProduct($order_id, $product_id, $product_attribute_id, $id_order_detail)
@@ -1001,8 +1002,6 @@ class RetailcrmHistory
         $newOrder->valid = 1;
         $newOrder->secure_key = md5(time());
 
-
-
         // save order
         try {
             RetailcrmLogger::writeDebug(__METHOD__, sprintf(
@@ -1023,7 +1022,6 @@ class RetailcrmHistory
             $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
 
             self::loadInPrestashop($newOrderHistoryRecord, 'add');
-
         } catch (\Exception $e) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
@@ -1089,7 +1087,7 @@ class RetailcrmHistory
             $orderDetail->id_warehouse = !empty($newOrder->id_warehouse) ? $newOrder->id_warehouse : 0;
 
             if (!$product->checkQty($orderDetail->product_quantity)) {
-                self::setOutOfStockStatus($order,$newOrder);
+                self::setOutOfStockStatus($order, $newOrder);
             }
 
             StockAvailable::updateQuantity(
@@ -1153,8 +1151,8 @@ class RetailcrmHistory
         }
 
         $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $order, [
-                'orderToUpdate' => $orderToUpdate,
-            ]
+            'orderToUpdate' => $orderToUpdate,
+        ]
         );
 
         self::handleCustomerDataChange($orderToUpdate, $order);
@@ -1641,7 +1639,6 @@ class RetailcrmHistory
                     continue;
                 }
 
-
                 $orderDetailId = !empty($parsedExtId['id_order_detail'])
                     ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
                 $orderDetail = new OrderDetail($orderDetailId);
@@ -1797,7 +1794,7 @@ class RetailcrmHistory
         }
         self::loadInPrestashop($customer, 'save');
 
-        if (!is_null($addressInvoice)) {
+        if (null !== $addressInvoice) {
             self::updateAddressInvoice($addressInvoice, $customer, $order);
         }
 
@@ -1852,6 +1849,7 @@ class RetailcrmHistory
         if (isset(self::$statuses[$state]) && '' != self::$statuses[$state]) {
             $status = self::$statuses[$state];
         }
+
         return $status;
     }
 
@@ -1864,7 +1862,6 @@ class RetailcrmHistory
                 $paymentFromCRM = end($order['payments']);
                 $paymentType = $paymentFromCRM['type'];
             } elseif (1 < count($order['payments'])) {
-
                 foreach ($order['payments'] as $paymentFromCRM) {
                     if (isset($paymentFromCRM['status']) && 'paid' !== $paymentFromCRM['status']) {
                         $paymentType = $paymentFromCRM['type'];
@@ -1885,12 +1882,11 @@ class RetailcrmHistory
             $paymentId = self::$payments[$paymentTypeCRM];
         }
 
-        if (is_null($paymentId)) {
+        if (null === $paymentId) {
             return null;
         }
 
         return self::getModulePaymentType($paymentId);
-
     }
 
     private static function getModulePaymentType($paymentId)
@@ -1970,7 +1966,7 @@ class RetailcrmHistory
 
             $parsedExtId = static::parseItemExternalId($item);
             $product_id = $parsedExtId['product_id'];
-            $product = new Product((int)$product_id, false, self::$default_lang);
+            $product = new Product((int) $product_id, false, self::$default_lang);
 
             foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
                 $orderDetailId = !empty($parsedExtId['id_order_detail'])
@@ -2033,7 +2029,6 @@ class RetailcrmHistory
     {
         // address invoice
         if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
-
             $dataOrder = array_merge(
                 $order['contact'],
                 ['address' => $order['company']['address']]
@@ -2047,7 +2042,6 @@ class RetailcrmHistory
                 ->build()
             ;
         } else {
-
             $customerBuilder = new RetailcrmCustomerBuilder();
             $customerBuilder
                 ->setDataCrm($order['customer'])
@@ -2056,6 +2050,7 @@ class RetailcrmHistory
 
             $customerBuilder = self::createAddressInvoiceForCustomer($customerBuilder, $customerId);
         }
+
         return $customerBuilder;
     }
 
@@ -2066,7 +2061,7 @@ class RetailcrmHistory
 
         if (!empty(self::$orderFix)) {
             $response = self::$api->ordersFixExternalIds(self::$orderFix);
-            if(!$response->isSuccessful()) {
+            if (!$response->isSuccessful()) {
                 throw new BadRequestHttpException(json_decode($response->getRawResponse())->errorMsg);
             }
         }
