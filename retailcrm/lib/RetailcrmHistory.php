@@ -964,10 +964,11 @@ class RetailcrmHistory
         $newOrder->reference = $orderNumber;
         $newOrder->id_carrier = (int) $deliveryType;
 
-        $paymentId = self::$payments[$paymentTypeCRM];
+        if (isset(self::$payments[$paymentTypeCRM])) {
+            $newOrder->module = self::$payments[$paymentTypeCRM];
+        }
 
         $newOrder->payment = $paymentType;
-        $newOrder->module = $paymentId;
 
         // totals
         $totalPaid = $order['totalSumm'];
@@ -1398,13 +1399,17 @@ class RetailcrmHistory
 
     private static function checkPaymentType($order, $orderToUpdate)
     {
-        $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
-
         if (empty($order['payments'])) {
             return;
         }
         foreach ($order['payments'] as $payment) {
-            if (isset($payment['externalId']) || !isset($payment['status']) || 'paid' !== $payment['status']) {
+            if (isset($payment['externalId'])) {
+                continue;
+            }
+            if (!isset($payment['status'])) {
+                continue;
+            }
+            if ('paid' !== $payment['status']) {
                 continue;
             }
 
@@ -1421,11 +1426,10 @@ class RetailcrmHistory
                 $orderPayment->amount = $orderToUpdate->total_paid;
             }
 
-            $orderPayment->id_currency = $default_currency;
+            $orderPayment->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
             $orderPayment->date_add = isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
 
-            RetailcrmLogger::writeDebug(
-                __METHOD__,
+            RetailcrmLogger::writeDebug(__METHOD__,
                 sprintf(
                     '<Order Reference: %s> %s::%s',
                     $orderToUpdate->reference,
@@ -1782,16 +1786,17 @@ class RetailcrmHistory
         }
 
         $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
-
-        $paymentType = null;
         if ($paymentTypeCRM) {
             $paymentType = self::getModulePaymentId($paymentTypeCRM);
+            if (!$paymentType) {
+                RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentType undefined");
+
+                return;
+            }
         }
 
         $customerId = self::getCustomerId($order);
-
         $customerBuilder = self::getCustomerById($order, $customerId);
-
         $customer = $customerBuilder->getData()->getCustomer();
         $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
 
@@ -1881,17 +1886,13 @@ class RetailcrmHistory
 
     private static function getModulePaymentId($paymentTypeCRM)
     {
-        $paymentId = null;
-
         if (isset(self::$payments[$paymentTypeCRM]) && !empty(self::$payments[$paymentTypeCRM])) {
             $paymentId = self::$payments[$paymentTypeCRM];
+
+            return self::getModulePaymentType($paymentId);
         }
 
-        if (null === $paymentId) {
-            return null;
-        }
-
-        return self::getModulePaymentType($paymentId);
+        return false;
     }
 
     private static function getModulePaymentType($paymentId)
@@ -2004,14 +2005,17 @@ class RetailcrmHistory
     private static function getCustomerId($order)
     {
         $customerId = null;
+        $existingCorporateContact = isset($order['contact']['externalId']);
+        $existingCustomer = isset($order['customer']['externalId']);
+
         $isCorporateCustomer =
             'customer_corporate' === $order['customer']['type']
             && RetailcrmTools::isCorporateEnabled()
             && !empty($order['contact'])
-            && isset($order['contact']['externalId']);
+            && $existingCorporateContact;
 
         if ($isCorporateCustomer) {
-            if (isset($order['contact']['externalId'])) {
+            if ($existingCorporateContact) {
                 $customerId = Customer::customerIdExistsStatic($order['contact']['externalId']);
             }
 
@@ -2023,7 +2027,7 @@ class RetailcrmHistory
                     $customerId = $customer['id_customer'];
                 }
             }
-        } elseif (isset($order['customer']['externalId'])) {
+        } elseif ($existingCustomer) {
             $customerId = Customer::customerIdExistsStatic($order['customer']['externalId']);
         }
 
