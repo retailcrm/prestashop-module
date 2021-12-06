@@ -2075,10 +2075,7 @@ class RetailcrmHistory
         self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
 
         if (!empty(self::$orderFix)) {
-            $response = self::$api->ordersFixExternalIds(self::$orderFix);
-            if (null === $response || !$response->isSuccessful()) {
-                throw new BadRequestHttpException(json_decode($response->getRawResponse())->errorMsg);
-            }
+            self::$api->ordersFixExternalIds(self::$orderFix);
         }
     }
 
