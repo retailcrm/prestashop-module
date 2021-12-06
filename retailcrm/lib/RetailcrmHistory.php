@@ -1,7 +1,5 @@
 <?php
 
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-
 /**
  * MIT License
  *
@@ -409,6 +407,12 @@ class RetailcrmHistory
                 'externalId' => $orderToUpdate->id,
                 'number' => $orderToUpdate->reference,
             ];
+        }
+
+        if (!empty(self::$updateOrderIds)) {
+            foreach (self::$updateOrderIds as $upOrder) {
+                self::$api->ordersEdit($upOrder);
+            }
         }
     }
 
