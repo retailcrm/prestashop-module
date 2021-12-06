@@ -262,6 +262,156 @@ class RetailcrmHistory
         }
     }
 
+    private static function updateOrders(array $orders)
+    {
+        self::init();
+
+        foreach ($orders as $orderHistory) {
+            $orderHistory = RetailcrmTools::filter('RetailcrmFilterOrdersHistory', $orderHistory);
+            $orderDeleted = isset($orderHistory['deleted']) && true == $orderHistory['deleted'];
+            $orderExists = isset($orderHistory['externalId']);
+
+            if ($orderDeleted) {
+                continue;
+            }
+
+            if ($orderExists && (false !== stripos($orderHistory['externalId'], 'pscart_'))) {
+                continue;
+            }
+
+            if (!$orderExists) {
+                self::createNewOrder($orderHistory);
+            } else {
+                $orderToUpdate = new Order((int) $orderHistory['externalId']);
+                self::updateOrder($orderHistory, $orderToUpdate);
+            }
+        }
+    }
+
+    private static function createNewOrder($orderHistory)
+    {
+        $order = self::getOrderFromCrm($orderHistory['id'], 'id');
+        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $order);
+
+        $orderStatus = self::getInternalOrderStatus($order['status']);
+
+        if (self::$cartStatus && (string) $orderStatus === (string) self::$cartStatus) {
+            return;
+        }
+
+        $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
+        if ($paymentTypeCRM) {
+            $paymentType = self::getModulePaymentId($paymentTypeCRM);
+            if (!$paymentType) {
+                RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentType undefined");
+
+                return;
+            }
+        }
+
+        $customerId = self::getCustomerId($order);
+        $customerBuilder = self::getCustomerById($order, $customerId);
+        $customer = $customerBuilder->getData()->getCustomer();
+        $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
+
+        if (empty($customer->id) && !empty($customer->email)) {
+            $customer->id = self::getCustomerIdByEmail($customer->email);
+        }
+        self::loadInPrestashop($customer, 'save');
+
+        if (null !== $addressInvoice) {
+            self::updateAddressInvoice($addressInvoice, $customer, $order);
+        }
+
+        $addressDelivery = self::createAddress($order, $customer);
+
+        $deliveryType = self::getDeliveryType($order);
+
+        $cart = self::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
+
+        $products = [];
+        if (!empty($order['items'])) {
+            $products = self::createProducts($order['items'], $addressDelivery);
+        }
+
+        $cart = self::addProductsToCart($cart, $products);
+
+        $newOrder = self::createOrder(
+            $cart,
+            $customer,
+            $order,
+            $deliveryType,
+            $paymentType,
+            $addressDelivery,
+            $addressInvoice,
+            $orderStatus,
+            $paymentTypeCRM
+        );
+
+        self::createPayments($order, $newOrder);
+
+        self::saveCarrier($newOrder->id, $deliveryType, $order['delivery']['cost']);
+
+        if (!empty($order['items'])) {
+            self::createOrderDetails($order, $newOrder);
+        }
+
+        self::sendExternalIdsToCrm($order, $newOrder);
+
+        // collect orders id and reference if option sendOrderNumber enabled
+        if (self::$sendOrderNumber) {
+            self::$updateOrderIds[] = [
+                'externalId' => $newOrder->id,
+                'number' => $newOrder->reference,
+            ];
+        }
+
+        if (!empty(self::$updateOrderIds)) {
+            foreach (self::$updateOrderIds as $upOrder) {
+                self::$api->ordersEdit($upOrder);
+            }
+        }
+    }
+
+    private static function updateOrder($order, $orderToUpdate)
+    {
+        if (!Validate::isLoadedObject($orderToUpdate)) {
+            return;
+        }
+
+        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $order, [
+            'orderToUpdate' => $orderToUpdate,
+        ]
+        );
+
+        self::handleCustomerDataChange($orderToUpdate, $order);
+
+        self::checkDeliveryChanges($order, $orderToUpdate);
+
+        self::checkDeliveryTypeAndCost($order, $orderToUpdate);
+
+        self::checkPaymentType($order, $orderToUpdate);
+
+        self::changeOrderTotals($order, $orderToUpdate);
+
+        self::checkOrderStatus($order, $orderToUpdate);
+
+        // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
+
+        if (isset($order['number']) && self::$receiveOrderNumber) {
+            $orderToUpdate->reference = $order['number'];
+            $orderToUpdate->update();
+        }
+
+        // collect orders id and reference if option sendOrderNumber enabled
+        if (self::$sendOrderNumber) {
+            self::$updateOrderIds[] = [
+                'externalId' => $orderToUpdate->id,
+                'number' => $orderToUpdate->reference,
+            ];
+        }
+    }
+
     /**
      * Updates sinceId for orders or customers to the latest value
      *
@@ -1146,45 +1296,6 @@ class RetailcrmHistory
         }
     }
 
-    private static function updateOrder($order, $orderToUpdate)
-    {
-        if (!Validate::isLoadedObject($orderToUpdate)) {
-            return;
-        }
-
-        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $order, [
-            'orderToUpdate' => $orderToUpdate,
-        ]
-        );
-
-        self::handleCustomerDataChange($orderToUpdate, $order);
-
-        self::checkDeliveryChanges($order, $orderToUpdate);
-
-        self::checkDeliveryTypeAndCost($order, $orderToUpdate);
-
-        self::checkPaymentType($order, $orderToUpdate);
-
-        self::changeOrderTotals($order, $orderToUpdate);
-
-        self::checkOrderStatus($order, $orderToUpdate);
-
-        // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
-
-        if (isset($order['number']) && self::$receiveOrderNumber) {
-            $orderToUpdate->reference = $order['number'];
-            $orderToUpdate->update();
-        }
-
-        // collect orders id and reference if option sendOrderNumber enabled
-        if (self::$sendOrderNumber) {
-            self::$updateOrderIds[] = [
-                'externalId' => $orderToUpdate->id,
-                'number' => $orderToUpdate->reference,
-            ];
-        }
-    }
-
     private static function getPaymentsCms(RetailcrmReferences $references)
     {
         $paymentsCMS = [];
@@ -1193,32 +1304,6 @@ class RetailcrmHistory
         }
 
         return $paymentsCMS;
-    }
-
-    private static function updateOrders(array $orders)
-    {
-        self::init();
-
-        foreach ($orders as $orderHistory) {
-            $orderHistory = RetailcrmTools::filter('RetailcrmFilterOrdersHistory', $orderHistory);
-            $orderDeleted = isset($orderHistory['deleted']) && true == $orderHistory['deleted'];
-            $orderExists = isset($orderHistory['externalId']);
-
-            if ($orderDeleted) {
-                continue;
-            }
-
-            if ($orderExists && (false !== stripos($orderHistory['externalId'], 'pscart_'))) {
-                continue;
-            }
-
-            if (!$orderExists) {
-                self::createNewOrder($orderHistory);
-            } else {
-                $orderToUpdate = new Order((int) $orderHistory['externalId']);
-                self::updateOrder($orderHistory, $orderToUpdate);
-            }
-        }
     }
 
     private static function createAddress($order, $customer)
@@ -1771,85 +1856,6 @@ class RetailcrmHistory
         // update order items ids in crm
         if ($isNewItemsExist) {
             self::$newItemsIdsByOrderId[$orderToUpdate->id] = $newItemsIds;
-        }
-    }
-
-    private static function createNewOrder($orderHistory)
-    {
-        $order = self::getOrderFromCrm($orderHistory['id'], 'id');
-        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $order);
-
-        $orderStatus = self::getInternalOrderStatus($order['status']);
-
-        if (self::$cartStatus && (string) $orderStatus === (string) self::$cartStatus) {
-            return;
-        }
-
-        $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
-        if ($paymentTypeCRM) {
-            $paymentType = self::getModulePaymentId($paymentTypeCRM);
-            if (!$paymentType) {
-                RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentType undefined");
-
-                return;
-            }
-        }
-
-        $customerId = self::getCustomerId($order);
-        $customerBuilder = self::getCustomerById($order, $customerId);
-        $customer = $customerBuilder->getData()->getCustomer();
-        $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
-
-        if (empty($customer->id) && !empty($customer->email)) {
-            $customer->id = self::getCustomerIdByEmail($customer->email);
-        }
-        self::loadInPrestashop($customer, 'save');
-
-        if (null !== $addressInvoice) {
-            self::updateAddressInvoice($addressInvoice, $customer, $order);
-        }
-
-        $addressDelivery = self::createAddress($order, $customer);
-
-        $deliveryType = self::getDeliveryType($order);
-
-        $cart = self::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
-
-        $products = [];
-        if (!empty($order['items'])) {
-            $products = self::createProducts($order['items'], $addressDelivery);
-        }
-
-        $cart = self::addProductsToCart($cart, $products);
-
-        $newOrder = self::createOrder(
-            $cart,
-            $customer,
-            $order,
-            $deliveryType,
-            $paymentType,
-            $addressDelivery,
-            $addressInvoice,
-            $orderStatus,
-            $paymentTypeCRM
-        );
-
-        self::createPayments($order, $newOrder);
-
-        self::saveCarrier($newOrder->id, $deliveryType, $order['delivery']['cost']);
-
-        if (!empty($order['items'])) {
-            self::createOrderDetails($order, $newOrder);
-        }
-
-        self::sendExternalIdsToCrm($order, $newOrder);
-
-        // collect orders id and reference if option sendOrderNumber enabled
-        if (self::$sendOrderNumber) {
-            self::$updateOrderIds[] = [
-                'externalId' => $newOrder->id,
-                'number' => $newOrder->reference,
-            ];
         }
     }
 
