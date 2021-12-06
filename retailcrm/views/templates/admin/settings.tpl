@@ -39,6 +39,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/vendor/sumoselect.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/sumoselect-custom.min.css">
+<link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-orders.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-upload.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/retailcrm-export.min.css">
 <link rel="stylesheet" href="{$assets|escape:'htmlall':'UTF-8'}/css/styles.min.css">
@@ -50,6 +51,7 @@
 <title>{$systemName|escape:'htmlall':'UTF-8'}</title>
 <div class="retail retail-wrap hidden">
     {include file='./module_messages.tpl'}
+    {include file='./module_translates.tpl'}
     <div class="retail-container retail-column">
         <aside class="retail-column__aside">
             <div class="retail-menu">
@@ -326,48 +328,7 @@
                             </div>
                         {/foreach}
                     </div>
-                    <div id="rcrm_tab_orders_upload">
-                        <div class="retail-form__title">{l s='Upload orders' mod='retailcrm'}</div>
-                        <div class="retail-form__label">{l s='Enter order IDs to upload to Simla.com, divided by a comma. You can also specify ranges, like "1-10". It\'s allowed to upload to 10 orders at a time.' mod='retailcrm'}</div>
-                        <div class="retail-form__row">
-                            <input type="text" name="{$uploadOrders|escape:'htmlall':'UTF-8'}" value=""
-                                   class="retail-form__area" placeholder="{l s='Orders IDs' mod='retailcrm'}">
-                        </div>
-                        <div class="retail-form__row retail-form__row_submit">
-                            <button id="upload-orders-submit" class="btn btn_invert btn_submit"
-                                    style="outline: none;">{l s='Upload' mod='retailcrm'}</button>
-                        </div>
-                        <div class="retail-form__title"
-                             style="margin-top: 40px;">{l s='Export orders & customers' mod='retailcrm'}</div>
-                        <div class="retail-form__label">{l s='You can export all the orders and customers from CMS to Simla.com by pressing "Export" button. This process can take a long time, and it\'s required that you keep the tab opened until it\'s done.' mod='retailcrm'}</div>
-                        <div class="retail-form__row">
-                            <div class="retail-circle">
-                                <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
-                                <input type="text" name="RETAILCRM_EXPORT_ORDERS_COUNT" readonly="readonly"
-                                       class="retail-circle__content" value="{$ordersCount|escape:'htmlall':'UTF-8'}"/>
-                                <input type="hidden" name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"
-                                       value="{$exportOrdersStepSize|escape:'htmlall':'UTF-8'}"/>
-                            </div>
-                            <div class="retail-circle">
-                                <div class="retail-circle__title">
-                                    {l s='Customers' mod='retailcrm'}
-                                </div>
-                                <input type="text" readonly="readonly"
-                                       title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount|escape:'htmlall':'UTF-8'}"
-                                       class="retail-circle__content" value="{$customersCount|escape:'htmlall':'UTF-8'}"/>
-                                <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"
-                                       value="{$exportCustomersCount|escape:'htmlall':'UTF-8'}"/>
-                                <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE"
-                                       value="{$exportCustomersStepSize|escape:'htmlall':'UTF-8'}"/>
-                            </div>
-                        </div>
-                        <div class="retail-form__row retail-form__row_submit"
-                             style="text-align: center; height: 60px; margin-bottom: 20px; clear:both;">
-                            <button id="export-orders-submit" class="btn btn_invert btn_submit"
-                                    style="outline: none;">{l s='Export' mod='retailcrm'}</button>
-                            <div id="export-orders-progress" class="retail-progress retail-hidden"></div>
-                        </div>
-                    </div>
+
                     <div id="rcrm_tab_daemon_collector">
                         <div class="retail-form__title">{l s='Daemon Collector' mod='retailcrm'}</div>
                         <div class="retail-form__row">
@@ -384,6 +345,171 @@
                         <input type="submit" value="{l s='Save' mod='retailcrm'}" class="btn btn_invert btn_submit">
                     </div>
                 </form>
+
+                <div id="rcrm_tab_orders_upload">
+                    <div class="retail-container--foldable">
+                        <div class="retail-row--foldable active">
+                            <div class="retail-form__title retail-row__title">{l s='Upload orders' mod='retailcrm'}</div>
+                            <div class="retail-form__row retail-row__content">
+                                <div class="retail-form__label">{l s='Enter order IDs to upload to Simla.com, divided by a comma. You can also specify ranges, like "1-10". It\'s allowed to upload to 10 orders at a time.' mod='retailcrm'}</div>
+
+                                <form class="rcrm-form-submit-trigger"
+                                      action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm"
+                                      method="post"
+                                >
+                                    <input type="hidden" name="submitretailcrm" value="1"/>
+
+                                    <div class="retail-form__row">
+                                        <input type="text" name="{$uploadOrders|escape:'htmlall':'UTF-8'}" value=""
+                                               class="retail-form__area"
+                                               placeholder="{l s='Orders IDs' mod='retailcrm'}">
+                                    </div>
+                                    <div class="retail-form__row retail-form__row_submit">
+                                        <button id="upload-orders-submit" class="btn btn_invert btn_submit"
+                                                style="outline: none;">{l s='Upload' mod='retailcrm'}</button>
+                                    </div>
+                                </form>
+                                <div class="retail-form__label">{l s='You can export all the orders and customers from CMS to Simla.com by pressing "Export" button. This process can take a long time, and it\'s required that you keep the tab opened until it\'s done.' mod='retailcrm'}</div>
+
+                                <form class="rcrm-form-submit-trigger"
+                                      action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm"
+                                      method="post"
+                                >
+                                    <div class="retail-form__row">
+                                        <div class="retail-circle">
+                                            <div class="retail-circle__title">{l s='Orders' mod='retailcrm'}</div>
+                                            <input type="text" name="RETAILCRM_EXPORT_ORDERS_COUNT" readonly="readonly"
+                                                   class="retail-circle__content"
+                                                   value="{$ordersCount|escape:'htmlall':'UTF-8'}"/>
+                                            <input type="hidden" name="RETAILCRM_EXPORT_ORDERS_STEP_SIZE"
+                                                   value="{$exportOrdersStepSize|escape:'htmlall':'UTF-8'}"/>
+                                        </div>
+                                        <div class="retail-circle">
+                                            <div class="retail-circle__title">
+                                                {l s='Customers' mod='retailcrm'}
+                                            </div>
+                                            <input type="text" readonly="readonly"
+                                                   title="{l s='Customers without orders' mod='retailcrm'}: {$exportCustomersCount|escape:'htmlall':'UTF-8'}"
+                                                   class="retail-circle__content"
+                                                   value="{$customersCount|escape:'htmlall':'UTF-8'}"/>
+                                            <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_COUNT"
+                                                   value="{$exportCustomersCount|escape:'htmlall':'UTF-8'}"/>
+                                            <input type="hidden" name="RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE"
+                                                   value="{$exportCustomersStepSize|escape:'htmlall':'UTF-8'}"/>
+                                        </div>
+                                    </div>
+                                    <div class="retail-form__row retail-form__row_submit"
+                                         style="text-align: center; height: 60px; margin-bottom: 20px; clear:both;">
+                                        <button id="export-orders-submit" class="btn btn_invert btn_submit"
+                                                style="outline: none;">{l s='Export' mod='retailcrm'}</button>
+                                        <div id="export-orders-progress" class="retail-progress retail-hidden"></div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="retail-row--foldable" id="retail-uploaded-orders-tab">
+                            <div class="retail-form__title retail-row__title">{l s='Uploaded orders' mod='retailcrm'}</div>
+                            <div class="retail-form__row retail-row__content">
+                                <div class="retail-form__label">{l s='In this section you can check the orders export results and manualy upload order to' mod='retailcrm'} {$systemName|escape:'htmlall':'UTF-8'}</div>
+                                <div class="retail-form__row">
+                                    <form action="{$retailControllerOrders|escape:'htmlall':'UTF-8'}"
+                                          id="retail-search-orders-form" method="GET">
+                                        <input type="text" name="search-orders-value" value=""
+                                               class="retail-form__area"
+                                               placeholder="{l s='Orders IDs' mod='retailcrm'}">
+
+                                        <button id="search-orders-submit" class="btn"
+                                                style="outline: none;">{l s='Search' mod='retailcrm'}</button>
+
+                                        <div class="retail-table-filter">
+                                            <label for="retail-table-filter-status-all"
+                                                   class="retail-table-filter-btn active">
+                                                <span>{l s='All' mod='retailcrm'}</span>
+                                                <input type="radio" name="search-orders-filter"
+                                                       id="retail-table-filter-status-all"
+                                                       value="0" class="search-orders-filter" checked>
+                                            </label>
+                                            <label for="retail-table-filter-status-ok"
+                                                   class="retail-table-filter-btn">
+                                                <span>{l s='Uploaded' mod='retailcrm'}</span>
+                                                <input type="radio" name="search-orders-filter"
+                                                       id="retail-table-filter-status-ok"
+                                                       value="1" class="search-orders-filter">
+                                            </label>
+                                            <label for="retail-table-filter-status-fail"
+                                                   class="retail-table-filter-btn">
+                                                <span>{l s='Error' mod='retailcrm'}</span>
+                                                <input type="radio" name="search-orders-filter"
+                                                       id="retail-table-filter-status-fail"
+                                                       value="2" class="search-orders-filter">
+                                            </label>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="retail-form__row retail-table-pagination"></div>
+                                <div class="retail-table-wrapper">
+                                    <a href="{$retailControllerOrdersUpload|escape:'htmlall':'UTF-8'}"
+                                       id="retail-controller-orders-upload" class="retail-controller-link"></a>
+                                    <table class="retail-table retail-table-sort retail-table-center hidden"
+                                           id="retail-orders-table">
+                                        <thead>
+                                        <tr>
+                                            <th><span>{l s='Date and Time' mod='retailcrm'}</span></th>
+                                            <th><span>{l s='ID in' mod='retailcrm'} Prestashop</span></th>
+                                            <th>
+                                                <span>{l s='ID in' mod='retailcrm'} {$systemName|escape:'htmlall':'UTF-8'}</span>
+                                            </th>
+                                            <th><span>{l s='Status' mod='retailcrm'}</span></th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td class="retail-orders-table__date"></td>
+                                            <td class="retail-orders-table__id-cms">
+                                                <a href="{$adminControllerOrders|escape:'htmlall':'UTF-8'}"
+                                                   target="_blank"></a>
+                                            </td>
+                                            <td class="retail-orders-table__id-crm">
+                                                <a href="{$url|cat:'/orders/'|escape:'htmlall':'UTF-8'}"
+                                                   target="_blank"></a>
+                                            </td>
+                                            <td class="retail-orders-table__status">
+                                                <p class="retail-orders-table__status--success">
+                                                    <span style="color: #2e8b57;">&#10004;</span>
+                                                    {l s='Uploaded' mod='retailcrm'}
+                                                </p>
+                                                <p class="retail-orders-table__status--error">
+                                                    <input type="checkbox" class="retail-collapsible__input">
+                                                    <label class="retail-collapsible__title">
+                                                        <span style="color: #dd2e44;">&#10060;</span>
+                                                        {l s='Error' mod='retailcrm'}
+                                                        <span class="retail-orders-table__error retail-collapsible__content"></span>
+                                                    </label>
+                                                </p>
+                                            </td>
+                                            <td class="retail-table-center retail-orders-table__upload">
+                                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+                                                     xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+                                                     y="0px" viewBox="0 0 29.978 29.978"
+                                                     xml:space="preserve"
+                                                     class="retail-btn-svg"
+                                                >
+                                                    <g>
+                                                        <path d="M25.462,19.105v6.848H4.515v-6.848H0.489v8.861c0,1.111,0.9,2.012,2.016,2.012h24.967c1.115,0,2.016-0.9,2.016-2.012   v-8.861H25.462z"/>
+                                                        <path d="M14.62,18.426l-5.764-6.965c0,0-0.877-0.828,0.074-0.828s3.248,0,3.248,0s0-0.557,0-1.416c0-2.449,0-6.906,0-8.723   c0,0-0.129-0.494,0.615-0.494c0.75,0,4.035,0,4.572,0c0.536,0,0.524,0.416,0.524,0.416c0,1.762,0,6.373,0,8.742   c0,0.768,0,1.266,0,1.266s1.842,0,2.998,0c1.154,0,0.285,0.867,0.285,0.867s-4.904,6.51-5.588,7.193   C15.092,18.979,14.62,18.426,14.62,18.426z"/>
+                                                    </g>
+                                                </svg>
+                                                {l s='Upload' mod='retailcrm'}
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="rcrm_tab_consultant">
                     <form class="rcrm-form-submit-trigger"
                           action="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm&item=consultant"
@@ -601,6 +727,7 @@
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/vendor/jquery.sumoselect.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-tabs.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-upload.min.js"></script>
+<script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-orders.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-icml.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-export.min.js"></script>
 <script src="{$assets|escape:'htmlall':'UTF-8'}/js/retailcrm-advanced.min.js"></script>

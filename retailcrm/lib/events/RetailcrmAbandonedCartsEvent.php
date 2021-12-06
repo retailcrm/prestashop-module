@@ -2,7 +2,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2021 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +28,15 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
-require_once __DIR__ . '/../RetailcrmPrestashopLoader.php';
+
+require_once dirname(__FILE__) . '/../RetailcrmPrestashopLoader.php';
 
 class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements RetailcrmEventInterface
 {

@@ -2,7 +2,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2021 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- *  @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
  *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
@@ -42,8 +42,6 @@
  * A simple autoloader that loads class files recursively starting in the directory
  * where this class resides.  Additional options can be provided to control the naming
  * convention of the class files.
- *
- * @license http://opensource.org/licenses/MIT  MIT License
  */
 class RetailcrmAutoloader
 {
@@ -138,7 +136,7 @@ class RetailcrmAutoloader
     }
 }
 
-RetailcrmAutoloader::setPath(realpath(__DIR__));
+RetailcrmAutoloader::setPath(realpath(dirname(__FILE__)));
 RetailcrmAutoloader::setPathCustom(realpath(_PS_MODULE_DIR_ . '/retailcrm/custom'));
 RetailcrmAutoloader::setFileExt('.php');
 spl_autoload_register('RetailcrmAutoloader::loader');

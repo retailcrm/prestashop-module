@@ -1,10 +1,47 @@
 <?php
+/**
+ * MIT License
+ *
+ * Copyright (c) 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
 
 global $_MODULE;
 $_MODULE = [];
 $_MODULE['<{retailcrm}prestashop>retailcrm_9b1e2d4b35252401dbdab3cbad2735c4'] = 'Simla.com';
 $_MODULE['<{retailcrm}prestashop>retailcrm_5e36a81536959d8cde52246dd15a6fca'] = 'Módulo de integración para Simla.com';
 $_MODULE['<{retailcrm}prestashop>retailcrm_876f23178c29dc2552c0b48bf23cd9bd'] = '¿Está seguro de que desea eliminar el módulo?';
+$_MODULE['<{retailcrm}prestashop>retailcrm_5e66ee98e79567f8daf9454b5517f819'] = 'Se debe especificar al menos un ID de pedido';
 $_MODULE['<{retailcrm}prestashop>retailcrm_6bd461d1fc51b3294c6513cecc24758d'] = 'Los pedidos han sido cargados con éxito';
 $_MODULE['<{retailcrm}prestashop>retailcrm_9a7fc06b4b2359f1f26f75fbbe27a3e8'] = 'No todos los pedidos se han cargado con existo';
 $_MODULE['<{retailcrm}prestashop>retailcrm_e7244a5e543ba692ebc495aee934ee9b'] = 'Orden omitida por inexistencia: %s';
@@ -82,6 +119,8 @@ $_MODULE['<{retailcrm}prestashop>index_95428f32e5c696cf71baccb776bc5c15'] = 'Tra
 $_MODULE['<{retailcrm}prestashop>index_e7f9e382dc50889098cbe56f2554c77b'] = 'Tarjeta bancaria';
 $_MODULE['<{retailcrm}prestashop>index_7088f1d1d9c91d8b75e9882ffd78540c'] = 'Datos de contacto';
 $_MODULE['<{retailcrm}prestashop>index_50f158e2507321f1a5b6f8fb9e350818'] = 'Escríbenos en caso de preguntas o dudas';
+$_MODULE['<{retailcrm}prestashop>module_translates_2207b29a762b5d7798e9794cad24f518'] = 'No se encontraron pedidos';
+$_MODULE['<{retailcrm}prestashop>module_translates_79b5ffb5b4868e9fc8b6c6e3efafd416'] = 'Ocurrió un error al buscar los pedidos. Inténtalo de nuevo';
 $_MODULE['<{retailcrm}prestashop>settings_2b65c584b7b4d7bd19d36f7d2b690c6a'] = 'Catálogo Icml';
 $_MODULE['<{retailcrm}prestashop>settings_c2cc7082a89c1ad6631a2f66af5f00c0'] = 'Conexión';
 $_MODULE['<{retailcrm}prestashop>settings_065ab3a28ca4f16f55f103adc7d0226f'] = 'Los métodos del envío';
@@ -134,25 +173,32 @@ $_MODULE['<{retailcrm}prestashop>settings_a54a0e8a7a80b58ce5f8e2ef344bbf95'] = '
 $_MODULE['<{retailcrm}prestashop>settings_65dd9f6e8bf4eaf54c3dc96f011dade1'] = 'Recibir las existencias del Simla.com';
 $_MODULE['<{retailcrm}prestashop>settings_b55197a49e8c4cd8c314bc2aa39d6feb'] = 'Agotado';
 $_MODULE['<{retailcrm}prestashop>settings_4c271a7beaf103049443085ccab1f03f'] = 'Cambio de estado del pedido si el producto está agotado y se deniega su pedido con stock cero.';
+$_MODULE['<{retailcrm}prestashop>settings_4d3d769b812b6faa6b76e1a8abaece2d'] = 'Active';
+$_MODULE['<{retailcrm}prestashop>settings_f75d8fa5c89351544d372cf90528ccf2'] = 'Clave de la página web';
+$_MODULE['<{retailcrm}prestashop>settings_c9cc8cce247e49bae79f15173ce97354'] = 'Guardar';
 $_MODULE['<{retailcrm}prestashop>settings_6f1f9a3e435963417d08849fbef139c1'] = 'Ingrese los ID de los pedidos para cargar en Simla.com, divididos por una coma. También puede especificar rangos, como \"1-10\". Se permite subir hasta 10 pedidos a la vez.';
 $_MODULE['<{retailcrm}prestashop>settings_acfa058ec9e6e4745eddc0cae3f0f881'] = 'Identificador del pedido';
 $_MODULE['<{retailcrm}prestashop>settings_91412465ea9169dfd901dd5e7c96dd99'] = 'Subir';
-$_MODULE['<{retailcrm}prestashop>settings_f4af7f6987dfee28741ce77ff2d09d46'] = 'Exportar pedidos y clientes';
 $_MODULE['<{retailcrm}prestashop>settings_418faff1c9df0d297ff586ac3230be97'] = 'Puede exportar todos los pedidos y clientes de CMS a Simla.com presionando el botón \"Exportar\". Este proceso puede llevar mucho tiempo y es necesario que mantenga la pestaña abierta hasta que termine.';
 $_MODULE['<{retailcrm}prestashop>settings_7442e29d7d53e549b78d93c46b8cdcfc'] = 'Pedidos';
 $_MODULE['<{retailcrm}prestashop>settings_e6d0e1c8fc6a4fcf47869df87e04cd88'] = 'Clientes';
 $_MODULE['<{retailcrm}prestashop>settings_f8f36c02fa6f370808135c66cfc788aa'] = 'Clientes sin pedidos';
 $_MODULE['<{retailcrm}prestashop>settings_0095a9fa74d1713e43e370a7d7846224'] = 'Exportar';
-$_MODULE['<{retailcrm}prestashop>settings_4d3d769b812b6faa6b76e1a8abaece2d'] = 'Active';
-$_MODULE['<{retailcrm}prestashop>settings_f75d8fa5c89351544d372cf90528ccf2'] = 'Clave de la página web';
-$_MODULE['<{retailcrm}prestashop>settings_c9cc8cce247e49bae79f15173ce97354'] = 'Guardar';
+$_MODULE['<{retailcrm}prestashop>settings_51348d86bbb5ef9d37b0cc340bcafd2d'] = 'Pedidos cargados';
+$_MODULE['<{retailcrm}prestashop>settings_7db8c329e031289c4bee5dc9628fbef7'] = 'En esta sección puede comprobar los resultados de exportación de pedidos y el pedido de carga manual a';
+$_MODULE['<{retailcrm}prestashop>settings_13348442cc6a27032d2b4aa28b75a5d3'] = 'Buscar';
+$_MODULE['<{retailcrm}prestashop>settings_b1c94ca2fbc3e78fc30069c8d0f01680'] = 'Todo';
+$_MODULE['<{retailcrm}prestashop>settings_fe8d588f340d7507265417633ccff16e'] = 'Subido';
+$_MODULE['<{retailcrm}prestashop>settings_902b0d55fddef6f8d651fe1035b7d4bd'] = 'Error';
+$_MODULE['<{retailcrm}prestashop>settings_da9c83250288c94613605b535c26c648'] = 'Fecha y Hora';
+$_MODULE['<{retailcrm}prestashop>settings_0b7fa7fc169b7d50df4dbe2303bfd201'] = 'ID en';
+$_MODULE['<{retailcrm}prestashop>settings_ec53a8c4f07baed5d8825072c89799be'] = 'Estado';
 $_MODULE['<{retailcrm}prestashop>settings_4f18e3f1c9941a6ec5a38bc716c521b4'] = 'Código que necesita insertar en la web';
 $_MODULE['<{retailcrm}prestashop>settings_ec3028a12402ab7f43962a6f3a667b6e'] = 'Modo de depuración';
 $_MODULE['<{retailcrm}prestashop>settings_5465108dc7fdda5c9ee8f00136bbaa61'] = 'Web Jobs';
 $_MODULE['<{retailcrm}prestashop>settings_9082f68bc90113d8950e4ed7fe8fa0a4'] = 'Administrador de tareas';
 $_MODULE['<{retailcrm}prestashop>settings_9194de58ce560c095f02cefc1c1c61e6'] = 'Nombre de la tarea';
 $_MODULE['<{retailcrm}prestashop>settings_05a3a24340b7b9cc8d4e08f0ef4f4dd9'] = 'Última ejecución';
-$_MODULE['<{retailcrm}prestashop>settings_ec53a8c4f07baed5d8825072c89799be'] = 'Estado';
 $_MODULE['<{retailcrm}prestashop>settings_0be8406951cdfda82f00f79328cf4efc'] = 'Comentario';
 $_MODULE['<{retailcrm}prestashop>settings_fe5b6cd4d7a31615bbec8d1505089d87'] = 'StackTrace';
 $_MODULE['<{retailcrm}prestashop>settings_48b516cc37de64527a42da11c35d3ddc'] = 'Reset jobs';

@@ -8,3 +8,4 @@ retailcrm/views/js/*.map
 retailcrm/config*.xml
 retailcrm/custom
 coverage.xml
+.php-cs-fixer.cache

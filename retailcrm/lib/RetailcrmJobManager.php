@@ -2,7 +2,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 DIGITAL RETAIL TECHNOLOGIES SL
+ * Copyright (c) 2021 DIGITAL RETAIL TECHNOLOGIES SL
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,20 +28,21 @@
  * versions in the future. If you wish to customize PrestaShop for your
  * needs please refer to http://www.prestashop.com for more information.
  *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @copyright 2020 DIGITAL RETAIL TECHNOLOGIES SL
- * @license   https://opensource.org/licenses/MIT  The MIT License
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
  *
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  */
+
 if (function_exists('date_default_timezone_set') && function_exists('date_default_timezone_get')) {
     date_default_timezone_set(@date_default_timezone_get());
 }
 
-require_once __DIR__ . '/../../../config/config.inc.php';
-require_once __DIR__ . '/../../../init.php';
-require_once __DIR__ . '/../bootstrap.php';
+require_once dirname(__FILE__) . '/../../../config/config.inc.php';
+require_once dirname(__FILE__) . '/../../../init.php';
+require_once dirname(__FILE__) . '/../bootstrap.php';
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -144,10 +145,10 @@ class RetailcrmJobManager
             $date2 = new \DateTimeImmutable();
 
             if (null !== $diff1) {
-                $date1->add($diff1);
+                $date1 = $date1->add($diff1);
             }
             if (null !== $diff2) {
-                $date2->add($diff2);
+                $date2 = $date2->add($diff2);
             }
 
             if ($date1 == $date2) {
@@ -163,7 +164,7 @@ class RetailcrmJobManager
                     $shouldRunAt = clone $lastRuns[$job];
 
                     if ($diff instanceof DateInterval) {
-                        $shouldRunAt->add($diff);
+                        $shouldRunAt = $shouldRunAt->add($diff);
                     }
                 } else {
                     $shouldRunAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1970-01-01 00:00:00');

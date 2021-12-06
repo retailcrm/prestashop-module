@@ -5,20 +5,26 @@
     text-align: center;
     padding: 20px;
     margin: 20px 0;
+
     &__title {
       font-size: 18px;
       margin-bottom: 20px;
     }
+
     &__content,
-    input&__content {
+    .retail input&__content,
+    .retail input[type="text"] &__content,
+    .retail input[readonly][type="text"] &__content {
       width: 120px;
       height: 120px;
       border-radius: 120px;
       text-align: center;
       font-size: 20px;
       line-height: 60px;
+      display: inline-block;
     }
   }
+
   &-progress {
     border-radius: 60px;
     border: 1px solid rgba(122, 122, 122, 0.15);
@@ -26,6 +32,7 @@
     height: 60px;
     overflow: hidden;
     transition: height 0.25s ease;
+
     &__loader {
       width: 0;
       border-radius: 60px;
@@ -39,8 +46,9 @@
       line-height: 60px;
     }
   }
+
   &-hidden {
     visibility: hidden;
-    height: 0!important;
+    height: 0 !important;
   }
 }
