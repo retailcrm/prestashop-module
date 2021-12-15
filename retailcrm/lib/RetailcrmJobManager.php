@@ -159,6 +159,8 @@ class RetailcrmJobManager
         });
 
         foreach ($jobs as $job => $diff) {
+            $exception = null;
+
             try {
                 if (isset($lastRuns[$job]) && $lastRuns[$job] instanceof DateTimeImmutable) {
                     $shouldRunAt = clone $lastRuns[$job];
@@ -189,9 +191,25 @@ class RetailcrmJobManager
                     );
                     $lastRuns[$job] = new \DateTimeImmutable('now');
 
+                    if ($result) {
+                        $lastRunsDetails[$job] = [
+                            'success' => true,
+                            'lastRun' => new \DateTimeImmutable('now'),
+                            'error' => null,
+                        ];
+
+                        self::clearCurrentJob($job);
+                    }
+
                     break;
                 }
-            } catch (\Exception $exception) {
+            } catch (\Exception $e) {
+                $exception = $e;
+            } catch (\Throwable $e) {
+                $exception = $e;
+            }
+
+            if (null !== $exception) {
                 if ($exception instanceof RetailcrmJobManagerException
                     && $exception->getPrevious() instanceof \Exception
                 ) {
@@ -218,16 +236,6 @@ class RetailcrmJobManager
             }
         }
 
-        if (isset($result) && $result) {
-            $lastRunsDetails[$job] = [
-                'success' => true,
-                'lastRun' => new \DateTimeImmutable('now'),
-                'error' => null,
-            ];
-
-            self::clearCurrentJob($job);
-        }
-
         try {
             static::setLastRuns($lastRuns);
             static::setLastRunDetails($lastRunsDetails);
@@ -252,6 +260,7 @@ class RetailcrmJobManager
      * @return bool
      *
      * @throws Exception
+     * @throws Throwable
      */
     public static function execManualJob($jobName)
     {
@@ -299,7 +308,7 @@ class RetailcrmJobManager
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (JSON_ERROR_NONE != json_last_error() || !is_array($lastRuns)) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $ran) {
@@ -363,22 +372,22 @@ class RetailcrmJobManager
     /**
      * Extracts jobs last runs from db
      *
-     * @return array<string, array>
+     * @param bool $withFormattedDate
      *
-     * @throws \Exception
+     * @return array<string, array>
      */
-    public static function getLastRunDetails()
+    public static function getLastRunDetails($withFormattedDate = false)
     {
         $lastRuns = json_decode((string) Configuration::getGlobalValue(self::LAST_RUN_DETAIL_NAME), true);
 
-        if (JSON_ERROR_NONE != json_last_error()) {
+        if (JSON_ERROR_NONE != json_last_error() || !is_array($lastRuns)) {
             $lastRuns = [];
         } else {
             foreach ($lastRuns as $job => $details) {
                 $lastRan = DateTimeImmutable::createFromFormat(DATE_RFC3339, $details['lastRun']);
 
                 if ($lastRan instanceof DateTimeImmutable) {
-                    $lastRuns[$job]['lastRun'] = $lastRan;
+                    $lastRuns[$job]['lastRun'] = $withFormattedDate ? $lastRan->format('Y-m-d H:i:s') : $lastRan;
                 } else {
                     $lastRuns[$job]['lastRun'] = null;
                 }
