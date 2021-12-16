@@ -89,7 +89,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['exportCustomersCount'] = RetailcrmExport::getCustomersCount(false);
             $params['exportOrdersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
             $params['exportCustomersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
-            $params['lastRunDetails'] = RetailcrmJobManager::getLastRunDetails();
+            $params['lastRunDetails'] = RetailcrmJobManager::getLastRunDetails(true);
             $params['currentJob'] = Configuration::get(RetailcrmJobManager::CURRENT_TASK);
             $params['currentJobCli'] = Configuration::get(RetailcrmCli::CURRENT_TASK_CLI);
             $params['retailcrmLogsInfo'] = RetailcrmLogger::getLogFilesInfo();
