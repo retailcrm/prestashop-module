@@ -99,10 +99,12 @@ class RetailcrmCli
             RetailcrmLogger::output('WARNING: cannot handle signals properly, force stop can cause problems!');
         }
 
-        $shortopts = 'j:s:';
+        $shortopts = 'hj:s:';
         $longopts = [
+            'help',
             'job:',
             'shop:',
+            'query-shops',
             'set-web-jobs:',
             'query-web-jobs',
             'run-jobs',
@@ -124,11 +126,15 @@ class RetailcrmCli
             RetailcrmTools::startJobManager();
         } elseif (isset($options['set-web-jobs'])) {
             $this->setWebJobs(self::getBool($options['set-web-jobs']), $shopId);
-        } elseif (empty($jobName)) {
-            $this->help();
-        } else {
+        } elseif (isset($options['query-shops'])) {
+            $this->queryShops();
+        } elseif (!empty($jobName)) {
             $this->setCleanupOnShutdown();
             $this->runJob($jobName, $shopId);
+        } elseif (isset($options['help']) || isset($options['h'])) {
+            $this->printHelp();
+        } else {
+            $this->printArgumentError('Unknown argument!');
         }
     }
 
@@ -198,7 +204,7 @@ class RetailcrmCli
     /**
      * Prints CLI help
      */
-    private function help()
+    private function printHelp()
     {
         RetailcrmLogger::output('Available jobs:');
         RetailcrmLogger::output();
@@ -215,6 +221,9 @@ class RetailcrmCli
         RetailcrmLogger::output(sprintf('> php %s --run-jobs - Run default jobs routine', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --set-web-jobs true / false - Enable or disable web jobs', $this->cliPath));
         RetailcrmLogger::output(sprintf('> php %s --query-web-jobs - Check web jobs status', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --query-shops - Get list of shops with ids (for MultiShop)', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s -h - Shows this page', $this->cliPath));
+        RetailcrmLogger::output(sprintf('> php %s --help - Shows this page', $this->cliPath));
         RetailcrmLogger::output();
         RetailcrmLogger::output(
             'NOTICE: If you have MultiShop feature enabled, you can additionally ' .
@@ -242,6 +251,15 @@ class RetailcrmCli
         RetailcrmLogger::output();
     }
 
+    private function printArgumentError($message = '')
+    {
+        if (!empty($message)) {
+            RetailcrmLogger::output($message);
+        }
+
+        RetailcrmLogger::output('Use -h or --help to get more info about CLI');
+    }
+
     /**
      * Sets new web jobs state
      *
@@ -250,13 +268,12 @@ class RetailcrmCli
      */
     private function setWebJobs($state, $shopId = null)
     {
-        if (null === $shopId) {
-            RetailcrmLogger::output('You must specify shop id');
+        $shopId = $this->setShopId($shopId);
 
+        if (null === $shopId) {
             return;
         }
 
-        RetailcrmContextSwitcher::setShopContext($shopId);
         $this->loadConfiguration();
 
         Configuration::updateValue(RetailCRM::ENABLE_WEB_JOBS, $state ? '1' : '0');
@@ -271,19 +288,56 @@ class RetailcrmCli
      */
     private function queryWebJobs($shopId = null)
     {
-        if (null === $shopId) {
-            RetailcrmLogger::output('You must specify shop id');
+        $shopId = $this->setShopId($shopId);
 
+        if (null === $shopId) {
             return;
         }
 
-        RetailcrmContextSwitcher::setShopContext($shopId);
         $this->loadConfiguration();
 
         RetailcrmLogger::output(sprintf(
             'Web jobs status: %s',
             RetailcrmTools::isWebJobsEnabled() ? 'true (enabled)' : 'false (disabled)'
         ));
+    }
+
+    private function queryShops()
+    {
+        $isFeatureActive = Shop::isFeatureActive();
+
+        RetailcrmLogger::output(sprintf(
+            'Multistore status: %s',
+            $isFeatureActive ? 'true (enabled)' : 'false (disabled)'
+        ));
+
+        $shops = RetailcrmContextSwitcher::getShops();
+        RetailcrmLogger::output(
+            "\nShop ID\t| Shop Name"
+        );
+
+        foreach ($shops as $shop) {
+            RetailcrmLogger::output(sprintf(
+                "%s\t- %s",
+                $shop['id_shop'],
+                $shop['name']
+            ));
+        }
+    }
+
+    private function setShopId($shopId)
+    {
+        if (null === $shopId) {
+            $shopId = Shop::getContextShopID();
+        }
+
+        if (null === $shopId) {
+            $this->printArgumentError('You must specify shop id');
+        } else {
+            RetailcrmContextSwitcher::setShopContext($shopId);
+        }
+
+        return $shopId;
     }
 
     /**
