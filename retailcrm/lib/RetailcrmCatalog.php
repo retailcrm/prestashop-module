@@ -56,6 +56,13 @@ class RetailcrmCatalog
         $this->version = substr(_PS_VERSION_, 0, 3);
         $this->link = new Link();
         $this->home_category = Configuration::get('PS_HOME_CATEGORY');
+
+        if (null === Context::getContext()->currency) {
+            if ($this->default_currency) {
+                $currency = new Currency($this->default_currency);
+                Context::getContext()->currency = $currency;
+            }
+        }
     }
 
     public function getData()
