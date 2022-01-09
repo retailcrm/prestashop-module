@@ -298,7 +298,7 @@ class RetailcrmHistory
             ];
         }
 
-        if (!empty(self::$updateOrderIds)) {
+        if (0 < count(self::$updateOrderIds)) {
             foreach (self::$updateOrderIds as $upOrder) {
                 self::$api->ordersEdit($upOrder);
             }

@@ -52,7 +52,13 @@ class RetailcrmLoggerMiddleware implements RetailcrmMiddlewareInterface
         /** @var RetailcrmApiResponse $response */
         $response = $next($request);
 
-        if (null !== $response && $response->isSuccessful()) {
+        if (null === $response) {
+            RetailcrmLogger::writeCaller($method, 'Response is null');
+
+            return $response;
+        }
+
+        if ($response->isSuccessful()) {
             // Don't print long lists in debug logs (errors while calling this will be easy to detect anyway)
             if (in_array($method, ['statusesList', 'paymentTypesList', 'deliveryTypesList'])) {
                 RetailcrmLogger::writeDebug($method, '[request was successful, but response is omitted]');
