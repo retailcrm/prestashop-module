@@ -286,7 +286,7 @@ class RetailcrmHistory
             }
         }
 
-        if (!empty(self::$orderFix)) {
+        if (0 < count(self::$orderFix)) {
             self::$api->ordersFixExternalIds(self::$orderFix);
         }
 
