@@ -278,10 +278,28 @@ class RetailcrmHistory
             }
 
             if (!$orderExists) {
-                self::createNewOrder($orderHistory);
+                $newOrder = self::createNewOrder($orderHistory);
             } else {
                 $orderToUpdate = new Order((int) $orderHistory['externalId']);
-                self::updateOrder($orderHistory, $orderToUpdate);
+                $newOrder = self::updateOrder($orderHistory, $orderToUpdate);
+            }
+        }
+
+        if (!empty(self::$orderFix)) {
+            self::$api->ordersFixExternalIds(self::$orderFix);
+        }
+
+        // collect orders id and reference if option sendOrderNumber enabled
+        if (self::$sendOrderNumber) {
+            self::$updateOrderIds[] = [
+                'externalId' => $newOrder->id,
+                'number' => $newOrder->reference,
+            ];
+        }
+
+        if (!empty(self::$updateOrderIds)) {
+            foreach (self::$updateOrderIds as $upOrder) {
+                self::$api->ordersEdit($upOrder);
             }
         }
     }
@@ -354,21 +372,10 @@ class RetailcrmHistory
             self::createOrderDetails($order, $newOrder);
         }
 
-        self::sendExternalIdsToCrm($order, $newOrder);
+        // collect order ids for single fix request
+        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
 
-        // collect orders id and reference if option sendOrderNumber enabled
-        if (self::$sendOrderNumber) {
-            self::$updateOrderIds[] = [
-                'externalId' => $newOrder->id,
-                'number' => $newOrder->reference,
-            ];
-        }
-
-        if (!empty(self::$updateOrderIds)) {
-            foreach (self::$updateOrderIds as $upOrder) {
-                self::$api->ordersEdit($upOrder);
-            }
-        }
+        return $newOrder;
     }
 
     private static function updateOrder($order, $orderToUpdate)
@@ -401,19 +408,7 @@ class RetailcrmHistory
             $orderToUpdate->update();
         }
 
-        // collect orders id and reference if option sendOrderNumber enabled
-        if (self::$sendOrderNumber) {
-            self::$updateOrderIds[] = [
-                'externalId' => $orderToUpdate->id,
-                'number' => $orderToUpdate->reference,
-            ];
-        }
-
-        if (!empty(self::$updateOrderIds)) {
-            foreach (self::$updateOrderIds as $upOrder) {
-                self::$api->ordersEdit($upOrder);
-            }
-        }
+        return $orderToUpdate;
     }
 
     /**
@@ -2071,16 +2066,6 @@ class RetailcrmHistory
         }
 
         return $customerBuilder;
-    }
-
-    private static function sendExternalIdsToCrm($order, $newOrder)
-    {
-        // collect order ids for single fix request
-        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
-
-        if (!empty(self::$orderFix)) {
-            self::$api->ordersFixExternalIds(self::$orderFix);
-        }
     }
 
     private static function getOrderCarrier($orderToUpdate)
