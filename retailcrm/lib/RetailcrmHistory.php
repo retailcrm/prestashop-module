@@ -122,7 +122,8 @@ class RetailcrmHistory
                 if (isset($customerHistory['externalId'])) {
                     $crmCustomerResponse = self::$api->customersGet($customerHistory['externalId']);
 
-                    if (empty($crmCustomerResponse)
+                    if (
+                        $crmCustomerResponse === null
                         || !$crmCustomerResponse->isSuccessful()
                         || !$crmCustomerResponse->offsetExists('customer')
                     ) {
@@ -543,7 +544,8 @@ class RetailcrmHistory
     {
         $crmOrderResponse = self::$api->ordersGet($id, $by);
 
-        if (!empty($crmOrderResponse)
+        if (
+            $crmOrderResponse !== null
             && $crmOrderResponse->isSuccessful()
             && $crmOrderResponse->offsetExists('order')
         ) {
