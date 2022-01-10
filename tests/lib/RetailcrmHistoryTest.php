@@ -1,4 +1,40 @@
 <?php
+/**
+ * MIT License
+ *
+ * Copyright (c) 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
+ *  @copyright 2021 DIGITAL RETAIL TECHNOLOGIES SL
+ *  @license   https://opensource.org/licenses/MIT  The MIT License
+ *
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
 
 class RetailcrmHistoryTest extends RetailcrmTestCase
 {
@@ -9,22 +45,18 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         parent::setUp();
 
-        $this->apiMock = $this->getMockBuilder('RetailcrmProxy')
-            ->disableOriginalConstructor()
-            ->setMethods(
-                [
-                    'customersHistory',
-                    'ordersHistory',
-                    'ordersGet',
-                    'ordersEdit',
-                    'customersGet',
-                    'customersFixExternalIds',
-                    'ordersFixExternalIds',
-                    'customersCorporateAddressesEdit',
-                ]
-            )
-            ->getMock()
-        ;
+        $this->apiMock = $this->getApiMock(
+            [
+                'customersHistory',
+                'ordersHistory',
+                'ordersGet',
+                'ordersEdit',
+                'customersGet',
+                'customersFixExternalIds',
+                'ordersFixExternalIds',
+                'customersCorporateAddressesEdit',
+            ]
+        );
 
         $catalog = new RetailcrmCatalog();
         $data = $catalog->getData();
@@ -38,7 +70,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     public function testCustomersHistory()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('customersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -50,7 +82,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('customersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -101,7 +133,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             'number' => $reference,
         ];
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -113,7 +145,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -127,7 +159,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->once())
+        $this->apiClientMock->expects($this->once())
             ->method('ordersEdit')
             ->with($checkArgs)
             ->willReturn(
@@ -135,7 +167,12 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                     '200',
                     json_encode(
                         [
-                            'order' => [],
+                            'success' => true,
+                            'id' => $crmOrder['id'],
+                            'order' => [
+                                'externalId' => $order->id,
+                                'number' => $updReference,
+                            ],
                         ]
                     )
                 )
@@ -157,10 +194,75 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($updReference, $secondUpdOrder->reference);
     }
 
-    private function orderCreate($apiMock, $orderData)
+    public function orderCreateDataProvider()
     {
+        return [
+            [
+                'orderData' => $this->getApiOrder(), ],
+            [
+                'orderData' => $this->getApiOrderWitchCorporateCustomer(),
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider orderCreateDataProvider
+     */
+    public function testOrderCreate($orderData)
+    {
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getHistoryDataNewOrder($orderData)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'order' => $orderData,
+                        ]
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($orderData)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersFixExternalIds')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode([
+                        'success' => true,
+                    ]
+                    )
+                )
+            )
+        ;
+
         RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        RetailcrmHistory::$api = $apiMock;
+        RetailcrmHistory::$api = $this->apiMock;
 
         $oldLastId = RetailcrmTestHelper::getMaxOrderId();
         RetailcrmHistory::ordersHistory();
@@ -172,12 +274,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
         $this->assertInstanceOf('Order', $order);
 
-        $order->current_state = 10;
-        $order->id_carrier = 1;
-
         // delivery address
-        $address = $this->createAddress($order->id_address_delivery, $orderData['firstName'], $orderData['lastName']);
-
+        $address = new Address($order->id_address_delivery);
         $this->assertEquals($orderData['firstName'], $address->firstname);
         $this->assertEquals($orderData['lastName'], $address->lastname);
 
@@ -192,12 +290,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($orderData['delivery']['address']['countryIso'], $addressDelivery['countryIso']);
         unset($orderData['delivery']['address']['countryIso']);
 
-//        $this->assertEquals($orderData['delivery']['address'], $addressDelivery['delivery']['address']);
-//        $this->assertEquals($orderData['phone'], $addressDelivery['phone']);
+        $this->assertEquals($orderData['delivery']['address'], $addressDelivery['delivery']['address']);
+        $this->assertEquals($orderData['phone'], $addressDelivery['phone']);
 
         // customer address
-        $address = $this->createAddress($order->id_address_invoice, $orderData['customer']['firstName'], $orderData['customer']['lastName']);
-
+        $address = new Address($order->id_address_invoice);
         $this->assertEquals($orderData['customer']['firstName'], $address->firstname);
         $this->assertEquals($orderData['customer']['lastName'], $address->lastname);
 
@@ -205,13 +302,14 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             ->setMode(RetailcrmAddressBuilder::MODE_CUSTOMER)
             ->setAddress($address)
             ->build()
-            ->getDataArray();
+            ->getDataArray()
+        ;
 
         if (isset($orderData['customer']['address']['id'])) {
             unset($orderData['customer']['address']['id']);
         }
         $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
-//        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
+        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
 
         // types and totals
         $this->assertEquals($orderData['totalSumm'], $order->total_paid);
@@ -238,7 +336,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
     public function testOrderSwitchCustomer()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -250,7 +348,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -264,12 +362,24 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
+                    )
+                )
+            )
+        ;
+
         $this->switchCustomer();
     }
 
     public function testOrderSwitchCorporateCustomer()
     {
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -281,7 +391,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -295,110 +405,44 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrderWitchCorporateCustomer())
+                    )
+                )
+            )
+        ;
+
         $this->switchCustomer();
-    }
-
-    public function testOrderCreate()
-    {
-        $orderData = $this->getApiOrder();
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersHistory')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getHistoryDataNewOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersGet')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        [
-                            'order' => $orderData,
-                        ]
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersEdit')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getEditedOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->orderCreate($this->apiMock, $orderData);
-    }
-
-    public function testOrderCreateWithCorporateCustomer()
-    {
-        $orderData = $this->getApiOrderWitchCorporateCustomer();
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersHistory')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getHistoryDataNewOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersGet')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        [
-                            'order' => $orderData,
-                        ]
-                    )
-                )
-            )
-        ;
-
-        $this->apiMock->expects($this->any())
-            ->method('ordersEdit')
-            ->willReturn(
-                new RetailcrmApiResponse(
-                    '200',
-                    json_encode(
-                        $this->getEditedOrder($orderData)
-                    )
-                )
-            )
-        ;
-
-        $this->orderCreate($this->apiMock, $orderData);
     }
 
     public function testPaymentStatusUpdate()
     {
         $lastId = RetailcrmTestHelper::getMaxOrderId();
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
                         $this->getUpdatePaymentStatus($lastId)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
                     )
                 )
             )
@@ -415,7 +459,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderId = RetailcrmTestHelper::getMaxOrderId();
         $crmOrder = $this->getApiOrderAddressUpdate($orderId);
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -427,7 +471,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             )
         ;
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersGet')
             ->willReturn(
                 new RetailcrmApiResponse(
@@ -436,6 +480,18 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         [
                             'order' => $crmOrder,
                         ]
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($this->getApiOrder())
                     )
                 )
             )
@@ -475,13 +531,25 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $orderId = RetailcrmTestHelper::getMaxOrderId();
         $crmOrder = $this->getApiOrderNameAndPhoneUpdate($orderId);
 
-        $this->apiMock->expects($this->any())
+        $this->apiClientMock->expects($this->any())
             ->method('ordersHistory')
             ->willReturn(
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
                         $this->getHistoryNameAndPhoneUpdated($orderId)
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersEdit')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        $this->getEditedOrder($crmOrder)
                     )
                 )
             )
@@ -497,11 +565,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
         $orderAfter = new Order($orderId);
         $idAddressAfter = $orderAfter->id_address_delivery;
-        $addressAfter = $this->createAddress($idAddressAfter, $crmOrder['firstName'], $crmOrder['lastName'], $crmOrder['phone']);
+        $addressAfter = new Address($idAddressAfter);
 
-//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-//            $this->assertNotEquals($idAddress, $idAddressAfter);
-//        }
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
 
         $this->assertEquals($crmOrder['firstName'], $addressAfter->firstname);
         $this->assertEquals($crmOrder['lastName'], $addressAfter->lastname);
@@ -528,18 +596,6 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
                         'id' => 7777,
                         'externalId' => '777',
                         'site' => '127.0.0.1:8000',
-                        'delivery' => [
-                            'code' => 'delivery',
-                            'cost' => 100,
-                            'netCost' => 0,
-                            'address' => [
-                                'index' => '111111',
-                                'countryIso' => 'RU',
-                                'region' => 'Buenos Aires',
-                                'city' => 'Test',
-                                'text' => 'Test text address',
-                            ],
-                        ],
                     ],
                     'order' => [
                         'id' => 6025,
@@ -1127,16 +1183,5 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $order['phone'] = '222222';
 
         return $order;
-    }
-
-    private function createAddress($id, $firstname, $lastname, $phone = null)
-    {
-        $address = new Address($id);
-        $address->firstname = $firstname;
-        $address->lastname = $lastname;
-        $address->id_country = 177; //RU
-        $address->phone = $phone;
-
-        return $address;
     }
 }
