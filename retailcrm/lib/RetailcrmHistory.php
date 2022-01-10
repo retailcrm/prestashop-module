@@ -281,8 +281,7 @@ class RetailcrmHistory
             if (!$orderExists) {
                 $newOrder = self::createNewOrder($orderHistory);
             } else {
-                $orderToUpdate = new Order((int) $orderHistory['externalId']);
-                $newOrder = self::updateOrder($orderHistory, $orderToUpdate);
+                $newOrder = self::updateOrder($orderHistory);
             }
         }
 
@@ -317,6 +316,7 @@ class RetailcrmHistory
         }
 
         $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
+        $paymentType = null;
         if ($paymentTypeCRM) {
             $paymentType = self::getModulePaymentId($paymentTypeCRM);
             if (!$paymentType) {
@@ -327,7 +327,7 @@ class RetailcrmHistory
         }
 
         $customerId = self::getCustomerId($order);
-        $customerBuilder = self::getCustomerById($order, $customerId);
+        $customerBuilder = self::getCustomerBuilderById($order, $customerId);
         $customer = $customerBuilder->getData()->getCustomer();
         $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
 
@@ -379,8 +379,9 @@ class RetailcrmHistory
         return $newOrder;
     }
 
-    private static function updateOrder($order, $orderToUpdate)
+    private static function updateOrder($order)
     {
+        $orderToUpdate = new Order((int) $order['externalId']);
         if (!Validate::isLoadedObject($orderToUpdate)) {
             return;
         }
@@ -2041,7 +2042,7 @@ class RetailcrmHistory
         return $customerId;
     }
 
-    private static function getCustomerById($order, $customerId)
+    private static function getCustomerBuilderById($order, $customerId)
     {
         // address invoice
         if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
