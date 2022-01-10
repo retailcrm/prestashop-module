@@ -1271,12 +1271,12 @@ class RetailcrmHistory
 
     private static function checkOrderStatus($order, $orderToUpdate)
     {
-        $updateOrderStatuses = self::getOrderStatuses($order, $orderToUpdate);
+        $statusIsChanged = self::statusIsChanged($order, $orderToUpdate);
 
         $orderStatus = $order['status'];
-        $orderStatusChanged = isset(self::$statuses[$orderStatus]) && !empty(self::$statuses[$orderStatus]) && (self::$statuses[$orderStatus] != $orderToUpdate->current_state);
+        $orderStatusChanged = (self::$statuses[$orderStatus] != $orderToUpdate->current_state) && isset(self::$statuses[$orderStatus]) && !empty(self::$statuses[$orderStatus]);
 
-        if (!empty($orderStatus) && !isset($updateOrderStatuses[$orderToUpdate->id]) && $orderStatusChanged) {
+        if (!empty($orderStatus) && $statusIsChanged && $orderStatusChanged) {
             $orderHistory = new OrderHistory();
             $orderHistory->id_employee = 0;
             $orderHistory->id_order = $orderToUpdate->id;
@@ -1962,7 +1962,7 @@ class RetailcrmHistory
         return $orderToUpdate;
     }
 
-    private static function getOrderStatuses($order, $orderToUpdate)
+    private static function statusIsChanged($order, $orderToUpdate)
     {
         $updateOrderStatuses = [];
 
@@ -1998,13 +1998,14 @@ class RetailcrmHistory
                 );
 
                 if ($newStatus) {
-                    $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
                     $orderToUpdate->current_state = self::$statuses[$newStatus];
+
+                    return true;
                 }
             }
         }
 
-        return $updateOrderStatuses;
+        return false;
     }
 
     private static function getCustomerId($order)
