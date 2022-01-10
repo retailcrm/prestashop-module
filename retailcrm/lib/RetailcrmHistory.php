@@ -1600,19 +1600,14 @@ class RetailcrmHistory
             }
 
             $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
-            $paymentType = null;
-            $paymentId = null;
 
             if ($paymentTypeCRM) {
-                if (!isset(self::$payments[$paymentTypeCRM]) || empty(self::$payments[$paymentTypeCRM])) {
-                    continue;
-                }
+                $paymentId = self::getModulePaymentId($paymentTypeCRM);
+                if (!$paymentId) {
+                    RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentId undefined");
 
-                $paymentId = self::$payments[$paymentTypeCRM];
-            } elseif (self::$paymentDefault) {
-                $paymentId = self::$paymentDefault;
-            } else {
-                continue;
+                    return;
+                }
             }
 
             $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
@@ -1898,6 +1893,8 @@ class RetailcrmHistory
             $paymentId = self::$payments[$paymentTypeCRM];
 
             return self::getModulePaymentType($paymentId);
+        } elseif (self::$paymentDefault) {
+            return self::$paymentDefault;
         }
 
         return false;
