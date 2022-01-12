@@ -1385,7 +1385,6 @@ class RetailcrmHistory
             RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
             || !Validate::isLoadedObject($orderAddress)
         ) {
-
             $infoOrder = self::getOrderFromCrm($order['externalId']);
 
             if (isset($infoOrder['delivery']['address'])) {
@@ -1467,7 +1466,6 @@ class RetailcrmHistory
     private static function changeOrderTotals($order, $orderToUpdate)
     {
         if (isset($order['items']) || isset($order['delivery']['cost'])) {
-
             $infoOrder = self::getOrderFromCrm($order['externalId']);
 
             if (isset($order['items']) && is_array($order['items'])) {
@@ -1820,7 +1818,6 @@ class RetailcrmHistory
                 ? $parsedExtId['id_order_detail'] : null;
 
             if (!$product->checkQty($orderDetail->product_quantity)) {
-
                 $newStatus = self::setOutOfStockStatus(
                     self::getOrderFromCrm($order['externalId']),
                     $orderToUpdate
