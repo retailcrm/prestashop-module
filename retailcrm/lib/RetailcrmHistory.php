@@ -401,7 +401,9 @@ class RetailcrmHistory
 
         self::changeOrderTotals($order, $orderToUpdate);
 
-        self::checkOrderStatus($order, $orderToUpdate);
+        self::changeOrderItems($order, $orderToUpdate);
+
+        self::changeOrderStatus($order, $orderToUpdate);
 
         // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
 
@@ -1269,7 +1271,7 @@ class RetailcrmHistory
         }
     }
 
-    private static function checkOrderStatus($order, $orderToUpdate)
+    private static function changeOrderStatus($order, $orderToUpdate)
     {
         $statusIsChanged = self::statusIsChanged($order, $orderToUpdate);
 
@@ -1466,16 +1468,8 @@ class RetailcrmHistory
     private static function changeOrderTotals($order, $orderToUpdate)
     {
         if (isset($order['items']) || isset($order['delivery']['cost'])) {
+
             $infoOrder = self::getOrderFromCrm($order['externalId']);
-
-            if (isset($order['items']) && is_array($order['items'])) {
-                $order = self::cleanDeletedItems($order, $orderToUpdate);
-
-                self::checkItemsQuantityAndDiscount($order, $orderToUpdate);
-
-                self::checkNewItems($order, $orderToUpdate);
-            }
-
             $orderToUpdate = self::changeTotals($infoOrder, $orderToUpdate);
 
             self::loadInPrestashop($orderToUpdate, 'update');
@@ -2085,5 +2079,17 @@ class RetailcrmHistory
         }
 
         return $cart;
+    }
+
+    private static function changeOrderItems($order, $orderToUpdate)
+    {
+        if (isset($order['items']) && is_array($order['items'])) {
+            $order = self::cleanDeletedItems($order, $orderToUpdate);
+
+            self::checkItemsQuantityAndDiscount($order, $orderToUpdate);
+
+            self::checkNewItems($order, $orderToUpdate);
+        }
+
     }
 }
