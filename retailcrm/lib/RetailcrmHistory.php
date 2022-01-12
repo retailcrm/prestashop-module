@@ -283,18 +283,18 @@ class RetailcrmHistory
             } else {
                 $newOrder = self::updateOrder($orderHistory);
             }
+
+            // collect orders id and reference if option sendOrderNumber enabled
+            if (self::$sendOrderNumber) {
+                self::$updateOrderIds[] = [
+                    'externalId' => $newOrder->id,
+                    'number' => $newOrder->reference,
+                ];
+            }
         }
 
         if (0 < count(self::$orderFix)) {
             self::$api->ordersFixExternalIds(self::$orderFix);
-        }
-
-        // collect orders id and reference if option sendOrderNumber enabled
-        if (self::$sendOrderNumber) {
-            self::$updateOrderIds[] = [
-                'externalId' => $newOrder->id,
-                'number' => $newOrder->reference,
-            ];
         }
 
         if (0 < count(self::$updateOrderIds)) {
