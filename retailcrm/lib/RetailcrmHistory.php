@@ -170,7 +170,7 @@ class RetailcrmHistory
 
                     $customer = $customerBuilder->getData()->getCustomer();
 
-                    if (false === self::loadInPrestashop($customer, 'add')) {
+                    if (false === self::loadInPrestashop($customer, 'save')) {
                         continue;
                     }
 
@@ -186,7 +186,7 @@ class RetailcrmHistory
 
                         $address->id_customer = $customer->id;
 
-                        self::loadInPrestashop($address, 'add');
+                        self::loadInPrestashop($address, 'save');
                     }
                 }
             }
@@ -1175,7 +1175,7 @@ class RetailcrmHistory
             $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
             $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
 
-            self::loadInPrestashop($newOrderHistoryRecord, 'add');
+            self::loadInPrestashop($newOrderHistoryRecord, 'save');
         } catch (\Exception $e) {
             RetailcrmLogger::writeCaller(
                 __METHOD__,
@@ -1323,7 +1323,7 @@ class RetailcrmHistory
 
         if (RetailcrmTools::validateEntity($address)) {
             RetailcrmTools::assignAddressIdsByFields($customer, $address);
-            self::loadInPrestashop($address, 'add');
+            self::loadInPrestashop($address, 'save');
         }
 
         return $address;
@@ -1344,12 +1344,12 @@ class RetailcrmHistory
 
                 if (null === $address->id) {
                     if (1 > $orderToUpdate->id_address_delivery) {
-                        self::loadInPrestashop($address, 'add');
+                        self::loadInPrestashop($address, 'save');
                         $orderToUpdate->id_address_delivery = $address->id;
                         self::loadInPrestashop($order, 'update');
                     } else {
                         if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-                            self::loadInPrestashop($address, 'add');
+                            self::loadInPrestashop($address, 'save');
 
                             $orderToUpdate->id_address_delivery = $address->id;
                             self::loadInPrestashop($orderToUpdate, 'update');
@@ -1385,7 +1385,9 @@ class RetailcrmHistory
             RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
             || !Validate::isLoadedObject($orderAddress)
         ) {
+
             $infoOrder = self::getOrderFromCrm($order['externalId']);
+
             if (isset($infoOrder['delivery']['address'])) {
                 // array_replace used to save changes, made by custom filters
                 $orderAddressCrm = array_replace(
@@ -1465,10 +1467,8 @@ class RetailcrmHistory
     private static function changeOrderTotals($order, $orderToUpdate)
     {
         if (isset($order['items']) || isset($order['delivery']['cost'])) {
-            // get full order
-            if (empty($infoOrder)) {
-                $infoOrder = self::getOrderFromCrm($order['externalId']);
-            }
+
+            $infoOrder = self::getOrderFromCrm($order['externalId']);
 
             if (isset($order['items']) && is_array($order['items'])) {
                 $order = self::cleanDeletedItems($order, $orderToUpdate);
@@ -1580,7 +1580,7 @@ class RetailcrmHistory
         $cart->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
         $cart->id_carrier = (int) $deliveryType;
 
-        self::loadInPrestashop($cart, 'add');
+        self::loadInPrestashop($cart, 'save');
 
         return $cart;
     }
@@ -1644,7 +1644,7 @@ class RetailcrmHistory
             RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
 
             if (empty($addressInvoice->id)) {
-                self::loadInPrestashop($addressInvoice, 'add');
+                self::loadInPrestashop($addressInvoice, 'save');
 
                 if (!empty($order['company']) && RetailcrmTools::isCorporateEnabled()) {
                     self::$api->customersCorporateAddressesEdit(
@@ -1820,11 +1820,9 @@ class RetailcrmHistory
                 ? $parsedExtId['id_order_detail'] : null;
 
             if (!$product->checkQty($orderDetail->product_quantity)) {
-                if (empty($infoOrder)) {
-                    $infoOrder = self::getOrderFromCrm($order['externalId']);
-                }
+
                 $newStatus = self::setOutOfStockStatus(
-                    $infoOrder,
+                    self::getOrderFromCrm($order['externalId']),
                     $orderToUpdate
                 );
 
