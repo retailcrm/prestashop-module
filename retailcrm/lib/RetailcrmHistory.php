@@ -1468,7 +1468,6 @@ class RetailcrmHistory
     private static function changeOrderTotals($order, $orderToUpdate)
     {
         if (isset($order['items']) || isset($order['delivery']['cost'])) {
-
             $infoOrder = self::getOrderFromCrm($order['externalId']);
             $orderToUpdate = self::changeTotals($infoOrder, $orderToUpdate);
 
@@ -2090,6 +2089,5 @@ class RetailcrmHistory
 
             self::checkNewItems($order, $orderToUpdate);
         }
-
     }
 }
