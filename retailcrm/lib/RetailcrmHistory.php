@@ -278,14 +278,15 @@ class RetailcrmHistory
                 continue;
             }
 
+            $newOrder = null;
             if (!$orderExists) {
-                $newOrder = self::createNewOrder($orderHistory);
+                $newOrder = self::createOrderInPrestashop($orderHistory);
             } else {
-                $newOrder = self::updateOrder($orderHistory);
+                $newOrder = self::updateOrderInPrestashop($orderHistory);
             }
 
             // collect orders id and reference if option sendOrderNumber enabled
-            if (self::$sendOrderNumber) {
+            if (self::$sendOrderNumber && isset($newOrder->id)) {
                 self::$updateOrderIds[] = [
                     'externalId' => $newOrder->id,
                     'number' => $newOrder->reference,
@@ -297,14 +298,20 @@ class RetailcrmHistory
             self::$api->ordersFixExternalIds(self::$orderFix);
         }
 
+        if (0 < count(self::$newItemsIdsByOrderId)) {
+            foreach (self::$newItemsIdsByOrderId as $newOrderId => $newItemsIds) {
+                static::updateOrderItems($newOrderId, $newItemsIds);
+            }
+        }
+
         if (0 < count(self::$updateOrderIds)) {
-            foreach (self::$updateOrderIds as $upOrder) {
-                self::$api->ordersEdit($upOrder);
+            foreach (self::$updateOrderIds as $updateOrderData) {
+                self::$api->ordersEdit($updateOrderData);
             }
         }
     }
 
-    private static function createNewOrder($orderHistory)
+    private static function createOrderInPrestashop($orderHistory)
     {
         $order = self::getOrderFromCrm($orderHistory['id'], 'id');
         $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $order);
@@ -316,14 +323,11 @@ class RetailcrmHistory
         }
 
         $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
-        $paymentType = null;
-        if ($paymentTypeCRM) {
-            $paymentType = self::getModulePaymentId($paymentTypeCRM);
-            if (!$paymentType) {
-                RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentType undefined");
+        $paymentType = self::checkCrmOrderPaymentType($paymentTypeCRM);
+        if (!$paymentType) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'In order ' . $orderHistory['id'] . ' payment type is undefined');
 
-                return;
-            }
+            return;
         }
 
         $customerId = self::getCustomerId($order);
@@ -353,7 +357,7 @@ class RetailcrmHistory
 
         $cart = self::addProductsToCart($cart, $products);
 
-        $newOrder = self::createOrder(
+        $prestashopOrder = self::createOrder(
             $cart,
             $customer,
             $order,
@@ -365,21 +369,21 @@ class RetailcrmHistory
             $paymentTypeCRM
         );
 
-        self::createPayments($order, $newOrder);
+        self::createPayments($order, $prestashopOrder);
 
-        self::saveCarrier($newOrder->id, $deliveryType, $order['delivery']['cost']);
+        self::saveCarrier($prestashopOrder->id, $deliveryType, $order['delivery']['cost']);
 
         if (!empty($order['items'])) {
-            self::createOrderDetails($order, $newOrder);
+            self::createOrderDetails($order, $prestashopOrder);
         }
 
         // collect order ids for single fix request
-        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $newOrder->id];
+        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $prestashopOrder->id];
 
-        return $newOrder;
+        return $prestashopOrder;
     }
 
-    private static function updateOrder($order)
+    private static function updateOrderInPrestashop($order)
     {
         $orderToUpdate = new Order((int) $order['externalId']);
         if (!Validate::isLoadedObject($orderToUpdate)) {
@@ -1262,13 +1266,6 @@ class RetailcrmHistory
 
         // update order items ids in crm
         self::$newItemsIdsByOrderId[$newOrder->id] = $newItemsIds;
-
-        // update order items ids in crm
-        if (!empty(self::$newItemsIdsByOrderId)) {
-            foreach (self::$newItemsIdsByOrderId as $newOrderId => $newItemsIds) {
-                static::updateOrderItems($newOrderId, $newItemsIds);
-            }
-        }
     }
 
     private static function changeOrderStatus($order, $orderToUpdate)
@@ -1491,20 +1488,18 @@ class RetailcrmHistory
                 continue;
             }
 
+            $orderPayment = new OrderPayment();
+
             $paymentType = self::getPaymentType($payment);
 
-            $orderToUpdate->payment = $paymentType;
-            $orderPayment = new OrderPayment();
-            $orderPayment->payment_method = $paymentType;
-            $orderPayment->order_reference = $orderToUpdate->reference;
-
-            if (isset($payment['amount'])) {
-                $orderPayment->amount = $payment['amount'];
-            } else {
-                $orderPayment->amount = $orderToUpdate->total_paid;
+            if ($paymentType) {
+                $orderToUpdate->payment = $paymentType;
+                $orderPayment->payment_method = $paymentType;
             }
 
+            $orderPayment->order_reference = $orderToUpdate->reference;
             $orderPayment->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+            $orderPayment->amount = isset($payment['amount']) ? $payment['amount'] : $orderToUpdate->total_paid;
             $orderPayment->date_add = isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
 
             RetailcrmLogger::writeDebug(__METHOD__,
@@ -2089,5 +2084,19 @@ class RetailcrmHistory
 
             self::checkNewItems($order, $orderToUpdate);
         }
+    }
+
+    private static function checkCrmOrderPaymentType($paymentTypeCRM)
+    {
+        if (!$paymentTypeCRM) {
+            return false;
+        }
+        $paymentType = self::getModulePaymentId($paymentTypeCRM);
+
+        if (!$paymentType) {
+            return false;
+        }
+
+        return $paymentType;
     }
 }
