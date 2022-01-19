@@ -362,6 +362,12 @@ class RetailcrmHistory
             $orderStatus
         );
 
+        if (!isset($prestashopOrder->id) || !$prestashopOrder->id) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Order not created');
+
+            return;
+        }
+
         self::createPayments($order, $prestashopOrder);
 
         self::saveCarrier($prestashopOrder->id, $deliveryType, $order['delivery']['cost']);
@@ -1526,11 +1532,6 @@ class RetailcrmHistory
 
     private static function saveCarrier($orderId, $deliveryType, $cost)
     {
-        if (!$orderId) {
-            RetailcrmLogger::writeDebug(__METHOD__, 'Invalid orderId');
-
-            return;
-        }
         // delivery save
         $carrier = new OrderCarrier();
         $carrier->id_order = $orderId;
