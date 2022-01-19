@@ -1271,7 +1271,7 @@ class RetailcrmHistory
         $statusIsChanged = self::statusIsChanged($order, $orderToUpdate);
 
         $orderStatus = $order['status'];
-        $orderStatusChanged = (self::$statuses[$orderStatus] != $orderToUpdate->current_state) && isset(self::$statuses[$orderStatus]) && !empty(self::$statuses[$orderStatus]);
+        $orderStatusChanged = !empty(self::$statuses[$orderStatus]) && self::$statuses[$orderStatus] != $orderToUpdate->current_state;
 
         if (!empty($orderStatus) && $statusIsChanged && $orderStatusChanged) {
             $orderHistory = new OrderHistory();
