@@ -323,12 +323,8 @@ class RetailcrmHistory
         }
 
         $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
-        $paymentType = self::checkCrmOrderPaymentType($paymentTypeCRM);
-        if (!$paymentType) {
-            RetailcrmLogger::writeDebug(__METHOD__, 'In order ' . $orderHistory['id'] . ' payment type is undefined');
-
-            return;
-        }
+        $paymentId = self::getModulePaymentId($paymentTypeCRM);
+        $paymentType = self::getModulePaymentType($paymentId);
 
         $customerId = self::getCustomerId($order);
         $customerBuilder = self::getCustomerBuilderById($order, $customerId);
@@ -362,11 +358,11 @@ class RetailcrmHistory
             $customer,
             $order,
             $deliveryType,
+            $paymentId,
             $paymentType,
             $addressDelivery,
             $addressInvoice,
-            $orderStatus,
-            $paymentTypeCRM
+            $orderStatus
         );
 
         self::createPayments($order, $prestashopOrder);
@@ -1106,7 +1102,7 @@ class RetailcrmHistory
         return $products;
     }
 
-    private static function createOrder($cart, $customer, $order, $deliveryType, $paymentType, $addressDelivery, $addressInvoice, $orderStatus, $paymentTypeCRM)
+    private static function createOrder($cart, $customer, $order, $deliveryType, $paymentId, $paymentType, $addressDelivery, $addressInvoice, $orderStatus)
     {
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
         $newOrder = new Order();
@@ -1121,11 +1117,7 @@ class RetailcrmHistory
         $orderNumber = self::$receiveOrderNumber ? $order['number'] : $newOrder->generateReference();
         $newOrder->reference = $orderNumber;
         $newOrder->id_carrier = (int) $deliveryType;
-
-        if (isset(self::$payments[$paymentTypeCRM])) {
-            $newOrder->module = self::$payments[$paymentTypeCRM];
-        }
-
+        $newOrder->module = $paymentId;
         $newOrder->payment = $paymentType;
 
         // totals
@@ -1577,26 +1569,14 @@ class RetailcrmHistory
             return;
         }
 
-        $references = new RetailcrmReferences(self::$api);
-        $paymentsCMS = self::getPaymentsCms($references);
-
         foreach ($order['payments'] as $payment) {
             if (isset($payment['externalId']) || !isset($payment['status']) || 'paid' !== $payment['status']) {
                 continue;
             }
 
-            $paymentTypeCRM = isset($payment['type']) ? $payment['type'] : null;
-
-            if ($paymentTypeCRM) {
-                $paymentId = self::getModulePaymentId($paymentTypeCRM);
-                if (!$paymentId) {
-                    RetailcrmLogger::writeDebug(__METHOD__, "Payment type $paymentId undefined");
-
-                    return;
-                }
-            }
-
-            $paymentType = isset($paymentsCMS[$paymentId]) ? $paymentsCMS[$paymentId] : $paymentId;
+            $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
+            $paymentId = self::getModulePaymentId($paymentTypeCRM);
+            $paymentType = self::getModulePaymentType($paymentId);
 
             $orderPayment = new OrderPayment();
             $orderPayment->payment_method = $paymentType;
@@ -1873,14 +1853,10 @@ class RetailcrmHistory
     private static function getModulePaymentId($paymentTypeCRM)
     {
         if (isset(self::$payments[$paymentTypeCRM]) && !empty(self::$payments[$paymentTypeCRM])) {
-            $paymentId = self::$payments[$paymentTypeCRM];
-
-            return self::getModulePaymentType($paymentId);
-        } elseif (self::$paymentDefault) {
-            return self::$paymentDefault;
+            return self::$payments[$paymentTypeCRM];
         }
 
-        return false;
+        return self::$paymentDefault;
     }
 
     private static function getModulePaymentType($paymentId)
@@ -1897,16 +1873,10 @@ class RetailcrmHistory
 
     private static function getDeliveryType($order)
     {
-        $deliveryType = null;
+        $deliveryType = self::$deliveryDefault;
         $delivery = isset($order['delivery']['code']) ? $order['delivery']['code'] : false;
         if ($delivery && isset(self::$deliveries[$delivery]) && '' != self::$deliveries[$delivery]) {
             $deliveryType = self::$deliveries[$delivery];
-        }
-
-        if (!isset($deliveryType) || !$deliveryType) {
-            if (self::$deliveryDefault) {
-                $deliveryType = self::$deliveryDefault;
-            }
         }
 
         return $deliveryType;
@@ -2084,19 +2054,5 @@ class RetailcrmHistory
 
             self::checkNewItems($order, $orderToUpdate);
         }
-    }
-
-    private static function checkCrmOrderPaymentType($paymentTypeCRM)
-    {
-        if (!$paymentTypeCRM) {
-            return false;
-        }
-        $paymentType = self::getModulePaymentId($paymentTypeCRM);
-
-        if (!$paymentType) {
-            return false;
-        }
-
-        return $paymentType;
     }
 }
