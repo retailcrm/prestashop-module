@@ -336,12 +336,9 @@ class RetailcrmHistory
         }
         self::loadInPrestashop($customer, 'save');
 
-        if (null !== $addressInvoice) {
-            self::updateAddressInvoice($addressInvoice, $customer, $order);
-        }
+        self::updateAddressInvoice($addressInvoice, $customer, $order);
 
         $addressDelivery = self::createAddress($order, $customer);
-
         $deliveryType = self::getDeliveryType($order);
 
         $cart = self::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
@@ -369,9 +366,7 @@ class RetailcrmHistory
 
         self::saveCarrier($prestashopOrder->id, $deliveryType, $order['delivery']['cost']);
 
-        if (!empty($order['items'])) {
-            self::createOrderDetails($order, $prestashopOrder);
-        }
+        self::createOrderDetails($order, $prestashopOrder);
 
         // collect order ids for single fix request
         self::$orderFix[] = ['id' => $order['id'], 'externalId' => $prestashopOrder->id];
@@ -1188,6 +1183,11 @@ class RetailcrmHistory
 
     private static function createOrderDetails($order, $newOrder)
     {
+        if (empty($order['items'])) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Empty order items');
+
+            return;
+        }
         $newItemsIds = [];
         foreach ($order['items'] as $item) {
             if (!isset($item['offer']['externalId'])) {
@@ -1526,6 +1526,11 @@ class RetailcrmHistory
 
     private static function saveCarrier($orderId, $deliveryType, $cost)
     {
+        if (!$orderId) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Invalid orderId');
+
+            return;
+        }
         // delivery save
         $carrier = new OrderCarrier();
         $carrier->id_order = $orderId;
@@ -1605,6 +1610,11 @@ class RetailcrmHistory
 
     private static function updateAddressInvoice($addressInvoice, $customer, $order)
     {
+        if (null === $addressInvoice) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Address invoice is null');
+
+            return;
+        }
         if (RetailcrmTools::validateEntity($addressInvoice)) {
             $addressInvoice->id_customer = $customer->id;
             RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
