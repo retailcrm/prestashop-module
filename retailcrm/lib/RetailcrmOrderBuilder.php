@@ -560,6 +560,19 @@ class RetailcrmOrderBuilder
 
                 return;
             }
+
+            if (RetailCrmTools::clearAddress($address['text']) === RetailCrmTools::clearAddress($addressInCrm['text'])) {
+                $this->api->customersCorporateAddressesEdit(
+                    $corporateId,
+                    $addressInCrm['id'],
+                    $address,
+                    'id',
+                    'id',
+                    $this->getApiSite()
+                );
+
+                return;
+            }
         }
 
         $this->api->customersCorporateAddressesCreate(
@@ -1200,6 +1213,7 @@ class RetailcrmOrderBuilder
                 'birthday' => RetailcrmTools::verifyDate($object->birthday, 'Y-m-d')
                     ? $object->birthday : '',
                 'sex' => '1' == $object->id_gender ? 'male' : ('2' == $object->id_gender ? 'female' : ''),
+                'isContact' => isset($address['company']),
             ],
             $address
         ), function ($value) {
