@@ -38,9 +38,24 @@
 
 class RetailcrmOrderBuilderTest extends RetailcrmTestCase
 {
+    /**
+     * @var RetailcrmProxy
+     */
+    private $apiMock;
+
     protected function setUp()
     {
         parent::setUp();
+
+        $this->apiMock = $this->getApiMock(
+            [
+                'method',
+                'credentials',
+                'customersCorporateAddresses',
+                'customersCorporateAddressesEdit',
+                'customersCorporateAddressesCreate',
+            ]
+        );
     }
 
     public function testInitialPriceZero()
@@ -50,6 +65,86 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
 
         $this->assertTrue(isset($resultItem['initialPrice']));
         $this->assertEquals(0, $resultItem['initialPrice']);
+    }
+
+    /**
+     * @dataProvider buildCrmCustomerAddresses
+     */
+    public function testBuildCrmCustomer($address, $isCorp)
+    {
+        $customer = new Customer(1);
+        $crmCustomer = RetailcrmOrderBuilder::buildCrmCustomer($customer, $address);
+
+        $this->assertEquals($isCorp, $crmCustomer['isContact']);
+        $this->assertNotEmpty($crmCustomer['email']);
+    }
+
+    /**
+     * @dataProvider appendAdditionalAddressToCorporateAddresses
+     */
+    public function testAppendAdditionalAddressToCorporate($address, $method)
+    {
+        $this->apiClientMock->expects($this->any())
+            ->method('credentials')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'success' => true,
+                        ]
+                    )
+                )
+            )
+        ;
+        $this->apiClientMock->expects($this->once())
+            ->method('customersCorporateAddresses')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'pagination' => [
+                                'totalPageCount' => 1,
+                                'currentPage' => 1,
+                            ],
+                            'addresses' => $this->getCorpAddresses(),
+                        ]
+                    )
+                )
+            )
+        ;
+
+        $this->apiClientMock->expects($this->once())
+            ->method($method)
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'pagination' => [
+                                'totalPageCount' => 1,
+                                'currentPage' => 1,
+                            ],
+                            'addresses' => $this->getCorpAddresses(),
+                        ]
+                    )
+                )
+            )
+        ;
+
+        $orderBuilder = new RetailcrmOrderBuilder();
+        $orderBuilder->setApi($this->apiMock);
+
+        $class = new ReflectionClass($orderBuilder);
+
+        $property = $class->getProperty('invoiceAddress');
+        $property->setAccessible(true);
+        $property->setValue($orderBuilder, $this->convertAddress($address));
+
+        $method = $class->getMethod('appendAdditionalAddressToCorporate');
+        $method->setAccessible(true);
+        $method->invoke($orderBuilder, 0);
     }
 
     public function testBuildCrmOrder()
@@ -68,6 +163,50 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
         $crmOrder = RetailcrmOrderBuilder::buildCrmOrder($order);
 
         $this->assertEquals($order->reference, $crmOrder['number']);
+    }
+
+    private function convertAddress($crmAddress)
+    {
+        $address = new Address();
+        $address->address1 = $crmAddress['text'];
+        $address->alias = $crmAddress['name'];
+        $address->city = $crmAddress['city'];
+        $address->id_country = Country::getByIso($crmAddress['countryIso']);
+        $address->country = Country::getNameById((int) Configuration::get('PS_LANG_DEFAULT'), $address->id_country);
+        $address->postcode = $crmAddress['index'];
+        $address->company = $crmAddress['name'];
+        $address->id = isset($crmAddress['externalId']) ? $crmAddress['externalId'] : null;
+
+        return $address;
+    }
+
+    public function appendAdditionalAddressToCorporateAddresses()
+    {
+        return [
+            [
+                $this->getCorpAddresses()[0],
+                'customersCorporateAddressesEdit',
+            ],
+            [
+                $this->getCorpAddresses()[1],
+                'customersCorporateAddressesEdit',
+            ],
+            [
+                [
+                    'id' => '3',
+                    'externalId' => '30',
+                    'index' => '423120',
+                    'city' => 'Kazan',
+                    'countryIso' => 'RU',
+                    'text' => 'ul. Fuchika, d. 129',
+                    'notes' => 'Building under the big tree',
+                    'region' => 'Republic of Tatarstan',
+                    'company' => 'MyCompany',
+                    'name' => 'Home',
+                ],
+                'customersCorporateAddressesCreate',
+            ],
+        ];
     }
 
     /**
@@ -90,6 +229,22 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
             ],
             'properties' => [],
             'purchasePrice' => 50,
+        ];
+    }
+
+    public function buildCrmCustomerAddresses()
+    {
+        return [
+            [
+                'Address' => [
+                    'company' => 'RetailCRM',
+                ],
+                'Is corporate address?' => true,
+            ],
+            [
+                'Address' => [],
+                'Is corporate address?' => false,
+            ],
         ];
     }
 
@@ -211,5 +366,35 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
         ];
 
         return $order;
+    }
+
+    private function getCorpAddresses()
+    {
+        return [
+            [
+                'id' => '1',
+                'externalId' => '10',
+                'index' => '452320',
+                'city' => 'Dyurtyuli',
+                'countryIso' => 'RU',
+                'text' => 'ul. Matrosova, d. 8',
+                'notes' => 'from 12:00 to 15:00',
+                'region' => 'Republic of Bashkortostan',
+                'company' => 'MyCompany',
+                'name' => 'Office',
+            ],
+            [
+                'id' => '2',
+                'externalId' => '90',
+                'index' => '760021',
+                'city' => 'Cali',
+                'countryIso' => 'CO',
+                'text' => 'Av 6 A NORTE No. 28 N-10, C.P 76001',
+                'notes' => 'Red door next to the road',
+                'region' => 'Cali',
+                'company' => 'MyCompany',
+                'name' => 'Warehouse',
+            ],
+        ];
     }
 }

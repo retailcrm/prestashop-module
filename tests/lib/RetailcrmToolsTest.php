@@ -39,6 +39,32 @@
 class RetailcrmToolsTest extends RetailcrmTestCase
 {
     /**
+     * @dataProvider clearAddresses
+     */
+    public function testClearAddress($address, $result)
+    {
+        $this->assertEquals($result, RetailcrmTools::clearAddress($address));
+    }
+
+    public function clearAddresses()
+    {
+        return [
+            [
+                'Dirty address' => 'Calle 66 # 11 -27, Casa || Casa',
+                'Clear address' => 'calle661127casacasa',
+            ],
+            [
+                'Dirty address' => 'Calle 111 # 7c 10 || 202 torre 6',
+                'Clear address' => 'calle1117c10202torre6',
+            ],
+            [
+                'Dirty address' => 'Bogotá, D.C. Calle 4B 20-85 || 312',
+                'Clear address' => 'bogotadccalle4b2085312',
+            ],
+        ];
+    }
+
+    /**
      * @dataProvider equalCustomerAddresses
      */
     public function testIsEqualCustomerAddress($address1, $address2, $result)

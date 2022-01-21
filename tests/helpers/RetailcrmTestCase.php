@@ -42,14 +42,6 @@ if (class_exists('LegacyTests\Unit\ContextMocker')) {
 
 abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * @var RetailcrmProxy
-     */
-    private $apiMock;
-
-    /**
-     * @var PHPUnit_Framework_MockObject_MockObject
-     */
     protected $apiClientMock;
 
     protected $contextMock;
@@ -68,10 +60,10 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
     {
         $this->apiClientMock = $this->apiMockBuilder($methods)->getMock();
 
-        $this->apiMock = new RetailcrmProxy('https://test.test', 'test_key');
-        $this->apiMock->setClient($this->apiClientMock);
+        $apiMock = new RetailcrmProxy('https://test.test', 'test_key');
+        $apiMock->setClient($this->apiClientMock);
 
-        return $this->apiMock;
+        return $apiMock;
     }
 
     protected function setConfig()

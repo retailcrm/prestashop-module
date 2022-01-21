@@ -243,7 +243,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     private function parseAddress()
     {
         $state = null;
-        $name  = null;
+        $name = null;
 
         if (!empty($this->address->id_state)) {
             $stateName = State::getNameById($this->address->id_state);
