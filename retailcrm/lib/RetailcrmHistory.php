@@ -1343,7 +1343,7 @@ class RetailcrmHistory
                     if (1 > $orderToUpdate->id_address_delivery) {
                         self::loadInPrestashop($address, 'save');
                         $orderToUpdate->id_address_delivery = $address->id;
-                        self::loadInPrestashop($order, 'update');
+                        self::loadInPrestashop($orderToUpdate, 'update');
                     } else {
                         if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
                             self::loadInPrestashop($address, 'save');
@@ -1803,7 +1803,6 @@ class RetailcrmHistory
                 );
 
                 if ($newStatus) {
-                    $updateOrderStatuses[$orderToUpdate->id] = $orderToUpdate->id;
                     $orderToUpdate->current_state = self::$statuses[$newStatus];
                 }
             }
@@ -1926,43 +1925,47 @@ class RetailcrmHistory
         return $orderToUpdate;
     }
 
-    private static function statusIsChanged($order, $orderToUpdate)
+    private static function statusIsChanged($crmOrder, $prestashopOrder)
     {
-        $updateOrderStatuses = [];
-
-        if (!isset($order['items'])) {
-            return $updateOrderStatuses;
+        if (!isset($crmOrder['items'])) {
+            return false;
         }
 
-        foreach ($order['items'] as $item) {
-            if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                continue;
-            }
+        foreach ($prestashopOrder->getProductsDetail() as $productDetail) {
+            foreach ($crmOrder['items'] as $item) {
+                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+                    continue;
+                }
 
-            $parsedExtId = static::parseItemExternalId($item);
-            $product_id = $parsedExtId['product_id'];
-            $product = new Product((int) $product_id, false, self::$default_lang);
+                if (empty($item['quantity'])) {
+                    continue;
+                }
 
-            foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
-                $orderDetailId = !empty($parsedExtId['id_order_detail'])
-                    ? $parsedExtId['id_order_detail'] : $orderItem['id_order_detail'];
-                $orderDetail = new OrderDetail($orderDetailId);
+                $parsedCrmExternalId = static::parseItemExternalId($item);
+                $isExistingItem = !isset($item['create']);
+
+                if (!$isExistingItem
+                    || $parsedCrmExternalId['product_id'] != $productDetail['product_id']
+                    || $parsedCrmExternalId['product_attribute_id'] != $productDetail['product_attribute_id']) {
+                    continue;
+                }
+
+                $orderDetail = self::getOrderDetail($productDetail);
 
                 $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
+
+                $product = new Product((int) $parsedCrmExternalId['product_id'], false, self::$default_lang);
 
                 if (0 <= $deltaQuantity || $product->checkQty(-1 * $deltaQuantity)) {
                     continue;
                 }
 
-                $infoOrder = self::getOrderFromCrm($order['externalId']);
+                $infoOrder = self::getOrderFromCrm($crmOrder['externalId']);
 
-                $newStatus = self::setOutOfStockStatus(
-                    $infoOrder,
-                    $orderToUpdate
-                );
+                $newStatus = self::setOutOfStockStatus($infoOrder, $prestashopOrder);
 
                 if ($newStatus) {
-                    $orderToUpdate->current_state = self::$statuses[$newStatus];
+                    $prestashopOrder->current_state = self::$statuses[$newStatus];
 
                     return true;
                 }
@@ -2065,5 +2068,10 @@ class RetailcrmHistory
 
             self::checkNewItems($order, $orderToUpdate);
         }
+    }
+
+    private static function getOrderDetail($productDetail)
+    {
+        return new OrderDetail($productDetail['id_order_detail']);
     }
 }
