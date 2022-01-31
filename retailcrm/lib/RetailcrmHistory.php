@@ -595,53 +595,45 @@ class RetailcrmHistory
      */
     private static function setOutOfStockStatus($crmOrder, $cmsOrder)
     {
-        $statusArray = json_decode(
-            Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS),
+        $outOfStockType = self::getOutOfStockType($crmOrder);
+
+        if (!$outOfStockType) {
+            return false;
+        }
+
+        if (!isset(self::$statuses[$outOfStockType])) {
+            //TODO: Add handling undefined status
+            return false;
+        }
+
+        if (self::$statuses[$outOfStockType] == $cmsOrder->current_state) {
+            return false;
+        }
+
+        $orderHistory = new OrderHistory();
+        $orderHistory->id_order = $cmsOrder->id;
+        $orderHistory->id_order_state = self::$statuses[$outOfStockType];
+        $orderHistory->date_add = date('Y-m-d H:i:s');
+
+        self::loadInPrestashop($orderHistory, 'save');
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__,
+            sprintf(
+                '<Order ID: %d> %s::%s',
+                $cmsOrder->id,
+                get_class($orderHistory),
+                'changeIdOrderState'
+            )
+        );
+
+        $orderHistory->changeIdOrderState(
+            (int)self::$statuses[$outOfStockType],
+            $cmsOrder->id,
             true
         );
 
-        if (isset($crmOrder['fullPaidAt']) && !empty($crmOrder['fullPaidAt'])) {
-            $outOfStockType = $statusArray['out_of_stock_paid'];
-
-            if ('' == $outOfStockType) {
-                return false;
-            }
-        } else {
-            $outOfStockType = $statusArray['out_of_stock_not_paid'];
-
-            if ('' == $outOfStockType) {
-                return false;
-            }
-        }
-
-        if (self::$statuses[$outOfStockType] != $cmsOrder->current_state) {
-            $orderHistory = new OrderHistory();
-            $orderHistory->id_order = $cmsOrder->id;
-            $orderHistory->id_order_state = self::$statuses[$outOfStockType];
-            $orderHistory->date_add = date('Y-m-d H:i:s');
-
-            self::loadInPrestashop($orderHistory, 'save');
-
-            RetailcrmLogger::writeDebug(
-                __METHOD__,
-                sprintf(
-                    '<Order ID: %d> %s::%s',
-                    $cmsOrder->id,
-                    get_class($orderHistory),
-                    'changeIdOrderState'
-                )
-            );
-
-            $orderHistory->changeIdOrderState(
-                (int) self::$statuses[$outOfStockType],
-                $cmsOrder->id,
-                true
-            );
-
-            return $outOfStockType;
-        }
-
-        return false;
+        return $outOfStockType;
     }
 
     /**
@@ -1924,45 +1916,14 @@ class RetailcrmHistory
             return false;
         }
 
-        foreach ($prestashopOrder->getProductsDetail() as $productDetail) {
-            foreach ($crmOrder['items'] as $item) {
-                if (RetailcrmOrderBuilder::isGiftItem($item)) {
-                    continue;
-                }
+        $infoOrder = self::getOrderFromCrm($crmOrder['externalId']);
 
-                if (empty($item['quantity'])) {
-                    continue;
-                }
+        $newStatus = self::setOutOfStockStatus($infoOrder, $prestashopOrder);
 
-                $parsedCrmExternalId = static::parseItemExternalId($item);
-                $isExistingItem = !isset($item['create']);
+        if ($newStatus) {
+            $prestashopOrder->current_state = self::$statuses[$newStatus];
 
-                if (!$isExistingItem
-                    || $parsedCrmExternalId['product_id'] != $productDetail['product_id']
-                    || $parsedCrmExternalId['product_attribute_id'] != $productDetail['product_attribute_id']) {
-                    continue;
-                }
-
-                $orderDetail = self::getOrderDetail($productDetail);
-
-                $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
-
-                $product = new Product((int) $parsedCrmExternalId['product_id'], false, self::$default_lang);
-
-                if (0 <= $deltaQuantity || $product->checkQty(-1 * $deltaQuantity)) {
-                    continue;
-                }
-
-                $infoOrder = self::getOrderFromCrm($crmOrder['externalId']);
-
-                $newStatus = self::setOutOfStockStatus($infoOrder, $prestashopOrder);
-
-                if ($newStatus) {
-                    $prestashopOrder->current_state = self::$statuses[$newStatus];
-
-                    return true;
-                }
-            }
+            return true;
         }
 
         return false;
@@ -2063,8 +2024,24 @@ class RetailcrmHistory
         }
     }
 
-    private static function getOrderDetail($productDetail)
+    private static function getOutOfStockType(array $crmOrder)
     {
-        return new OrderDetail($productDetail['id_order_detail']);
+        $statusArray = json_decode(
+            Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS),
+            true
+        );
+
+        //TODO: add check empty statuses
+
+        if (!empty($crmOrder['fullPaidAt'])) {
+            $outOfStockType = $statusArray['out_of_stock_paid'];
+        } else {
+            $outOfStockType = $statusArray['out_of_stock_not_paid'];
+        }
+
+        if ('' == $outOfStockType) {
+            return false;
+        }
+        return $outOfStockType;
     }
 }
