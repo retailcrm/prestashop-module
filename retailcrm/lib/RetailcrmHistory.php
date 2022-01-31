@@ -628,7 +628,7 @@ class RetailcrmHistory
         );
 
         $orderHistory->changeIdOrderState(
-            (int)self::$statuses[$outOfStockType],
+            (int) self::$statuses[$outOfStockType],
             $cmsOrder->id,
             true
         );
@@ -2042,6 +2042,7 @@ class RetailcrmHistory
         if ('' == $outOfStockType) {
             return false;
         }
+
         return $outOfStockType;
     }
 }
