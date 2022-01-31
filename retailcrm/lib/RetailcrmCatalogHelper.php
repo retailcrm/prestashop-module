@@ -65,7 +65,7 @@ class RetailcrmCatalogHelper
 
     public static function getIcmlFileLink()
     {
-        return _PS_BASE_URL_ . '/' . self::getIcmlFilename();
+        return _PS_BASE_URL_SSL_ . '/' . self::getIcmlFilename();
     }
 
     public static function getIcmlFileName()
