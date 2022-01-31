@@ -1340,20 +1340,13 @@ class RetailcrmHistory
                 RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
 
                 if (null === $address->id) {
-                    if (1 > $orderToUpdate->id_address_delivery) {
+                    if (1 > $orderToUpdate->id_address_delivery || version_compare(_PS_VERSION_, '1.7.7', '<')) {
                         self::loadInPrestashop($address, 'save');
                         $orderToUpdate->id_address_delivery = $address->id;
                         self::loadInPrestashop($orderToUpdate, 'update');
                     } else {
-                        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-                            self::loadInPrestashop($address, 'save');
-
-                            $orderToUpdate->id_address_delivery = $address->id;
-                            self::loadInPrestashop($orderToUpdate, 'update');
-                        } else {
-                            $address->id = $orderToUpdate->id_address_delivery;
-                            self::loadInPrestashop($address, 'update');
-                        }
+                        $address->id = $orderToUpdate->id_address_delivery;
+                        self::loadInPrestashop($address, 'update');
                     }
                 } elseif ($address->id !== $orderToUpdate->id_address_delivery) {
                     RetailcrmLogger::writeDebug(__METHOD__, sprintf(
