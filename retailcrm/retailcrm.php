@@ -971,7 +971,7 @@ class RetailCRM extends Module
                 'enableOrderNumberSending' => (false !== Tools::getValue(static::ENABLE_ORDER_NUMBER_SENDING)),
                 'enableOrderNumberReceiving' => (false !== Tools::getValue(static::ENABLE_ORDER_NUMBER_RECEIVING)),
                 'debugMode' => (false !== Tools::getValue(static::ENABLE_DEBUG_MODE)),
-                'webJobs' => (false !== Tools::getValue(static::ENABLE_WEB_JOBS, true) ? '1' : '0'),
+                'webJobs' => (false !== Tools::getValue(static::ENABLE_WEB_JOBS) ? '1' : '0'),
                 'collectorActive' => (false !== Tools::getValue(static::COLLECTOR_ACTIVE)),
                 'collectorKey' => (string) (Tools::getValue(static::COLLECTOR_KEY)),
                 'clientId' => Configuration::get(static::CLIENT_ID),
