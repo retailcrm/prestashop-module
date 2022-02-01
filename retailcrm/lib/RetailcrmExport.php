@@ -175,10 +175,10 @@ class RetailcrmExport
 
             try {
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
-            } catch (\InvalidArgumentException $exception) {
-                RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $record['id_order'], $exception->getMessage()));
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                RetailcrmLogger::output($exception->getMessage());
+            } catch (Exception $exception) {
+                self::handleError($record['id_order'], $exception);
+            } catch (Throwable $exception) {
+                self::handleError($record['id_order'], $exception);
             }
 
             time_nanosleep(0, 250000000);
@@ -346,10 +346,10 @@ class RetailcrmExport
 
                 try {
                     $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
-                } catch (\Exception $exception) {
-                    RetailcrmLogger::writeCaller('export', sprintf('Error while building %s: %s', $customerId, $exception->getMessage()));
-                    RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                    RetailcrmLogger::output($exception->getMessage());
+                } catch (Exception $exception) {
+                    self::handleError($customerId, $exception);
+                } catch (Throwable $exception) {
+                    self::handleError($customerId, $exception);
                 }
 
                 if (50 == count($customers)) {
@@ -451,5 +451,13 @@ class RetailcrmExport
         }
 
         return true;
+    }
+
+    private static function handleError($entityId, $exception)
+    {
+        RetailcrmLogger::writeException('export', $exception, sprintf(
+            'Error while building %s: %s', $entityId, $exception->getMessage()
+        ), true);
+        RetailcrmLogger::output($exception->getMessage());
     }
 }

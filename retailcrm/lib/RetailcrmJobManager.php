@@ -120,6 +120,16 @@ class RetailcrmJobManager
             );
 
             return;
+        } catch (Throwable $exception) {
+            static::handleError(
+                $exception->getFile(),
+                $exception->getMessage(),
+                $exception->getTraceAsString(),
+                '',
+                $jobs
+            );
+
+            return;
         }
 
         RetailcrmLogger::writeDebug(__METHOD__, 'Trying to acquire lock...');
@@ -203,9 +213,9 @@ class RetailcrmJobManager
 
                     break;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $exception = $e;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $exception = $e;
             }
 
@@ -247,6 +257,14 @@ class RetailcrmJobManager
                 '',
                 $jobs
             );
+        } catch (Throwable $exception) {
+            static::handleError(
+                $exception->getFile(),
+                $exception->getMessage(),
+                $exception->getTraceAsString(),
+                '',
+                $jobs
+            );
         }
 
         static::unlock();
@@ -276,25 +294,13 @@ class RetailcrmJobManager
             }
 
             return $result;
-        } catch (\Exception $exception) {
-            if ($exception instanceof RetailcrmJobManagerException
-                && $exception->getPrevious() instanceof \Exception
-            ) {
-                $exception = $exception->getPrevious();
-            }
-
-            RetailcrmLogger::printException($exception, '', false);
-            self::updateLastRunDetail($jobName, [
-                'success' => false,
-                'lastRun' => new \DateTimeImmutable('now'),
-                'error' => [
-                    'message' => $exception->getMessage(),
-                    'trace' => $exception->getTraceAsString(),
-                ],
-            ]);
-
-            throw $exception;
+        } catch (Exception $exception) {
+            self::handleManualRunError($jobName, $exception);
+        } catch (Throwable $exception) {
+            self::handleManualRunError($jobName, $exception);
         }
+
+        return false;
     }
 
     /**
@@ -455,7 +461,9 @@ class RetailcrmJobManager
             return static::execHere($jobName, $cliMode, $force, $shopId);
         } catch (\RetailcrmJobManagerException $exception) {
             throw $exception;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
+            throw new RetailcrmJobManagerException($exception->getMessage(), $job, [], 0, $exception);
+        } catch (Throwable $exception) {
             throw new RetailcrmJobManagerException($exception->getMessage(), $job, [], 0, $exception);
         }
     }
@@ -594,6 +602,13 @@ class RetailcrmJobManager
                     try {
                         self::setLastRunDetails($lastRunsDetails);
                     } catch (Exception $exception) {
+                        static::handleError(
+                            $exception->getFile(),
+                            $exception->getMessage(),
+                            $exception->getTraceAsString(),
+                            $job
+                        );
+                    } catch (Throwable $exception) {
                         static::handleError(
                             $exception->getFile(),
                             $exception->getMessage(),
@@ -810,5 +825,35 @@ class RetailcrmJobManager
         RetailcrmLogger::writeDebug(__METHOD__, 'Lock removed.');
 
         return false;
+    }
+
+    /**
+     * @param $jobName
+     * @param Exception|Throwable $exception
+     *
+     * @throws Exception|Throwable
+     */
+    private static function handleManualRunError($jobName, $exception)
+    {
+        if ($exception instanceof RetailcrmJobManagerException
+            && (
+                $exception->getPrevious() instanceof Exception
+                || $exception->getPrevious() instanceof Throwable
+            )
+        ) {
+            $exception = $exception->getPrevious();
+        }
+
+        RetailcrmLogger::printException($exception, '', false);
+        self::updateLastRunDetail($jobName, [
+            'success' => false,
+            'lastRun' => new \DateTimeImmutable('now'),
+            'error' => [
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ],
+        ]);
+
+        throw $exception;
     }
 }

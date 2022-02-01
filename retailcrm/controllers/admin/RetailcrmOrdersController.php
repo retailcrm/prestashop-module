@@ -70,6 +70,11 @@ class RetailcrmOrdersController extends RetailcrmAdminAbstractController
                 'success' => false,
                 'errorMsg' => $e->getMessage(),
             ];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
         }
     }
 }

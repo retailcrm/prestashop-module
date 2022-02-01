@@ -41,7 +41,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
     /**
      * {@inheritDoc}
      *
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
@@ -83,11 +83,9 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
 
             return $response;
         } catch (Exception $e) {
-            if (isset($order['externalId'])) {
-                RetailcrmExportOrdersHelper::updateExportState($order['externalId'], null, [$e->getMessage()]);
-            }
-
-            throw $e;
+            $this->handleError($order, $e);
+        } catch (Throwable $e) {
+            $this->handleError($order, $e);
         }
     }
 
@@ -97,7 +95,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
      *
      * @return RetailcrmApiResponse
      *
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     private function handleOrdersUpload(RetailcrmApiRequest $request, callable $next)
     {
@@ -108,6 +106,12 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
         try {
             $response = $next($request);
         } catch (Exception $e) {
+            foreach ($requestedOrders as $id_order) {
+                RetailcrmExportOrdersHelper::updateExportState($id_order, null, [$e->getMessage()]);
+            }
+
+            throw $e;
+        } catch (Throwable $e) {
             foreach ($requestedOrders as $id_order) {
                 RetailcrmExportOrdersHelper::updateExportState($id_order, null, [$e->getMessage()]);
             }
@@ -168,5 +172,19 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
         }
 
         return $orders;
+    }
+
+    /**
+     * @throws Exception|Throwable
+     */
+    private function handleError($order, $e)
+    {
+        if (isset($order['externalId'])) {
+            RetailcrmExportOrdersHelper::updateExportState(
+                $order['externalId'], null, [$e->getMessage()]
+            );
+        }
+
+        throw $e;
     }
 }

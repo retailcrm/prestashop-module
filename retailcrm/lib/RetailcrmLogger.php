@@ -128,8 +128,9 @@ class RetailcrmLogger
     /**
      * Output error info to stdout
      *
-     * @param $exception
+     * @param Exception|Throwable $exception
      * @param string $header
+     * @param bool $toOutput
      */
     public static function printException($exception, $header = 'Error while executing a job: ', $toOutput = true)
     {
@@ -326,5 +327,20 @@ class RetailcrmLogger
         }
 
         return $reduced;
+    }
+
+    public static function writeException($caller, $exception, $message = null, $withTrace = false)
+    {
+        if (null !== $message) {
+            RetailcrmLogger::writeCaller($caller, $message);
+        }
+
+        RetailcrmLogger::writeCaller($caller, $exception->getMessage());
+
+        if ($withTrace) {
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+        }
+
+        return true;
     }
 }

@@ -218,7 +218,7 @@ class RetailcrmTools
     /**
      * Dumps entity using it's definition mapping.
      *
-     * @param \ObjectModel $object
+     * @param $object
      *
      * @return array|string
      */
@@ -812,8 +812,9 @@ class RetailcrmTools
 
             return (null === $result || false === $result) ? $object : $result;
         } catch (Exception $e) {
-            RetailcrmLogger::writeCaller(__METHOD__, 'Error in custom filter: ' . $e->getMessage());
-            RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
+            RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
+        } catch (Throwable $e) {
+            RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
         }
 
         return $object;
