@@ -455,7 +455,9 @@ class RetailcrmTools
      */
     public static function isDebug()
     {
-        return '1' === Configuration::get(RetailCRM::ENABLE_DEBUG_MODE);
+        $value = Configuration::get(RetailCRM::ENABLE_DEBUG_MODE);
+
+        return '1' === $value || true === $value;
     }
 
     /**
@@ -489,6 +491,11 @@ class RetailcrmTools
         return null;
     }
 
+    /**
+     * WebJobs should be enabled by default, so here we check if it was explicitly disabled
+     *
+     * @return bool
+     */
     public static function isWebJobsEnabled()
     {
         return '0' !== Configuration::get(RetailCRM::ENABLE_WEB_JOBS);
