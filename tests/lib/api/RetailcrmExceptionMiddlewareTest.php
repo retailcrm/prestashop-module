@@ -45,9 +45,18 @@ class RetailcrmExceptionMiddlewareTest extends RetailcrmTestCase
         parent::setUp();
 
         $this->api = RetailcrmTools::getApiClient();
+        $this->apiMock = $this->getApiMock(
+            [
+                'ordersGet',
+                'ordersEdit',
+                'ordersPaymentEdit',
+                'ordersCreate',
+                'ordersUpload',
+            ]
+        );
     }
 
-    public function getRequests()
+    public function getRequestsBadParams()
     {
         return [
             [
@@ -99,13 +108,72 @@ class RetailcrmExceptionMiddlewareTest extends RetailcrmTestCase
     }
 
     /**
-     * @dataProvider getRequests
+     * @dataProvider getRequestsBadParams
      */
-    public function testRequest($method, $params, $errorMsg)
+    public function testRequestBadParams($method, $params, $errorMsg)
     {
         /** @var RetailcrmApiResponse $response */
         $response = call_user_func_array([$this->api, $method], $params);
 
+        $this->checkResponse($response, $errorMsg);
+    }
+
+    public function getRequestsException()
+    {
+        return [
+            [
+                'method' => 'ordersGet',
+                'params' => [406, 'id'],
+            ],
+            [
+                'method' => 'ordersEdit',
+                'params' => [['id' => 406], 'id'],
+            ],
+            [
+                'method' => 'ordersPaymentEdit',
+                'params' => [['id' => 406], 'id'],
+            ],
+            [
+                'method' => 'ordersCreate',
+                'params' => [['id' => 407]],
+            ],
+            [
+                'method' => 'ordersUpload',
+                'params' => [[['externalId' => 1]]],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider getRequestsException
+     */
+    public function testRequestException($method, $params)
+    {
+        $errorMsg = 'Test exception ' . md5(json_encode([$method, $params]));
+
+        $this->makeRequestException($method, $params, $errorMsg, function () use ($errorMsg) {
+            throw new Exception($errorMsg);
+        });
+
+        if (class_exists('Error')) {
+            $this->makeRequestException($method, $params, $errorMsg, function () use ($errorMsg) {
+                throw new Error($errorMsg);
+            });
+        }
+    }
+
+    private function makeRequestException($method, $params, $errorMsg, $return)
+    {
+        $this->apiClientMock->expects($this->any())->method($method)->willReturnCallback($return);
+
+        /** @var RetailcrmApiResponse $response */
+        $response = call_user_func_array([$this->apiMock, $method], $params);
+
+        $this->checkResponse($response, $errorMsg);
+    }
+
+    private function checkResponse(RetailcrmApiResponse $response, $errorMsg)
+    {
         $this->assertInstanceOf(RetailcrmApiResponse::class, $response);
         $this->assertFalse($response->isSuccessful());
         $this->assertStringStartsWith('Internal error: ', $response['errorMsg']);
