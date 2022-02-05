@@ -228,7 +228,7 @@ class RetailcrmCartUploader
             }
         } catch (Exception $exception) {
             return RetailcrmLogger::writeException(__METHOD__, $exception, $messageTotal, true);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             return RetailcrmLogger::writeException(__METHOD__, $exception, $messageTotal, true);
         }
 
@@ -239,7 +239,7 @@ class RetailcrmCartUploader
             }
         } catch (Exception $exception) {
             return RetailcrmLogger::writeException(__METHOD__, $exception, $messageProducts, true);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             return RetailcrmLogger::writeException(__METHOD__, $exception, $messageProducts, true);
         }
 
@@ -268,7 +268,7 @@ class RetailcrmCartUploader
             );
         } catch (Exception $exception) {
             RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
         }
 

@@ -85,7 +85,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
                     $skippedOrders[] = $id_order;
                 } catch (Exception $e) {
                     $errors[$id_order][] = $e->getMessage();
-                } catch (Throwable $e) {
+                } catch (Error $e) {
                     $errors[$id_order][] = $e->getMessage();
                 }
 
@@ -104,7 +104,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
                 'success' => false,
                 'errorMsg' => $e->getMessage(),
             ];
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             return [
                 'success' => false,
                 'errorMsg' => $e->getMessage(),

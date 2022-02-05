@@ -177,7 +177,7 @@ class RetailcrmExport
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
             } catch (Exception $exception) {
                 self::handleError($record['id_order'], $exception);
-            } catch (Throwable $exception) {
+            } catch (Error $exception) {
                 self::handleError($record['id_order'], $exception);
             }
 
@@ -348,7 +348,7 @@ class RetailcrmExport
                     $customers[] = RetailcrmOrderBuilder::buildCrmCustomer($cmsCustomer, $address);
                 } catch (Exception $exception) {
                     self::handleError($customerId, $exception);
-                } catch (Throwable $exception) {
+                } catch (Error $exception) {
                     self::handleError($customerId, $exception);
                 }
 

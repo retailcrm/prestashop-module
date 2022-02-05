@@ -120,7 +120,7 @@ class RetailcrmJobManager
             );
 
             return;
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             static::handleError(
                 $exception->getFile(),
                 $exception->getMessage(),
@@ -215,7 +215,7 @@ class RetailcrmJobManager
                 }
             } catch (Exception $e) {
                 $exception = $e;
-            } catch (Throwable $e) {
+            } catch (Error $e) {
                 $exception = $e;
             }
 
@@ -257,7 +257,7 @@ class RetailcrmJobManager
                 '',
                 $jobs
             );
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             static::handleError(
                 $exception->getFile(),
                 $exception->getMessage(),
@@ -278,7 +278,7 @@ class RetailcrmJobManager
      * @return bool
      *
      * @throws Exception
-     * @throws Throwable
+     * @throws Error
      */
     public static function execManualJob($jobName)
     {
@@ -296,7 +296,7 @@ class RetailcrmJobManager
             return $result;
         } catch (Exception $exception) {
             self::handleManualRunError($jobName, $exception);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             self::handleManualRunError($jobName, $exception);
         }
 
@@ -463,7 +463,7 @@ class RetailcrmJobManager
             throw $exception;
         } catch (Exception $exception) {
             throw new RetailcrmJobManagerException($exception->getMessage(), $job, [], 0, $exception);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             throw new RetailcrmJobManagerException($exception->getMessage(), $job, [], 0, $exception);
         }
     }
@@ -608,7 +608,7 @@ class RetailcrmJobManager
                             $exception->getTraceAsString(),
                             $job
                         );
-                    } catch (Throwable $exception) {
+                    } catch (Error $exception) {
                         static::handleError(
                             $exception->getFile(),
                             $exception->getMessage(),
@@ -829,16 +829,16 @@ class RetailcrmJobManager
 
     /**
      * @param $jobName
-     * @param Exception|Throwable $exception
+     * @param Exception|Error $exception
      *
-     * @throws Exception|Throwable
+     * @throws Exception|Error
      */
     private static function handleManualRunError($jobName, $exception)
     {
         if ($exception instanceof RetailcrmJobManagerException
             && (
                 $exception->getPrevious() instanceof Exception
-                || $exception->getPrevious() instanceof Throwable
+                || $exception->getPrevious() instanceof Error
             )
         ) {
             $exception = $exception->getPrevious();

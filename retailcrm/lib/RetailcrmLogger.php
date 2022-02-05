@@ -128,7 +128,7 @@ class RetailcrmLogger
     /**
      * Output error info to stdout
      *
-     * @param Exception|Throwable $exception
+     * @param Exception|Error $exception
      * @param string $header
      * @param bool $toOutput
      */

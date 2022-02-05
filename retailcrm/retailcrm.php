@@ -454,7 +454,7 @@ class RetailCRM extends Module
             } catch (Exception $e) {
                 $this->displayError($e->getMessage());
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
-            } catch (Throwable $e) {
+            } catch (Error $e) {
                 $this->displayError($e->getMessage());
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
             }
@@ -515,7 +515,7 @@ class RetailCRM extends Module
                 $this->l('was completed with errors'),
                 $e->getMessage()
             ));
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             return $this->displayError(sprintf(
                 '%s %s: %s',
                 $this->l($jobNameFront),
@@ -655,7 +655,7 @@ class RetailCRM extends Module
             return RetailcrmJsonResponse::successfullResponse();
         } catch (Exception $exception) {
             return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
         }
     }
@@ -822,7 +822,7 @@ class RetailCRM extends Module
         } catch (Exception $e) {
             RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
             RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
             RetailcrmLogger::writeNoCaller($e->getTraceAsString());
         }
@@ -846,7 +846,7 @@ class RetailCRM extends Module
             } catch (Exception $e) {
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
                 RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-            } catch (Throwable $e) {
+            } catch (Error $e) {
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
                 RetailcrmLogger::writeNoCaller($e->getTraceAsString());
             }
@@ -1508,7 +1508,7 @@ class RetailCRM extends Module
         } catch (Exception $exception) {
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
             RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }

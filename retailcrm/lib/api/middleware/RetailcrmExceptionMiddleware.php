@@ -49,7 +49,7 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
             $this->checkResponseType($response);
         } catch (Exception $e) {
             $response = $this->getInvalidResponse($request, $e);
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             $response = $this->getInvalidResponse($request, $e);
         }
 
@@ -74,7 +74,7 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
 
     /**
      * @param RetailcrmApiRequest $request
-     * @param Exception|Throwable $exception
+     * @param Exception|Error $exception
      *
      * @return RetailcrmApiResponse
      */

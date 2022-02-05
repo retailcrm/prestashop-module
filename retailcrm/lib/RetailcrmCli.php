@@ -174,7 +174,7 @@ class RetailcrmCli
             ));
         } catch (Exception $exception) {
             $this->handleException($jobName, $exception);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             $this->handleException($jobName, $exception);
         }
 
@@ -186,7 +186,7 @@ class RetailcrmCli
     /**
      * Prints error details
      *
-     * @param Exception|Throwable $exception
+     * @param Exception|Error $exception
      * @param string $header
      */
     private function printStack($exception, $header = 'Error while executing a job: ')
@@ -359,7 +359,7 @@ class RetailcrmCli
             }
         } catch (Exception $exception) {
             $this->printStack($exception);
-        } catch (Throwable $exception) {
+        } catch (Error $exception) {
             $this->printStack($exception);
         }
     }
@@ -456,7 +456,7 @@ class RetailcrmCli
         if ($exception instanceof RetailcrmJobManagerException
             && (
                 $exception->getPrevious() instanceof Exception
-                || $exception->getPrevious() instanceof Throwable
+                || $exception->getPrevious() instanceof Error
             )
         ) {
             $this->printStack($exception->getPrevious());

@@ -41,7 +41,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
     /**
      * {@inheritDoc}
      *
-     * @throws Exception|Throwable
+     * @throws Exception|Error
      */
     public function __invoke(RetailcrmApiRequest $request, callable $next = null)
     {
@@ -84,7 +84,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
             return $response;
         } catch (Exception $e) {
             $this->handleError($order, $e);
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             $this->handleError($order, $e);
         }
     }
@@ -95,7 +95,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
      *
      * @return RetailcrmApiResponse
      *
-     * @throws Exception|Throwable
+     * @throws Exception|Error
      */
     private function handleOrdersUpload(RetailcrmApiRequest $request, callable $next)
     {
@@ -111,7 +111,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
             }
 
             throw $e;
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             foreach ($requestedOrders as $id_order) {
                 RetailcrmExportOrdersHelper::updateExportState($id_order, null, [$e->getMessage()]);
             }
@@ -175,7 +175,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
     }
 
     /**
-     * @throws Exception|Throwable
+     * @throws Exception|Error
      */
     private function handleError($order, $e)
     {

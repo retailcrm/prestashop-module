@@ -813,7 +813,7 @@ class RetailcrmTools
             return (null === $result || false === $result) ? $object : $result;
         } catch (Exception $e) {
             RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
-        } catch (Throwable $e) {
+        } catch (Error $e) {
             RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
         }
 
