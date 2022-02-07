@@ -454,6 +454,9 @@ class RetailCRM extends Module
             } catch (Exception $e) {
                 $this->displayError($e->getMessage());
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
+            } catch (Error $e) {
+                $this->displayError($e->getMessage());
+                RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
             }
 
             $isSuccessful = $isSuccessful ? $response : false;
@@ -506,6 +509,13 @@ class RetailCRM extends Module
                 ));
             }
         } catch (Exception $e) {
+            return $this->displayError(sprintf(
+                '%s %s: %s',
+                $this->l($jobNameFront),
+                $this->l('was completed with errors'),
+                $e->getMessage()
+            ));
+        } catch (Error $e) {
             return $this->displayError(sprintf(
                 '%s %s: %s',
                 $this->l($jobNameFront),
@@ -643,7 +653,9 @@ class RetailCRM extends Module
             }
 
             return RetailcrmJsonResponse::successfullResponse();
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
+            return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
+        } catch (Error $exception) {
             return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
         }
     }
@@ -810,6 +822,9 @@ class RetailCRM extends Module
         } catch (Exception $e) {
             RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
             RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+        } catch (Error $e) {
+            RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
         }
 
         return false;
@@ -829,6 +844,9 @@ class RetailCRM extends Module
 
                 return RetailcrmExport::exportOrder($params['order']->id);
             } catch (Exception $e) {
+                RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
+                RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+            } catch (Error $e) {
                 RetailcrmLogger::writeCaller(__METHOD__, $e->getMessage());
                 RetailcrmLogger::writeNoCaller($e->getTraceAsString());
             }
@@ -1434,6 +1452,8 @@ class RetailCRM extends Module
      * Activity indicator in cache will be rewrited by current state.
      *
      * @return array
+     *
+     * @throws PrestaShopException
      */
     public static function getCachedCmsModulesList()
     {
@@ -1452,46 +1472,50 @@ class RetailCRM extends Module
             static::writeModulesCache($serializedModules);
 
             return static::$moduleListCache;
-        } else {
-            try {
-                if (is_array(static::$moduleListCache)) {
-                    return static::$moduleListCache;
-                }
+        }
 
-                $modulesList = static::requireModulesCache();
-
-                if (false === $modulesList) {
-                    Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'not exist');
-
-                    return static::getCachedCmsModulesList();
-                }
-
-                static::$moduleListCache = [];
-
-                foreach ($modulesList as $serializedModule) {
-                    $deserialized = json_decode($serializedModule);
-
-                    if ($deserialized instanceof stdClass
-                        && property_exists($deserialized, 'name')
-                        && property_exists($deserialized, 'active')
-                    ) {
-                        $deserialized->active = Module::isEnabled($deserialized->name);
-                        static::$moduleListCache[] = $deserialized;
-                    }
-                }
-
-                static::$moduleListCache = array_filter(static::$moduleListCache);
-                unset($modulesList);
-
+        try {
+            if (is_array(static::$moduleListCache)) {
                 return static::$moduleListCache;
-            } catch (Exception $exception) {
-                RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
-                RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-                Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'exception');
+            }
+
+            $modulesList = static::requireModulesCache();
+
+            if (false === $modulesList) {
+                Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'not exist');
 
                 return static::getCachedCmsModulesList();
             }
+
+            static::$moduleListCache = [];
+
+            foreach ($modulesList as $serializedModule) {
+                $deserialized = json_decode($serializedModule);
+
+                if ($deserialized instanceof stdClass
+                        && property_exists($deserialized, 'name')
+                        && property_exists($deserialized, 'active')
+                    ) {
+                    $deserialized->active = Module::isEnabled($deserialized->name);
+                    static::$moduleListCache[] = $deserialized;
+                }
+            }
+
+            static::$moduleListCache = array_filter(static::$moduleListCache);
+            unset($modulesList);
+
+            return static::$moduleListCache;
+        } catch (Exception $exception) {
+            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+        } catch (Error $exception) {
+            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
+            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
         }
+
+        Configuration::updateValue(static::MODULE_LIST_CACHE_CHECKSUM, 'exception');
+
+        return static::getCachedCmsModulesList();
     }
 
     /**

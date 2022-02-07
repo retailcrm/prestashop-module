@@ -217,22 +217,19 @@ class RetailcrmCartUploader
     {
         $shouldBeUploaded = true;
 
+        $messageTotal = sprintf('Failure while trying to get cart total (cart id=%d)', $cart->id);
+        $messageProducts = sprintf('Failure while trying to get cart products (cart id=%d)', $cart->id);
+
         try {
             $currentCartTotal = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 
             if (0 == $currentCartTotal) {
                 $shouldBeUploaded = false;
             }
-        } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(
-                __METHOD__,
-                sprintf('Failure while trying to get cart total (cart id=%d)', $cart->id)
-            );
-            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
-            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
-            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-
-            return true;
+        } catch (Exception $exception) {
+            return RetailcrmLogger::writeException(__METHOD__, $exception, $messageTotal, true);
+        } catch (Error $exception) {
+            return RetailcrmLogger::writeException(__METHOD__, $exception, $messageTotal, true);
         }
 
         try {
@@ -240,16 +237,10 @@ class RetailcrmCartUploader
             if (0 == count($cart->getProducts(true)) || !$shouldBeUploaded) {
                 return true;
             }
-        } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(
-                __METHOD__,
-                sprintf('Failure while trying to get cart products (cart id=%d)', $cart->id)
-            );
-            RetailcrmLogger::writeCaller(__METHOD__, 'Error message and stacktrace will be printed below');
-            RetailcrmLogger::writeCaller(__METHOD__, $exception->getMessage());
-            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
-
-            return true;
+        } catch (Exception $exception) {
+            return RetailcrmLogger::writeException(__METHOD__, $exception, $messageProducts, true);
+        } catch (Error $exception) {
+            return RetailcrmLogger::writeException(__METHOD__, $exception, $messageProducts, true);
         }
 
         return false;
@@ -275,12 +266,10 @@ class RetailcrmCartUploader
                 static::$paymentTypes[0],
                 static::$syncStatus
             );
-        } catch (\Exception $exception) {
-            RetailcrmLogger::writeCaller(
-                'abandonedCarts',
-                $exception->getMessage() . PHP_EOL . $exception->getTraceAsString()
-            );
-            RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+        } catch (Exception $exception) {
+            RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
+        } catch (Error $exception) {
+            RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
         }
 
         return $order;

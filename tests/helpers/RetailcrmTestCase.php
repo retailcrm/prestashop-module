@@ -42,8 +42,14 @@ if (class_exists('LegacyTests\Unit\ContextMocker')) {
 
 abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @var RetailcrmProxy
+     */
     private $apiMock;
 
+    /**
+     * @var PHPUnit_Framework_MockObject_MockObject
+     */
     protected $apiClientMock;
 
     protected $contextMock;

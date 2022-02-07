@@ -172,14 +172,10 @@ class RetailcrmCli
                 $jobName,
                 $result ? 'true' : 'false'
             ));
-        } catch (\Exception $exception) {
-            if ($exception instanceof RetailcrmJobManagerException && $exception->getPrevious() instanceof \Exception) {
-                $this->printStack($exception->getPrevious());
-            } else {
-                $this->printStack($exception);
-            }
-
-            self::clearCurrentJob($jobName);
+        } catch (Exception $exception) {
+            $this->handleException($jobName, $exception);
+        } catch (Error $exception) {
+            $this->handleException($jobName, $exception);
         }
 
         if (isset($result) && $result) {
@@ -190,7 +186,7 @@ class RetailcrmCli
     /**
      * Prints error details
      *
-     * @param \Exception $exception
+     * @param Exception|Error $exception
      * @param string $header
      */
     private function printStack($exception, $header = 'Error while executing a job: ')
@@ -361,7 +357,9 @@ class RetailcrmCli
             } else {
                 RetailcrmLogger::output('Job manager internal state was NOT cleared.');
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
+            $this->printStack($exception);
+        } catch (Error $exception) {
             $this->printStack($exception);
         }
     }
@@ -451,5 +449,21 @@ class RetailcrmCli
             'RetailcrmUpdateSinceIdEvent',
             'RetailcrmClearLogsEvent',
         ];
+    }
+
+    private function handleException($jobName, $exception)
+    {
+        if ($exception instanceof RetailcrmJobManagerException
+            && (
+                $exception->getPrevious() instanceof Exception
+                || $exception->getPrevious() instanceof Error
+            )
+        ) {
+            $this->printStack($exception->getPrevious());
+        } else {
+            $this->printStack($exception);
+        }
+
+        self::clearCurrentJob($jobName);
     }
 }

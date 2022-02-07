@@ -409,13 +409,9 @@ class RetailcrmReferences
                 return current($response['sites']);
             }
         } catch (Exception $e) {
-            RetailcrmLogger::writeCaller(
-                __METHOD__,
-                sprintf(
-                    'Error: %s',
-                    $e->getMessage()
-                )
-            );
+            RetailcrmLogger::writeException(__METHOD__, $e->getMessage(), null, false);
+        } catch (Error $e) {
+            RetailcrmLogger::writeException(__METHOD__, $e->getMessage(), null, false);
         }
 
         return null;

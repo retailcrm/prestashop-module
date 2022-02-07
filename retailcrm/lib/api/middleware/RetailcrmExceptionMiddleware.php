@@ -45,16 +45,51 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
     {
         try {
             $response = $next($request);
-        } catch (Exception $e) {
-            RetailcrmLogger::writeCaller($request->getMethod(), $e->getMessage());
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
-            $response = new RetailcrmApiResponse(500, json_encode([
-                'success' => false,
-                'errorMsg' => sprintf('Internal error: %s', $e->getMessage()),
-            ]));
+            $this->checkResponseType($response);
+        } catch (Exception $e) {
+            $response = $this->getInvalidResponse($request, $e);
+        } catch (Error $e) {
+            $response = $this->getInvalidResponse($request, $e);
         }
 
         return $response;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function checkResponseType($response)
+    {
+        if (!($response instanceof RetailcrmApiResponse)) {
+            throw new Exception(
+                sprintf(
+                    'Expected instance of `%s`, but `%s` given',
+                    RetailcrmApiResponse::class,
+                    (is_object($response) ? get_class($response) : gettype($response))
+                )
+            );
+        }
+    }
+
+    /**
+     * @param RetailcrmApiRequest $request
+     * @param Exception|Error $exception
+     *
+     * @return RetailcrmApiResponse
+     */
+    private function getInvalidResponse(RetailcrmApiRequest $request, $exception)
+    {
+        $errorMsg = sprintf('Internal error: %s', $exception->getMessage());
+
+        RetailcrmLogger::writeCaller($request->getMethod(), $errorMsg);
+        RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
+
+        return new RetailcrmApiResponse(
+            500, json_encode([
+                'success' => false,
+                'errorMsg' => $errorMsg,
+            ])
+        );
     }
 }
