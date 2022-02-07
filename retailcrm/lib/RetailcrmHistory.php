@@ -1260,12 +1260,11 @@ class RetailcrmHistory
 
     private static function changeOrderStatus($order, $orderToUpdate)
     {
-        $statusIsChanged = self::statusIsChanged($order, $orderToUpdate);
-
         $orderStatus = $order['status'];
+
         $orderStatusChanged = !empty(self::$statuses[$orderStatus]) && self::$statuses[$orderStatus] != $orderToUpdate->current_state;
 
-        if (!empty($orderStatus) && $statusIsChanged && $orderStatusChanged) {
+        if (!empty($orderStatus) && $orderStatusChanged) {
             $orderHistory = new OrderHistory();
             $orderHistory->id_employee = 0;
             $orderHistory->id_order = $orderToUpdate->id;
@@ -1781,16 +1780,7 @@ class RetailcrmHistory
             $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
                 ? $parsedExtId['id_order_detail'] : null;
 
-            if (!$product->checkQty($orderDetail->product_quantity)) {
-                $newStatus = self::setOutOfStockStatus(
-                    self::getOrderFromCrm($order['externalId']),
-                    $orderToUpdate
-                );
-
-                if ($newStatus) {
-                    $orderToUpdate->current_state = self::$statuses[$newStatus];
-                }
-            }
+            self::changePrestashopOrderStatus($order, $orderToUpdate);
 
             StockAvailable::updateQuantity(
                 $product_id,
@@ -1910,7 +1900,7 @@ class RetailcrmHistory
         return $orderToUpdate;
     }
 
-    private static function statusIsChanged($crmOrder, $prestashopOrder)
+    private static function changePrestashopOrderStatus($crmOrder, $prestashopOrder)
     {
         if (!isset($crmOrder['items'])) {
             return false;
