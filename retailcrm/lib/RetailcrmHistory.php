@@ -380,40 +380,43 @@ class RetailcrmHistory
         return $prestashopOrder;
     }
 
-    private static function updateOrderInPrestashop($order)
+    private static function updateOrderInPrestashop($crmOrder)
     {
-        $orderToUpdate = new Order((int) $order['externalId']);
-        if (!Validate::isLoadedObject($orderToUpdate)) {
+        $prestashopOrder = new Order((int) $crmOrder['externalId']);
+        if (!Validate::isLoadedObject($prestashopOrder)) {
             return;
         }
 
-        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $order, [
-            'orderToUpdate' => $orderToUpdate,
-        ]
-        );
+        $crmOrder = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $crmOrder, [
+            'orderToUpdate' => $prestashopOrder,
+        ]);
 
-        self::handleCustomerDataChange($orderToUpdate, $order);
+        self::handleCustomerDataChange($prestashopOrder, $crmOrder);
 
-        self::checkDeliveryChanges($order, $orderToUpdate);
+        self::checkDeliveryChanges($crmOrder, $prestashopOrder);
 
-        self::checkDeliveryTypeAndCost($order, $orderToUpdate);
+        self::checkDeliveryTypeAndCost($crmOrder, $prestashopOrder);
 
-        self::checkPaymentType($order, $orderToUpdate);
+        self::checkPaymentType($crmOrder, $prestashopOrder);
 
-        self::changeOrderTotals($order, $orderToUpdate);
+        self::changeOrderTotals($crmOrder, $prestashopOrder);
 
-        self::changeOrderItems($order, $orderToUpdate);
+        $crmOrder = self::cleanDeletedItems($crmOrder, $prestashopOrder);
 
-        self::changeOrderStatus($order, $orderToUpdate);
+        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder);
+
+        self::checkNewItems($crmOrder, $prestashopOrder);
+
+        self::updatePrestashopOrderStatus($crmOrder, $prestashopOrder);
 
         // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
 
-        if (isset($order['number']) && self::$receiveOrderNumber) {
-            $orderToUpdate->reference = $order['number'];
-            $orderToUpdate->update();
+        if (isset($crmOrder['number']) && self::$receiveOrderNumber) {
+            $prestashopOrder->reference = $crmOrder['number'];
+            $prestashopOrder->update();
         }
 
-        return $orderToUpdate;
+        return $prestashopOrder;
     }
 
     /**
@@ -597,41 +600,16 @@ class RetailcrmHistory
     {
         $outOfStockType = self::getOutOfStockType($crmOrder);
 
-        if (!$outOfStockType) {
-            return false;
+        if ($outOfStockType) {
+            return $outOfStockType;
         }
 
-        if (!isset(self::$statuses[$outOfStockType])) {
-            //TODO: Add handling undefined status
-            return false;
-        }
+        return false;
 
-        if (self::$statuses[$outOfStockType] == $cmsOrder->current_state) {
-            return false;
-        }
-
-        $orderHistory = new OrderHistory();
-        $orderHistory->id_order = $cmsOrder->id;
-        $orderHistory->id_order_state = self::$statuses[$outOfStockType];
-        $orderHistory->date_add = date('Y-m-d H:i:s');
-
-        self::loadInPrestashop($orderHistory, 'save');
-
-        RetailcrmLogger::writeDebug(
-            __METHOD__,
-            sprintf(
-                '<Order ID: %d> %s::%s',
-                $cmsOrder->id,
-                get_class($orderHistory),
-                'changeIdOrderState'
-            )
-        );
-
-        $orderHistory->changeIdOrderState(
-            (int) self::$statuses[$outOfStockType],
-            $cmsOrder->id,
-            true
-        );
+//        if (!isset(self::$statuses[$outOfStockType])) {
+//            //TODO: Add handling undefined status
+//            return false;
+//        }
 
         return $outOfStockType;
     }
@@ -1258,7 +1236,7 @@ class RetailcrmHistory
         self::$newItemsIdsByOrderId[$newOrder->id] = $newItemsIds;
     }
 
-    private static function changeOrderStatus($order, $orderToUpdate)
+    private static function updatePrestashopOrderStatus($order, $orderToUpdate)
     {
         $orderStatus = $order['status'];
 
@@ -1636,9 +1614,13 @@ class RetailcrmHistory
         return $customerBuilder;
     }
 
-    private static function cleanDeletedItems($order, $orderToUpdate)
+    private static function cleanDeletedItems($crmOrder, $orderToUpdate)
     {
-        foreach ($order['items'] as $key => $item) {
+        if (!isset($crmOrder['items']) || !is_array($crmOrder['items'])) {
+            return;
+        }
+
+        foreach ($crmOrder['items'] as $item) {
             if (!isset($item['delete']) || true != $item['delete']) {
                 continue;
             }
@@ -1667,24 +1649,24 @@ class RetailcrmHistory
                 $product_attribute_id,
                 $id_order_detail
             );
-            unset($order['items'][$key]);
         }
 
-        return $order;
+        return $crmOrder;
     }
 
-    private static function checkItemsQuantityAndDiscount($order, $orderToUpdate)
+    private static function checkItemsQuantityAndDiscount($crmOrder, $prestashopOrder)
     {
-        foreach ($orderToUpdate->getProductsDetail() as $orderItem) {
-            foreach ($order['items'] as $key => $item) {
-                if (RetailcrmOrderBuilder::isGiftItem($item)) {
+        $itemQuantities = [];
+        foreach ($prestashopOrder->getProductsDetail() as $orderItem) {
+            foreach ($crmOrder['items'] as $crmItem) {
+                if (RetailcrmOrderBuilder::isGiftItem($crmItem)) {
                     continue;
                 }
 
-                $parsedExtId = static::parseItemExternalId($item);
+                $parsedExtId = static::parseItemExternalId($crmItem);
                 $product_id = $parsedExtId['product_id'];
                 $product_attribute_id = $parsedExtId['product_attribute_id'];
-                $isExistingItem = !isset($item['create']);
+                $isExistingItem = !isset($crmItem['create']);
 
                 if (!$isExistingItem || $product_id != $orderItem['product_id'] || $product_attribute_id != $orderItem['product_attribute_id']) {
                     continue;
@@ -1695,16 +1677,18 @@ class RetailcrmHistory
                 $orderDetail = new OrderDetail($orderDetailId);
 
                 // price
-                if (isset($item['initialPrice'])) {
-                    $productPrice = round($item['initialPrice'], 2);
+                if (isset($crmItem['initialPrice'])) {
+                    $productPrice = round($crmItem['initialPrice'], 2);
                     $orderDetail->unit_price_tax_incl = $productPrice;
                 }
 
                 // quantity
-                if (isset($item['quantity']) && $item['quantity'] != $orderItem['product_quantity']) {
-                    $deltaQuantity = $orderDetail->product_quantity - $item['quantity'];
-                    $orderDetail->product_quantity = $item['quantity'];
-                    $orderDetail->product_quantity_in_stock = $item['quantity'];
+                if (isset($crmItem['quantity']) && $crmItem['quantity'] != $orderItem['product_quantity']) {
+                    $deltaQuantity = $orderDetail->product_quantity - $crmItem['quantity'];
+                    $orderDetail->product_quantity = $crmItem['quantity'];
+                    $orderDetail->product_quantity_in_stock = $crmItem['quantity'];
+
+                    $itemQuantities[$product_id] = StockAvailable::getQuantityAvailableByProduct($product_id);
 
                     StockAvailable::updateQuantity(
                         $product_id,
@@ -1714,17 +1698,22 @@ class RetailcrmHistory
                     );
                 }
 
-                $orderDetail->id_warehouse = !empty($orderToUpdate->id_warehouse)
-                    ? $orderToUpdate->id_warehouse : 0;
+                $orderDetail->id_warehouse = !empty($prestashopOrder->id_warehouse)
+                    ? $prestashopOrder->id_warehouse : 0;
 
                 self::loadInPrestashop($orderDetail, 'update');
-                unset($order['items'][$key]);
             }
         }
+
+        return $itemQuantities;
     }
 
     private static function checkNewItems($order, $orderToUpdate)
     {
+        if (!isset($crmOrder['items']) || !is_array($crmOrder['items'])) {
+            return;
+        }
+
         $isNewItemsExist = false;
         $newItemsIds = [];
         foreach ($order['items'] as $key => $newItem) {
@@ -1733,6 +1722,7 @@ class RetailcrmHistory
             }
 
             $isNewItem = isset($newItem['create']) ? $newItem['create'] : false;
+
             if (!$isNewItem) {
                 continue;
             }
@@ -2003,14 +1993,25 @@ class RetailcrmHistory
         return $cart;
     }
 
-    private static function changeOrderItems($order, $orderToUpdate)
+    private static function setOutOfStockStatusInCrm($crmOrder, $prestashopOrder)
     {
-        if (isset($order['items']) && is_array($order['items'])) {
-            $order = self::cleanDeletedItems($order, $orderToUpdate);
+        if (!isset($crmOrder['items']) || !is_array($crmOrder['items'])) {
+            return;
+        }
 
-            self::checkItemsQuantityAndDiscount($order, $orderToUpdate);
+        $quantities = self::checkItemsQuantityAndDiscount($crmOrder, $prestashopOrder);
 
-            self::checkNewItems($order, $orderToUpdate);
+        $outOfStockItems = array_filter($quantities, function ($value) {
+            if (1 > $value) {
+                return true;
+            }
+
+            return false;
+        });
+
+        if (0 < count($outOfStockItems)) {
+            $crmOrder['status'] = self::setOutOfStockStatus($crmOrder, $prestashopOrder);
+            self::$api->ordersEdit($crmOrder);
         }
     }
 
@@ -2024,15 +2025,9 @@ class RetailcrmHistory
         //TODO: add check empty statuses
 
         if (!empty($crmOrder['fullPaidAt'])) {
-            $outOfStockType = $statusArray['out_of_stock_paid'];
+            return $statusArray['out_of_stock_paid'];
         } else {
-            $outOfStockType = $statusArray['out_of_stock_not_paid'];
+            return $statusArray['out_of_stock_not_paid'];
         }
-
-        if ('' == $outOfStockType) {
-            return false;
-        }
-
-        return $outOfStockType;
     }
 }
