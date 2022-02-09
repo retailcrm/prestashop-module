@@ -36,45 +36,10 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
-{
-    protected function buildParams()
-    {
-        switch ($this->getCurrentLanguageISO()) {
-            case 'ru':
-                $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            case 'es':
-                $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            default:
-                $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-        }
-
-        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
-
-        $this->data = [
-            'assets' => $this->assets,
-            'apiUrl' => $settingsNames['urlName'],
-            'apiKey' => $settingsNames['apiKeyName'],
-            'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail,
-        ];
-    }
-
-    /**
-     * Set template data
-     */
-    protected function setTemplate()
-    {
-        $this->template = 'index.tpl';
-    }
-}
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('Location: ../');
+exit;

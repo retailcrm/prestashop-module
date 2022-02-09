@@ -57,7 +57,7 @@
             <div class="retail-menu">
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_connection" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_active"><span>{l s='Connection' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_delivery_types" class="retail-menu__btn retail-menu__btn_big{if in_array('delivery', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Delivery' mod='retailcrm'}<span/></a>
-                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_order_statuses" class="retail-menu__btn retail-menu__btn_big{if in_array('statuses', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Order statuses' mod='retailcrm'}<span/></a>
+                <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_order_statuses" class="retail-menu__btn retail-menu__btn_big{if in_array('status', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Order statuses' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_payment_types" class="retail-menu__btn retail-menu__btn_big{if in_array('payment', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Payment types' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_default_types" class="retail-menu__btn retail-menu__btn_big{if in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)} retail-menu__btn_error{/if}"><span>{l s='Default' mod='retailcrm'}<span/></a>
                 <a href="{$url_post|escape:'htmlall':'UTF-8'}&amp;configure=retailcrm" data-tab-trigger="rcrm_tab_stock" class="retail-menu__btn retail-menu__btn_big retail-menu__btn_active"><span>{l s='Stock' mod='retailcrm'}<span/></a>
@@ -234,6 +234,7 @@
                                             style="outline: none;{if $showUpdateButton} display: none;{/if}">{l s='Generate now' mod='retailcrm'}</button>
                                 </div>
                     </div>
+
                     <div id="rcrm_tab_delivery_types">
                         <div class="retail-form__title">
                             {l s='Delivery' mod='retailcrm'}
@@ -413,7 +414,7 @@
                                 <div class="retail-form__label">{l s='In this section you can check the orders export results and manualy upload order to' mod='retailcrm'} {$systemName|escape:'htmlall':'UTF-8'}</div>
                                 <div class="retail-form__row">
                                     <form action="{$retailControllerOrders|escape:'htmlall':'UTF-8'}"
-                                          id="retail-search-orders-form" method="GET">
+                                          id="retail-search-orders-form" method="POST">
                                         <input type="text" name="search-orders-value" value=""
                                                class="retail-form__area"
                                                placeholder="{l s='Orders IDs' mod='retailcrm'}">

@@ -36,45 +36,17 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
+require_once dirname(__FILE__) . '/../../bootstrap.php';
+
+class RetailcrmAdminPostAbstractController extends RetailcrmAdminAbstractController
 {
-    protected function buildParams()
+    public function postProcess()
     {
-        switch ($this->getCurrentLanguageISO()) {
-            case 'ru':
-                $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            case 'es':
-                $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            default:
-                $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-        }
-
-        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
-
-        $this->data = [
-            'assets' => $this->assets,
-            'apiUrl' => $settingsNames['urlName'],
-            'apiKey' => $settingsNames['apiKeyName'],
-            'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail,
-        ];
+        $this->ajaxDie(json_encode($this->getData()));
     }
 
-    /**
-     * Set template data
-     */
-    protected function setTemplate()
+    protected function getData()
     {
-        $this->template = 'index.tpl';
+        return [];
     }
 }

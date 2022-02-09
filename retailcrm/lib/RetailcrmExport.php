@@ -371,7 +371,7 @@ class RetailcrmExport
      *
      * @return bool
      *
-     * @throws PrestaShopObjectNotFoundExceptionCore
+     * @throws RetailcrmNotFoundException
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      * @throws Exception
@@ -383,16 +383,17 @@ class RetailcrmExport
         }
 
         $object = new Order($id);
+
+        if (!Validate::isLoadedObject($object)) {
+            throw new RetailcrmNotFoundException('Order not found');
+        }
+
         $customer = new Customer($object->id_customer);
         $apiResponse = static::$api->ordersGet($object->id);
         $existingOrder = [];
 
         if ($apiResponse->isSuccessful() && $apiResponse->offsetExists('order')) {
             $existingOrder = $apiResponse['order'];
-        }
-
-        if (!Validate::isLoadedObject($object)) {
-            throw new PrestaShopObjectNotFoundExceptionCore('Order not found');
         }
 
         $orderBuilder = new RetailcrmOrderBuilder();

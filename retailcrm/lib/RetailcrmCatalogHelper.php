@@ -95,11 +95,17 @@ class RetailcrmCatalogHelper
             $icmlInfo = [];
         }
 
+        $icmlInfo['isCatalogConnected'] = false;
+        $icmlInfo['isUrlActual'] = false;
+        $icmlInfo['siteId'] = null;
+
         $lastGenerated = self::getIcmlFileDate();
 
         if (false === $lastGenerated) {
             return $icmlInfo;
         }
+
+        $icmlInfo['isCatalogConnected'] = true;
 
         $icmlInfo['lastGenerated'] = $lastGenerated;
         $now = new DateTimeImmutable();

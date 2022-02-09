@@ -40,6 +40,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
 {
     protected $settings;
     protected $settingsNames;
+    /**
+     * @var RetailcrmSettings
+     */
+    private $settingsHelper;
 
     /**
      * RetailcrmSettingsTemplate constructor.
@@ -56,6 +60,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
 
         $this->settings = $settings;
         $this->settingsNames = $settingsNames;
+        $this->settingsHelper = new RetailcrmSettings($module);
     }
 
     /**
@@ -90,12 +95,12 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             $params['exportOrdersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
             $params['exportCustomersStepSize'] = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
             $params['lastRunDetails'] = RetailcrmJobManager::getLastRunDetails(true);
-            $params['currentJob'] = Configuration::get(RetailcrmJobManager::CURRENT_TASK);
-            $params['currentJobCli'] = Configuration::get(RetailcrmCli::CURRENT_TASK_CLI);
-            $params['retailcrmLogsInfo'] = RetailcrmLogger::getLogFilesInfo();
+            $params['currentJob'] = Configuration::get(RetailcrmJobManager::CURRENT_TASK); // todo move to function above
+            $params['currentJobCli'] = Configuration::get(RetailcrmCli::CURRENT_TASK_CLI); // todo move to function above
+            $params['retailcrmLogsInfo'] = RetailcrmLoggerHelper::getLogFilesInfo();
             $params['catalogInfoMultistore'] = RetailcrmCatalogHelper::getIcmlFileInfoMultistore();
             $params['shopsInfo'] = RetailcrmContextSwitcher::getShops();
-            $params['errorTabs'] = $this->module->validateStoredSettings();
+            $params['errorTabs'] = $this->settingsHelper->validateStoredSettings();
 
             $params['retailControllerOrders'] = RetailcrmTools::getAdminControllerUrl(
                 RetailcrmOrdersController::class

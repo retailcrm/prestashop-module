@@ -36,45 +36,38 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
+class RetailcrmSettingsItemJson extends RetailcrmSettingsItem
 {
-    protected function buildParams()
+    public function getValue()
     {
-        switch ($this->getCurrentLanguageISO()) {
-            case 'ru':
-                $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            case 'es':
-                $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            default:
-                $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
+        $value = parent::getValue();
+
+        if (is_string($value)) {
+            return json_decode($value, true);
         }
 
-        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
+        if (is_array($value)) {
+            return $value;
+        }
 
-        $this->data = [
-            'assets' => $this->assets,
-            'apiUrl' => $settingsNames['urlName'],
-            'apiKey' => $settingsNames['apiKeyName'],
-            'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail,
-        ];
+        return [];
     }
 
-    /**
-     * Set template data
-     */
-    protected function setTemplate()
+    public function getValueForUpdate() // todo change to protected
     {
-        $this->template = 'index.tpl';
+        $value = parent::getValue();
+
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
+    }
+
+    public function getValueStored()
+    {
+        $valueStored = parent::getValueStored();
+
+        return (array) json_decode($valueStored, true);
     }
 }

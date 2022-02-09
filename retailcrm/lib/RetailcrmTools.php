@@ -383,7 +383,7 @@ class RetailcrmTools
     public static function validateCrmAddress($address)
     {
         if (preg_match("/https:\/\/(.*).(retailcrm.(pro|ru|es)|simla.com)/", $address)) {
-            return true;
+            return Validate::isGenericName($address);
         }
 
         return false;

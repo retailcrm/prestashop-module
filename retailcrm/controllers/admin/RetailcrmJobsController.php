@@ -38,34 +38,95 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
+class RetailcrmJobsController extends RetailcrmAdminPostAbstractController
 {
     protected function getData()
     {
-        $orders = Tools::getValue('orders', []);
-        $page = (int) (Tools::getValue('page', 1));
-
-        switch (Tools::getValue('filter')) {
-            case '1':
-                $withErrors = false;
-                break;
-            case '2':
-                $withErrors = true;
-                break;
+        switch ($_SERVER['REQUEST_METHOD']) {
+            case 'POST':
+                return $this->postHandler();
+            case 'GET':
+                return $this->getHandler();
             default:
-                $withErrors = null;
+                return [];
+        }
+    }
+
+    protected function postHandler()
+    {
+        if (!Tools::getIsset('jobName') && !Tools::getIsset('reset')) {
+            return [
+                'success' => false,
+                'errorMsg' => 'Bad request',
+            ];
         }
 
+        if (Tools::getIsset('reset')) {
+            return $this->resetJobManager();
+        }
+
+        $jobName = Tools::getValue('jobName');
+
+        return $this->runJob($jobName);
+    }
+
+    protected function getHandler()
+    {
+        return [
+            'success' => true,
+            'result' => RetailcrmSettingsHelper::getJobsInfo(),
+        ];
+    }
+
+    private function resetJobManager()
+    {
+        $errors = [];
         try {
-            return array_merge([
+            if (!RetailcrmJobManager::reset()) {
+                $errors[] = 'Job manager internal state was NOT cleared.';
+            }
+            if (!RetailcrmCli::clearCurrentJob(null)) {
+                $errors[] = 'CLI job was NOT cleared';
+            }
+
+            if (!empty($errors)) {
+                return [
+                    'success' => false,
+                    'errorMsg' => implode(' ', $errors),
+                ];
+            }
+
+            return [
                 'success' => true,
-            ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
+            ];
         } catch (Exception $e) {
             return [
                 'success' => false,
                 'errorMsg' => $e->getMessage(),
             ];
-        } catch (Error $e) {
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
+        }
+    }
+
+    private function runJob($jobName)
+    {
+        try {
+            $result = RetailcrmJobManager::execManualJob($jobName);
+
+            return [
+                'success' => true,
+                'result' => $result,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'errorMsg' => $e->getMessage(),

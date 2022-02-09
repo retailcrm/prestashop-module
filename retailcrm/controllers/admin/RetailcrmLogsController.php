@@ -38,34 +38,75 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
+class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
 {
     protected function getData()
     {
-        $orders = Tools::getValue('orders', []);
-        $page = (int) (Tools::getValue('page', 1));
-
-        switch (Tools::getValue('filter')) {
-            case '1':
-                $withErrors = false;
-                break;
-            case '2':
-                $withErrors = true;
-                break;
+        switch ($_SERVER['REQUEST_METHOD']) {
+            case 'POST':
+                return $this->postHandler();
+            case 'GET':
+                return $this->getHandler();
             default:
-                $withErrors = null;
+                return [];
+        }
+    }
+
+    protected function postHandler()
+    {
+        if (!Tools::getIsset('logName') && !Tools::getIsset('all')) {
+            return [
+                'success' => false,
+                'errorMsg' => 'Bad request',
+            ];
         }
 
+        if (Tools::getIsset('all')) {
+            return $this->downloadAll();
+        }
+
+        $logName = Tools::getValue('logName');
+
+        return $this->download($logName);
+    }
+
+    protected function getHandler()
+    {
+        return [
+            'success' => true,
+            'result' => RetailcrmLoggerHelper::getLogFilesInfo(),
+        ];
+    }
+
+    private function downloadAll()
+    {
         try {
-            return array_merge([
-                'success' => true,
-            ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
+            return RetailcrmLoggerHelper::downloadAll();
         } catch (Exception $e) {
             return [
                 'success' => false,
                 'errorMsg' => $e->getMessage(),
             ];
-        } catch (Error $e) {
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
+        }
+    }
+
+    private function download($logName)
+    {
+        try {
+            return [
+                'success' => RetailcrmLoggerHelper::download($logName),
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'errorMsg' => $e->getMessage(),

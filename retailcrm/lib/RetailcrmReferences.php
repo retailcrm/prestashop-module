@@ -64,7 +64,7 @@ class RetailcrmReferences
         );
     }
 
-    public function getDeliveryTypes()
+    public function getDeliveryTypes() // todo rewrite for vue end remove old one
     {
         $deliveryTypes = [];
         $apiDeliveryTypes = $this->getApiDeliveryTypes();
@@ -74,7 +74,7 @@ class RetailcrmReferences
                 $deliveryTypes[] = [
                     'type' => 'select',
                     'label' => $carrier['name'],
-                    'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
+                    'name' => RetailcrmSettingsHelper::getSettingsNames()['deliveryName'] . '[' . $carrier['id_carrier'] . ']',
                     'subname' => $carrier['id_carrier'],
                     'required' => false,
                     'options' => [
@@ -102,7 +102,7 @@ class RetailcrmReferences
                     $statusTypes[] = [
                         'type' => 'select',
                         'label' => $state['name'],
-                        'name' => "RETAILCRM_API_STATUS[$key]",
+                        'name' => RetailcrmSettingsHelper::getSettingsNames()['statusName'] . "[$key]",
                         'subname' => $key,
                         'required' => false,
                         'options' => [
@@ -127,7 +127,7 @@ class RetailcrmReferences
             $statusTypes[] = [
                 'type' => 'select',
                 'label' => $state,
-                'name' => "RETAILCRM_API_OUT_OF_STOCK_STATUS[$key]",
+                'name' => RetailcrmSettingsHelper::getSettingsNames()['outOfStockStatusName'] . "[$key]",
                 'subname' => $key,
                 'required' => false,
                 'options' => [
@@ -152,7 +152,7 @@ class RetailcrmReferences
                 $paymentTypes[] = [
                     'type' => 'select',
                     'label' => $payment['name'],
-                    'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
+                    'name' => RetailcrmSettingsHelper::getSettingsNames()['paymentName'] . '[' . $payment['code'] . ']',
                     'subname' => $payment['code'],
                     'required' => false,
                     'options' => [
@@ -174,6 +174,7 @@ class RetailcrmReferences
 
         $paymentDeliveryTypes = [];
 
+        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
         if (!empty($this->carriers)) {
             $deliveryTypes[] = [
                 'id_option' => '',
@@ -190,7 +191,7 @@ class RetailcrmReferences
             $paymentDeliveryTypes[] = [
                 'type' => 'select',
                 'label' => $arParams[0],
-                'name' => 'RETAILCRM_API_DELIVERY_DEFAULT',
+                'name' => $settingsNames['deliveryDefaultName'],
                 'required' => false,
                 'options' => [
                     'query' => $deliveryTypes,
@@ -216,7 +217,7 @@ class RetailcrmReferences
             $paymentDeliveryTypes[] = [
                 'type' => 'select',
                 'label' => $arParams[1],
-                'name' => 'RETAILCRM_API_PAYMENT_DEFAULT',
+                'name' => $settingsNames['paymentDefaultName'],
                 'required' => false,
                 'options' => [
                     'query' => $paymentTypes,
@@ -296,7 +297,60 @@ class RetailcrmReferences
         return $this->getApiStatuses();
     }
 
-    public function getApiDeliveryTypes()
+    public function getApiStatusesWithGroup()
+    {
+        $request = $this->api->statusesList();
+        $requestGroups = $this->api->statusGroupsList();
+
+        if (!$request || !$requestGroups) {
+            return [];
+        }
+
+        $crmStatusTypes = [];
+        foreach ($request->statuses as $sType) {
+            if (!$sType['active']) {
+                continue;
+            }
+
+            $crmStatusTypes[$sType['group']]['statuses'][] = [
+                'code' => $sType['code'],
+                'name' => $sType['name'],
+                'ordering' => $sType['ordering'],
+            ];
+        }
+
+        foreach ($requestGroups->statusGroups as $statusGroup) {
+            if (!isset($crmStatusTypes[$statusGroup['code']])) {
+                continue;
+            }
+
+            $crmStatusTypes[$statusGroup['code']]['code'] = $statusGroup['code'];
+            $crmStatusTypes[$statusGroup['code']]['name'] = $statusGroup['name'];
+            $crmStatusTypes[$statusGroup['code']]['ordering'] = $statusGroup['ordering'];
+        }
+
+        usort($crmStatusTypes, function ($a, $b) {
+            if ($a['ordering'] == $b['ordering']) {
+                return 0;
+            } else {
+                return $a['ordering'] < $b['ordering'] ? -1 : 1;
+            }
+        });
+
+        foreach ($crmStatusTypes as &$crmStatusType) {
+            usort($crmStatusType['statuses'], function ($a, $b) {
+                if ($a['ordering'] == $b['ordering']) {
+                    return 0;
+                } else {
+                    return $a['ordering'] < $b['ordering'] ? -1 : 1;
+                }
+            });
+        }
+
+        return $crmStatusTypes;
+    }
+
+    public function getApiDeliveryTypes() // todo rewrite for vue end remove old one
     {
         $crmDeliveryTypes = [];
         $request = $this->api->deliveryTypesList();

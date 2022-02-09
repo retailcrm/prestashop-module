@@ -894,7 +894,7 @@ class RetailcrmOrderBuilder
         $order,
         $customer = null,
         $orderCart = null,
-        $isStatusExport = false,
+        $isStatusExport = false, // todo always false -> remove unused parameter
         $preferCustomerAddress = false,
         $dataFromCart = false,
         $contactPersonId = '',
@@ -915,7 +915,7 @@ class RetailcrmOrderBuilder
             $paymentType = $order->payment;
         }
 
-        if (0 == $order->current_state) {
+        if (0 == $order->current_state) { // todo refactor
             $order_status = $statusExport;
 
             if (!$isStatusExport) {

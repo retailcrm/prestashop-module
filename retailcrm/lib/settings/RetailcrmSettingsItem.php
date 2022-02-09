@@ -36,45 +36,59 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
+class RetailcrmSettingsItem
 {
-    protected function buildParams()
+    private $paramKey;
+    protected $configKey;
+
+    public function __construct($paramKey, $configKey)
     {
-        switch ($this->getCurrentLanguageISO()) {
-            case 'ru':
-                $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            case 'es':
-                $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            default:
-                $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-        }
-
-        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
-
-        $this->data = [
-            'assets' => $this->assets,
-            'apiUrl' => $settingsNames['urlName'],
-            'apiKey' => $settingsNames['apiKeyName'],
-            'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail,
-        ];
+        $this->paramKey = $paramKey;
+        $this->configKey = $configKey;
     }
 
-    /**
-     * Set template data
-     */
-    protected function setTemplate()
+    public function updateValue()
     {
-        $this->template = 'index.tpl';
+        if (!$this->issetValue()) {
+            return;
+        }
+
+        $value = $this->getValueForUpdate();
+
+        Configuration::updateValue($this->configKey, $value);
+    }
+
+    public function issetValue()
+    {
+        return Tools::getIsset($this->paramKey);
+    }
+
+    public function deleteValue()
+    {
+        return Configuration::deleteByName($this->configKey);
+    }
+
+    public function getValue()
+    {
+        return Tools::getValue($this->paramKey);
+    }
+
+    public function getValueForUpdate() // todo make protected
+    {
+        return $this->getValue();
+    }
+
+    public function getValueStored()
+    {
+        return Configuration::get($this->configKey, null, null, null, '');
+    }
+
+    public function getValueWithStored()
+    {
+        if ($this->issetValue()) {
+            return $this->getValue();
+        }
+
+        return $this->getValueStored();
     }
 }

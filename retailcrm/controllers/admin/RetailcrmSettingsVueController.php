@@ -36,45 +36,47 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmBaseTemplate extends RetailcrmAbstractTemplate
+require_once dirname(__FILE__) . '/../../bootstrap.php';
+
+class RetailcrmSettingsVueController extends RetailcrmAdminAbstractController
 {
-    protected function buildParams()
+    public static function getParentId()
     {
-        switch ($this->getCurrentLanguageISO()) {
-            case 'ru':
-                $promoVideoUrl = 'VEatkEGJfGw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            case 'es':
-                $promoVideoUrl = 'LdJFoqOkLj8';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-            default:
-                $promoVideoUrl = 'wLjtULfZvOw';
-                $registerUrl = 'https://account.simla.com/lead-form/?cp=https%3A%2F%2Faccount.simla.com%2Flead-form%2F';
-                $supportEmail = 'help@simla.com';
-                break;
-        }
-
-        $settingsNames = RetailcrmSettingsHelper::getSettingsNames();
-
-        $this->data = [
-            'assets' => $this->assets,
-            'apiUrl' => $settingsNames['urlName'],
-            'apiKey' => $settingsNames['apiKeyName'],
-            'promoVideoUrl' => $promoVideoUrl,
-            'registerUrl' => $registerUrl,
-            'supportEmail' => $supportEmail,
-        ];
+        return (int) Tab::getIdFromClassName('IMPROVE');
     }
 
-    /**
-     * Set template data
-     */
-    protected function setTemplate()
+    public static function getIcon()
     {
-        $this->template = 'index.tpl';
+        return 'shop';
+    }
+
+    public static function getPosition()
+    {
+        return 7;
+    }
+
+    public static function getName()
+    {
+        $name = [];
+
+        foreach (Language::getLanguages(true) as $lang) {
+            $name[$lang['id_lang']] = 'Simla.com (Vue.js)';
+        }
+
+        return $name;
+    }
+
+    public function postProcess()
+    {
+        $link = $this->context->link->getAdminLink('AdminModules', true, [], [
+            'configure' => 'retailcrm',
+            'vue' => true,
+        ]);
+
+        if (version_compare(_PS_VERSION_, '1.7.0.3', '<')) {
+            $link .= '&module_name=retailcrm&configure=retailcrm&vue';
+        }
+
+        $this->setRedirectAfter($link);
     }
 }

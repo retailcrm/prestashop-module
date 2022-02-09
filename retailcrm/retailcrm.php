@@ -78,7 +78,6 @@ class RetailCRM extends Module
     const ENABLE_ORDER_NUMBER_RECEIVING = 'RETAILCRM_ENABLE_ORDER_NUMBER_RECEIVING';
     const ENABLE_DEBUG_MODE = 'RETAILCRM_ENABLE_DEBUG_MODE';
 
-    const LATEST_API_VERSION = '5';
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
@@ -92,17 +91,13 @@ class RetailCRM extends Module
         'RetailcrmClearLogsEvent' => 'Clearing logs',
     ];
 
-    const TABS_TO_VALIDATE = [
-        'delivery' => self::DELIVERY,
-        'statuses' => self::STATUS,
-        'payment' => self::PAYMENT,
-        'deliveryDefault' => self::DELIVERY_DEFAULT,
-        'paymentDefault' => self::PAYMENT_DEFAULT,
-    ];
-
     // todo dynamically define controller classes
     const ADMIN_CONTROLLERS = [
         RetailcrmSettingsController::class,
+        RetailcrmSettingsUpdateController::class,
+        RetailcrmSettingsVueController::class, // todo remove debug
+        RetailcrmJobsController::class,
+        RetailcrmLogsController::class,
         RetailcrmOrdersController::class,
         RetailcrmOrdersUploadController::class,
     ];
@@ -286,7 +281,7 @@ class RetailCRM extends Module
         }
 
         return parent::uninstall()
-            && Configuration::deleteByName(static::API_URL)
+            && Configuration::deleteByName(static::API_URL) // todo delete with SettingsItems class
             && Configuration::deleteByName(static::API_KEY)
             && Configuration::deleteByName(static::DELIVERY)
             && Configuration::deleteByName(static::STATUS)
@@ -415,10 +410,6 @@ class RetailCRM extends Module
 
     public function getContent()
     {
-        $output = null;
-        $address = Configuration::get(static::API_URL);
-        $token = Configuration::get(static::API_KEY);
-
         if (Tools::isSubmit('submit' . $this->name)) {
             // todo all those vars & ifs to one $command var and check in switch
             $jobName = (string) (Tools::getValue(static::RUN_JOB));
@@ -430,7 +421,7 @@ class RetailCRM extends Module
             $resetJobs = (bool) (Tools::getValue(static::RESET_JOBS));
 
             if (!empty($ordersIds)) {
-                $output .= $this->uploadOrders(RetailcrmTools::partitionId($ordersIds));
+                $this->uploadOrders(RetailcrmTools::partitionId($ordersIds)); // upload through controller
             } elseif (!empty($jobName)) {
                 $this->runJobMultistore($jobName);
             } elseif (!empty($exportOrders)) {
@@ -444,12 +435,30 @@ class RetailCRM extends Module
             } elseif ($resetJobs) {
                 return $this->resetJobs();
             } else {
-                $output .= $this->saveSettings();
+                $settings = new RetailcrmSettings($this);
+                $response = $settings->save();
+
+                RetailcrmLogger::writeCaller('SAVESETTINGS', json_encode($response, 128));
+
+                if (isset($response['errors'])) {
+                    foreach ($response['errors'] as $error) {
+                        $this->displayError($error);
+                    }
+                }
+
+                if (isset($response['warnings'])) {
+                    foreach ($response['warnings'] as $warning) {
+                        $this->displayWarning($warning);
+                    }
+                }
             }
         }
 
+        // todo remove
+        $address = Configuration::get(static::API_URL);
+        $token = Configuration::get(static::API_KEY);
         if ($address && $token) {
-            $this->api = new RetailcrmProxy($address, $token, $this->log);
+            $this->api = new RetailcrmProxy($address, $token);
             $this->reference = new RetailcrmReferences($this->api);
         }
 
@@ -494,7 +503,7 @@ class RetailCRM extends Module
 
             try {
                 $response = RetailcrmExport::exportOrder($orderId);
-            } catch (PrestaShopObjectNotFoundExceptionCore $e) {
+            } catch (RetailcrmNotFoundException $e) {
                 $skippedOrders[] = $orderId;
             } catch (Exception $e) {
                 $this->displayError($e->getMessage());
@@ -645,7 +654,7 @@ class RetailCRM extends Module
 
         $name = (string) (Tools::getValue(static::DOWNLOAD_LOGS_NAME));
         if (!empty($name)) {
-            if (false === ($filePath = RetailcrmLogger::checkFileName($name))) {
+            if (false === ($filePath = RetailcrmLoggerHelper::checkFileName($name))) {
                 return false;
             }
 
@@ -663,7 +672,7 @@ class RetailCRM extends Module
             $zipFile = new ZipArchive();
             $zipFile->open($zipname, ZipArchive::CREATE);
 
-            foreach (RetailcrmLogger::getLogFilesInfo() as $logFile) {
+            foreach (RetailcrmLoggerHelper::getLogFilesInfo() as $logFile) {
                 $zipFile->addFile($logFile['path'], $logFile['name']);
             }
 
@@ -856,6 +865,7 @@ class RetailCRM extends Module
 
     public function hookActionOrderEdited($params)
     {
+        // todo refactor it to call hookActionOrderStatusPostUpdate
         if (!$this->api) {
             return false;
         }
@@ -922,6 +932,8 @@ class RetailCRM extends Module
 
     public function hookActionPaymentCCAdd($params)
     {
+        // todo add checks that module configured correctly
+
         $payments = array_filter(json_decode(Configuration::get(static::PAYMENT), true));
         $paymentType = false;
         $externalId = false;
@@ -1006,102 +1018,6 @@ class RetailCRM extends Module
     }
 
     /**
-     * Save settings handler
-     *
-     * @return string
-     */
-    private function saveSettings()
-    {
-        $output = '';
-        $url = (string) Tools::getValue(static::API_URL);
-        $apiKey = (string) Tools::getValue(static::API_KEY);
-        $consultantCode = (string) Tools::getValue(static::CONSULTANT_SCRIPT);
-
-        if (!empty($url) && !empty($apiKey)) {
-            $settings = [
-                'url' => rtrim($url, '/'),
-                'apiKey' => $apiKey,
-                'address' => (string) (Tools::getValue(static::API_URL)),
-                'delivery' => json_encode(Tools::getValue(static::DELIVERY)),
-                'status' => json_encode(Tools::getValue(static::STATUS)),
-                'outOfStockStatus' => json_encode(Tools::getValue(static::OUT_OF_STOCK_STATUS)),
-                'payment' => json_encode(Tools::getValue(static::PAYMENT)),
-                'deliveryDefault' => json_encode(Tools::getValue(static::DELIVERY_DEFAULT)),
-                'paymentDefault' => json_encode(Tools::getValue(static::PAYMENT_DEFAULT)),
-                'statusExport' => (string) (Tools::getValue(static::STATUS_EXPORT)),
-                'enableCorporate' => (false !== Tools::getValue(static::ENABLE_CORPORATE_CLIENTS)),
-                'enableHistoryUploads' => (false !== Tools::getValue(static::ENABLE_HISTORY_UPLOADS)),
-                'enableBalancesReceiving' => (false !== Tools::getValue(static::ENABLE_BALANCES_RECEIVING)),
-                'enableOrderNumberSending' => (false !== Tools::getValue(static::ENABLE_ORDER_NUMBER_SENDING)),
-                'enableOrderNumberReceiving' => (false !== Tools::getValue(static::ENABLE_ORDER_NUMBER_RECEIVING)),
-                'debugMode' => (false !== Tools::getValue(static::ENABLE_DEBUG_MODE)),
-                'webJobs' => (false !== Tools::getValue(static::ENABLE_WEB_JOBS) ? '1' : '0'),
-                'collectorActive' => (false !== Tools::getValue(static::COLLECTOR_ACTIVE)),
-                'collectorKey' => (string) (Tools::getValue(static::COLLECTOR_KEY)),
-                'clientId' => Configuration::get(static::CLIENT_ID),
-                'synchronizeCartsActive' => (false !== Tools::getValue(static::SYNC_CARTS_ACTIVE)),
-                'synchronizedCartStatus' => (string) (Tools::getValue(static::SYNC_CARTS_STATUS)),
-                'synchronizedCartDelay' => (string) (Tools::getValue(static::SYNC_CARTS_DELAY)),
-            ];
-
-            $output .= $this->validateForm($settings, $output);
-
-            if ('' === $output) {
-                Configuration::updateValue(static::API_URL, $settings['url']);
-                Configuration::updateValue(static::API_KEY, $settings['apiKey']);
-                Configuration::updateValue(static::DELIVERY, $settings['delivery']);
-                Configuration::updateValue(static::STATUS, $settings['status']);
-                Configuration::updateValue(static::OUT_OF_STOCK_STATUS, $settings['outOfStockStatus']);
-                Configuration::updateValue(static::PAYMENT, $settings['payment']);
-                Configuration::updateValue(static::DELIVERY_DEFAULT, $settings['deliveryDefault']);
-                Configuration::updateValue(static::PAYMENT_DEFAULT, $settings['paymentDefault']);
-                Configuration::updateValue(static::STATUS_EXPORT, $settings['statusExport']);
-                Configuration::updateValue(static::ENABLE_CORPORATE_CLIENTS, $settings['enableCorporate']);
-                Configuration::updateValue(static::ENABLE_HISTORY_UPLOADS, $settings['enableHistoryUploads']);
-                Configuration::updateValue(static::ENABLE_BALANCES_RECEIVING, $settings['enableBalancesReceiving']);
-                Configuration::updateValue(static::ENABLE_ORDER_NUMBER_SENDING, $settings['enableOrderNumberSending']);
-                Configuration::updateValue(
-                    static::ENABLE_ORDER_NUMBER_RECEIVING,
-                    $settings['enableOrderNumberReceiving']
-                );
-                Configuration::updateValue(static::COLLECTOR_ACTIVE, $settings['collectorActive']);
-                Configuration::updateValue(static::COLLECTOR_KEY, $settings['collectorKey']);
-                Configuration::updateValue(static::SYNC_CARTS_ACTIVE, $settings['synchronizeCartsActive']);
-                Configuration::updateValue(static::SYNC_CARTS_STATUS, $settings['synchronizedCartStatus']);
-                Configuration::updateValue(static::SYNC_CARTS_DELAY, $settings['synchronizedCartDelay']);
-                Configuration::updateValue(static::ENABLE_DEBUG_MODE, $settings['debugMode']);
-                Configuration::updateValue(static::ENABLE_WEB_JOBS, $settings['webJobs']);
-
-                $this->apiUrl = $settings['url'];
-                $this->apiKey = $settings['apiKey'];
-                $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, $this->log);
-                $this->reference = new RetailcrmReferences($this->api);
-
-                if (0 == $this->isRegisteredInHook('actionPaymentCCAdd')) {
-                    $this->registerHook('actionPaymentCCAdd');
-                }
-            }
-        }
-
-        if (!empty($consultantCode)) {
-            $extractor = new RetailcrmConsultantRcctExtractor();
-            $rcct = $extractor->setConsultantScript($consultantCode)->build()->getDataString();
-
-            if (!empty($rcct)) {
-                Configuration::updateValue(static::CONSULTANT_SCRIPT, $consultantCode, true);
-                Configuration::updateValue(static::CONSULTANT_RCCT, $rcct);
-                Cache::getInstance()->set(static::CONSULTANT_RCCT, $rcct);
-            } else {
-                Configuration::deleteByName(static::CONSULTANT_SCRIPT);
-                Configuration::deleteByName(static::CONSULTANT_RCCT);
-                Cache::getInstance()->delete(static::CONSULTANT_RCCT);
-            }
-        }
-
-        return $output;
-    }
-
-    /**
      * Activate/deactivate module in marketplace retailCRM
      *
      * @param \RetailcrmProxy $apiClient
@@ -1140,37 +1056,6 @@ class RetailCRM extends Module
     }
 
     /**
-     * Returns true if provided connection supports API v5
-     *
-     * @param $settings
-     *
-     * @return bool
-     */
-    private function validateApiVersion($settings)
-    {
-        /** @var \RetailcrmProxy|\RetailcrmApiClientV5 $api */
-        $api = new RetailcrmProxy(
-            $settings['url'],
-            $settings['apiKey'],
-            $this->log
-        );
-
-        $response = $api->apiVersions();
-
-        if (false !== $response && isset($response['versions']) && !empty($response['versions'])) {
-            foreach ($response['versions'] as $version) {
-                if ($version == static::LATEST_API_VERSION
-                    || Tools::substr($version, 0, 1) == static::LATEST_API_VERSION
-                ) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Workaround to pass translate method into another classes
      *
      * @param $text
@@ -1180,201 +1065,6 @@ class RetailCRM extends Module
     public function translate($text)
     {
         return $this->l($text);
-    }
-
-    /**
-     * Cart status must be present and must be unique to cartsIds only
-     *
-     * @param string $statuses
-     * @param string $statusExport
-     * @param string $cartStatus
-     *
-     * @return bool
-     */
-    private function validateCartStatus($statuses, $statusExport, $cartStatus)
-    {
-        if ('' != $cartStatus && ($cartStatus == $statusExport || stripos($statuses, $cartStatus))) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Returns false if mapping is not valid in one-to-one relation
-     *
-     * @param string $statuses
-     *
-     * @return bool
-     */
-    private function validateMappingOneToOne($statuses)
-    {
-        $data = json_decode($statuses, true);
-
-        if (JSON_ERROR_NONE != json_last_error() || !is_array($data)) {
-            return true;
-        }
-
-        $statusesList = array_filter(array_values($data));
-
-        if (count($statusesList) != count(array_unique($statusesList))) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public function validateStoredSettings()
-    {
-        $output = [];
-        $checkApiMethods = [
-            'delivery' => 'getApiDeliveryTypes',
-            'statuses' => 'getApiStatuses',
-            'payment' => 'getApiPaymentTypes',
-        ];
-
-        foreach (self::TABS_TO_VALIDATE as $tabName => $settingName) {
-            $storedValues = Tools::getIsset($settingName)
-                ? Tools::getValue($settingName)
-                : json_decode(Configuration::get($settingName), true);
-
-            if (false !== $storedValues && null !== $storedValues) {
-                if (!$this->validateMappingSelected($storedValues)) {
-                    $output[] = $tabName;
-                } else {
-                    if (array_key_exists($tabName, $checkApiMethods)) {
-                        $crmValues = call_user_func([$this->reference, $checkApiMethods[$tabName]]);
-                        $crmCodes = array_column($crmValues, 'id_option');
-
-                        if (!empty(array_diff($storedValues, $crmCodes))) {
-                            $output[] = $tabName;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!$this->validateCatalogMultistore()) {
-            $output[] = 'catalog';
-        }
-
-        return $output;
-    }
-
-    private function validateMappingSelected($values)
-    {
-        if (is_array($values)) {
-            foreach ($values as $item) {
-                if (empty($item)) {
-                    return false;
-                }
-            }
-        } else {
-            if (empty($values)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Catalog info validator
-     *
-     * @return bool
-     */
-    public function validateCatalog()
-    {
-        $icmlInfo = RetailcrmCatalogHelper::getIcmlFileInfo();
-
-        if (!$icmlInfo || !isset($icmlInfo['lastGenerated'])) {
-            $urlConfiguredAt = RetailcrmTools::getConfigurationCreatedAtByName(self::API_KEY);
-
-            if ($urlConfiguredAt instanceof DateTimeImmutable) {
-                $now = new DateTimeImmutable();
-                /** @var DateInterval $diff */
-                $diff = $urlConfiguredAt->diff($now);
-
-                if (($diff->days * 24 + $diff->h) > 4) {
-                    return false;
-                }
-            }
-        } elseif ($icmlInfo['isOutdated'] || !$icmlInfo['isUrlActual']) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Catalog info validator for multistore
-     *
-     * @return bool
-     */
-    private function validateCatalogMultistore()
-    {
-        $results = RetailcrmContextSwitcher::runInContext([$this, 'validateCatalog']);
-        $results = array_filter($results, function ($item) {
-            return !$item;
-        });
-
-        return empty($results);
-    }
-
-    /**
-     * Settings form validator
-     *
-     * @param $settings
-     * @param $output
-     *
-     * @return string
-     */
-    private function validateForm($settings, $output)
-    {
-        if (!RetailcrmTools::validateCrmAddress($settings['url']) || !Validate::isGenericName($settings['url'])) {
-            $output .= $this->displayError($this->l('Invalid or empty crm address'));
-        } elseif (!$settings['apiKey'] || '' == $settings['apiKey']) {
-            $output .= $this->displayError($this->l('Invalid or empty crm api token'));
-        } elseif (!$this->validateApiVersion($settings)) {
-            $output .= $this->displayError($this->l('The selected version of the API is unavailable'));
-        } elseif (!$this->validateCartStatus(
-            $settings['status'],
-            $settings['statusExport'],
-            $settings['synchronizedCartStatus']
-        )) {
-            $output .= $this->displayError(
-                $this->l('Order status for abandoned carts should not be used in other settings')
-            );
-        } elseif (!$this->validateMappingOneToOne($settings['status'])) {
-            $output .= $this->displayError(
-                $this->l('Order statuses should not repeat in statuses matrix')
-            );
-        } elseif (!$this->validateMappingOneToOne($settings['delivery'])) {
-            $output .= $this->displayError(
-                $this->l('Delivery types should not repeat in delivery matrix')
-            );
-        } elseif (!$this->validateMappingOneToOne($settings['payment'])) {
-            $output .= $this->displayError(
-                $this->l('Payment types should not repeat in payment matrix')
-            );
-        }
-
-        $errorTabs = $this->validateStoredSettings();
-
-        if (in_array('delivery', $errorTabs)) {
-            $this->displayWarning($this->l('Select values for all delivery types'));
-        }
-        if (in_array('statuses', $errorTabs)) {
-            $this->displayWarning($this->l('Select values for all order statuses'));
-        }
-        if (in_array('payment', $errorTabs)) {
-            $this->displayWarning($this->l('Select values for all payment types'));
-        }
-        if (in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)) {
-            $this->displayWarning($this->l('Select values for all default parameters'));
-        }
-
-        return $output;
     }
 
     /**
@@ -1413,84 +1103,6 @@ class RetailCRM extends Module
         }
 
         return _PS_ROOT_DIR_ . '/retailcrm_modules_cache.php';
-    }
-
-    /**
-     * Returns all module settings
-     *
-     * @return array
-     */
-    public static function getSettings()
-    {
-        $syncCartsDelay = (string) (Configuration::get(static::SYNC_CARTS_DELAY));
-
-        // Use 15 minutes as default interval but don't change immediate interval to it if user already made decision
-        if (empty($syncCartsDelay) && '0' !== $syncCartsDelay) {
-            $syncCartsDelay = '900';
-        }
-
-        return [
-            'url' => (string) (Configuration::get(static::API_URL)),
-            'apiKey' => (string) (Configuration::get(static::API_KEY)),
-            'delivery' => json_decode(Configuration::get(static::DELIVERY), true),
-            'status' => json_decode(Configuration::get(static::STATUS), true),
-            'outOfStockStatus' => json_decode(Configuration::get(static::OUT_OF_STOCK_STATUS), true),
-            'payment' => json_decode(Configuration::get(static::PAYMENT), true),
-            'deliveryDefault' => json_decode(Configuration::get(static::DELIVERY_DEFAULT), true),
-            'paymentDefault' => json_decode(Configuration::get(static::PAYMENT_DEFAULT), true),
-            'statusExport' => (string) (Configuration::get(static::STATUS_EXPORT)),
-            'collectorActive' => (Configuration::get(static::COLLECTOR_ACTIVE)),
-            'collectorKey' => (string) (Configuration::get(static::COLLECTOR_KEY)),
-            'clientId' => Configuration::get(static::CLIENT_ID),
-            'synchronizeCartsActive' => (Configuration::get(static::SYNC_CARTS_ACTIVE)),
-            'synchronizedCartStatus' => (string) (Configuration::get(static::SYNC_CARTS_STATUS)),
-            'synchronizedCartDelay' => $syncCartsDelay,
-            'consultantScript' => (string) (Configuration::get(static::CONSULTANT_SCRIPT)),
-            'enableCorporate' => (bool) (Configuration::get(static::ENABLE_CORPORATE_CLIENTS)),
-            'enableHistoryUploads' => (bool) (Configuration::get(static::ENABLE_HISTORY_UPLOADS)),
-            'enableBalancesReceiving' => (bool) (Configuration::get(static::ENABLE_BALANCES_RECEIVING)),
-            'enableOrderNumberSending' => (bool) (Configuration::get(static::ENABLE_ORDER_NUMBER_SENDING)),
-            'enableOrderNumberReceiving' => (bool) (Configuration::get(static::ENABLE_ORDER_NUMBER_RECEIVING)),
-            'debugMode' => RetailcrmTools::isDebug(),
-            'webJobs' => RetailcrmTools::isWebJobsEnabled(),
-        ];
-    }
-
-    /**
-     * Returns all settings names in DB
-     *
-     * @return array
-     */
-    public static function getSettingsNames()
-    {
-        return [
-            'urlName' => static::API_URL,
-            'apiKeyName' => static::API_KEY,
-            'deliveryName' => static::DELIVERY,
-            'statusName' => static::STATUS,
-            'outOfStockStatusName' => static::OUT_OF_STOCK_STATUS,
-            'paymentName' => static::PAYMENT,
-            'deliveryDefaultName' => static::DELIVERY_DEFAULT,
-            'paymentDefaultName' => static::PAYMENT_DEFAULT,
-            'statusExportName' => static::STATUS_EXPORT,
-            'collectorActiveName' => static::COLLECTOR_ACTIVE,
-            'collectorKeyName' => static::COLLECTOR_KEY,
-            'clientIdName' => static::CLIENT_ID,
-            'synchronizeCartsActiveName' => static::SYNC_CARTS_ACTIVE,
-            'synchronizedCartStatusName' => static::SYNC_CARTS_STATUS,
-            'synchronizedCartDelayName' => static::SYNC_CARTS_DELAY,
-            'uploadOrders' => static::UPLOAD_ORDERS,
-            'runJobName' => static::RUN_JOB,
-            'consultantScriptName' => static::CONSULTANT_SCRIPT,
-            'enableCorporateName' => static::ENABLE_CORPORATE_CLIENTS,
-            'enableHistoryUploadsName' => static::ENABLE_HISTORY_UPLOADS,
-            'enableBalancesReceivingName' => static::ENABLE_BALANCES_RECEIVING,
-            'enableOrderNumberSendingName' => static::ENABLE_ORDER_NUMBER_SENDING,
-            'enableOrderNumberReceivingName' => static::ENABLE_ORDER_NUMBER_RECEIVING,
-            'debugModeName' => static::ENABLE_DEBUG_MODE,
-            'webJobsName' => static::ENABLE_WEB_JOBS,
-            'jobsNames' => static::JOBS_NAMES,
-        ];
     }
 
     /**

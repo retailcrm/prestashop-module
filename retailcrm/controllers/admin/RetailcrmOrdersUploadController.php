@@ -38,25 +38,13 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
+class RetailcrmOrdersUploadController extends RetailcrmAdminPostAbstractController
 {
-    private $api;
-
-    public function __construct()
-    {
-        parent::__construct();
-
-        $this->api = RetailcrmTools::getApiClient();
-    }
-
-    public function postProcess()
-    {
-        $this->ajaxDie(json_encode($this->getData()));
-    }
-
     protected function getData()
     {
-        if (!($this->api instanceof RetailcrmProxy)) {
+        $api = RetailcrmTools::getApiClient();
+
+        if (!($api instanceof RetailcrmProxy)) {
             return [
                 'success' => false,
                 'errorMsg' => "Can't upload orders - set API key and API URL first!",
@@ -70,7 +58,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
             $uploadedOrders = [];
             $errors = [];
 
-            RetailcrmExport::$api = $this->api;
+            RetailcrmExport::$api = $api;
             foreach ($orderIds as $orderId) {
                 $id_order = (int) $orderId;
                 $response = false;
@@ -81,7 +69,7 @@ class RetailcrmOrdersUploadController extends RetailcrmAdminAbstractController
                     if ($response) {
                         $uploadedOrders[] = $id_order;
                     }
-                } catch (PrestaShopObjectNotFoundExceptionCore $e) {
+                } catch (RetailcrmNotFoundException $e) {
                     $skippedOrders[] = $id_order;
                 } catch (Exception $e) {
                     $errors[$id_order][] = $e->getMessage();
