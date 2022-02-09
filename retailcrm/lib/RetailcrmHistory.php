@@ -313,21 +313,21 @@ class RetailcrmHistory
 
     private static function createOrderInPrestashop($orderHistory)
     {
-        $order = self::getOrderFromCrm($orderHistory['id'], 'id');
-        $order = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $order);
+        $crmOrder = self::getOrderFromCrm($orderHistory['id'], 'id');
+        $crmOrder = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryCreate', $crmOrder);
 
-        $orderStatus = self::getInternalOrderStatus($order['status']);
+        $orderStatus = self::getInternalOrderStatus($crmOrder['status']);
 
         if (self::$cartStatus && (string) $orderStatus === (string) self::$cartStatus) {
             return;
         }
 
-        $paymentTypeCRM = self::getPaymentTypeFromCRM($order);
+        $paymentTypeCRM = self::getPaymentTypeFromCRM($crmOrder);
         $paymentId = self::getModulePaymentId($paymentTypeCRM);
         $paymentType = self::getModulePaymentType($paymentId);
 
-        $customerId = self::getCustomerId($order);
-        $customerBuilder = self::getCustomerBuilderById($order, $customerId);
+        $customerId = self::getCustomerId($crmOrder);
+        $customerBuilder = self::getCustomerBuilderById($crmOrder, $customerId);
         $customer = $customerBuilder->getData()->getCustomer();
         $addressInvoice = $customerBuilder->getData()->getCustomerAddress();
 
@@ -336,16 +336,16 @@ class RetailcrmHistory
         }
         self::loadInPrestashop($customer, 'save');
 
-        self::updateAddressInvoice($addressInvoice, $customer, $order);
+        self::updateAddressInvoice($addressInvoice, $customer, $crmOrder);
 
-        $addressDelivery = self::createAddress($order, $customer);
-        $deliveryType = self::getDeliveryType($order);
+        $addressDelivery = self::createAddress($crmOrder, $customer);
+        $deliveryType = self::getDeliveryType($crmOrder);
 
         $cart = self::createCart($customer, $addressDelivery, $addressInvoice, $deliveryType);
 
         $products = [];
-        if (!empty($order['items'])) {
-            $products = self::createProducts($order['items'], $addressDelivery);
+        if (!empty($crmOrder['items'])) {
+            $products = self::createProducts($crmOrder['items'], $addressDelivery);
         }
 
         $cart = self::addProductsToCart($cart, $products);
@@ -353,7 +353,7 @@ class RetailcrmHistory
         $prestashopOrder = self::createOrder(
             $cart,
             $customer,
-            $order,
+            $crmOrder,
             $deliveryType,
             $paymentId,
             $paymentType,
@@ -368,14 +368,18 @@ class RetailcrmHistory
             return;
         }
 
-        self::createPayments($order, $prestashopOrder);
+        self::createPayments($crmOrder, $prestashopOrder);
 
-        self::saveCarrier($prestashopOrder->id, $deliveryType, $order['delivery']['cost']);
+        self::saveCarrier($prestashopOrder->id, $deliveryType, $crmOrder['delivery']['cost']);
 
-        self::createOrderDetails($order, $prestashopOrder);
+        $quantities = self::createOrderDetails($crmOrder, $prestashopOrder);
+
+        self::setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder);
+
+        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
 
         // collect order ids for single fix request
-        self::$orderFix[] = ['id' => $order['id'], 'externalId' => $prestashopOrder->id];
+        self::$orderFix[] = ['id' => $crmOrder['id'], 'externalId' => $prestashopOrder->id];
 
         return $prestashopOrder;
     }
@@ -403,14 +407,17 @@ class RetailcrmHistory
 
         $crmOrder = self::cleanDeletedItems($crmOrder, $prestashopOrder);
 
-        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder);
-
         self::checkNewItems($crmOrder, $prestashopOrder);
 
-        self::updatePrestashopOrderStatus($crmOrder, $prestashopOrder);
+        self::setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder);
+
+        $statusChanged = self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder);
+
+        if (!$statusChanged) {
+            self::updatePrestashopOrderStatus($crmOrder, $prestashopOrder);
+        }
 
         // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
-
         if (isset($crmOrder['number']) && self::$receiveOrderNumber) {
             $prestashopOrder->reference = $crmOrder['number'];
             $prestashopOrder->update();
@@ -1231,25 +1238,12 @@ class RetailcrmHistory
             if (self::loadInPrestashop($orderDetail, 'save')) {
                 $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
             }
-
-            unset($orderDetail);
-        }
-
-        $outOfStockItems = array_filter($quantities, function ($value) {
-            if (1 > $value) {
-                return true;
-            }
-
-            return false;
-        });
-
-        if (0 < count($outOfStockItems)) {
-            $crmOrder['status'] = self::setOutOfStockStatus($crmOrder, $prestashopOrder);
-            self::$api->ordersEdit($crmOrder, 'id');
         }
 
         // update order items ids in crm
         self::$newItemsIdsByOrderId[$prestashopOrder->id] = $newItemsIds;
+
+        return $quantities;
     }
 
     private static function updatePrestashopOrderStatus($order, $orderToUpdate)
@@ -1440,12 +1434,14 @@ class RetailcrmHistory
 
     private static function changeOrderTotals($order, $orderToUpdate)
     {
-        if (isset($order['items']) || isset($order['delivery']['cost'])) {
-            $infoOrder = self::getOrderFromCrm($order['externalId']);
-            $orderToUpdate = self::changeTotals($infoOrder, $orderToUpdate);
-
-            self::loadInPrestashop($orderToUpdate, 'update');
+        if (!isset($order['items']) && !isset($order['delivery']['cost'])) {
+            return;
         }
+
+        $infoOrder = self::getOrderFromCrm($order['externalId']);
+        $orderToUpdate = self::changeTotals($infoOrder, $orderToUpdate);
+
+        self::loadInPrestashop($orderToUpdate, 'update');
     }
 
     private static function checkPaymentType($order, $orderToUpdate)
@@ -1732,7 +1728,7 @@ class RetailcrmHistory
 
         $isNewItemsExist = false;
         $newItemsIds = [];
-        foreach ($order['items'] as $key => $newItem) {
+        foreach ($order['items'] as $newItem) {
             if (RetailcrmOrderBuilder::isGiftItem($newItem)) {
                 continue;
             }
@@ -1786,8 +1782,6 @@ class RetailcrmHistory
             $orderDetail->id_order_detail = !empty($parsedExtId['id_order_detail'])
                 ? $parsedExtId['id_order_detail'] : null;
 
-            self::changePrestashopOrderStatus($order, $orderToUpdate);
-
             StockAvailable::updateQuantity(
                 $product_id,
                 $product_attribute_id,
@@ -1799,8 +1793,6 @@ class RetailcrmHistory
                 $newItemsIds[Db::getInstance()->Insert_ID()] = $newItem['id'];
             }
 
-            unset($orderDetail);
-            unset($order['items'][$key]);
             $isNewItemsExist = true;
         }
 
@@ -1906,18 +1898,18 @@ class RetailcrmHistory
         return $orderToUpdate;
     }
 
-    private static function changePrestashopOrderStatus($crmOrder, $prestashopOrder)
+    private static function setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder)
     {
         if (!isset($crmOrder['items'])) {
             return false;
         }
 
-        $infoOrder = self::getOrderFromCrm($crmOrder['externalId']);
-
-        $newStatus = self::setOutOfStockStatus($infoOrder, $prestashopOrder);
+        $newStatus = self::setOutOfStockStatus($crmOrder, $prestashopOrder);
 
         if ($newStatus) {
             $prestashopOrder->current_state = self::$statuses[$newStatus];
+
+            self::loadInPrestashop($prestashopOrder, 'save');
 
             return true;
         }
@@ -2009,13 +2001,15 @@ class RetailcrmHistory
         return $cart;
     }
 
-    private static function setOutOfStockStatusInCrm($crmOrder, $prestashopOrder)
+    private static function setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities = null)
     {
         if (!isset($crmOrder['items']) || !is_array($crmOrder['items'])) {
-            return;
+            return false;
         }
 
-        $quantities = self::checkItemsQuantityAndDiscount($crmOrder, $prestashopOrder);
+        if (null === $quantities) {
+            $quantities = self::checkItemsQuantityAndDiscount($crmOrder, $prestashopOrder);
+        }
 
         $outOfStockItems = array_filter($quantities, function ($value) {
             if (1 > $value) {
@@ -2027,8 +2021,13 @@ class RetailcrmHistory
 
         if (0 < count($outOfStockItems)) {
             $crmOrder['status'] = self::setOutOfStockStatus($crmOrder, $prestashopOrder);
-            self::$api->ordersEdit($crmOrder);
+
+            self::$api->ordersEdit($crmOrder, 'id');
+
+            return true;
         }
+
+        return false;
     }
 
     private static function getOutOfStockType(array $crmOrder)
