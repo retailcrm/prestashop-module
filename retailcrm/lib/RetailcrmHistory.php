@@ -376,7 +376,7 @@ class RetailcrmHistory
 
         self::setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder);
 
-        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
+        $statusChanged = self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
 
         // collect order ids for single fix request
         self::$orderFix[] = ['id' => $crmOrder['id'], 'externalId' => $prestashopOrder->id];
@@ -612,13 +612,6 @@ class RetailcrmHistory
         }
 
         return false;
-
-//        if (!isset(self::$statuses[$outOfStockType])) {
-//            //TODO: Add handling undefined status
-//            return false;
-//        }
-
-        return $outOfStockType;
     }
 
     /**
@@ -1221,11 +1214,6 @@ class RetailcrmHistory
             $orderDetail->unit_price_tax_incl = $productPrice;
 
             $orderDetail->id_warehouse = !empty($prestashopOrder->id_warehouse) ? $prestashopOrder->id_warehouse : 0;
-
-            if (!$product->checkQty($orderDetail->product_quantity)) {
-                self::setOutOfStockStatus($crmOrder, $prestashopOrder);
-            }
-
             $quantities[$product_id] = StockAvailable::getQuantityAvailableByProduct($product_id);
 
             StockAvailable::updateQuantity(
@@ -2036,8 +2024,6 @@ class RetailcrmHistory
             Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS),
             true
         );
-
-        //TODO: add check empty statuses
 
         if (!empty($crmOrder['fullPaidAt'])) {
             return $statusArray['out_of_stock_paid'];
