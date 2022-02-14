@@ -53,5 +53,78 @@ function upgrade_module_3_0_2($module)
         return false;
     }
 
-    return $module->registerHook('actionCarrierUpdate');
+    return $module->registerHook('actionCarrierUpdate')
+        && upgrade_module_3_0_2_remove_old_files([
+            'retailcrm/job/abandonedCarts.php',
+            'retailcrm/job/export.php',
+            'retailcrm/job/icml.php',
+            'retailcrm/job/index.php',
+            'retailcrm/job/inventories.php',
+            'retailcrm/job/jobs.php',
+            'retailcrm/job/missing.php',
+            'retailcrm/job/sync.php',
+            'retailcrm/lib/CurlException.php',
+            'retailcrm/lib/InvalidJsonException.php',
+            'retailcrm/lib/JobManager.php',
+            'retailcrm/lib/RetailcrmApiClient.php',
+            'retailcrm/lib/RetailcrmApiClientV4.php',
+            'retailcrm/lib/RetailcrmApiClientV5.php',
+            'retailcrm/lib/RetailcrmApiErrors.php',
+            'retailcrm/lib/RetailcrmApiResponse.php',
+            'retailcrm/lib/RetailcrmDaemonCollector.php',
+            'retailcrm/lib/RetailcrmHttpClient.php',
+            'retailcrm/lib/RetailcrmInventories.php',
+            'retailcrm/lib/RetailcrmProxy.php',
+            'retailcrm/lib/RetailcrmService.php',
+            'retailcrm/public/css/.gitignore',
+            'retailcrm/public/css/retailcrm-upload.css',
+            'retailcrm/public/js/.gitignore',
+            'retailcrm/public/js/exec-jobs.js',
+            'retailcrm/public/js/retailcrm-upload.js',
+        ]);
 }
+
+/**
+ * Remove files that was deleted\moved\renamed in new version and currently outdated
+ *
+ * @param array $files File paths relative to the `modules/` directory
+ */
+function upgrade_module_3_0_2_remove_old_files($files)
+{
+    try {
+        foreach ($files as $file) {
+            if (strpos($file, 'retailcrm/') !== 0) {
+                continue;
+            }
+
+            $fullPath = sprintf(
+                '%s/../%s', __DIR__, str_replace('retailcrm/', '', $file)
+            );
+
+            if (!file_exists($fullPath)) {
+                continue;
+            }
+
+            RetailcrmLogger::writeCaller(
+                __METHOD__, sprintf('Remove `%s`', $file)
+            );
+
+            unlink($fullPath);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        RetailcrmLogger::writeCaller(
+            __METHOD__,
+            sprintf('Error removing `%s`: %s', $file, $e->getMessage())
+        );
+    } catch (Error $e) {
+        RetailcrmLogger::writeCaller(
+            __METHOD__,
+            sprintf('Error removing `%s`: %s', $file, $e->getMessage())
+        );
+    }
+
+    return false;
+}
+
