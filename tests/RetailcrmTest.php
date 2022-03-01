@@ -234,7 +234,7 @@ class RetailCRMTest extends RetailcrmTestCase
         $cart = $this->createMock('Cart');
         $cart->expects($this->any())->method('getProducts')->willReturn($this->getProducts());
         $cart->expects($this->any())->method('getAddressCollection')->willReturn($this->getAddressCollection());
-        $status = new StdClass();
+        $status = new stdClass();
         $reference = $order->reference;
         $updReference = 'test';
 

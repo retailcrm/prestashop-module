@@ -3,7 +3,7 @@
 ## Usage
 
 If you want to modify data, sent between CRM and CMS you can use custom filters.
-To use filters you should define a new class in `<prestashop-root>/modules/retailcrm/custom/hooks`. Filename and classname must match the filter name.
+To use filters you should define a new class in `<prestashop-root>/modules/retailcrm/custom/filters`. Filename and classname must match the filter name.
 Filter class should implement interface *RetailcrmFilterInterface*. In filter class you must define *filter()* function, which will take initial `$object` and return customized `$object`.
 
 ## Example
@@ -12,7 +12,7 @@ The example below shows you how to customize address data, loaded from CRM histo
 
 ```php
 <?php
-// custom/hooks/RetailcrmFilterSaveCustomerAddress.php
+// custom/filters/RetailcrmFilterSaveCustomerAddress.php
 
 class RetailcrmFilterSaveCustomerAddress implements RetailcrmFilterInterface
 {
@@ -42,6 +42,7 @@ class RetailcrmFilterSaveCustomerAddress implements RetailcrmFilterInterface
 There are list of available filters:
 
 * *RetailcrmFilterProcessOrder* - order array, which will be sent to CRM
+* *RetailcrmFilterOrderStatusUpdate* - order array, which will be sent to CRM when the status is changed
 * *RetailcrmFilterProcessCustomer* - customer array, which will be sent to CRM
 * *RetailcrmFilterProcessCustomerCorporate* - corporate customer array, which will be sent to CRM
 * *RetailcrmFilterProcessAddress* - address array, which will be sent to CRM

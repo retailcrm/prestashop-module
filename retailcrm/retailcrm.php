@@ -865,7 +865,7 @@ class RetailCRM extends Module
 
             $order = RetailcrmTools::filter('RetailcrmFilterOrderStatusUpdate', $order, $params);
 
-            if (isset($order['externalId']) && count($order) > 1) {
+            if (isset($order['externalId']) && 1 < count($order)) {
                 $this->api->ordersEdit($order);
 
                 return true;
