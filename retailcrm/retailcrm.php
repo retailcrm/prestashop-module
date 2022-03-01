@@ -368,6 +368,51 @@ class RetailCRM extends Module
         );
     }
 
+    /**
+     * Remove files that was deleted\moved\renamed in a newer version and currently are outdated
+     *
+     * @param array $files File paths relative to the `modules/` directory
+     *
+     * @return bool
+     */
+    public function removeOldFiles($files)
+    {
+        foreach ($files as $file) {
+            try {
+                if (0 !== strpos($file, 'retailcrm/')) {
+                    continue;
+                }
+
+                $relativePath = str_replace('retailcrm/', '', $file);
+                $fullPath = sprintf(
+                    '%s/%s', __DIR__, $relativePath
+                );
+
+                if (!file_exists($fullPath)) {
+                    continue;
+                }
+
+                RetailcrmLogger::writeCaller(
+                    __METHOD__, sprintf('Remove `%s`', $file)
+                );
+
+                unlink($fullPath); // todo maybe check and remove empty directories
+            } catch (Exception $e) {
+                RetailcrmLogger::writeCaller(
+                    __METHOD__,
+                    sprintf('Error removing `%s`: %s', $file, $e->getMessage())
+                );
+            } catch (Error $e) {
+                RetailcrmLogger::writeCaller(
+                    __METHOD__,
+                    sprintf('Error removing `%s`: %s', $file, $e->getMessage())
+                );
+            }
+        }
+
+        return true;
+    }
+
     public function getContent()
     {
         $output = null;

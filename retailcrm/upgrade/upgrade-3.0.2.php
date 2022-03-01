@@ -93,7 +93,7 @@ function upgrade_module_3_0_2_remove_old_files($files)
 {
     try {
         foreach ($files as $file) {
-            if (strpos($file, 'retailcrm/') !== 0) {
+            if (0 !== strpos($file, 'retailcrm/')) {
                 continue;
             }
 
@@ -127,4 +127,3 @@ function upgrade_module_3_0_2_remove_old_files($files)
 
     return false;
 }
-
