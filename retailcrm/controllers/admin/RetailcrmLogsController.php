@@ -40,18 +40,6 @@ require_once dirname(__FILE__) . '/../../bootstrap.php';
 
 class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
 {
-    protected function getData()
-    {
-        switch ($_SERVER['REQUEST_METHOD']) {
-            case 'POST':
-                return $this->postHandler();
-            case 'GET':
-                return $this->getHandler();
-            default:
-                return [];
-        }
-    }
-
     protected function postHandler()
     {
         if (!Tools::getIsset('logName') && !Tools::getIsset('all')) {

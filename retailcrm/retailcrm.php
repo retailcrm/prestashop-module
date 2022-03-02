@@ -93,13 +93,12 @@ class RetailCRM extends Module
 
     // todo dynamically define controller classes
     const ADMIN_CONTROLLERS = [
+        RetailcrmSettingsLinkController::class,
         RetailcrmSettingsController::class,
-        RetailcrmSettingsUpdateController::class,
         RetailcrmSettingsVueController::class, // todo remove debug
         RetailcrmJobsController::class,
         RetailcrmLogsController::class,
         RetailcrmOrdersController::class,
-        RetailcrmOrdersUploadController::class,
     ];
 
     /**

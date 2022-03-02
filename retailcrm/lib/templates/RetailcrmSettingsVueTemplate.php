@@ -70,7 +70,7 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
         if ($this->module->api) {
             $params['vue'] = [
                 'controller' => [
-                    'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsUpdateController::class),
+                    'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
                     'jobs' => RetailcrmTools::getAdminControllerUrl(RetailcrmJobsController::class),
                     'logs' => RetailcrmTools::getAdminControllerUrl(RetailcrmLogsController::class),
                 ],
@@ -131,11 +131,8 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
                     ],
                 ],
                 'orders' => [
-                    'controller' => [
-                        'table' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
-                        'upload' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersUploadController::class),
-                        'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
-                    ],
+                    'controller' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
+                    'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
                     'upload' => [
                         'orders' => [
                             'count',

@@ -40,20 +40,73 @@ require_once dirname(__FILE__) . '/../../bootstrap.php';
 
 class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
 {
-    protected function getData()
+    protected function postHandler()
+    {
+        $api = RetailcrmTools::getApiClient();
+
+        if (!($api instanceof RetailcrmProxy)) {
+            return [
+                'success' => false,
+                'errorMsg' => "Can't upload orders - set API key and API URL first!",
+            ];
+        }
+
+        $orderIds = Tools::getValue('orders');
+        try {
+            $isSuccessful = true;
+            $skippedOrders = [];
+            $uploadedOrders = [];
+            $errors = [];
+
+            RetailcrmExport::$api = $api;
+            foreach ($orderIds as $orderId) {
+                $id_order = (int) $orderId;
+                $response = false;
+
+                try {
+                    $response = RetailcrmExport::exportOrder($id_order);
+
+                    if ($response) {
+                        $uploadedOrders[] = $id_order;
+                    }
+                } catch (RetailcrmNotFoundException $e) {
+                    $skippedOrders[] = $id_order;
+                } catch (Exception $e) {
+                    $errors[$id_order][] = $e->getMessage();
+                }
+
+                $isSuccessful = $isSuccessful ? $response : false;
+                time_nanosleep(0, 50000000);
+            }
+
+            return [
+                'success' => $isSuccessful,
+                'uploadedOrders' => $uploadedOrders,
+                'skippedOrders' => $skippedOrders,
+                'errors' => $errors,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'errorMsg' => $e->getMessage(),
+            ];
+        }
+    }
+
+    protected function getHandler()
     {
         $orders = Tools::getValue('orders', []);
         $page = (int) (Tools::getValue('page', 1));
 
         switch (Tools::getValue('filter')) {
-            case '1':
-                $withErrors = false;
-                break;
-            case '2':
-                $withErrors = true;
-                break;
-            default:
-                $withErrors = null;
+        case '1':
+            $withErrors = false;
+            break;
+        case '2':
+            $withErrors = true;
+            break;
+        default:
+            $withErrors = null;
         }
 
         try {
