@@ -396,6 +396,8 @@ class RetailcrmOrderBuilder
      */
     private function createCorporateIfNotExist()
     {
+        $crmAddressId = 0;
+        $companyWasFound = true;
         $corporateWasFound = true;
         $this->validateCmsCustomerInDb();
 
@@ -417,13 +419,32 @@ class RetailcrmOrderBuilder
         }
 
         if (empty($crmCorporate)) {
+            $crmCorporate = $this->findCorporateCustomerByContact($customer['id']);
+
+            if (!empty($crmCorporate)) {
+                $companyWasFound = false;
+            }
+        }
+
+        if (empty($crmCorporate)) {
             $crmCorporate = $this->createCorporateCustomer($customer['externalId']);
             $corporateWasFound = false;
         } elseif (isset($crmCorporate['id'])) {
-            $this->appendAdditionalAddressToCorporate($crmCorporate['id']);
+            $result = $this->appendAdditionalAddressToCorporate($crmCorporate['id']);
+            $crmAddressId = isset($result['id']) ? $result['id'] : 0;
         }
 
         if ($corporateWasFound) {
+            if (!$companyWasFound) {
+                $company = $this->buildCorporateCompany($crmAddressId);
+                $this->api->customersCorporateCompaniesCreate(
+                    $crmCorporate['id'],
+                    $company,
+                    'id',
+                    $this->getApiSite()
+                );
+            }
+
             $contactList = $this->api->customersCorporateContacts(
                 $crmCorporate['id'],
                 ['contactIds' => [$customer['id']]],
@@ -526,6 +547,8 @@ class RetailcrmOrderBuilder
      * Append new address to corporate customer if new address is not present in corporate customer.
      *
      * @param string|int $corporateId
+     *
+     * @return bool|array|\RetailcrmApiResponse
      */
     private function appendAdditionalAddressToCorporate($corporateId)
     {
@@ -549,7 +572,7 @@ class RetailcrmOrderBuilder
 
         foreach ($addresses as $addressInCrm) {
             if (!empty($addressInCrm['externalId']) && $addressInCrm['externalId'] == $this->invoiceAddress->id) {
-                $this->api->customersCorporateAddressesEdit(
+                return $this->api->customersCorporateAddressesEdit(
                     $corporateId,
                     $addressInCrm['externalId'],
                     $address,
@@ -557,12 +580,10 @@ class RetailcrmOrderBuilder
                     'externalId',
                     $this->getApiSite()
                 );
-
-                return;
             }
 
             if (RetailCrmTools::clearAddress($address['text']) === RetailCrmTools::clearAddress($addressInCrm['text'])) {
-                $this->api->customersCorporateAddressesEdit(
+                return $this->api->customersCorporateAddressesEdit(
                     $corporateId,
                     $addressInCrm['id'],
                     $address,
@@ -570,8 +591,6 @@ class RetailcrmOrderBuilder
                     'id',
                     $this->getApiSite()
                 );
-
-                return;
             }
         }
 
@@ -656,6 +675,32 @@ class RetailcrmOrderBuilder
     {
         $crmCorporate = $this->api->customersCorporateList([
             'companyName' => $companyName,
+        ]);
+
+        if ($crmCorporate instanceof RetailcrmApiResponse
+            && $crmCorporate->isSuccessful()
+            && $crmCorporate->offsetExists('customersCorporate')
+            && 0 < count($crmCorporate['customersCorporate'])
+        ) {
+            $crmCorporate = $crmCorporate['customersCorporate'];
+
+            return reset($crmCorporate);
+        }
+
+        return [];
+    }
+
+    /**
+     * Find corporate customer by contact id
+     *
+     * @param $contactId
+     *
+     * @return array
+     */
+    private function findCorporateCustomerByContact($contactId)
+    {
+        $crmCorporate = $this->api->customersCorporateList([
+            'contactIds' => [$contactId],
         ]);
 
         if ($crmCorporate instanceof RetailcrmApiResponse
