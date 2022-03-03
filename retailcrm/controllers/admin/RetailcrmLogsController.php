@@ -43,10 +43,7 @@ class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
     protected function postHandler()
     {
         if (!Tools::getIsset('logName') && !Tools::getIsset('all')) {
-            return [
-                'success' => false,
-                'errorMsg' => 'Bad request',
-            ];
+            throw new Exception('Invalid request data');
         }
 
         if (Tools::getIsset('all')) {
@@ -68,37 +65,14 @@ class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
 
     private function downloadAll()
     {
-        try {
-            return RetailcrmLoggerHelper::downloadAll();
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        return RetailcrmLoggerHelper::downloadAll();
     }
 
     private function download($logName)
     {
-        try {
-            return [
-                'success' => RetailcrmLoggerHelper::download($logName),
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        // todo mb refactor
+        return [
+            'success' => RetailcrmLoggerHelper::download($logName),
+        ];
     }
 }

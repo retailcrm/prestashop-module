@@ -73,12 +73,16 @@ class RetailcrmExport
      *
      * @return int
      */
-    public static function getOrdersCount()
+    public static function getOrdersCount($skipUploaded = false)
     {
         $sql = 'SELECT count(o.id_order)
-            FROM `' . _DB_PREFIX_ . 'orders` o
+            FROM `' . _DB_PREFIX_ . 'orders` o' . ($skipUploaded ? '
+            LEFT JOIN `' . _DB_PREFIX_ . 'retailcrm_exported_orders` reo ON o.`id_order` = reo.`id_order`
+            ' : '') . '
             WHERE 1
-            ' . Shop::addSqlRestriction(false, 'o');
+            ' . Shop::addSqlRestriction(false, 'o') . ($skipUploaded ? '
+            AND (reo.`last_uploaded` IS NULL OR reo.`errors` IS NOT NULL)
+            ' : '');
 
         return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
     }
@@ -93,10 +97,10 @@ class RetailcrmExport
      *
      * @throws PrestaShopDatabaseException
      */
-    public static function getOrdersIds($start = 0, $count = null)
+    public static function getOrdersIds($start = 0, $count = null, $skipUploaded = false)
     {
         if (null === $count) {
-            $to = static::getOrdersCount();
+            $to = static::getOrdersCount($skipUploaded);
             $count = $to - $start;
         } else {
             $to = $start + $count;
@@ -104,9 +108,13 @@ class RetailcrmExport
 
         if (0 < $count) {
             $predefinedSql = 'SELECT o.`id_order`
-                FROM `' . _DB_PREFIX_ . 'orders` o
+                FROM `' . _DB_PREFIX_ . 'orders` o' . ($skipUploaded ? '
+                LEFT JOIN `' . _DB_PREFIX_ . 'retailcrm_exported_orders` reo ON o.`id_order` = reo.`id_order`
+                ' : '') . '
                 WHERE 1
-                ' . Shop::addSqlRestriction(false, 'o') . '
+                ' . Shop::addSqlRestriction(false, 'o') . ($skipUploaded ? '
+                AND (reo.`last_uploaded` IS NULL OR reo.`errors` IS NOT NULL)
+                ' : '') . '
                 ORDER BY o.`id_order` ASC';
 
             while ($start < $to) {
@@ -137,14 +145,14 @@ class RetailcrmExport
      * @param int $from
      * @param int|null $count
      */
-    public static function exportOrders($from = 0, $count = null)
+    public static function exportOrders($from = 0, $count = null, $skipUploaded = false)
     {
         if (!static::validateState()) {
             return;
         }
 
         $orders = [];
-        $orderRecords = static::getOrdersIds($from, $count);
+        $orderRecords = static::getOrdersIds($from, $count, $skipUploaded);
         $orderBuilder = new RetailcrmOrderBuilder();
         $orderBuilder->defaultLangFromConfiguration()->setApi(static::$api);
 
@@ -438,6 +446,52 @@ class RetailcrmExport
     }
 
     /**
+     * @param $orderIds
+     *
+     * @return array
+     *
+     * @throws Exception
+     */
+    public static function uploadOrders($orderIds)
+    {
+        if (!static::$api || !(static::$api instanceof RetailcrmProxy)) {
+            throw new Exception('Set API key and API URL first');
+        }
+
+        $isSuccessful = true;
+        $skippedOrders = [];
+        $uploadedOrders = [];
+        $errors = [];
+
+        foreach ($orderIds as $orderId) {
+            $id_order = (int) $orderId;
+            $response = false;
+
+            try {
+                $response = self::exportOrder($id_order);
+
+                if ($response) {
+                    $uploadedOrders[] = $id_order;
+                }
+            } catch (RetailcrmNotFoundException $e) {
+                $skippedOrders[] = $id_order;
+            } catch (Exception $e) {
+                $errors[$id_order][] = $e->getMessage();
+            }
+
+            $isSuccessful = $isSuccessful ? $response : false;
+            time_nanosleep(0, 50000000);
+        }
+
+        return [
+            'success' => $isSuccessful,
+            'uploadedOrders' => $uploadedOrders,
+            'skippedOrders' => $skippedOrders,
+            'errors' => $errors,
+        ];
+    }
+
+    /**
      * Returns false if inner state is not correct
      *
      * @return bool
@@ -452,6 +506,36 @@ class RetailcrmExport
         }
 
         return true;
+    }
+
+    /**
+     * @param int $step
+     * @param string $entity
+     *
+     * @return bool
+     *
+     * @throws Exception
+     */
+    public static function export($step, $entity = 'order')
+    {
+        --$step;
+        if (0 > $step) {
+            throw new Exception('Invalid request data');
+        }
+
+        if ('order' === $entity) {
+            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
+
+            RetailcrmExport::$ordersOffset = $stepSize;
+            RetailcrmExport::exportOrders($step * $stepSize, $stepSize, true);
+        // todo maybe save current step to database
+        } elseif ('customer' === $entity) {
+            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
+
+            RetailcrmExport::$customersOffset = $stepSize;
+            RetailcrmExport::exportCustomers($step * $stepSize, $stepSize);
+            // todo maybe save current step to database
+        }
     }
 
     private static function handleError($entityId, $exception)

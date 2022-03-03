@@ -99,6 +99,7 @@ class RetailCRM extends Module
         RetailcrmJobsController::class,
         RetailcrmLogsController::class,
         RetailcrmOrdersController::class,
+        RetailcrmExportController::class,
     ];
 
     /**

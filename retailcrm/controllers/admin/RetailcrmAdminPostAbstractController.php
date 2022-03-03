@@ -47,23 +47,39 @@ class RetailcrmAdminPostAbstractController extends RetailcrmAdminAbstractControl
 
     protected function getData()
     {
-        switch ($_SERVER['REQUEST_METHOD']) {
-        case 'POST':
-            return $this->postHandler();
-        case 'GET':
-            return $this->getHandler();
-        default:
-            return [];
+        try {
+            switch ($_SERVER['REQUEST_METHOD']) {
+            case 'POST':
+                return $this->postHandler();
+            case 'GET':
+                return $this->getHandler();
+            default:
+                return [];
+            }
+        } catch (Exception $e) {
+            return RetailcrmJsonResponse::invalidResponse($e->getMessage());
+        } catch (Error $e) {
+            return RetailcrmJsonResponse::invalidResponse($e->getMessage());
         }
     }
 
+    /**
+     * @return array
+     *
+     * @throws Exception|Error
+     */
     protected function postHandler()
     {
-        return [];
+        throw new Exception('Method not allowed');
     }
 
+    /**
+     * @return array
+     *
+     * @throws Exception|Error
+     */
     protected function getHandler()
     {
-        return [];
+        throw new Exception('Method not allowed');
     }
 }

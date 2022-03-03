@@ -42,55 +42,11 @@ class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
 {
     protected function postHandler()
     {
-        $api = RetailcrmTools::getApiClient();
-
-        if (!($api instanceof RetailcrmProxy)) {
-            return [
-                'success' => false,
-                'errorMsg' => "Can't upload orders - set API key and API URL first!",
-            ];
-        }
-
         $orderIds = Tools::getValue('orders');
-        try {
-            $isSuccessful = true;
-            $skippedOrders = [];
-            $uploadedOrders = [];
-            $errors = [];
 
-            RetailcrmExport::$api = $api;
-            foreach ($orderIds as $orderId) {
-                $id_order = (int) $orderId;
-                $response = false;
+        RetailcrmExport::$api = RetailcrmTools::getApiClient();
 
-                try {
-                    $response = RetailcrmExport::exportOrder($id_order);
-
-                    if ($response) {
-                        $uploadedOrders[] = $id_order;
-                    }
-                } catch (RetailcrmNotFoundException $e) {
-                    $skippedOrders[] = $id_order;
-                } catch (Exception $e) {
-                    $errors[$id_order][] = $e->getMessage();
-                }
-
-                $isSuccessful = $isSuccessful ? $response : false;
-                time_nanosleep(0, 50000000);
-            }
-
-            return [
-                'success' => $isSuccessful,
-                'uploadedOrders' => $uploadedOrders,
-                'skippedOrders' => $skippedOrders,
-                'errors' => $errors,
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        return RetailcrmExport::uploadOrders($orderIds);
     }
 
     protected function getHandler()
@@ -109,20 +65,8 @@ class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
             $withErrors = null;
         }
 
-        try {
-            return array_merge([
-                'success' => true,
-            ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Error $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        return array_merge([
+            'success' => true,
+        ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
     }
 }

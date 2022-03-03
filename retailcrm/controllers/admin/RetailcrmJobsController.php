@@ -43,10 +43,7 @@ class RetailcrmJobsController extends RetailcrmAdminPostAbstractController
     protected function postHandler()
     {
         if (!Tools::getIsset('jobName') && !Tools::getIsset('reset')) {
-            return [
-                'success' => false,
-                'errorMsg' => 'Bad request',
-            ];
+            throw new Exception('Invalid request data');
         }
 
         if (Tools::getIsset('reset')) {
@@ -69,56 +66,27 @@ class RetailcrmJobsController extends RetailcrmAdminPostAbstractController
     private function resetJobManager()
     {
         $errors = [];
-        try {
-            if (!RetailcrmJobManager::reset()) {
-                $errors[] = 'Job manager internal state was NOT cleared.';
-            }
-            if (!RetailcrmCli::clearCurrentJob(null)) {
-                $errors[] = 'CLI job was NOT cleared';
-            }
-
-            if (!empty($errors)) {
-                return [
-                    'success' => false,
-                    'errorMsg' => implode(' ', $errors),
-                ];
-            }
-
-            return [
-                'success' => true,
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
+        if (!RetailcrmJobManager::reset()) {
+            $errors[] = 'Job manager internal state was NOT cleared.';
         }
+        if (!RetailcrmCli::clearCurrentJob(null)) {
+            $errors[] = 'CLI job was NOT cleared';
+        }
+
+        if (!empty($errors)) {
+            throw new Exception(implode(' ', $errors));
+        }
+
+        return RetailcrmJsonResponse::successfullResponse();
     }
 
     private function runJob($jobName)
     {
-        try {
-            $result = RetailcrmJobManager::execManualJob($jobName);
+        $result = RetailcrmJobManager::execManualJob($jobName);
 
-            return [
-                'success' => true,
-                'result' => $result,
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        return [
+            'success' => true,
+            'result' => $result,
+        ];
     }
 }

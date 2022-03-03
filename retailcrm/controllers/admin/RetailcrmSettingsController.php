@@ -49,38 +49,26 @@ class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
 
     protected function getHandler()
     {
-        try {
-            $result = [
-                'success' => true,
-            ];
+        $result = [
+            'success' => true,
+        ];
 
-            if (Tools::getIsset('catalog')) {
-                $result['catalog'] = RetailcrmCatalogHelper::getIcmlFileInfo();
-            }
-            if (Tools::getIsset('delivery')) {
-                $result['delivery'] = $this->module->reference->getApiDeliveryTypes(
-                ); // todo replace with helper function
-            }
-            if (Tools::getIsset('payment')) {
-                $result['payment'] = $this->module->reference->getApiPaymentTypes(
-                ); // todo replace with helper function
-            }
-            if (Tools::getIsset('status')) {
-                $result['status'] = $this->module->reference->getApiStatusesWithGroup(
-                ); // todo replace with helper function
-            }
-
-            return $result;
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Error $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
+        if (Tools::getIsset('catalog')) {
+            $result['catalog'] = RetailcrmCatalogHelper::getIcmlFileInfo();
         }
+        if (Tools::getIsset('delivery')) {
+            $result['delivery'] = $this->module->reference->getApiDeliveryTypes(
+                ); // todo replace with helper function
+        }
+        if (Tools::getIsset('payment')) {
+            $result['payment'] = $this->module->reference->getApiPaymentTypes(
+                ); // todo replace with helper function
+        }
+        if (Tools::getIsset('status')) {
+            $result['status'] = $this->module->reference->getApiStatusesWithGroup(
+                ); // todo replace with helper function
+        }
+
+        return $result;
     }
 }

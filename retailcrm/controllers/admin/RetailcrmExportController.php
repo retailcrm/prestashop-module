@@ -38,41 +38,49 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmSettingsAdvancedController extends RetailcrmAdminAbstractController
+class RetailcrmExportController extends RetailcrmAdminPostAbstractController
 {
-    public static function getParentId()
+    protected function postHandler()
     {
-        return (int) Tab::getIdFromClassName('IMPROVE');
-    }
+        $api = RetailcrmTools::getApiClient();
 
-    public static function getIcon()
-    {
-        return 'code';
-    }
-
-    public static function getPosition()
-    {
-        return 7;
-    }
-
-    public static function getName()
-    {
-        $name = [];
-
-        foreach (Language::getLanguages(true) as $lang) {
-            $name[$lang['id_lang']] = 'Simla.com Advanced';
+        if (empty($api)) {
+            throw new Exception('Set API key & URL first');
         }
 
-        return $name;
+        RetailcrmExport::init();
+        RetailcrmExport::$api = $api;
+        RetailcrmHistory::$api = $api;
+
+        if (Tools::getIsset('stepOrders')) {
+            RetailcrmExport::export(Tools::getValue('stepOrders'), 'order');
+        } elseif (Tools::getIsset('stepCustomers')) {
+            RetailcrmExport::export(Tools::getValue('stepCustomers'), 'customer');
+        } elseif (Tools::getIsset('stepSinceId')) {
+            RetailcrmHistory::updateSinceId('customers');
+            RetailcrmHistory::updateSinceId('orders');
+        } else {
+            throw new Exception('Invalid request data');
+        }
+
+        return RetailcrmJsonResponse::successfullResponse();
     }
 
-    public function postProcess()
+    protected function getHandler()
     {
-        $link = $this->context->link->getAdminLink('AdminModules', true, [], [
-            'configure' => 'retailcrm',
-            'rcrmtab' => 'rcrm_tab_advanced',
-        ]);
-
-        $this->setRedirectAfter($link);
+        // todo move to helper
+        return [
+            'success' => true,
+            'orders' => [
+                'count' => RetailcrmExport::getOrdersCount(),
+                'exportCount' => RetailcrmExport::getOrdersCount(true),
+                'exportStepSize' => RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB,
+            ],
+            'customers' => [
+                'count' => RetailcrmExport::getCustomersCount(),
+                'exportCount' => RetailcrmExport::getCustomersCount(false),
+                'exportStepSize' => RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB,
+            ],
+        ];
     }
 }

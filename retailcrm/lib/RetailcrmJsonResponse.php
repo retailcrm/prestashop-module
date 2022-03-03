@@ -52,23 +52,17 @@ class RetailcrmJsonResponse
 {
     private static function jsonResponse($response)
     {
-        header('Content-Type: application/json');
-
-        $result = json_encode($response);
-
-        echo $result;
-
-        return $result;
+        return json_encode($response);
     }
 
     public static function invalidResponse($msg, $status = 404)
     {
         http_response_code($status);
 
-        return self::jsonResponse([
+        return [
             'success' => false,
             'errorMsg' => $msg,
-        ]);
+        ];
     }
 
     public static function successfullResponse($data = null, $key = null)
@@ -91,6 +85,6 @@ class RetailcrmJsonResponse
             }
         }
 
-        return self::jsonResponse($response);
+        return $response;
     }
 }

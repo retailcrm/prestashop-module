@@ -116,6 +116,7 @@ class RetailcrmExportOrdersHelper
         if ($page > $pagination['totalPageCount']) {
             $orderInfo = [];
         } else {
+            $sqlOrdersInfo .= ' ORDER BY `id_order` ASC'; // todo order by function $orderBy argument
             $sqlOrdersInfo .= ' LIMIT ' . self::ROWS_PER_PAGE * ($page - 1) . ', ' . self::ROWS_PER_PAGE . ';';
             $orderInfo = Db::getInstance()->executeS($sqlOrdersInfo);
         }

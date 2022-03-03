@@ -71,6 +71,9 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
             $params['vue'] = [
                 'controller' => [
                     'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
+                    'orders' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
+                    'export' => RetailcrmTools::getAdminControllerUrl(RetailcrmExportController::class),
+                    'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
                     'jobs' => RetailcrmTools::getAdminControllerUrl(RetailcrmJobsController::class),
                     'logs' => RetailcrmTools::getAdminControllerUrl(RetailcrmLogsController::class),
                 ],
@@ -128,21 +131,6 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
                     ],
                     'consultant' => [
                         'consultantScript' => $this->consultantScript->getValueStored(),
-                    ],
-                ],
-                'orders' => [
-                    'controller' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
-                    'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
-                    'upload' => [
-                        'orders' => [
-                            'count',
-                            'stepSize',
-                        ],
-                        'customers' => [
-                            'count',
-                            'countTotal', // or 'countUpload'
-                            'stepSize',
-                        ],
                     ],
                 ],
                 'catalog' => [
