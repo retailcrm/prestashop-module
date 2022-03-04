@@ -1,14 +1,18 @@
 # Examples
 
-- [Classes](#classes)  
-  - [Prices with discounts to icml](#prices-with-discounts-to-icml)
-- [Filters](#filters)  
+- [Classes](#classes)
+    - [Prices with discounts to icml](#prices-with-discounts-to-icml)
+- [Filters](#filters)
+    - [Set order custom field on status change](#set-order-custom-field-on-status-change)
 
 ## Classes
+
 ### Prices with discounts to ICML
+
 Customization for generate ICML catalog with prices including discounts
 
 Put code to  `.../retailcrm/custom/classes/RetailcrmCatalog.php`:
+
 ```php
 <...>
 $price = !empty($product['rate'])
@@ -40,12 +44,44 @@ if (!empty($product['manufacturer_name'])) {
 ```
 
 ## Filters
-### ...
-...
 
-Put code to  `...`:
+### Set order custom field on status change
+
+Put code to `custom/filters/RetailcrmFilterOrderStatusUpdate.php`:
+
 ```php
-<...>
-code
-<...>
+<?php
+// custom/filters/RetailcrmFilterOrderStatusUpdate.php
+
+class RetailcrmFilterOrderStatusUpdate implements RetailcrmFilterInterface
+{
+    /**
+     * {@inheritDoc}
+     */
+    public static function filter($object, array $parameters)
+    {
+        // get data from Order object
+        $order = new Order($parameters['id_order']);
+        
+        $trackingNumbers = [];
+        foreach ($order->getShipping() as $shipping) {
+            $trackingNumbers[] = $shipping['tracking_number'];
+        }
+        
+        $object['customFields']['tracking'] = implode(', ', $trackingNumbers);
+
+        // get data from the database
+        $sql = 'SELECT important_data FROM ' . _DB_PREFIX_ . 'important_table 
+                WHERE id_order = ' . pSQL($order->id);
+
+        $data = [];
+        foreach (Db::getInstance()->ExecuteS($sql) as $row) {
+            $data[] = $row['important_data'];
+        }
+
+        $object['customFields']['important_data'] = implode(', ', $data);
+
+        return $object;
+    }
+}
 ```

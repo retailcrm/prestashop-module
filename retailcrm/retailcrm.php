@@ -853,19 +853,20 @@ class RetailCRM extends Module
 
             return false;
         } elseif (isset($params['newOrderStatus'])) {
+            $order = [
+                'externalId' => $params['id_order'],
+            ];
+
             $statusCode = $params['newOrderStatus']->id;
 
             if (array_key_exists($statusCode, $status) && !empty($status[$statusCode])) {
-                $orderStatus = $status[$statusCode];
+                $order['status'] = $status[$statusCode];
             }
 
-            if (isset($orderStatus)) {
-                $this->api->ordersEdit(
-                    [
-                        'externalId' => $params['id_order'],
-                        'status' => $orderStatus,
-                    ]
-                );
+            $order = RetailcrmTools::filter('RetailcrmFilterOrderStatusUpdate', $order, $params);
+
+            if (isset($order['externalId']) && 1 < count($order)) {
+                $this->api->ordersEdit($order);
 
                 return true;
             }
