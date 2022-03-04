@@ -47,12 +47,12 @@ class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
         }
 
         if (Tools::getIsset('all')) {
-            return $this->downloadAll();
+            return RetailcrmLoggerHelper::downloadAll();
         }
 
         $logName = Tools::getValue('logName');
 
-        return $this->download($logName);
+        return RetailcrmLoggerHelper::download($logName);
     }
 
     protected function getHandler()
@@ -60,19 +60,6 @@ class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
         return [
             'success' => true,
             'result' => RetailcrmLoggerHelper::getLogFilesInfo(),
-        ];
-    }
-
-    private function downloadAll()
-    {
-        return RetailcrmLoggerHelper::downloadAll();
-    }
-
-    private function download($logName)
-    {
-        // todo mb refactor
-        return [
-            'success' => RetailcrmLoggerHelper::download($logName),
         ];
     }
 }

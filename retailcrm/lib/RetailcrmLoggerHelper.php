@@ -49,12 +49,8 @@ class RetailcrmLoggerHelper
             return false;
         }
 
-        header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
+        header('Content-Disposition: attachment; filename=' . basename($filePath));
         header('Content-Length: ' . filesize($filePath));
 
         readfile($filePath);
@@ -75,9 +71,10 @@ class RetailcrmLoggerHelper
 
         $zipFile->close();
 
-        header('Content-Type: application/zip');
+        header('Content-Type: ' . mime_content_type($zipname));
         header('Content-disposition: attachment; filename=' . basename($zipname));
         header('Content-Length: ' . filesize($zipname));
+
         readfile($zipname);
         unlink($zipname);
 
