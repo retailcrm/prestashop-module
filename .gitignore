@@ -7,5 +7,7 @@ retailcrm/views/css/*.map
 retailcrm/views/js/*.map
 retailcrm/config*.xml
 retailcrm/custom
+upgrade/upgrade-*.php
+!upgrade/upgrade-sample.php
 coverage.xml
 .php-cs-fixer.cache

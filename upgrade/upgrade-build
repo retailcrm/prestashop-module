@@ -1,0 +1,113 @@
+#! /bin/bash
+
+# params
+DIFF_FILTER=DR
+
+# functions
+build-diff()
+{
+  DIFF_TAG_FROM=$1
+  DIFF_TAG_TO=${2//v/}
+  DIFF_PATH_TO=$3 # todo use $2 by default
+
+  if [ ! -f upgrade/upgrade-sample.php ]; then
+    echo "Sample file not found"
+    exit 1
+  fi
+
+  if [ "$DIFF_PATH_TO" == "" ]; then
+    CURRENT_DIFF=$(git diff --name-status --diff-filter=$DIFF_FILTER "$DIFF_TAG_FROM" | grep "\tretailcrm/" | grep --invert-match "\tretailcrm/config.*.xml" |  awk '{print $2}')
+  else
+    CURRENT_DIFF=$(git diff --name-status --diff-filter=$DIFF_FILTER "$DIFF_TAG_FROM" "$DIFF_PATH_TO" | grep "\tretailcrm/" | grep --invert-match "\tretailcrm/config.*.xml" |  awk '{print $2}')
+  fi
+
+  if [ "$CURRENT_DIFF" != "" ]; then
+    echo "$CURRENT_DIFF" >> upgrade/tmp-diff
+#    echo "$CURRENT_DIFF" > "upgrade/tmp-diff ($DIFF_TAG_FROM to $DIFF_TAG_TO)"
+
+    FILES_TO_DELETE=$(echo "$CURRENT_DIFF" | awk 'BEGIN {FS=" "; printf "[\\n"} {printf "\t\t'\''%s'\',\\\\n' ", $1} END {print "\t]" }' )
+    DIFF_TAG_TO_UND=$(echo "$DIFF_TAG_TO" | sed 's/\./_/g' )
+    DIFF_TAG_TO_ESC=$(echo "$DIFF_TAG_TO" | sed 's/\./\\\./g' )
+
+    UPGRADE_SCRIPT=$(cat upgrade/upgrade-sample.php)
+    UPGRADE_SCRIPT=$(echo "$UPGRADE_SCRIPT" | sed "s=\['sample'\]=$FILES_TO_DELETE=")
+    UPGRADE_SCRIPT=$(echo "$UPGRADE_SCRIPT" | sed "s/upgrade_module_sample/upgrade_module_$DIFF_TAG_TO_UND/")
+    UPGRADE_SCRIPT=$(echo "$UPGRADE_SCRIPT" | sed "s/to version sample/to version $DIFF_TAG_TO_ESC/")
+
+    echo "$UPGRADE_SCRIPT" > upgrade/upgrade-"$DIFF_TAG_TO".php
+
+    # if [ ! -f retailcrm/upgrade/upgrade-"$DIFF_TAG_TO".php ]; then
+    #   echo "$UPGRADE_SCRIPT" > retailcrm/upgrade/upgrade-"$DIFF_TAG_TO".php
+    # fi
+  fi
+}
+
+# get count of found files and remove temp files
+build-diff-count()
+{
+    if test -f upgrade/tmp-diff; then
+      sort upgrade/tmp-diff | uniq > upgrade/diff
+      echo "Found $(wc -l < upgrade/diff) files"
+
+      rm upgrade/tmp-diff
+      rm upgrade/diff
+    fi
+}
+
+# compare current index with latest tag
+build-diff-latest-tag()
+{
+  CURRENT_TAG=$(git tag | tail -n 1)
+  NEW_TAG=$(cat VERSION)
+
+  if [ "$CURRENT_TAG" == "v$NEW_TAG" ] && [ "$1" != "force" ]; then
+        echo "You should update module version at 'VERSION' first"
+        echo "Or use 'force' argument"
+        exit 0
+  fi
+
+  echo "Diff from $CURRENT_TAG to $NEW_TAG"
+  build-diff "$CURRENT_TAG" "$NEW_TAG"
+}
+
+# get all tags
+build-diff-all-tags()
+{
+  OLDEST_TAG=$(git tag | head -n 1)
+  NEWEST_TAG=$(git tag | tail -n 1)
+  ALL_TAGS=$(git tag | cat)
+  PREVIOUS_TAG=$OLDEST_TAG
+
+  echo "Diff from $OLDEST_TAG to $NEWEST_TAG"
+
+  for CURRENT_TAG in $ALL_TAGS ; do
+    if [ "$CURRENT_TAG" == "$PREVIOUS_TAG" ]; then
+      continue;
+    fi
+
+    build-diff "$PREVIOUS_TAG" "$CURRENT_TAG" "$CURRENT_TAG"
+
+    if [ "$CURRENT_TAG" == "$NEWEST_TAG" ]; then
+      break;
+    fi
+
+    PREVIOUS_TAG=$CURRENT_TAG
+  done
+}
+
+
+# go to root
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/../" || exit
+
+# todo fetch tags
+
+if [ "$1" == "all" ]; then
+  build-diff-all-tags
+else
+  build-diff-latest-tag "$1"
+fi
+
+build-diff-count
+
+echo 'Done'
