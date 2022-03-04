@@ -6,3 +6,4 @@
 
 1. [Синхронизация данных клиентов](Customers.md)
 2. [Синхронизация данных заказов](Orders.md)
+3. [Inventories](Inventories.md)

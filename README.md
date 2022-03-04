@@ -6,7 +6,7 @@
 Prestashop module.
 =================
 
-Module allows integrate CMS Prestashop with [Simla.com](https://www.retailcrm.pro) ([Documentation](https://docs.retailcrm.ru/Users/Integration/SiteModules/PrestaShop) page)
+Module allows integrate CMS Prestashop with [Simla.com](https://simla.com) ([Documentation](https://www.simla.com/docs/Users/Integration/SiteModules/PrestaShop) page)
 
 #### Features:
 
@@ -27,3 +27,7 @@ Module allows integrate CMS Prestashop with [Simla.com](https://www.retailcrm.pr
 #### Customization
 
 You can customize your module behavior using [Custom Filters](doc/3.%20Customization/Filters.md) or [Custom Classes](doc/3.%20Customization/Classes.md)
+
+#### Documentation
+
+[Here](doc/README.md) you can find more information about module setup and workflow
