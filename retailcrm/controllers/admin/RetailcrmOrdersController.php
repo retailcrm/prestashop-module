@@ -55,14 +55,14 @@ class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
         $page = (int) (Tools::getValue('page', 1));
 
         switch (Tools::getValue('filter')) {
-        case '1':
-            $withErrors = false;
-            break;
-        case '2':
-            $withErrors = true;
-            break;
-        default:
-            $withErrors = null;
+            case '1':
+                $withErrors = false;
+                break;
+            case '2':
+                $withErrors = true;
+                break;
+            default:
+                $withErrors = null;
         }
 
         return array_merge([

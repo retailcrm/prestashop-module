@@ -49,12 +49,12 @@ class RetailcrmAdminPostAbstractController extends RetailcrmAdminAbstractControl
     {
         try {
             switch ($_SERVER['REQUEST_METHOD']) {
-            case 'POST':
-                return $this->postHandler();
-            case 'GET':
-                return $this->getHandler();
-            default:
-                return [];
+                case 'POST':
+                    return $this->postHandler();
+                case 'GET':
+                    return $this->getHandler();
+                default:
+                    return [];
             }
         } catch (Exception $e) {
             return RetailcrmJsonResponse::invalidResponse($e->getMessage());

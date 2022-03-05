@@ -58,15 +58,15 @@ class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
         }
         if (Tools::getIsset('delivery')) {
             $result['delivery'] = $this->module->reference->getApiDeliveryTypes(
-                ); // todo replace with helper function
+            ); // todo replace with helper function
         }
         if (Tools::getIsset('payment')) {
             $result['payment'] = $this->module->reference->getApiPaymentTypes(
-                ); // todo replace with helper function
+            ); // todo replace with helper function
         }
         if (Tools::getIsset('status')) {
             $result['status'] = $this->module->reference->getApiStatusesWithGroup(
-                ); // todo replace with helper function
+            ); // todo replace with helper function
         }
 
         return $result;

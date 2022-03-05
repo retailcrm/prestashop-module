@@ -291,8 +291,7 @@ class RetailcrmSettings
 
         //  check abandoned carts status
         if ($this->settings->issetValue('status') || $this->settings->issetValue('synchronizedCartStatus')) {
-            if (!$this->validateCartStatus($this->settings->getValueWithStored('status'), $this->settings->getValueWithStored('synchronizedCartStatus')
-            )) {
+            if (!$this->validateCartStatus($this->settings->getValueWithStored('status'), $this->settings->getValueWithStored('synchronizedCartStatus'))) {
                 $this->displayError('Order status for abandoned carts should not be used in other settings'); // todo check if it works
             }
         }

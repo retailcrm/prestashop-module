@@ -166,7 +166,8 @@ class RetailcrmCustomerBuilder extends RetailcrmAbstractBuilder implements Retai
             $this->customer,
             [
                 'dataCrm' => $this->dataCrm,
-            ]);
+            ]
+        );
 
         return $this;
     }
