@@ -299,6 +299,10 @@ class RetailcrmReferences
 
     public function getApiStatusesWithGroup()
     {
+        if (!$this->api) {
+            return [];
+        }
+
         $request = $this->api->statusesList();
         $requestGroups = $this->api->statusGroupsList();
 
@@ -352,24 +356,31 @@ class RetailcrmReferences
 
     public function getApiDeliveryTypes() // todo rewrite for vue end remove old one
     {
+        if (!$this->api) {
+            return [];
+        }
+
         $crmDeliveryTypes = [];
         $request = $this->api->deliveryTypesList();
 
-        if ($request) {
-            $crmDeliveryTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-            foreach ($request->deliveryTypes as $dType) {
-                if (!$dType['active']) {
-                    continue;
-                }
+        if (!$request) {
+            return [];
+        }
 
-                $crmDeliveryTypes[] = [
-                    'id_option' => $dType['code'],
-                    'name' => $dType['name'],
-                ];
+        $crmDeliveryTypes[] = [
+            'id_option' => '',
+            'name' => '',
+        ];
+
+        foreach ($request->deliveryTypes as $dType) {
+            if (!$dType['active']) {
+                continue;
             }
+
+            $crmDeliveryTypes[] = [
+                'id_option' => $dType['code'],
+                'name' => $dType['name'],
+            ];
         }
 
         return $crmDeliveryTypes;
@@ -377,58 +388,71 @@ class RetailcrmReferences
 
     public function getApiStatuses()
     {
+        if (!$this->api) {
+            return [];
+        }
+
         $crmStatusTypes = [];
         $request = $this->api->statusesList();
 
-        if ($request) {
-            $crmStatusTypes[] = [
-                'id_option' => '',
-                'name' => '',
-                'ordering' => '',
-            ];
-            foreach ($request->statuses as $sType) {
-                if (!$sType['active']) {
-                    continue;
-                }
-
-                $crmStatusTypes[] = [
-                    'id_option' => $sType['code'],
-                    'name' => $sType['name'],
-                    'ordering' => $sType['ordering'],
-                ];
-            }
-            usort($crmStatusTypes, function ($a, $b) {
-                if ($a['ordering'] == $b['ordering']) {
-                    return 0;
-                } else {
-                    return $a['ordering'] < $b['ordering'] ? -1 : 1;
-                }
-            });
+        if (!$request) {
+            return [];
         }
+
+        $crmStatusTypes[] = [
+            'id_option' => '',
+            'name' => '',
+            'ordering' => '',
+        ];
+        foreach ($request->statuses as $sType) {
+            if (!$sType['active']) {
+                continue;
+            }
+
+            $crmStatusTypes[] = [
+                'id_option' => $sType['code'],
+                'name' => $sType['name'],
+                'ordering' => $sType['ordering'],
+            ];
+        }
+        usort($crmStatusTypes, function ($a, $b) {
+            if ($a['ordering'] == $b['ordering']) {
+                return 0;
+            } else {
+                return $a['ordering'] < $b['ordering'] ? -1 : 1;
+            }
+        });
 
         return $crmStatusTypes;
     }
 
     public function getApiPaymentTypes()
     {
+        if (!$this->api) {
+            return [];
+        }
+
         $crmPaymentTypes = [];
-        $request = $this->api->paymentTypesList();
+        $request         = $this->api->paymentTypesList();
 
-        if ($request) {
-            $crmPaymentTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-            foreach ($request->paymentTypes as $pType) {
-                if (!$pType['active']) {
-                    continue;
-                }
+        if (!$request) {
+            return [];
+        }
 
-                $crmPaymentTypes[] = [
-                    'id_option' => $pType['code'],
-                    'name' => $pType['name'],
-                ];
+        $crmPaymentTypes[] = [
+            'id_option' => '',
+            'name' => '',
+        ];
+
+        foreach ($request->paymentTypes as $pType) {
+            if (!$pType['active']) {
+                continue;
             }
+
+            $crmPaymentTypes[] = [
+                'id_option' => $pType['code'],
+                'name' => $pType['name'],
+            ];
         }
 
         return $crmPaymentTypes;

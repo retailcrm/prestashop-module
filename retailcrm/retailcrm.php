@@ -459,8 +459,9 @@ class RetailCRM extends Module
         $token = Configuration::get(static::API_KEY);
         if ($address && $token) {
             $this->api = new RetailcrmProxy($address, $token);
-            $this->reference = new RetailcrmReferences($this->api);
         }
+
+        $this->reference = new RetailcrmReferences($this->api);
 
         $templateFactory = new RetailcrmTemplateFactory($this->context->smarty, $this->assetsBase);
 

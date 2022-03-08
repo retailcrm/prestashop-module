@@ -60,14 +60,6 @@ class RetailcrmTemplateFactory
      */
     public function createTemplate(Module $module)
     {
-        $settings = RetailcrmSettingsHelper::getSettings();
-
-        if (empty($settings['url']) && empty($settings['apiKey'])) {
-            return new RetailcrmBaseTemplate($module, $this->smarty, $this->assets);
-        } elseif (Tools::getIsset('vue')) {
-            return new RetailcrmSettingsVueTemplate($module, $this->smarty, $this->assets);
-        } else {
-            return new RetailcrmSettingsTemplate($module, $this->smarty, $this->assets, $settings, RetailcrmSettingsHelper::getSettingsNames());
-        }
+        return new RetailcrmSettingsVueTemplate($module, $this->smarty, $this->assets);
     }
 }
