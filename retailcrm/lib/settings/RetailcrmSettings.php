@@ -53,6 +53,11 @@ class RetailcrmSettings
      */
     private $settings;
 
+    /**
+     * @var RetailcrmSettingsItemHtml
+     */
+    private $consultantScript;
+
     public function __construct(Module $module)
     {
         $this->module = $module;
@@ -276,66 +281,64 @@ class RetailcrmSettings
     private function validateForm()
     {
         if ($this->settings->issetValue('url') && !RetailcrmTools::validateCrmAddress($this->settings->getValue('url'))) {
-            $this->displayError('Invalid or empty crm address');
+            $this->displayError('errors.url');
         }
 
         if ($this->settings->issetValue('apiKey') && !$this->settings->getValue('apiKey')) {
-            $this->displayError('Invalid or empty crm api token');
+            $this->displayError('errors.key');
         }
 
         if ($this->settings->issetValue('url') || $this->settings->issetValue('apiKey')) {
             if (!$this->validateApiVersion($this->settings->getValueWithStored('url'), $this->settings->getValueWithStored('apiKey'))) {
-                $this->displayError('The selected version of the API is unavailable');
+                $this->displayError('errors.version');
             }
         }
 
         //  check abandoned carts status
         if ($this->settings->issetValue('status') || $this->settings->issetValue('synchronizedCartStatus')) {
-            if (!$this->validateCartStatus($this->settings->getValueWithStored('status'), $this->settings->getValueWithStored('synchronizedCartStatus'))) {
-                $this->displayError('Order status for abandoned carts should not be used in other settings'); // todo check if it works
+            if (!$this->validateCartStatus(
+                $this->settings->getValueWithStored('status'),
+                $this->settings->getValueWithStored('synchronizedCartStatus')
+            )
+            ) {
+                $this->displayError('errors.carts'); // todo check if it works
             }
         }
 
         //  check mapping statuses
         if ($this->settings->issetValue('status')) {
             if (!$this->validateMappingOneToOne($this->settings->getValue('status'))) {
-                $this->displayError(
-                    'Order statuses should not repeat in statuses matrix'
-                );
+                $this->displayError('errors.status');
             }
         }
 
         //  check mapping delivery
         if ($this->settings->issetValue('delivery')) {
             if (!$this->validateMappingOneToOne($this->settings->getValue('delivery'))) {
-                $this->displayError(
-                    'Delivery types should not repeat in delivery matrix'
-                );
+                $this->displayError('errors.delivery');
             }
         }
 
         //  check mapping payment
         if ($this->settings->issetValue('payment')) {
             if (!$this->validateMappingOneToOne($this->settings->getValue('payment'))) {
-                $this->displayError(
-                    'Payment types should not repeat in payment matrix'
-                );
+                $this->displayError('errors.payment');
             }
         }
 
         $errorTabs = $this->validateStoredSettings(); // todo maybe refactor
 
         if (in_array('delivery', $errorTabs)) {
-            $this->displayWarning('Select values for all delivery types');
+            $this->displayWarning('warnings.delivery');
         }
         if (in_array('status', $errorTabs)) {
-            $this->displayWarning('Select values for all order statuses');
+            $this->displayWarning('warnings.status');
         }
         if (in_array('payment', $errorTabs)) {
-            $this->displayWarning('Select values for all payment types');
+            $this->displayWarning('warnings.payment');
         }
         if (in_array('deliveryDefault', $errorTabs) || in_array('paymentDefault', $errorTabs)) {
-            $this->displayWarning('Select values for all default parameters');
+            $this->displayWarning('warnings.default');
         }
 
         return null === $this->errors || 0 === count($this->errors);
