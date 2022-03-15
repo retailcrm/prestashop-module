@@ -167,7 +167,7 @@ class RetailcrmExport
             if (!empty($orderCustomer->id)) {
                 $orderBuilder->setCmsCustomer($orderCustomer);
             } else {
-                //TODO
+                // TODO
                 // Caused crash before because of empty RetailcrmOrderBuilder::cmsCustomer.
                 // Current version *shouldn't* do this, but I suggest more tests for guest customers.
                 $orderBuilder->setCmsCustomer(null);
