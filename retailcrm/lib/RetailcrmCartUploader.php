@@ -150,7 +150,7 @@ class RetailcrmCartUploader
             $response = static::$api->ordersGet($cartExternalId);
 
             if (!($response instanceof RetailcrmApiResponse)) {
-                //TODO
+                // TODO
                 // Extract address from cart (if exists) and append to customer?
                 // Or maybe this customer will not order anything, so we don't need it's address...
                 static::$api->customersCreate(RetailcrmOrderBuilder::buildCrmCustomer(new Customer($cart->id_customer)));

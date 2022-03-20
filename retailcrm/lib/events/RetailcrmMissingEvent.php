@@ -187,7 +187,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
 
         foreach ($products as $product) {
             $item = [
-                //'productId' => $product['product_id'],
+                // 'productId' => $product['product_id'],
                 'offer' => ['externalId' => $product['product_id']],
                 'productName' => $product['product_name'],
                 'quantity' => $product['product_quantity'],
