@@ -243,6 +243,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
     private function parseAddress()
     {
         $state = null;
+        $name = null;
 
         if (!empty($this->address->id_state)) {
             $stateName = State::getNameById($this->address->id_state);
@@ -250,6 +251,10 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             if (!empty($stateName)) {
                 $state = $stateName;
             }
+        }
+
+        if (static::MODE_CORPORATE_CUSTOMER === $this->mode) {
+            $name = isset($this->address->alias) ? $this->address->alias : $this->address->company;
         }
 
         return array_filter([
@@ -263,6 +268,7 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
                 ])),
             'notes' => $this->address->other,
             'region' => $state,
+            'name' => $name,
         ]);
     }
 

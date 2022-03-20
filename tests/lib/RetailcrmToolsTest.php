@@ -39,6 +39,32 @@
 class RetailcrmToolsTest extends RetailcrmTestCase
 {
     /**
+     * @dataProvider clearAddresses
+     */
+    public function testClearAddress($address, $result)
+    {
+        $this->assertEquals($result, RetailcrmTools::clearAddress($address));
+    }
+
+    public function clearAddresses()
+    {
+        return [
+            [
+                'Calle 66 # 11 -27, Casa || Casa',
+                'calle661127casacasa',
+            ],
+            [
+                'Calle 111 # 7c 10 || 202 torre 6',
+                'calle1117c10202torre6',
+            ],
+            [
+                'Bogotá, D.C. Calle 4B 20-85 || 312',
+                'bogotadccalle4b2085312',
+            ],
+        ];
+    }
+
+    /**
      * @dataProvider equalCustomerAddresses
      */
     public function testIsEqualCustomerAddress($address1, $address2, $result)
@@ -49,7 +75,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
     public function equalCustomerAddresses()
     {
         return [
-            'Equal addresses' => [
+            'equal_addresses' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -72,7 +98,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 true,
             ],
-            'Changed phone' => [
+            'changed_phone' => [
                 [
                     'phones' => [
                         ['number' => '222'],
@@ -95,7 +121,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Changed index' => [
+            'changed_index' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -118,7 +144,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Reduced address' => [
+            'reduced_address' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -139,7 +165,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Expanded address' => [
+            'expanded_address' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -160,7 +186,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Reduced phone' => [
+            'reduced_phone' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -184,7 +210,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Expanded phone' => [
+            'expanded_phone' => [
                 [
                     'phones' => [
                         ['number' => '111'],
@@ -208,7 +234,7 @@ class RetailcrmToolsTest extends RetailcrmTestCase
                 ],
                 false,
             ],
-            'Replaced field' => [
+            'replaced_field' => [
                 [
                     'phones' => [
                         ['number' => '111'],

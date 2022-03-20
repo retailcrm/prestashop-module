@@ -401,6 +401,7 @@ class RetailcrmHistory
                         $addressInvoice = $corporateCustomerBuilder->getData()->getCustomerAddress();
                     } else {
                         $customerBuilder = new RetailcrmCustomerBuilder();
+
                         if ($customerId) {
                             $customerBuilder->setCustomer(new Customer($customerId));
                         }

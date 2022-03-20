@@ -51,6 +51,11 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
     {
         parent::setUp();
 
+        $this->address = $this->prepareAddress();
+    }
+
+    private function prepareAddress()
+    {
         $this->defaultLang = (int) Configuration::get('PS_LANG_DEFAULT');
         $address = new Address();
         $address->id_state = State::getIdByName('Alabama');
@@ -65,7 +70,36 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
         $address->phone = '123';
         $address->phone_mobile = '123';
         $address->postcode = '333000';
-        $this->address = $address;
+
+        return $address;
+    }
+
+    /**
+     * @dataProvider parseAddresses
+     */
+    public function testParseAddress($address, $mode, $addressName)
+    {
+        $addressBuilder = new RetailcrmAddressBuilder();
+        $class = new ReflectionClass($addressBuilder);
+
+        $property = $class->getProperty('address');
+        $property->setAccessible(true);
+        $property->setValue($addressBuilder, $address);
+
+        $property = $class->getProperty('mode');
+        $property->setAccessible(true);
+        $property->setValue($addressBuilder, $mode);
+
+        $method = $class->getMethod('parseAddress');
+        $method->setAccessible(true);
+        $result = $method->invoke($addressBuilder);
+
+        if (RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER === $mode) {
+            $this->assertArrayHasKey('name', $result);
+            $this->assertEquals($addressName, $result['name']);
+        } else {
+            $this->assertArrayNotHasKey('name', $result);
+        }
     }
 
     public function testBuildRegular()
@@ -176,6 +210,39 @@ class RetailcrmAddressBuilderTest extends RetailcrmTestCase
             $this->assertArrayHasKey($field, $address);
             $this->assertNotEmpty($address[$field]);
         }
+    }
+
+    public function parseAddresses()
+    {
+        $addressWithAlias = $this->prepareAddress();
+        $addressWithAlias->alias = 'test_alias';
+
+        $addressWithCompany = $this->prepareAddress();
+        unset($addressWithCompany->alias);
+        $addressWithCompany->company = 'test_company';
+
+        return [
+            [
+                'Address' => $addressWithAlias,
+                'Mode' => RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER,
+                'Address name' => $addressWithAlias->alias,
+            ],
+            [
+                'Address' => $addressWithCompany,
+                'Mode' => RetailcrmAddressBuilder::MODE_CORPORATE_CUSTOMER,
+                'Address name' => $addressWithCompany->company,
+            ],
+            [
+                'Address' => $addressWithAlias,
+                'Mode' => RetailcrmAddressBuilder::MODE_CUSTOMER,
+                'Address name' => null,
+            ],
+            [
+                'Address' => $addressWithCompany,
+                'Mode' => RetailcrmAddressBuilder::MODE_CUSTOMER,
+                'Address name' => null,
+            ],
+        ];
     }
 
     public function getAddressLines()
