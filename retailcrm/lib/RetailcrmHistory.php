@@ -376,7 +376,7 @@ class RetailcrmHistory
 
         self::setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder, $quantities);
 
-        $statusChanged = self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
+        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
 
         // collect order ids for single fix request
         self::$orderFix[] = ['id' => $crmOrder['id'], 'externalId' => $prestashopOrder->id];
@@ -411,9 +411,9 @@ class RetailcrmHistory
 
         self::setOutOfStockStatusInPrestashop($crmOrder, $prestashopOrder, $quantities);
 
-        $outOfStockStatusChangedInCrm = self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
+        self::setOutOfStockStatusInCrm($crmOrder, $prestashopOrder, $quantities);
 
-        self::switchPrestashopOrderStatusByCrmStatus($crmOrder, $prestashopOrder);
+        self::switchPrestashopOrderStatusByCrmStatus($crmOrder, $prestashopOrder, $quantities);
 
         // update order number in PS if receiveOrderNumber option (CRM->PS) enabled
         if (isset($crmOrder['number']) && self::$receiveOrderNumber) {
@@ -1167,12 +1167,18 @@ class RetailcrmHistory
         return $quantities;
     }
 
-    private static function switchPrestashopOrderStatusByCrmStatus($crmOrder, $prestashopOrder)
+    private static function switchPrestashopOrderStatusByCrmStatus($crmOrder, $prestashopOrder, $quantities)
     {
         if (!isset($crmOrder['status'])) {
             return;
         }
         $orderStatus = $crmOrder['status'];
+
+        $outOfStockItems = self::getOutOfStockItems($quantities);
+
+        if (0 < count($outOfStockItems)) {
+            $orderStatus = self::getOutOfStockStatus($crmOrder, $prestashopOrder);
+        }
 
         $orderStatusChanged = !empty(self::$statuses[$orderStatus]) && self::$statuses[$orderStatus] != $prestashopOrder->current_state;
 
