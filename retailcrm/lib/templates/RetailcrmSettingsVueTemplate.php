@@ -76,6 +76,7 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
         $statusesCRM      = $this->module->reference->getApiStatusesWithGroup();
 
         $params['vue'] = [
+            'locale' => Context::getContext()->getCurrentLocale()->getCode(),
             'controller' => [
                 'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
                 'orders' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
