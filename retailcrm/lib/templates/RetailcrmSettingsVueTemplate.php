@@ -117,8 +117,8 @@ class RetailcrmSettingsVueTemplate extends RetailcrmAbstractTemplate
                     'enabled' => (bool)(Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)),
                     'delivery' => $deliveryTypesCMS,
                     'payment' => $paymentTypesCMS,
-                    'deliveryDefault' => json_decode(Configuration::get(RetailCRM::DELIVERY_DEFAULT), true),
-                    'paymentDefault' => json_decode(Configuration::get(RetailCRM::PAYMENT_DEFAULT), true),
+                    'deliveryDefault' => $this->settings->getValueStored('deliveryDefault'),
+                    'paymentDefault' => $this->settings->getValueStored('paymentDefault'),
                 ],
                 'stocks' => [
                     'enabled' => $this->settings->getValueStored('enableBalancesReceiving'),
