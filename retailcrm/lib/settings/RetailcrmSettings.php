@@ -170,7 +170,7 @@ class RetailcrmSettings
 
             if (null !== $checkApiMethod) {
                 $crmValues = call_user_func([$this->module->reference, $checkApiMethod]); // todo use class own reference
-                $crmCodes = array_column($crmValues, 'id_option'); // todo replace with 'code'
+                $crmCodes = array_column($crmValues, 'code');
 
                 if (!empty(array_diff($storedValues, $crmCodes))) {
                     $tabsWithWarnings[] = $tabName;

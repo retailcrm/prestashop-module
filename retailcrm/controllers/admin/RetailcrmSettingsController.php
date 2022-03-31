@@ -49,6 +49,13 @@ class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
 
     protected function getHandler()
     {
+        if (null === $this->module->reference) {
+            return [
+                'success' => false,
+                'errorMsg' => 'Set api key & url first',
+            ];
+        }
+
         $result = [
             'success' => true,
         ];

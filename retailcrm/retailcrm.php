@@ -64,12 +64,6 @@ class RetailCRM extends Module
     const SYNC_CARTS_STATUS = 'RETAILCRM_API_SYNCHRONIZED_CART_STATUS';
     const SYNC_CARTS_DELAY = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
-    const RUN_JOB = 'RETAILCRM_RUN_JOB';
-    const EXPORT_ORDERS = 'RETAILCRM_EXPORT_ORDERS_STEP';
-    const EXPORT_CUSTOMERS = 'RETAILCRM_EXPORT_CUSTOMERS_STEP';
-    const UPDATE_SINCE_ID = 'RETAILCRM_UPDATE_SINCE_ID';
-    const DOWNLOAD_LOGS_NAME = 'RETAILCRM_DOWNLOAD_LOGS_NAME';
-    const DOWNLOAD_LOGS = 'RETAILCRM_DOWNLOAD_LOGS';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
@@ -81,46 +75,16 @@ class RetailCRM extends Module
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
-    const RESET_JOBS = 'RETAILCRM_RESET_JOBS';
-    const JOBS_NAMES = [
-        'RetailcrmAbandonedCartsEvent' => 'Abandoned Carts',
-        'RetailcrmIcmlEvent' => 'Icml generation',
-        'RetailcrmIcmlUpdateUrlEvent' => 'Icml update URL',
-        'RetailcrmSyncEvent' => 'History synchronization',
-        'RetailcrmInventoriesEvent' => 'Inventories uploads',
-        'RetailcrmClearLogsEvent' => 'Clearing logs',
-    ];
 
     // todo dynamically define controller classes
     const ADMIN_CONTROLLERS = [
         RetailcrmSettingsLinkController::class,
         RetailcrmSettingsController::class,
-        RetailcrmSettingsVueController::class, // todo remove debug
         RetailcrmJobsController::class,
         RetailcrmLogsController::class,
         RetailcrmOrdersController::class,
         RetailcrmExportController::class,
     ];
-
-    /**
-     * @var array
-     */
-    private $templateErrors;
-
-    /**
-     * @var array
-     */
-    private $templateWarnings;
-
-    /**
-     * @var array
-     */
-    private $templateConfirms;
-
-    /**
-     * @var array
-     */
-    private $templateInfos;
 
     /** @var bool|\RetailcrmApiClientV5 */
     public $api = false;
@@ -173,7 +137,7 @@ class RetailCRM extends Module
         }
 
         if ($this->apiUrl && $this->apiKey) {
-            $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey, $this->log);
+            $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey);
             $this->reference = new RetailcrmReferences($this->api);
         }
 
@@ -270,11 +234,7 @@ class RetailCRM extends Module
         $apiKey = Configuration::get(static::API_KEY);
 
         if (!empty($apiUrl) && !empty($apiKey)) {
-            $api = new RetailcrmProxy(
-                $apiUrl,
-                $apiKey,
-                RetailcrmLogger::getLogFile()
-            );
+            $api = new RetailcrmProxy($apiUrl, $apiKey);
 
             $clientId = Configuration::get(static::CLIENT_ID);
             $this->integrationModule($api, $clientId, false);
@@ -410,309 +370,13 @@ class RetailCRM extends Module
 
     public function getContent()
     {
-        if (Tools::isSubmit('submit' . $this->name)) {
-            // todo all those vars & ifs to one $command var and check in switch
-            $jobName = (string) (Tools::getValue(static::RUN_JOB));
-            $ordersIds = (string) (Tools::getValue(static::UPLOAD_ORDERS));
-            $exportOrders = (int) (Tools::getValue(static::EXPORT_ORDERS));
-            $exportCustomers = (int) (Tools::getValue(static::EXPORT_CUSTOMERS));
-            $updateSinceId = (bool) (Tools::getValue(static::UPDATE_SINCE_ID));
-            $downloadLogs = (bool) (Tools::getValue(static::DOWNLOAD_LOGS));
-            $resetJobs = (bool) (Tools::getValue(static::RESET_JOBS));
-
-            if (!empty($ordersIds)) {
-                $this->uploadOrders(RetailcrmTools::partitionId($ordersIds)); // upload through controller
-            } elseif (!empty($jobName)) {
-                $this->runJobMultistore($jobName);
-            } elseif (!empty($exportOrders)) {
-                return $this->export($exportOrders);
-            } elseif (!empty($exportCustomers)) {
-                return $this->export($exportCustomers, 'customer');
-            } elseif ($updateSinceId) {
-                return $this->updateSinceId();
-            } elseif ($downloadLogs) {
-                return $this->downloadLogs();
-            } elseif ($resetJobs) {
-                return $this->resetJobs();
-            } else {
-                $settings = new RetailcrmSettings($this);
-                $response = $settings->save();
-
-                RetailcrmLogger::writeCaller('SAVESETTINGS', json_encode($response, 128));
-
-                if (isset($response['errors'])) {
-                    foreach ($response['errors'] as $error) {
-                        $this->displayError($error);
-                    }
-                }
-
-                if (isset($response['warnings'])) {
-                    foreach ($response['warnings'] as $warning) {
-                        $this->displayWarning($warning);
-                    }
-                }
-            }
-        }
-
-        // todo remove
-        $address = Configuration::get(static::API_URL);
-        $token = Configuration::get(static::API_KEY);
-        if ($address && $token) {
-            $this->api = new RetailcrmProxy($address, $token);
-        }
-
-        $this->reference = new RetailcrmReferences($this->api);
-
         $templateFactory = new RetailcrmTemplateFactory($this->context->smarty, $this->assetsBase);
 
         return $templateFactory
             ->createTemplate($this)
             ->setContext($this->context)
-            ->setErrors($this->getErrorMessages())
-            ->setWarnings($this->getWarningMessage())
-            ->setInformations($this->getInformationMessages())
-            ->setConfirmations($this->getConfirmationMessages())
             ->render(__FILE__)
         ;
-    }
-
-    public function uploadOrders($orderIds)
-    {
-        if (10 < count($orderIds)) {
-            return $this->displayError($this->l("Can't upload more than 10 orders per request"));
-        }
-
-        if (1 > count($orderIds)) {
-            return $this->displayError($this->l('At least one order ID should be specified'));
-        }
-
-        if (!($this->api instanceof RetailcrmProxy)) {
-            $this->api = RetailcrmTools::getApiClient();
-
-            if (!($this->api instanceof RetailcrmProxy)) {
-                return $this->displayError($this->l("Can't upload orders - set API key and API URL first!"));
-            }
-        }
-
-        $result = '';
-        $isSuccessful = true;
-        $skippedOrders = [];
-        RetailcrmExport::$api = $this->api;
-
-        foreach ($orderIds as $orderId) {
-            $response = false;
-
-            try {
-                $response = RetailcrmExport::exportOrder($orderId);
-            } catch (RetailcrmNotFoundException $e) {
-                $skippedOrders[] = $orderId;
-            } catch (Exception $e) {
-                $this->displayError($e->getMessage());
-                RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
-            } catch (Error $e) {
-                $this->displayError($e->getMessage());
-                RetailcrmLogger::writeCaller(__METHOD__, $e->getTraceAsString());
-            }
-
-            $isSuccessful = $isSuccessful ? $response : false;
-            time_nanosleep(0, 50000000);
-        }
-
-        if ($isSuccessful && empty($skippedOrders)) {
-            return $this->displayConfirmation($this->l('All orders were uploaded successfully'));
-        } else {
-            $result .= $this->displayWarning($this->l('Not all orders were uploaded successfully'));
-
-            if ($errors = RetailcrmApiErrors::getErrors()) {
-                foreach ($errors as $error) {
-                    $result .= $this->displayError($error);
-                }
-            }
-
-            if (!empty($skippedOrders)) {
-                $result .= $this->displayWarning(sprintf(
-                    $this->l('Orders skipped due to non-existence: %s', 'retailcrm'),
-                    implode(', ', $skippedOrders)
-                ));
-            }
-
-            return $result;
-        }
-    }
-
-    /**
-     * @param string $jobName
-     *
-     * @return string
-     */
-    public function runJob($jobName)
-    {
-        $jobNameFront = (empty(static::JOBS_NAMES[$jobName]) ? $jobName : static::JOBS_NAMES[$jobName]);
-
-        try {
-            if (RetailcrmJobManager::execManualJob($jobName)) {
-                return $this->displayConfirmation(sprintf(
-                    '%s %s',
-                    $this->l($jobNameFront),
-                    $this->l('was completed successfully')
-                ));
-            } else {
-                return $this->displayError(sprintf(
-                    '%s %s',
-                    $this->l($jobNameFront),
-                    $this->l('was not executed')
-                ));
-            }
-        } catch (Exception $e) {
-            return $this->displayError(sprintf(
-                '%s %s: %s',
-                $this->l($jobNameFront),
-                $this->l('was completed with errors'),
-                $e->getMessage()
-            ));
-        } catch (Error $e) {
-            return $this->displayError(sprintf(
-                '%s %s: %s',
-                $this->l($jobNameFront),
-                $this->l('was completed with errors'),
-                $e->getMessage()
-            ));
-        }
-    }
-
-    public function runJobMultistore($jobName)
-    {
-        RetailcrmContextSwitcher::runInContext([$this, 'runJob'], [$jobName]);
-    }
-
-    /**
-     * @param int $step
-     * @param string $entity
-     *
-     * @return bool
-     */
-    public function export($step, $entity = 'order')
-    {
-        if (!Tools::getValue('ajax')) {
-            return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
-        }
-
-        --$step;
-        if (0 > $step) {
-            return RetailcrmJsonResponse::invalidResponse('Invalid request data');
-        }
-
-        $api = RetailcrmTools::getApiClient();
-
-        if (empty($api)) {
-            return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
-        }
-
-        RetailcrmExport::init();
-        RetailcrmExport::$api = $api;
-
-        if ('order' === $entity) {
-            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
-
-            RetailcrmExport::$ordersOffset = $stepSize;
-            RetailcrmExport::exportOrders($step * $stepSize, $stepSize);
-        // todo maybe save current step to database
-        } elseif ('customer' === $entity) {
-            $stepSize = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
-
-            RetailcrmExport::$customersOffset = $stepSize;
-            RetailcrmExport::exportCustomers($step * $stepSize, $stepSize);
-            // todo maybe save current step to database
-        }
-
-        return RetailcrmJsonResponse::successfullResponse();
-    }
-
-    public function updateSinceId()
-    {
-        if (!Tools::getValue('ajax')) {
-            return RetailcrmJsonResponse::invalidResponse('This method allow only in ajax mode');
-        }
-
-        $api = RetailcrmTools::getApiClient();
-
-        if (empty($api)) {
-            return RetailcrmJsonResponse::invalidResponse('Set API key & URL first');
-        }
-
-        RetailcrmHistory::$api = $api;
-        RetailcrmHistory::updateSinceId('customers');
-        RetailcrmHistory::updateSinceId('orders');
-
-        return RetailcrmJsonResponse::successfullResponse();
-    }
-
-    public function downloadLogs()
-    {
-        if (!Tools::getValue('ajax')) {
-            return false;
-        }
-
-        $name = (string) (Tools::getValue(static::DOWNLOAD_LOGS_NAME));
-        if (!empty($name)) {
-            if (false === ($filePath = RetailcrmLoggerHelper::checkFileName($name))) {
-                return false;
-            }
-
-            header('Content-Description: File Transfer');
-            header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate');
-            header('Pragma: public');
-            header('Content-Length: ' . filesize($filePath));
-            readfile($filePath);
-        } else {
-            $zipname = _PS_DOWNLOAD_DIR_ . '/retailcrm_logs_' . date('Y-m-d H-i-s') . '.zip';
-
-            $zipFile = new ZipArchive();
-            $zipFile->open($zipname, ZipArchive::CREATE);
-
-            foreach (RetailcrmLoggerHelper::getLogFilesInfo() as $logFile) {
-                $zipFile->addFile($logFile['path'], $logFile['name']);
-            }
-
-            $zipFile->close();
-
-            header('Content-Type: application/zip');
-            header('Content-disposition: attachment; filename=' . basename($zipname));
-            header('Content-Length: ' . filesize($zipname));
-            readfile($zipname);
-            unlink($zipname);
-        }
-
-        return true;
-    }
-
-    /**
-     * Resets JobManager and cli internal lock
-     */
-    public function resetJobs()
-    {
-        $errors = [];
-        try {
-            if (!RetailcrmJobManager::reset()) {
-                $errors[] = 'Job manager internal state was NOT cleared.';
-            }
-            if (!RetailcrmCli::clearCurrentJob(null)) {
-                $errors[] = 'CLI job was NOT cleared';
-            }
-
-            if (!empty($errors)) {
-                return RetailcrmJsonResponse::invalidResponse(implode(' ', $errors));
-            }
-
-            return RetailcrmJsonResponse::successfullResponse();
-        } catch (Exception $exception) {
-            return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
-        } catch (Error $exception) {
-            return RetailcrmJsonResponse::invalidResponse($exception->getMessage());
-        }
     }
 
     public function hookActionCustomerAccountAdd($params)
@@ -1057,18 +721,6 @@ class RetailCRM extends Module
     }
 
     /**
-     * Workaround to pass translate method into another classes
-     *
-     * @param $text
-     *
-     * @return mixed
-     */
-    public function translate($text)
-    {
-        return $this->l($text);
-    }
-
-    /**
      * Loads data from modules list cache
      *
      * @return array|mixed
@@ -1194,170 +846,5 @@ class RetailCRM extends Module
             fflush($file);
             fclose($file);
         }
-    }
-
-    /**
-     * Synchronized cartsIds time choice
-     *
-     * @return array
-     */
-    public function getSynchronizedCartsTimeSelect()
-    {
-        return [
-            [
-                'id_option' => '900',
-                'name' => $this->l('After 15 minutes'),
-            ],
-            [
-                'id_option' => '1800',
-                'name' => $this->l('After 30 minutes'),
-            ],
-            [
-                'id_option' => '2700',
-                'name' => $this->l('After 45 minute'),
-            ],
-            [
-                'id_option' => '3600',
-                'name' => $this->l('After 1 hour'),
-            ],
-        ];
-    }
-
-    /**
-     * Initializes arrays of messages
-     */
-    private function initializeTemplateMessages()
-    {
-        if (null === $this->templateErrors) {
-            $this->templateErrors = [];
-        }
-
-        if (null === $this->templateWarnings) {
-            $this->templateWarnings = [];
-        }
-
-        if (null === $this->templateConfirms) {
-            $this->templateConfirms = [];
-        }
-
-        if (null === $this->templateErrors) {
-            $this->templateInfos = [];
-        }
-    }
-
-    /**
-     * Returns error messages
-     *
-     * @return array
-     */
-    protected function getErrorMessages()
-    {
-        if (empty($this->templateErrors)) {
-            return [];
-        }
-
-        return $this->templateErrors;
-    }
-
-    /**
-     * Returns warning messages
-     *
-     * @return array
-     */
-    protected function getWarningMessage()
-    {
-        if (empty($this->templateWarnings)) {
-            return [];
-        }
-
-        return $this->templateWarnings;
-    }
-
-    /**
-     * Returns information messages
-     *
-     * @return array
-     */
-    protected function getInformationMessages()
-    {
-        if (empty($this->templateInfos)) {
-            return [];
-        }
-
-        return $this->templateInfos;
-    }
-
-    /**
-     * Returns confirmation messages
-     *
-     * @return array
-     */
-    protected function getConfirmationMessages()
-    {
-        if (empty($this->templateConfirms)) {
-            return [];
-        }
-
-        return $this->templateConfirms;
-    }
-
-    /**
-     * Replacement for default error message helper
-     *
-     * @param string|array $message
-     *
-     * @return string
-     */
-    public function displayError($message)
-    {
-        $this->initializeTemplateMessages();
-        $this->templateErrors[] = $message;
-
-        return ' ';
-    }
-
-    /**
-     * Replacement for default warning message helper
-     *
-     * @param string|array $message
-     *
-     * @return string
-     */
-    public function displayWarning($message)
-    {
-        $this->initializeTemplateMessages();
-        $this->templateWarnings[] = $message;
-
-        return ' ';
-    }
-
-    /**
-     * Replacement for default warning message helper
-     *
-     * @param string|array $message
-     *
-     * @return string
-     */
-    public function displayConfirmation($message)
-    {
-        $this->initializeTemplateMessages();
-        $this->templateConfirms[] = $message;
-
-        return ' ';
-    }
-
-    /**
-     * Replacement for default warning message helper
-     *
-     * @param string|array $message
-     *
-     * @return string
-     */
-    public function displayInformation($message)
-    {
-        $this->initializeTemplateMessages();
-        $this->templateInfos[] = $message;
-
-        return ' ';
     }
 }

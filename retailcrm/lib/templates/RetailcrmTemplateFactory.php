@@ -60,6 +60,6 @@ class RetailcrmTemplateFactory
      */
     public function createTemplate(Module $module)
     {
-        return new RetailcrmSettingsVueTemplate($module, $this->smarty, $this->assets);
+        return new RetailcrmSettingsTemplate($module, $this->smarty, $this->assets);
     }
 }

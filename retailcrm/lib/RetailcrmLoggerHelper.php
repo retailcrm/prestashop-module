@@ -65,8 +65,8 @@ class RetailcrmLoggerHelper
         $zipFile = new ZipArchive();
         $zipFile->open($zipname, ZipArchive::CREATE);
 
-        foreach (self::getLogFilesInfo() as $logFile) {
-            $zipFile->addFile($logFile['path'], $logFile['name']);
+        foreach (self::getLogFiles() as $logFile) {
+            $zipFile->addFile($logFile, basename($logFile));
         }
 
         $zipFile->close();

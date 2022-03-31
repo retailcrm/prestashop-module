@@ -138,11 +138,6 @@ class RetailcrmCatalogHelper
         return $icmlInfo;
     }
 
-    public static function getIcmlFileInfoMultistore()
-    {
-        return RetailcrmContextSwitcher::runInContext([self::class, 'getIcmlFileInfo']);
-    }
-
     /**
      * @param int $productsCount
      * @param int $offersCount

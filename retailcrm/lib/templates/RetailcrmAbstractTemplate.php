@@ -48,18 +48,6 @@ abstract class RetailcrmAbstractTemplate
     /** @var array */
     protected $data;
 
-    /** @var array */
-    private $errors;
-
-    /** @var array */
-    private $warnings;
-
-    /** @var array */
-    private $informations;
-
-    /** @var array */
-    private $confirmations;
-
     /** @var Context */
     protected $context;
 
@@ -75,10 +63,6 @@ abstract class RetailcrmAbstractTemplate
         $this->module = $module;
         $this->smarty = $smarty;
         $this->assets = $assets;
-        $this->errors = [];
-        $this->warnings = [];
-        $this->informations = [];
-        $this->confirmations = [];
     }
 
     /**
@@ -125,70 +109,9 @@ abstract class RetailcrmAbstractTemplate
                 . '&token=' . $this->smarty->getTemplateVars('token');
         }
 
-        $this->smarty->assign(\array_merge($this->data, [
-            'moduleErrors' => $this->errors,
-            'moduleWarnings' => $this->warnings,
-            'moduleConfirmations' => $this->confirmations,
-            'moduleInfos' => $this->informations,
-        ]));
+        $this->smarty->assign($this->data);
 
         return $this->module->display($file, "views/templates/admin/$this->template");
-    }
-
-    /**
-     * @param $messages
-     *
-     * @return self
-     */
-    public function setErrors($messages)
-    {
-        if (!empty($messages)) {
-            $this->errors = $messages;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param $messages
-     *
-     * @return self
-     */
-    public function setWarnings($messages)
-    {
-        if (!empty($messages)) {
-            $this->warnings = $messages;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param $messages
-     *
-     * @return self
-     */
-    public function setInformations($messages)
-    {
-        if (!empty($messages)) {
-            $this->informations = $messages;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param $messages
-     *
-     * @return self
-     */
-    public function setConfirmations($messages)
-    {
-        if (!empty($messages)) {
-            $this->confirmations = $messages;
-        }
-
-        return $this;
     }
 
     /**
