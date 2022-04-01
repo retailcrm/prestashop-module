@@ -59,7 +59,7 @@ class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
     {
         return [
             'success' => true,
-            'result' => RetailcrmLoggerHelper::getLogFilesInfo(),
+            'result' => RetailcrmSettingsHelper::getLogFilesInfo(),
         ];
     }
 }

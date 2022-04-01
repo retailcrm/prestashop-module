@@ -44,6 +44,11 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
     private $settings;
 
     /**
+     * @var RetailcrmSettingsItemHtml
+     */
+    private $consultantScript;
+
+    /**
      * RetailcrmSettingsTemplate constructor.
      *
      * @param \Module $module
@@ -126,11 +131,9 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
                     'statuses' => $this->settings->getValueStored('outOfStockStatus'),
                 ],
                 'carts' => [
-                    'settings' => [
-                        'synchronizeCartsActive' => $this->settings->getValueStored('synchronizeCartsActive'),
-                        'synchronizedCartStatus' => $this->settings->getValueStored('synchronizedCartStatus'),
-                        'synchronizedCartDelay' => $this->settings->getValueStored('synchronizedCartDelay'),
-                    ],
+                    'synchronizeCartsActive' => $this->settings->getValueStored('synchronizeCartsActive'),
+                    'synchronizedCartStatus' => $this->settings->getValueStored('synchronizedCartStatus'),
+                    'synchronizedCartDelay' => $this->settings->getValueStored('synchronizedCartDelay'),
                     'delays' => RetailcrmSettingsHelper::getCartDelays(),
                 ],
                 'collector' => [
@@ -142,13 +145,13 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
                 ],
             ],
             'catalog' => [
-                'info' => RetailcrmCatalogHelper::getIcmlFileInfo(),
+                'info' => RetailcrmSettingsHelper::getIcmlFileInfo(),
                 'generateName' => RetailcrmIcmlEvent::class,
                 'updateURLName' => RetailcrmIcmlUpdateUrlEvent::class,
             ],
             'advanced' => [
                 'jobs' => RetailcrmSettingsHelper::getJobsInfo(),
-                'logs' => RetailcrmLoggerHelper::getLogFilesInfo(),
+                'logs' => RetailcrmSettingsHelper::getLogFilesInfo(),
             ],
         ];
 

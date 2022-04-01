@@ -61,7 +61,7 @@ class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
         ];
 
         if (Tools::getIsset('catalog')) {
-            $result['catalog'] = RetailcrmCatalogHelper::getIcmlFileInfo();
+            $result['catalog'] = RetailcrmSettingsHelper::getIcmlFileInfo();
         }
         if (Tools::getIsset('delivery')) {
             $result['delivery'] = $this->module->reference->getApiDeliveryTypes(

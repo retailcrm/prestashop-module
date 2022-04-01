@@ -102,28 +102,6 @@ class RetailcrmLoggerHelper
     }
 
     /**
-     * Retrieves log files basic info for advanced tab
-     *
-     * @return array
-     */
-    public static function getLogFilesInfo()
-    {
-        $fileNames = [];
-        $logFiles = self::getLogFiles();
-
-        foreach ($logFiles as $logFile) {
-            $fileNames[] = [
-                'name' => basename($logFile),
-                'path' => $logFile,
-                'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
-                'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
-            ];
-        }
-
-        return $fileNames;
-    }
-
-    /**
      * Retrieves log files paths
      *
      * @return Generator|void
