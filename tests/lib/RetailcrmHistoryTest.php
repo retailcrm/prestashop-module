@@ -309,7 +309,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             unset($orderData['customer']['address']['id']);
         }
         $this->assertEquals($orderData['customer']['address'], $addressInvoice['address']);
-//        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
+        $this->assertEquals($orderData['customer']['phones'][0]['number'], $addressInvoice['phones'][0]['number']);
 
         // types and totals
         $this->assertEquals($orderData['totalSumm'], $order->total_paid);
@@ -567,9 +567,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $idAddressAfter = $orderAfter->id_address_delivery;
         $addressAfter = new Address($idAddressAfter);
 
-//        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
-//            $this->assertNotEquals($idAddress, $idAddressAfter);
-//        }
+        if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+            $this->assertNotEquals($idAddress, $idAddressAfter);
+        }
 
         $this->assertEquals($crmOrder['firstName'], $addressAfter->firstname);
         $this->assertEquals($crmOrder['lastName'], $addressAfter->lastname);
