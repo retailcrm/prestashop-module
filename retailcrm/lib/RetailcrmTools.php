@@ -772,15 +772,14 @@ class RetailcrmTools
     /**
      * Returns true if mapped fields in address are equal. Returns false otherwise.
      *
-     * @param \Address $first
-     * @param \Address $second
+     * @param \Address $address1
+     * @param \Address $address2
      *
      * @return bool
      */
-    protected static function isAddressesEqualByFields($first, $second)
+    protected static function isAddressesEqualByFields($address1, $address2)
     {
-        $checkMapping = [
-            'alias',
+        $fieldsToCompare = [
             'id_country',
             'lastname',
             'firstname',
@@ -795,16 +794,26 @@ class RetailcrmTools
             'vat_number',
         ];
 
-        foreach ($checkMapping as $field) {
-            if ($first->$field != $second->$field) {
+        try {
+            // getting fields in the same format (normalized)
+            $address1Fields = $address1->getFields();
+            $address2Fields = $address2->getFields();
+        } catch (PrestaShopException $e) {
+            RetailcrmLogger::writeDebug(__METHOD__, $e->getMessage());
+
+            return false;
+        }
+
+        foreach ($fieldsToCompare as $field) {
+            if ($address1Fields[$field] !== $address2Fields[$field]) {
                 RetailcrmLogger::writeDebug(__METHOD__, json_encode([
                     'first' => [
-                        'id' => $first->id,
-                        $field => $first->$field,
+                        'id' => $address1->id,
+                        $field => $address1Fields[$field],
                     ],
                     'second' => [
-                        'id' => $second->id,
-                        $field => $second->$field,
+                        'id' => $address2->id,
+                        $field => $address2Fields[$field],
                     ],
                 ]));
 

@@ -191,11 +191,11 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
         $this->buildAddressLine();
 
-        if (isset($this->dataCrm['notes'])) {
+        if (array_key_exists('notes', $this->dataCrm)) {
             $this->setAddressField('other', $this->dataCrm['notes'], '');
         }
 
-        if (isset($this->dataCrm['countryIso'])) {
+        if (array_key_exists('countryIso', $this->dataCrm)) {
             $countryIso = null;
             if (Validate::isLanguageIsoCode($this->dataCrm['countryIso'])) {
                 $countryIso = Country::getByIso($this->dataCrm['countryIso']);
@@ -204,13 +204,13 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
             $this->setAddressField('id_country', $countryIso, Configuration::get('PS_COUNTRY_DEFAULT'));
         }
 
-        if (isset($this->dataCrm['city'])) {
+        if (array_key_exists('city', $this->dataCrm)) {
             $this->setAddressField('city', $this->dataCrm['city'], '--');
         }
-        if (isset($this->dataCrm['index'])) {
+        if (array_key_exists('index', $this->dataCrm)) {
             $this->setAddressField('postcode', $this->dataCrm['index'], '');
         }
-        if (isset($this->dataCrm['region'])) {
+        if (array_key_exists('region', $this->dataCrm)) {
             $this->setAddressField('id_state', (int) State::getIdByName($this->dataCrm['region']));
         }
 
@@ -242,10 +242,12 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     {
         if (isset($this->dataCrm['text'])) {
             $text = $this->dataCrm['text'];
+
             if (isset($this->dataCrm['notes'])) {
                 $text = str_replace($this->dataCrm['notes'], '', $text);
             }
 
+            $text = rtrim($text, ', ');
             $addressLine = explode(RetailcrmAddressBuilder::ADDRESS_LINE_DIVIDER, $text, 2);
 
             $this->setAddressField('address1', $addressLine[0], '--');
