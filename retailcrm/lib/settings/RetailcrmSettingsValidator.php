@@ -136,6 +136,16 @@ class RetailcrmSettingsValidator
             }
         }
 
+        //  check collector identifier
+        if ($this->settings->issetValue('collectorActive') || $this->settings->issetValue('collectorKey')) {
+            if (!$this->validateCollector(
+                $this->settings->getValueWithStored('collectorActive'),
+                $this->settings->getValueWithStored('collectorKey')
+            )) {
+                $this->addError('errors.collector');
+            }
+        }
+
         $errorTabs = $this->validateStoredSettings(); // todo maybe refactor
 
         if (in_array('delivery', $errorTabs)) {
@@ -285,6 +295,11 @@ class RetailcrmSettingsValidator
         }
 
         return false;
+    }
+
+    private function validateCollector($collectorActive, $collectorKey)
+    {
+        return !$collectorActive || $collectorKey !== '';
     }
 
     private function addError($message)

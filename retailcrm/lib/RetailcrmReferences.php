@@ -233,11 +233,6 @@ class RetailcrmReferences
             return [];
         }
 
-        $crmDeliveryTypes[] = [
-            'code' => '',
-            'name' => '',
-        ];
-
         foreach ($request->deliveryTypes as $dType) {
             if (!$dType['active']) {
                 continue;
@@ -270,11 +265,6 @@ class RetailcrmReferences
             return [];
         }
 
-        $crmStatusTypes[] = [
-            'code' => '',
-            'name' => '',
-            'ordering' => '',
-        ];
         foreach ($request->statuses as $sType) {
             if (!$sType['active']) {
                 continue;
@@ -309,11 +299,6 @@ class RetailcrmReferences
         if (!$request) {
             return [];
         }
-
-        $crmPaymentTypes[] = [
-            'code' => '',
-            'name' => '',
-        ];
 
         foreach ($request->paymentTypes as $pType) {
             if (!$pType['active']) {

@@ -42,6 +42,10 @@ class RetailcrmSettingsItemUrl extends RetailcrmSettingsItem
     {
         $value = parent::getValue();
 
-        return rtrim($value, '/');
+        if ('/' !== $value[strlen($value) - 1]) {
+            $value .= '/';
+        }
+
+        return $value;
     }
 }
