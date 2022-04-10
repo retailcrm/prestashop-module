@@ -80,5 +80,7 @@ function upgrade_module_3_3_6($module)
         'retailcrm/public/js/.gitignore',
         'retailcrm/public/js/exec-jobs.js',
         'retailcrm/public/js/retailcrm-upload.js',
-    ]);
+    ])
+    && $module->uninstallOldTabs()
+    ;
 }

@@ -219,18 +219,32 @@ class RetailCRM extends Module
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public function uninstallOldTabs()
     {
-        $moduleTabList = Tab::getCollectionFromModule($this->name);
+        $moduleTabs = Tab::getCollectionFromModule($this->name);
 
         /** @var Tab $tab */
-        foreach ($moduleTabList as $tab) {
+        foreach ($moduleTabs as $tab) {
             $tabClassName = $tab->class_name . 'Controller';
 
             if (!in_array($tabClassName, self::ADMIN_CONTROLLERS)) {
-                $tab->delete();
+                try {
+                    $tab->delete();
+                } catch (PrestaShopException $e) {
+                    RetailcrmLogger::writeCaller(
+                        __METHOD__, sprintf('Error while deleting old tabs: %s', $e->getMessage())
+                    );
+                    RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
+
+                    return false;
+                }
             }
         }
+
+        return true;
     }
 
     public function hookHeader()
