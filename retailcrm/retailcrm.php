@@ -77,14 +77,15 @@ class RetailCRM extends Module
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
 
     // todo dynamically define controller classes
-    const ADMIN_CONTROLLERS = [
-        RetailcrmSettingsLinkController::class,
-        RetailcrmSettingsController::class,
-        RetailcrmJobsController::class,
-        RetailcrmLogsController::class,
-        RetailcrmOrdersController::class,
-        RetailcrmExportController::class,
-    ];
+    const ADMIN_CONTROLLERS
+        = [
+            RetailcrmSettingsLinkController::class,
+            RetailcrmSettingsController::class,
+            RetailcrmJobsController::class,
+            RetailcrmLogsController::class,
+            RetailcrmOrdersController::class,
+            RetailcrmExportController::class,
+        ];
 
     /** @var bool|\RetailcrmApiClientV5 */
     public $api = false;
@@ -216,6 +217,20 @@ class RetailCRM extends Module
         }
 
         return true;
+    }
+
+    public function uninstallOldTabs()
+    {
+        $moduleTabList = Tab::getCollectionFromModule($this->name);
+
+        /** @var Tab $tab */
+        foreach ($moduleTabList as $tab) {
+            $tabClassName = $tab->class_name . 'Controller';
+
+            if (!in_array($tabClassName, self::ADMIN_CONTROLLERS)) {
+                $tab->delete();
+            }
+        }
     }
 
     public function hookHeader()
@@ -812,9 +827,9 @@ class RetailCRM extends Module
                 $deserialized = json_decode($serializedModule);
 
                 if ($deserialized instanceof stdClass
-                        && property_exists($deserialized, 'name')
-                        && property_exists($deserialized, 'active')
-                    ) {
+                    && property_exists($deserialized, 'name')
+                    && property_exists($deserialized, 'active')
+                ) {
                     $deserialized->active = Module::isEnabled($deserialized->name);
                     static::$moduleListCache[] = $deserialized;
                 }

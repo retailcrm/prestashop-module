@@ -84,7 +84,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
             'locale' => $this->getCurrentLanguageISO(),
             'controller' => [
                 'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
-                'payments' => RetailcrmTools::getAdminControllerUrl( AdminPaymentPreferencesController::class),
+                'payments' => RetailcrmTools::getAdminControllerUrl(AdminPaymentPreferencesController::class),
                 'orders' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
                 'export' => RetailcrmTools::getAdminControllerUrl(RetailcrmExportController::class),
                 'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
@@ -174,6 +174,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function setTemplate()
     {
-        $this->template = 'vue.tpl';
+        $this->template = 'index.tpl';
     }
 }

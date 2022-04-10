@@ -1715,7 +1715,18 @@ eval("var _objectSpread = __webpack_require__(/*! ./node_modules/@babel/runtime/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("var map = {\n\t\"./ru/checking-work-2.png\": \"./src/assets/images/ru/checking-work-2.png\",\n\t\"./ru/checking-work-3.png\": \"./src/assets/images/ru/checking-work-3.png\",\n\t\"./ru/delivery-info-1.png\": \"./src/assets/images/ru/delivery-info-1.png\",\n\t\"./ru/delivery-info-2.png\": \"./src/assets/images/ru/delivery-info-2.png\",\n\t\"./ru/where-is-search-1.png\": \"./src/assets/images/ru/where-is-search-1.png\",\n\t\"./ru/where-is-search-2.png\": \"./src/assets/images/ru/where-is-search-2.png\",\n\t\"./ru/where-is-search-3.png\": \"./src/assets/images/ru/where-is-search-3.png\",\n\t\"./ru/where-is-search-4.png\": \"./src/assets/images/ru/where-is-search-4.png\",\n\t\"./ru/where-is-search-5.png\": \"./src/assets/images/ru/where-is-search-5.png\"\n};\n\n\nfunction webpackContext(req) {\n\tvar id = webpackContextResolve(req);\n\treturn __webpack_require__(id);\n}\nfunction webpackContextResolve(req) {\n\tif(!__webpack_require__.o(map, req)) {\n\t\tvar e = new Error(\"Cannot find module '\" + req + \"'\");\n\t\te.code = 'MODULE_NOT_FOUND';\n\t\tthrow e;\n\t}\n\treturn map[req];\n}\nwebpackContext.keys = function webpackContextKeys() {\n\treturn Object.keys(map);\n};\nwebpackContext.resolve = webpackContextResolve;\nmodule.exports = webpackContext;\nwebpackContext.id = \"./src/assets/images sync recursive ^\\\\.\\\\/.*$\";\n\n//# sourceURL=webpack:///./src/assets/images_sync_^\\.\\/.*$?");
+eval("var map = {\n\t\"./es/where-is-search-1.png\": \"./src/assets/images/es/where-is-search-1.png\",\n\t\"./ru/checking-work-2.png\": \"./src/assets/images/ru/checking-work-2.png\",\n\t\"./ru/checking-work-3.png\": \"./src/assets/images/ru/checking-work-3.png\",\n\t\"./ru/delivery-info-1.png\": \"./src/assets/images/ru/delivery-info-1.png\",\n\t\"./ru/delivery-info-2.png\": \"./src/assets/images/ru/delivery-info-2.png\",\n\t\"./ru/where-is-search-1.png\": \"./src/assets/images/ru/where-is-search-1.png\",\n\t\"./ru/where-is-search-2.png\": \"./src/assets/images/ru/where-is-search-2.png\",\n\t\"./ru/where-is-search-3.png\": \"./src/assets/images/ru/where-is-search-3.png\",\n\t\"./ru/where-is-search-4.png\": \"./src/assets/images/ru/where-is-search-4.png\",\n\t\"./ru/where-is-search-5.png\": \"./src/assets/images/ru/where-is-search-5.png\"\n};\n\n\nfunction webpackContext(req) {\n\tvar id = webpackContextResolve(req);\n\treturn __webpack_require__(id);\n}\nfunction webpackContextResolve(req) {\n\tif(!__webpack_require__.o(map, req)) {\n\t\tvar e = new Error(\"Cannot find module '\" + req + \"'\");\n\t\te.code = 'MODULE_NOT_FOUND';\n\t\tthrow e;\n\t}\n\treturn map[req];\n}\nwebpackContext.keys = function webpackContextKeys() {\n\treturn Object.keys(map);\n};\nwebpackContext.resolve = webpackContextResolve;\nmodule.exports = webpackContext;\nwebpackContext.id = \"./src/assets/images sync recursive ^\\\\.\\\\/.*$\";\n\n//# sourceURL=webpack:///./src/assets/images_sync_^\\.\\/.*$?");
+
+/***/ }),
+
+/***/ "./src/assets/images/es/where-is-search-1.png":
+/*!****************************************************!*\
+  !*** ./src/assets/images/es/where-is-search-1.png ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"img/where-is-search-1.12e96183.png\";\n\n//# sourceURL=webpack:///./src/assets/images/es/where-is-search-1.png?");
 
 /***/ }),
 
@@ -1770,7 +1781,7 @@ eval("module.exports = __webpack_require__.p + \"img/delivery-info-2.69d02675.pn
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("module.exports = __webpack_require__.p + \"img/where-is-search-1.374b2070.png\";\n\n//# sourceURL=webpack:///./src/assets/images/ru/where-is-search-1.png?");
+eval("module.exports = __webpack_require__.p + \"img/where-is-search-1.8473a5d9.png\";\n\n//# sourceURL=webpack:///./src/assets/images/ru/where-is-search-1.png?");
 
 /***/ }),
 

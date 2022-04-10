@@ -299,7 +299,7 @@ class RetailcrmSettingsValidator
 
     private function validateCollector($collectorActive, $collectorKey)
     {
-        return !$collectorActive || $collectorKey !== '';
+        return !$collectorActive || '' !== $collectorKey;
     }
 
     private function addError($message)

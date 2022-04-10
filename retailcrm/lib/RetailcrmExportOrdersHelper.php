@@ -88,23 +88,23 @@ class RetailcrmExportOrdersHelper
             return [];
         }
 
-        $sqlOrdersInfo = 'SELECT * FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` WHERE 1';
-        $sqlPagination = 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` WHERE 1';
+        $sqlOrdersInfo = 'FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` eo
+            LEFT JOIN `' . _DB_PREFIX_ . 'orders` o on o.id_order = eo.id_order
+            WHERE 1
+            ' . Shop::addSqlRestriction(false, 'o')
+            ;
 
         if (0 < count($ordersIds)) {
             $sqlOrdersInfo .= ' AND (`id_order` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
-                    OR `id_order_crm` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
-                )';
-            $sqlPagination .= ' AND (`id_order` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
                     OR `id_order_crm` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
                 )';
         }
 
         if (null !== $withErrors) {
             $sqlOrdersInfo .= ' AND errors IS ' . ($withErrors ? 'NOT' : '') . ' NULL';
-            $sqlPagination .= ' AND errors IS ' . ($withErrors ? 'NOT' : '') . ' NULL';
         }
 
+        $sqlPagination = 'SELECT COUNT(*) ' . $sqlOrdersInfo;
         $totalCount = Db::getInstance()->getValue($sqlPagination);
 
         $pagination = [
@@ -116,8 +116,9 @@ class RetailcrmExportOrdersHelper
         if ($page > $pagination['totalPageCount']) {
             $orderInfo = [];
         } else {
-            $sqlOrdersInfo .= ' ORDER BY `id_order` ASC'; // todo order by function $orderBy argument
+            $sqlOrdersInfo .= ' ORDER BY eo.`last_uploaded` DESC'; // todo order by function $orderBy argument
             $sqlOrdersInfo .= ' LIMIT ' . self::ROWS_PER_PAGE * ($page - 1) . ', ' . self::ROWS_PER_PAGE . ';';
+            $sqlOrdersInfo = 'SELECT eo.* ' . $sqlOrdersInfo;
             $orderInfo = Db::getInstance()->executeS($sqlOrdersInfo);
         }
 
