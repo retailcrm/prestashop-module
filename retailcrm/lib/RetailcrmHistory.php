@@ -1139,8 +1139,6 @@ class RetailcrmHistory
                 $deltaQuantity = -1 * ($item['quantity'] - $orderDetail->product_quantity);
             }
 
-            $quantities[$product_id]['delta'] = $deltaQuantity;
-
             StockAvailable::updateQuantity(
                 $product_id,
                 $product_attribute_id,
