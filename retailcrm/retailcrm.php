@@ -661,7 +661,7 @@ class RetailCRM extends Module
             $zipname = _PS_DOWNLOAD_DIR_ . '/retailcrm_logs_' . date('Y-m-d H-i-s') . '.zip';
 
             $zipFile = new ZipArchive();
-            $zipFile->open($zipname, ZIPARCHIVE::CREATE);
+            $zipFile->open($zipname, ZipArchive::CREATE);
 
             foreach (RetailcrmLogger::getLogFilesInfo() as $logFile) {
                 $zipFile->addFile($logFile['path'], $logFile['name']);
