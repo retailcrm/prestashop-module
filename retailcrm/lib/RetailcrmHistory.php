@@ -1805,6 +1805,11 @@ class RetailcrmHistory
         ];
 
         $orderdb = new Order($orderId);
+
+	if (null === Context::getContext()->currency) {
+            Context::getContext()->currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+        }
+
         foreach ($orderdb->getProducts() as $item) {
             if (isset($item['product_attribute_id']) && 0 < $item['product_attribute_id']) {
                 $productId = $item['product_id'] . '#' . $item['product_attribute_id'];
