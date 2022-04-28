@@ -1806,7 +1806,7 @@ class RetailcrmHistory
 
         $orderdb = new Order($orderId);
 
-	if (null === Context::getContext()->currency) {
+        if (null === Context::getContext()->currency) {
             Context::getContext()->currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
         }
 
