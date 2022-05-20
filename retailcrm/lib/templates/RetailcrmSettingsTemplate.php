@@ -63,6 +63,14 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
         $this->consultantScript = new RetailcrmSettingsItemHtml('consultantScript', RetailCRM::CONSULTANT_SCRIPT);
     }
 
+    protected function buildParams()
+    {
+        $this->data = [
+            'assets' => $this->assets,
+            'appData' => $this->getParams(),
+        ];
+    }
+
     /**
      * Build params for template
      *
@@ -70,8 +78,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
      */
     protected function getParams()
     {
-        $params = [];
-
         $deliveryTypesCMS = $this->module->reference->getDeliveryTypes();
         $paymentTypesCMS = $this->module->reference->getSystemPaymentModules();
         $statusesCMS = $this->module->reference->getStatuses();
@@ -80,7 +86,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
         $paymentTypesCRM = $this->module->reference->getApiPaymentTypes();
         $statusesCRM = $this->module->reference->getApiStatusesWithGroup();
 
-        $params['vue'] = [
+        return [
             'locale' => $this->getCurrentLanguageISO(),
             'controller' => [
                 'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
@@ -155,18 +161,6 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
                 'logs' => RetailcrmSettingsHelper::getLogFilesInfo(),
             ],
         ];
-
-        return $params;
-    }
-
-    protected function buildParams()
-    {
-        $this->data = array_merge(
-            [
-                'assets' => $this->assets,
-            ],
-            $this->getParams()
-        );
     }
 
     /**

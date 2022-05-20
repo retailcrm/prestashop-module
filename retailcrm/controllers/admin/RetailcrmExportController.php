@@ -53,7 +53,9 @@ class RetailcrmExportController extends RetailcrmAdminPostAbstractController
         RetailcrmHistory::$api = $api;
 
         if (Tools::getIsset('stepOrders')) {
-            RetailcrmExport::export(Tools::getValue('stepOrders'), 'order');
+            $skipUploaded = Tools::getIsset('skipUploaded') && 'true' === Tools::getValue('skipUploaded');
+
+            RetailcrmExport::export(Tools::getValue('stepOrders'), 'order', $skipUploaded);
         } elseif (Tools::getIsset('stepCustomers')) {
             RetailcrmExport::export(Tools::getValue('stepCustomers'), 'customer');
         } elseif (Tools::getIsset('stepSinceId')) {

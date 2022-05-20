@@ -73,7 +73,6 @@ function upgrade_module_3_3_6($module)
         'retailcrm/lib/RetailcrmApiResponse.php',
         'retailcrm/lib/RetailcrmDaemonCollector.php',
         'retailcrm/lib/RetailcrmHttpClient.php',
-        'retailcrm/lib/RetailcrmInventories.php',
         'retailcrm/lib/RetailcrmProxy.php',
         'retailcrm/lib/RetailcrmService.php',
         'retailcrm/public/css/.gitignore',
@@ -145,5 +144,6 @@ function upgrade_module_3_3_6($module)
         'retailcrm/views/templates/admin/settings.tpl',
     ])
     && $module->uninstallOldTabs()
+    && $module->installTab()
     ;
 }

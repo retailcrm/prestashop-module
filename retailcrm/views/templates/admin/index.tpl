@@ -35,8 +35,7 @@
  * to avoid any conflicts with others containers.
  *}
 <script>
-    window.simlaData = {$vue|default:'{}'|@json_encode};
-    console.log(window.simlaData);
+    window.$appData = {$appData|default:'{}'|@json_encode};
 </script>
 
 {include file='./../../index.html'}

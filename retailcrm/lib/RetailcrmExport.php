@@ -511,12 +511,11 @@ class RetailcrmExport
     /**
      * @param int $step
      * @param string $entity
-     *
-     * @return bool
+     * @param bool $skipUploaded
      *
      * @throws Exception
      */
-    public static function export($step, $entity = 'order')
+    public static function export($step, $entity = 'order', $skipUploaded = false)
     {
         --$step;
         if (0 > $step) {
@@ -527,7 +526,7 @@ class RetailcrmExport
             $stepSize = RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB;
 
             RetailcrmExport::$ordersOffset = $stepSize;
-            RetailcrmExport::exportOrders($step * $stepSize, $stepSize, true);
+            RetailcrmExport::exportOrders($step * $stepSize, $stepSize, $skipUploaded);
         // todo maybe save current step to database
         } elseif ('customer' === $entity) {
             $stepSize = RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB;
