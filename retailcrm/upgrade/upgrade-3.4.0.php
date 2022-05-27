@@ -41,13 +41,13 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Upgrade module to version 3.3.6
+ * Upgrade module to version 3.4.0
  *
  * @param \RetailCRM $module
  *
  * @return bool
  */
-function upgrade_module_3_3_6($module)
+function upgrade_module_3_4_0($module)
 {
     if ('retailcrm' != $module->name) {
         return false;
