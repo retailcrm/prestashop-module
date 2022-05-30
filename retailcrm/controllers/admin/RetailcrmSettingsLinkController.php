@@ -36,55 +36,46 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmSettingsLinkController extends RetailcrmAdminAbstractController
 {
-    private static function jsonResponse($response)
+    public static function getParentId()
     {
-        return json_encode($response);
+        return (int) Tab::getIdFromClassName('IMPROVE');
     }
 
-    public static function invalidResponse($msg, $status = 404)
+    public static function getIcon()
     {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
+        return 'shop';
     }
 
-    public static function successfullResponse($data = null, $key = null)
+    public static function getPosition()
     {
-        $response = [
-            'success' => true,
-        ];
+        return 7;
+    }
 
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+    public static function getName()
+    {
+        $name = [];
+
+        foreach (Language::getLanguages(true) as $lang) {
+            $name[$lang['id_lang']] = 'Simla.com';
         }
 
-        return $response;
+        return $name;
+    }
+
+    public function postProcess()
+    {
+        $link = $this->context->link->getAdminLink('AdminModules', true, [], [
+            'configure' => 'retailcrm',
+        ]);
+
+        if (version_compare(_PS_VERSION_, '1.7.0.3', '<')) {
+            $link .= '&module_name=retailcrm&configure=retailcrm';
+        }
+
+        $this->setRedirectAfter($link);
     }
 }

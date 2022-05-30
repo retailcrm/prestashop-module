@@ -129,14 +129,16 @@ class RetailCRMTest extends RetailcrmTestCase
 
         $this->mockMethodsForOrderUpload(1, 1, $updReference);
 
+        RetailcrmExport::$api = $this->retailcrmModule->api;
+
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, false);
-        $this->retailcrmModule->uploadOrders([1]);
+        RetailcrmExport::uploadOrders([1]);
         $firstUpdOrder = new Order(1);
 
         $this->assertEquals($reference, $firstUpdOrder->reference);
 
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING, true);
-        $this->retailcrmModule->uploadOrders([1]);
+        RetailcrmExport::uploadOrders([1]);
         $secondUpdOrder = new Order(1);
 
         $this->assertEquals($updReference, $secondUpdOrder->reference);

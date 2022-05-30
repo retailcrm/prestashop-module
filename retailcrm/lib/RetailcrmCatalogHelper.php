@@ -87,56 +87,6 @@ class RetailcrmCatalogHelper
         return _PS_ROOT_DIR_ . '/' . self::getIcmlFileName();
     }
 
-    public static function getIcmlFileInfo()
-    {
-        $icmlInfo = json_decode((string) Configuration::get(self::ICML_INFO_NAME), true);
-
-        if (null === $icmlInfo || JSON_ERROR_NONE !== json_last_error()) {
-            $icmlInfo = [];
-        }
-
-        $lastGenerated = self::getIcmlFileDate();
-
-        if (false === $lastGenerated) {
-            return $icmlInfo;
-        }
-
-        $icmlInfo['lastGenerated'] = $lastGenerated;
-        $now = new DateTimeImmutable();
-        /** @var DateInterval $diff */
-        $diff = $lastGenerated->diff($now);
-
-        $icmlInfo['lastGeneratedDiff'] = [
-            'days' => $diff->days,
-            'hours' => $diff->h,
-            'minutes' => $diff->i,
-        ];
-
-        $icmlInfo['isOutdated'] = (
-            0 < $icmlInfo['lastGeneratedDiff']['days']
-            || 4 < $icmlInfo['lastGeneratedDiff']['hours']
-        );
-
-        $api = RetailcrmTools::getApiClient();
-
-        if (null !== $api) {
-            $reference = new RetailcrmReferences($api);
-
-            $site = $reference->getSite();
-            $icmlInfo['isUrlActual'] = !empty($site['ymlUrl']) && $site['ymlUrl'] === self::getIcmlFileLink();
-            if (!empty($site['catalogId'])) {
-                $icmlInfo['siteId'] = $site['catalogId'];
-            }
-        }
-
-        return $icmlInfo;
-    }
-
-    public static function getIcmlFileInfoMultistore()
-    {
-        return RetailcrmContextSwitcher::runInContext([self::class, 'getIcmlFileInfo']);
-    }
-
     /**
      * @param int $productsCount
      * @param int $offersCount

@@ -67,21 +67,13 @@ class RetailcrmReferences
     public function getDeliveryTypes()
     {
         $deliveryTypes = [];
-        $apiDeliveryTypes = $this->getApiDeliveryTypes();
 
         if (!empty($this->carriers)) {
             foreach ($this->carriers as $carrier) {
                 $deliveryTypes[] = [
-                    'type' => 'select',
                     'label' => $carrier['name'],
-                    'name' => 'RETAILCRM_API_DELIVERY[' . $carrier['id_carrier'] . ']',
-                    'subname' => $carrier['id_carrier'],
+                    'id' => $carrier['id_carrier'],
                     'required' => false,
-                    'options' => [
-                        'query' => $apiDeliveryTypes,
-                        'id' => 'id_option',
-                        'name' => 'name',
-                    ],
                 ];
             }
         }
@@ -93,140 +85,20 @@ class RetailcrmReferences
     {
         $statusTypes = [];
         $states = OrderState::getOrderStates($this->default_lang, true);
-        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
 
         if (!empty($states)) {
             foreach ($states as $state) {
                 if (' ' != $state['name']) {
-                    $key = $state['id_order_state'];
                     $statusTypes[] = [
-                        'type' => 'select',
                         'label' => $state['name'],
-                        'name' => "RETAILCRM_API_STATUS[$key]",
-                        'subname' => $key,
+                        'id' => $state['id_order_state'],
                         'required' => false,
-                        'options' => [
-                            'query' => $this->apiStatuses,
-                            'id' => 'id_option',
-                            'name' => 'name',
-                        ],
                     ];
                 }
             }
         }
 
         return $statusTypes;
-    }
-
-    public function getOutOfStockStatuses($arParams)
-    {
-        $statusTypes = [];
-        $this->apiStatuses = $this->apiStatuses ?: $this->getApiStatuses();
-
-        foreach ($arParams as $key => $state) {
-            $statusTypes[] = [
-                'type' => 'select',
-                'label' => $state,
-                'name' => "RETAILCRM_API_OUT_OF_STOCK_STATUS[$key]",
-                'subname' => $key,
-                'required' => false,
-                'options' => [
-                    'query' => $this->apiStatuses,
-                    'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
-        }
-
-        return $statusTypes;
-    }
-
-    public function getPaymentTypes()
-    {
-        $payments = $this->getSystemPaymentModules();
-        $paymentTypes = [];
-        $apiPaymentTypes = $this->getApiPaymentTypes();
-
-        if (!empty($payments)) {
-            foreach ($payments as $payment) {
-                $paymentTypes[] = [
-                    'type' => 'select',
-                    'label' => $payment['name'],
-                    'name' => 'RETAILCRM_API_PAYMENT[' . $payment['code'] . ']',
-                    'subname' => $payment['code'],
-                    'required' => false,
-                    'options' => [
-                        'query' => $apiPaymentTypes,
-                        'id' => 'id_option',
-                        'name' => 'name',
-                    ],
-                ];
-            }
-        }
-
-        return $paymentTypes;
-    }
-
-    public function getPaymentAndDeliveryForDefault($arParams)
-    {
-        $paymentTypes = [];
-        $deliveryTypes = [];
-
-        $paymentDeliveryTypes = [];
-
-        if (!empty($this->carriers)) {
-            $deliveryTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-
-            foreach ($this->carriers as $valCarrier) {
-                $deliveryTypes[] = [
-                    'id_option' => $valCarrier['id_carrier'],
-                    'name' => $valCarrier['name'],
-                ];
-            }
-
-            $paymentDeliveryTypes[] = [
-                'type' => 'select',
-                'label' => $arParams[0],
-                'name' => 'RETAILCRM_API_DELIVERY_DEFAULT',
-                'required' => false,
-                'options' => [
-                    'query' => $deliveryTypes,
-                    'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
-        }
-        $paymentModules = $this->getSystemPaymentModules();
-        if (!empty($paymentModules)) {
-            $paymentTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-
-            foreach ($paymentModules as $valPayment) {
-                $paymentTypes[$valPayment['id']] = [
-                    'id_option' => $valPayment['code'],
-                    'name' => $valPayment['name'],
-                ];
-            }
-
-            $paymentDeliveryTypes[] = [
-                'type' => 'select',
-                'label' => $arParams[1],
-                'name' => 'RETAILCRM_API_PAYMENT_DEFAULT',
-                'required' => false,
-                'options' => [
-                    'query' => $paymentTypes,
-                    'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
-        }
-
-        return $paymentDeliveryTypes;
     }
 
     public function getSystemPaymentModules($active = true)
@@ -291,59 +163,52 @@ class RetailcrmReferences
         return $this->payment_modules;
     }
 
-    public function getStatuseDefaultExport()
+    public function getApiStatusesWithGroup()
     {
-        return $this->getApiStatuses();
-    }
-
-    public function getApiDeliveryTypes()
-    {
-        $crmDeliveryTypes = [];
-        $request = $this->api->deliveryTypesList();
-
-        if ($request) {
-            $crmDeliveryTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-            foreach ($request->deliveryTypes as $dType) {
-                if (!$dType['active']) {
-                    continue;
-                }
-
-                $crmDeliveryTypes[] = [
-                    'id_option' => $dType['code'],
-                    'name' => $dType['name'],
-                ];
-            }
+        if (!$this->api) {
+            return [];
         }
 
-        return $crmDeliveryTypes;
-    }
-
-    public function getApiStatuses()
-    {
-        $crmStatusTypes = [];
         $request = $this->api->statusesList();
+        $requestGroups = $this->api->statusGroupsList();
 
-        if ($request) {
-            $crmStatusTypes[] = [
-                'id_option' => '',
-                'name' => '',
-                'ordering' => '',
-            ];
-            foreach ($request->statuses as $sType) {
-                if (!$sType['active']) {
-                    continue;
-                }
+        if (!$request || !$requestGroups) {
+            return [];
+        }
 
-                $crmStatusTypes[] = [
-                    'id_option' => $sType['code'],
-                    'name' => $sType['name'],
-                    'ordering' => $sType['ordering'],
-                ];
+        $crmStatusTypes = [];
+        foreach ($request->statuses as $sType) {
+            if (!$sType['active']) {
+                continue;
             }
-            usort($crmStatusTypes, function ($a, $b) {
+
+            $crmStatusTypes[$sType['group']]['statuses'][] = [
+                'code' => $sType['code'],
+                'name' => $sType['name'],
+                'ordering' => $sType['ordering'],
+            ];
+        }
+
+        foreach ($requestGroups->statusGroups as $statusGroup) {
+            if (!isset($crmStatusTypes[$statusGroup['code']])) {
+                continue;
+            }
+
+            $crmStatusTypes[$statusGroup['code']]['code'] = $statusGroup['code'];
+            $crmStatusTypes[$statusGroup['code']]['name'] = $statusGroup['name'];
+            $crmStatusTypes[$statusGroup['code']]['ordering'] = $statusGroup['ordering'];
+        }
+
+        usort($crmStatusTypes, function ($a, $b) {
+            if ($a['ordering'] == $b['ordering']) {
+                return 0;
+            } else {
+                return $a['ordering'] < $b['ordering'] ? -1 : 1;
+            }
+        });
+
+        foreach ($crmStatusTypes as &$crmStatusType) {
+            usort($crmStatusType['statuses'], function ($a, $b) {
                 if ($a['ordering'] == $b['ordering']) {
                     return 0;
                 } else {
@@ -355,26 +220,95 @@ class RetailcrmReferences
         return $crmStatusTypes;
     }
 
+    public function getApiDeliveryTypes()
+    {
+        if (!$this->api) {
+            return [];
+        }
+
+        $crmDeliveryTypes = [];
+        $request = $this->api->deliveryTypesList();
+
+        if (!$request) {
+            return [];
+        }
+
+        foreach ($request->deliveryTypes as $dType) {
+            if (!$dType['active']) {
+                continue;
+            }
+
+            $crmDeliveryTypes[] = [
+                'code' => $dType['code'],
+                'name' => $dType['name'],
+            ];
+        }
+
+        return $crmDeliveryTypes;
+    }
+
+    /**
+     * Used in \RetailcrmSettings::validateStoredSettings to validate api statuses
+     *
+     * @return array
+     */
+    public function getApiStatuses()
+    {
+        if (!$this->api) {
+            return [];
+        }
+
+        $crmStatusTypes = [];
+        $request = $this->api->statusesList();
+
+        if (!$request) {
+            return [];
+        }
+
+        foreach ($request->statuses as $sType) {
+            if (!$sType['active']) {
+                continue;
+            }
+
+            $crmStatusTypes[] = [
+                'code' => $sType['code'],
+                'name' => $sType['name'],
+                'ordering' => $sType['ordering'],
+            ];
+        }
+        usort($crmStatusTypes, function ($a, $b) {
+            if ($a['ordering'] == $b['ordering']) {
+                return 0;
+            } else {
+                return $a['ordering'] < $b['ordering'] ? -1 : 1;
+            }
+        });
+
+        return $crmStatusTypes;
+    }
+
     public function getApiPaymentTypes()
     {
+        if (!$this->api) {
+            return [];
+        }
+
         $crmPaymentTypes = [];
         $request = $this->api->paymentTypesList();
 
-        if ($request) {
-            $crmPaymentTypes[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-            foreach ($request->paymentTypes as $pType) {
-                if (!$pType['active']) {
-                    continue;
-                }
+        if (!$request) {
+            return [];
+        }
 
-                $crmPaymentTypes[] = [
-                    'id_option' => $pType['code'],
-                    'name' => $pType['name'],
-                ];
+        foreach ($request->paymentTypes as $pType) {
+            if (!$pType['active']) {
+                continue;
             }
+
+            $crmPaymentTypes[] = [
+                'code' => $pType['code'],
+                'name' => $pType['name'],
+            ];
         }
 
         return $crmPaymentTypes;
@@ -415,62 +349,5 @@ class RetailcrmReferences
         }
 
         return null;
-    }
-
-    public function getStores()
-    {
-        $storesShop = $this->getShopStores();
-        $retailcrmStores = $this->getApiStores();
-
-        foreach ($storesShop as $key => $storeShop) {
-            $stores[] = [
-                'type' => 'select',
-                'name' => 'RETAILCRM_STORES[' . $key . ']',
-                'label' => $storeShop,
-                'options' => [
-                    'query' => $retailcrmStores,
-                    'id' => 'id_option',
-                    'name' => 'name',
-                ],
-            ];
-        }
-
-        return $stores;
-    }
-
-    protected function getShopStores()
-    {
-        $stores = [];
-        $warehouses = Warehouse::getWarehouses();
-
-        foreach ($warehouses as $warehouse) {
-            $arrayName = explode('-', $warehouse['name']);
-            $warehouseName = trim($arrayName[1]);
-            $stores[$warehouse['id_warehouse']] = $warehouseName;
-        }
-
-        return $stores;
-    }
-
-    protected function getApiStores()
-    {
-        $crmStores = [];
-        $response = $this->api->storesList();
-
-        if ($response) {
-            $crmStores[] = [
-                'id_option' => '',
-                'name' => '',
-            ];
-
-            foreach ($response->stores as $store) {
-                $crmStores[] = [
-                    'id_option' => $store['code'],
-                    'name' => $store['name'],
-                ];
-            }
-        }
-
-        return $crmStores;
     }
 }

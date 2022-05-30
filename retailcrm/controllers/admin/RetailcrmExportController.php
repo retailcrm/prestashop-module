@@ -36,55 +36,53 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmExportController extends RetailcrmAdminPostAbstractController
 {
-    private static function jsonResponse($response)
+    protected function postHandler()
     {
-        return json_encode($response);
-    }
+        $api = RetailcrmTools::getApiClient();
 
-    public static function invalidResponse($msg, $status = 404)
-    {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+        if (empty($api)) {
+            throw new Exception('Set API key & URL first');
         }
 
-        return $response;
+        RetailcrmExport::init();
+        RetailcrmExport::$api = $api;
+        RetailcrmHistory::$api = $api;
+
+        if (Tools::getIsset('stepOrders')) {
+            $skipUploaded = Tools::getIsset('skipUploaded') && 'true' === Tools::getValue('skipUploaded');
+
+            RetailcrmExport::export(Tools::getValue('stepOrders'), 'order', $skipUploaded);
+        } elseif (Tools::getIsset('stepCustomers')) {
+            RetailcrmExport::export(Tools::getValue('stepCustomers'), 'customer');
+        } elseif (Tools::getIsset('stepSinceId')) {
+            RetailcrmHistory::updateSinceId('customers');
+            RetailcrmHistory::updateSinceId('orders');
+        } else {
+            throw new Exception('Invalid request data');
+        }
+
+        return RetailcrmJsonResponse::successfullResponse();
+    }
+
+    protected function getHandler()
+    {
+        // todo move to helper
+        return [
+            'success' => true,
+            'orders' => [
+                'count' => RetailcrmExport::getOrdersCount(),
+                'exportCount' => RetailcrmExport::getOrdersCount(true),
+                'exportStepSize' => RetailcrmExport::RETAILCRM_EXPORT_ORDERS_STEP_SIZE_WEB,
+            ],
+            'customers' => [
+                'count' => RetailcrmExport::getCustomersCount(),
+                'exportCount' => RetailcrmExport::getCustomersCount(false),
+                'exportStepSize' => RetailcrmExport::RETAILCRM_EXPORT_CUSTOMERS_STEP_SIZE_WEB,
+            ],
+        ];
     }
 }

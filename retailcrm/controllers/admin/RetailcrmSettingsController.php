@@ -38,44 +38,44 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmSettingsController extends RetailcrmAdminAbstractController
+class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
 {
-    public static function getParentId()
+    protected function postHandler()
     {
-        return (int) Tab::getIdFromClassName('IMPROVE');
+        $settings = new RetailcrmSettings($this->module);
+
+        return $settings->save();
     }
 
-    public static function getIcon()
+    protected function getHandler()
     {
-        return 'shop';
-    }
-
-    public static function getPosition()
-    {
-        return 7;
-    }
-
-    public static function getName()
-    {
-        $name = [];
-
-        foreach (Language::getLanguages(true) as $lang) {
-            $name[$lang['id_lang']] = 'Simla.com';
+        if (null === $this->module->reference) {
+            return [
+                'success' => false,
+                'errorMsg' => 'Set api key & url first',
+            ];
         }
 
-        return $name;
-    }
+        $result = [
+            'success' => true,
+        ];
 
-    public function postProcess()
-    {
-        $link = $this->context->link->getAdminLink('AdminModules', true, [], [
-            'configure' => 'retailcrm',
-        ]);
-
-        if (version_compare(_PS_VERSION_, '1.7.0.3', '<')) {
-            $link .= '&module_name=retailcrm&configure=retailcrm';
+        if (Tools::getIsset('catalog')) {
+            $result['catalog'] = RetailcrmSettingsHelper::getIcmlFileInfo();
+        }
+        if (Tools::getIsset('delivery')) {
+            $result['delivery'] = $this->module->reference->getApiDeliveryTypes(
+            ); // todo replace with helper function
+        }
+        if (Tools::getIsset('payment')) {
+            $result['payment'] = $this->module->reference->getApiPaymentTypes(
+            ); // todo replace with helper function
+        }
+        if (Tools::getIsset('status')) {
+            $result['status'] = $this->module->reference->getApiStatusesWithGroup(
+            ); // todo replace with helper function
         }
 
-        $this->setRedirectAfter($link);
+        return $result;
     }
 }

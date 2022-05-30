@@ -36,55 +36,30 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmLogsController extends RetailcrmAdminPostAbstractController
 {
-    private static function jsonResponse($response)
+    protected function postHandler()
     {
-        return json_encode($response);
-    }
-
-    public static function invalidResponse($msg, $status = 404)
-    {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+        if (!Tools::getIsset('logName') && !Tools::getIsset('all')) {
+            throw new Exception('Invalid request data');
         }
 
-        return $response;
+        if (Tools::getIsset('all')) {
+            return RetailcrmLoggerHelper::downloadAll();
+        }
+
+        $logName = Tools::getValue('logName');
+
+        return RetailcrmLoggerHelper::download($logName);
+    }
+
+    protected function getHandler()
+    {
+        return [
+            'success' => true,
+            'result' => RetailcrmSettingsHelper::getLogFilesInfo(),
+        ];
     }
 }

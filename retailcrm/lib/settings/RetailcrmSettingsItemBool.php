@@ -36,55 +36,24 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
-
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmSettingsItemBool extends RetailcrmSettingsItem
 {
-    private static function jsonResponse($response)
+    public function getValue()
     {
-        return json_encode($response);
+        $value = parent::getValue();
+
+        return false !== $value && 'false' !== $value;
     }
 
-    public static function invalidResponse($msg, $status = 404)
+    public function getValueForUpdate() // todo to protected
     {
-        http_response_code($status);
+        $valueForUpdate = parent::getValueForUpdate();
 
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
+        return $valueForUpdate ? '1' : '0';
     }
 
-    public static function successfullResponse($data = null, $key = null)
+    public function getValueStored()
     {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
-        }
-
-        return $response;
+        return '1' === parent::getValueStored();
     }
 }

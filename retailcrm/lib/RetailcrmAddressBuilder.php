@@ -204,7 +204,8 @@ class RetailcrmAddressBuilder extends RetailcrmAbstractDataBuilder
             [
                 'address' => $this->address,
                 'mode' => $this->mode,
-            ]);
+            ]
+        );
 
         return $this;
     }

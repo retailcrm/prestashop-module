@@ -36,55 +36,59 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
-
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmSettingsItem
 {
-    private static function jsonResponse($response)
+    private $paramKey;
+    protected $configKey;
+
+    public function __construct($paramKey, $configKey)
     {
-        return json_encode($response);
+        $this->paramKey = $paramKey;
+        $this->configKey = $configKey;
     }
 
-    public static function invalidResponse($msg, $status = 404)
+    public function updateValue()
     {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+        if (!$this->issetValue()) {
+            return;
         }
 
-        return $response;
+        $value = $this->getValueForUpdate();
+
+        Configuration::updateValue($this->configKey, $value);
+    }
+
+    public function issetValue()
+    {
+        return Tools::getIsset($this->paramKey);
+    }
+
+    public function deleteValue()
+    {
+        return Configuration::deleteByName($this->configKey);
+    }
+
+    public function getValue()
+    {
+        return Tools::getValue($this->paramKey);
+    }
+
+    public function getValueForUpdate() // todo make protected
+    {
+        return $this->getValue();
+    }
+
+    public function getValueStored()
+    {
+        return Configuration::get($this->configKey, null, null, null, '');
+    }
+
+    public function getValueWithStored()
+    {
+        if ($this->issetValue()) {
+            return $this->getValue();
+        }
+
+        return $this->getValueStored();
     }
 }

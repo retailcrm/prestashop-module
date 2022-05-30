@@ -196,8 +196,7 @@ class RetailcrmOrderBuilder
         if (empty($this->apiSite)) {
             $response = $this->api->credentials();
 
-            if (
-                $response->isSuccessful()
+            if ($response->isSuccessful()
                 && $response->offsetExists('sitesAvailable')
                 && is_array($response['sitesAvailable'])
                 && !empty($response['sitesAvailable'])
@@ -894,7 +893,7 @@ class RetailcrmOrderBuilder
         $order,
         $customer = null,
         $orderCart = null,
-        $isStatusExport = false,
+        $isStatusExport = false, // todo always false -> remove unused parameter
         $preferCustomerAddress = false,
         $dataFromCart = false,
         $contactPersonId = '',
@@ -915,7 +914,7 @@ class RetailcrmOrderBuilder
             $paymentType = $order->payment;
         }
 
-        if (0 == $order->current_state) {
+        if (0 == $order->current_state) { // todo refactor
             $order_status = $statusExport;
 
             if (!$isStatusExport) {
@@ -1172,7 +1171,8 @@ class RetailcrmOrderBuilder
                 'order' => $order,
                 'customer' => $customer,
                 'cart' => $cart,
-            ]);
+            ]
+        );
     }
 
     /**
@@ -1271,7 +1271,8 @@ class RetailcrmOrderBuilder
             [
                 'customer' => $object,
                 'address' => $address,
-            ]);
+            ]
+        );
     }
 
     public static function buildCrmCustomerCorporate(
@@ -1359,7 +1360,8 @@ class RetailcrmOrderBuilder
             RetailcrmTools::clearArray($customer),
             [
                 'customer' => $object,
-            ]);
+            ]
+        );
     }
 
     /**

@@ -36,55 +36,23 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
-
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmSettingsItemCache extends RetailcrmSettingsItem
 {
-    private static function jsonResponse($response)
+    public function updateValue()
     {
-        return json_encode($response);
-    }
-
-    public static function invalidResponse($msg, $status = 404)
-    {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+        if (!$this->issetValue()) {
+            return;
         }
 
-        return $response;
+        $value = $this->getValueForUpdate();
+
+        Configuration::updateValue($this->configKey, $value);
+        Cache::getInstance()->set($this->configKey, $value);
+    }
+
+    public function deleteValue()
+    {
+        return parent::deleteValue()
+            && Cache::getInstance()->delete($this->configKey);
     }
 }

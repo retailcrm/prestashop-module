@@ -36,55 +36,57 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmJobsController extends RetailcrmAdminPostAbstractController
 {
-    private static function jsonResponse($response)
+    protected function postHandler()
     {
-        return json_encode($response);
-    }
-
-    public static function invalidResponse($msg, $status = 404)
-    {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
-            }
+        if (!Tools::getIsset('jobName') && !Tools::getIsset('reset')) {
+            throw new Exception('Invalid request data');
         }
 
-        return $response;
+        if (Tools::getIsset('reset')) {
+            return $this->resetJobManager();
+        }
+
+        $jobName = Tools::getValue('jobName');
+
+        return $this->runJob($jobName);
+    }
+
+    protected function getHandler()
+    {
+        return [
+            'success' => true,
+            'result' => RetailcrmSettingsHelper::getJobsInfo(),
+        ];
+    }
+
+    private function resetJobManager()
+    {
+        $errors = [];
+        if (!RetailcrmJobManager::reset()) {
+            $errors[] = 'Job manager internal state was NOT cleared.';
+        }
+        if (!RetailcrmCli::clearCurrentJob(null)) {
+            $errors[] = 'CLI job was NOT cleared';
+        }
+
+        if (!empty($errors)) {
+            throw new Exception(implode(' ', $errors));
+        }
+
+        return RetailcrmJsonResponse::successfullResponse();
+    }
+
+    private function runJob($jobName)
+    {
+        $result = RetailcrmJobManager::execManualJob($jobName);
+
+        return [
+            'success' => true,
+            'result' => $result,
+        ];
     }
 }

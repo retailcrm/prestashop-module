@@ -38,6 +38,11 @@
 
 class RetailcrmAdminAbstractController extends ModuleAdminController
 {
+    /**
+     * @var RetailCRM
+     */
+    public $module;
+
     public static function getId()
     {
         $tabId = (int) Tab::getIdFromClassName(static::getClassName());

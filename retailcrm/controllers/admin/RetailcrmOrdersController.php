@@ -38,14 +38,18 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmOrdersController extends RetailcrmAdminAbstractController
+class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
 {
-    public function postProcess()
+    protected function postHandler()
     {
-        $this->ajaxDie(json_encode($this->getData()));
+        $orderIds = Tools::getValue('orders');
+
+        RetailcrmExport::$api = RetailcrmTools::getApiClient();
+
+        return RetailcrmExport::uploadOrders($orderIds);
     }
 
-    protected function getData()
+    protected function getHandler()
     {
         $orders = Tools::getValue('orders', []);
         $page = (int) (Tools::getValue('page', 1));
@@ -61,20 +65,8 @@ class RetailcrmOrdersController extends RetailcrmAdminAbstractController
                 $withErrors = null;
         }
 
-        try {
-            return array_merge([
-                'success' => true,
-            ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        } catch (Error $e) {
-            return [
-                'success' => false,
-                'errorMsg' => $e->getMessage(),
-            ];
-        }
+        return array_merge([
+            'success' => true,
+        ], RetailcrmExportOrdersHelper::getOrders($orders, $withErrors, $page));
     }
 }

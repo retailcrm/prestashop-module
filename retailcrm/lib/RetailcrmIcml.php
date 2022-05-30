@@ -86,7 +86,8 @@ class RetailcrmIcml
         ';
 
         $xml = new SimpleXMLElement(
-            $string, LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
+            $string,
+            LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
         );
 
         $this->dd = new DOMDocument();

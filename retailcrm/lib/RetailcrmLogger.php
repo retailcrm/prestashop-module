@@ -235,78 +235,13 @@ class RetailcrmLogger
      */
     public static function clearObsoleteLogs()
     {
-        $logFiles = self::getLogFiles();
+        $logFiles = RetailcrmLoggerHelper::getLogFiles();
 
         foreach ($logFiles as $logFile) {
             if (filemtime($logFile) < strtotime('-30 days')) {
                 unlink($logFile);
             }
         }
-    }
-
-    /**
-     * Retrieves log files basic info for advanced tab
-     *
-     * @return array
-     */
-    public static function getLogFilesInfo()
-    {
-        $fileNames = [];
-        $logFiles = self::getLogFiles();
-
-        foreach ($logFiles as $logFile) {
-            $fileNames[] = [
-                'name' => basename($logFile),
-                'path' => $logFile,
-                'size' => number_format(filesize($logFile), 0, '.', ' ') . ' bytes',
-                'modified' => date('Y-m-d H:i:s', filemtime($logFile)),
-            ];
-        }
-
-        return $fileNames;
-    }
-
-    /**
-     * Retrieves log files paths
-     *
-     * @return Generator|void
-     */
-    private static function getLogFiles()
-    {
-        $logDir = self::getLogDir();
-
-        if (!is_dir($logDir)) {
-            return;
-        }
-
-        $handle = opendir($logDir);
-        while (($file = readdir($handle)) !== false) {
-            if (false !== self::checkFileName($file)) {
-                yield "$logDir/$file";
-            }
-        }
-
-        closedir($handle);
-    }
-
-    /**
-     * Checks if given logs filename relates to the module
-     *
-     * @param string $file
-     *
-     * @return false|string
-     */
-    public static function checkFileName($file)
-    {
-        $logDir = self::getLogDir();
-        if (preg_match('/^retailcrm[a-zA-Z0-9-_]+.log$/', $file)) {
-            $path = "$logDir/$file";
-            if (is_file($path)) {
-                return $path;
-            }
-        }
-
-        return false;
     }
 
     /**

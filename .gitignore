@@ -7,6 +7,7 @@ retailcrm/views/css/*.map
 retailcrm/views/js/*.map
 retailcrm/config*.xml
 retailcrm/custom
+retailcrm/override
 upgrade/upgrade-*.php
 !upgrade/upgrade-sample.php
 coverage.xml

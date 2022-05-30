@@ -36,55 +36,50 @@
  * to avoid any conflicts with others containers.
  */
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-/**
- * Class RetailcrmLogger
- *
- * @author    DIGITAL RETAIL TECHNOLOGIES SL <mail@simlachat.com>
- * @license   GPL
- *
- * @see      https://retailcrm.ru
- */
-class RetailcrmJsonResponse
+class RetailcrmAdminPostAbstractController extends RetailcrmAdminAbstractController
 {
-    private static function jsonResponse($response)
+    public function postProcess()
     {
-        return json_encode($response);
+        $this->ajaxDie(json_encode($this->getData()));
     }
 
-    public static function invalidResponse($msg, $status = 404)
+    protected function getData()
     {
-        http_response_code($status);
-
-        return [
-            'success' => false,
-            'errorMsg' => $msg,
-        ];
-    }
-
-    public static function successfullResponse($data = null, $key = null)
-    {
-        $response = [
-            'success' => true,
-        ];
-
-        if (null !== $data) {
-            if (is_array($key)) {
-                foreach ($key as $i => $value) {
-                    if (isset($data[$i])) {
-                        $response[$value] = $data[$i];
-                    }
-                }
-            } elseif (is_string($key)) {
-                $response[$key] = $data;
-            } else {
-                $response['response'] = $data;
+        try {
+            switch ($_SERVER['REQUEST_METHOD']) {
+                case 'POST':
+                    return $this->postHandler();
+                case 'GET':
+                    return $this->getHandler();
+                default:
+                    return [];
             }
+        } catch (Exception $e) {
+            return RetailcrmJsonResponse::invalidResponse($e->getMessage());
+        } catch (Error $e) {
+            return RetailcrmJsonResponse::invalidResponse($e->getMessage());
         }
+    }
 
-        return $response;
+    /**
+     * @return array
+     *
+     * @throws Exception|Error
+     */
+    protected function postHandler()
+    {
+        throw new Exception('Method not allowed');
+    }
+
+    /**
+     * @return array
+     *
+     * @throws Exception|Error
+     */
+    protected function getHandler()
+    {
+        throw new Exception('Method not allowed');
     }
 }

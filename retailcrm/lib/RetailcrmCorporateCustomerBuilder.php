@@ -218,14 +218,16 @@ class RetailcrmCorporateCustomerBuilder extends RetailcrmAbstractBuilder impleme
             $this->corporateCustomer,
             [
                 'dataCrm' => $this->dataCrm,
-            ]);
+            ]
+        );
 
         $this->corporateAddress = RetailcrmTools::filter(
             'RetailcrmFilterSaveCorporateCustomerAddress',
             $this->corporateAddress,
             [
                 'dataCrm' => $this->dataCrm,
-            ]);
+            ]
+        );
 
         return $this;
     }
