@@ -152,8 +152,8 @@ class RetailcrmOrderBuilderTest extends RetailcrmTestCase
         $order = new Order(1);
         $order->reference = 'test_n';
         $order->current_state = 0;
-        Configuration::updateValue('RETAILCRM_API_DELIVERY', '{"1":"test_delivery"}');
-        Configuration::updateValue('RETAILCRM_API_STATUS', '{"1":"test_status"}');
+        Configuration::updateValue(RetailCRM::DELIVERY, '{"1":"test_delivery"}');
+        Configuration::updateValue(RetailCRM::STATUS, '{"1":"test_status"}');
         Configuration::updateValue(RetailCRM::ENABLE_ORDER_NUMBER_SENDING, false);
         $crmOrder = RetailcrmOrderBuilder::buildCrmOrder($order);
 

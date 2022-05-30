@@ -58,12 +58,12 @@ class RetailcrmHistory
     {
         self::$receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
         self::$sendOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
-        self::$cartStatus = (string) (Configuration::get('RETAILCRM_API_SYNCHRONIZED_CART_STATUS'));
-        self::$statuses = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_STATUS'), true)));
-        self::$deliveries = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_DELIVERY'), true)));
-        self::$payments = array_flip(array_filter(json_decode(Configuration::get('RETAILCRM_API_PAYMENT'), true)));
-        self::$deliveryDefault = json_decode(Configuration::get('RETAILCRM_API_DELIVERY_DEFAULT'), true);
-        self::$paymentDefault = json_decode(Configuration::get('RETAILCRM_API_PAYMENT_DEFAULT'), true);
+        self::$cartStatus = (string) (Configuration::get(RetailCRM::SYNC_CARTS_STATUS));
+        self::$statuses = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::STATUS), true)));
+        self::$deliveries = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::DELIVERY), true)));
+        self::$payments = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::PAYMENT), true)));
+        self::$deliveryDefault = Configuration::get(RetailCRM::DELIVERY_DEFAULT);
+        self::$paymentDefault = Configuration::get(RetailCRM::PAYMENT_DEFAULT);
     }
 
     /**

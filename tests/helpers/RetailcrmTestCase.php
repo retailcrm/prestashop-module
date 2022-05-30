@@ -90,9 +90,9 @@ abstract class RetailcrmTestCase extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        Configuration::updateValue('RETAILCRM_API_DELIVERY', $delivery);
-        Configuration::updateValue('RETAILCRM_API_STATUS', $status);
-        Configuration::updateValue('RETAILCRM_API_PAYMENT', $payment);
+        Configuration::updateValue(RetailCRM::DELIVERY, $delivery);
+        Configuration::updateValue(RetailCRM::STATUS, $status);
+        Configuration::updateValue(RetailCRM::PAYMENT, $payment);
     }
 
     private function apiMockBuilder(array $methods)

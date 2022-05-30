@@ -53,6 +53,8 @@ function upgrade_module_3_4_0($module)
         return false;
     }
 
+    retailcrm_convert_old_default_values_format();
+
     return $module->removeOldFiles([
         // old files from 2.x versions
         'retailcrm/job/abandonedCarts.php',
@@ -146,4 +148,38 @@ function upgrade_module_3_4_0($module)
     && $module->uninstallOldTabs()
     && $module->installTab()
     ;
+}
+
+function retailcrm_convert_old_default_values_format()
+{
+    $configs = [
+        'RETAILCRM_API_DELIVERY_DEFAULT',
+        'RETAILCRM_API_PAYMENT_DEFAULT',
+    ];
+
+    $isMultiStoreActive = Shop::isFeatureActive();
+
+    if ($isMultiStoreActive) {
+        $shops = Shop::getShops();
+    } else {
+        $shops[] = Shop::getContext();
+    }
+
+    foreach ($shops as $shop) {
+        $idShop = (int) $shop['id_shop'];
+
+        foreach ($configs as $configKey) {
+            if (!Configuration::hasKey($configKey, null, null, $idShop)) {
+                continue;
+            }
+
+            $configValue = Configuration::get($configKey, null, null, $idShop, '');
+
+            if ('' === $configValue) {
+                continue;
+            }
+
+            Configuration::updateValue($configKey, str_replace('"', '', $configValue), false, null, $idShop);
+        }
+    }
 }

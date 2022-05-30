@@ -141,11 +141,6 @@ class RetailcrmSettingsItems
     public function getChanged()
     {
         $changed = [];
-//
-//        $changed['DEBUG'] = [
-//            'GET' => $_GET,
-//            'POST' => $_POST,
-//        ];
 
         foreach ($this->settings as $key => $setting) {
             if ($setting->issetValue()) {

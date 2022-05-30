@@ -552,10 +552,10 @@ class RetailCRM extends Module
         }
 
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
-        $deliveryDefault = json_decode(Configuration::get(static::DELIVERY_DEFAULT), true);
+        $deliveryDefault = Configuration::get(static::DELIVERY_DEFAULT);
 
         if ($oldCarrierId == $deliveryDefault) {
-            Configuration::updateValue(static::DELIVERY_DEFAULT, json_encode($newCarrier->id));
+            Configuration::updateValue(static::DELIVERY_DEFAULT, $newCarrier->id);
         }
 
         if (is_array($delivery) && array_key_exists($oldCarrierId, $delivery)) {
