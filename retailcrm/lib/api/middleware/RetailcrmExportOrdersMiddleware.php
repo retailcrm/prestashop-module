@@ -181,7 +181,9 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
     {
         if (isset($order['externalId'])) {
             RetailcrmExportOrdersHelper::updateExportState(
-                $order['externalId'], null, [$e->getMessage()]
+                $order['externalId'],
+                null,
+                [$e->getMessage()]
             );
         }
 

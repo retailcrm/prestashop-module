@@ -540,7 +540,9 @@ class RetailcrmExport
     private static function handleError($entityId, $exception)
     {
         RetailcrmLogger::writeException('export', $exception, sprintf(
-            'Error while building %s: %s', $entityId, $exception->getMessage()
+            'Error while building %s: %s',
+            $entityId,
+            $exception->getMessage()
         ), true);
         RetailcrmLogger::output($exception->getMessage());
     }

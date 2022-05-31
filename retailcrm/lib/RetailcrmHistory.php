@@ -122,8 +122,7 @@ class RetailcrmHistory
                 if (isset($customerHistory['externalId'])) {
                     $crmCustomerResponse = self::$api->customersGet($customerHistory['externalId']);
 
-                    if (
-                        null === $crmCustomerResponse
+                    if (null === $crmCustomerResponse
                         || !$crmCustomerResponse->isSuccessful()
                         || !$crmCustomerResponse->offsetExists('customer')
                     ) {
@@ -498,8 +497,7 @@ class RetailcrmHistory
     {
         $crmOrderResponse = self::$api->ordersGet($id, $by);
 
-        if (
-            null !== $crmOrderResponse
+        if (null !== $crmOrderResponse
             && $crmOrderResponse->isSuccessful()
             && $crmOrderResponse->offsetExists('order')
         ) {
@@ -693,15 +691,13 @@ class RetailcrmHistory
             WHERE id_order = ' . pSQL((int) $order_id) . '
             AND product_id = ' . pSQL((int) $product_id) . '
             AND product_attribute_id = ' . pSQL((int) $product_attribute_id) . '
-            AND id_order_detail = ' . pSQL((int) $id_order_detail)
-        );
+            AND id_order_detail = ' . pSQL((int) $id_order_detail));
     }
 
     private static function getNewOrderDetailId()
     {
         return Db::getInstance()->getRow('
-            SELECT MAX(id_order_detail) FROM  ' . _DB_PREFIX_ . 'order_detail'
-        );
+            SELECT MAX(id_order_detail) FROM  ' . _DB_PREFIX_ . 'order_detail');
     }
 
     /**
@@ -798,8 +794,7 @@ class RetailcrmHistory
                 $notOurChanges[$externalId] = [];
             }
 
-            if (
-                'api' == $entry['source']
+            if ('api' == $entry['source']
                 && isset($entry['apiKey']['current'])
                 && true == $entry['apiKey']['current']
             ) {
@@ -1072,12 +1067,11 @@ class RetailcrmHistory
 
         try {
             RetailcrmLogger::writeDebug(__METHOD__, sprintf(
-                    '<Customer ID: %d> %s::%s',
-                    $newOrder->id_customer,
-                    get_class($newOrder),
-                    'add'
-                )
-            );
+                '<Customer ID: %d> %s::%s',
+                $newOrder->id_customer,
+                get_class($newOrder),
+                'add'
+            ));
             $newOrder->add(false, false);
 
             $newOrderHistoryRecord = new OrderHistory(null, static::$default_lang, Context::getContext()->shop->id);
@@ -1265,8 +1259,7 @@ class RetailcrmHistory
         $orderAddressCrm = isset($order['delivery']['address']) ? $order['delivery']['address'] : [];
         $orderPhone = $orderAddress->phone;
 
-        if (
-            RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
+        if (RetailcrmHistoryHelper::isAddressLineChanged($orderAddressCrm)
             || !Validate::isLoadedObject($orderAddress)
         ) {
             $infoOrder = self::getOrderFromCrm($order['externalId']);
@@ -1320,8 +1313,7 @@ class RetailcrmHistory
             $orderDeliveryCode = !empty($order['delivery']['code']) ? $order['delivery']['code'] : null;
             $orderDeliveryCost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
 
-            if (
-                (
+            if ((
                     null !== $orderDeliveryCode
                     && isset(self::$deliveries[$orderDeliveryCode])
                     && null !== self::$deliveries[$orderDeliveryCode]
@@ -1389,7 +1381,8 @@ class RetailcrmHistory
             $orderPayment->amount = isset($payment['amount']) ? $payment['amount'] : $orderToUpdate->total_paid;
             $orderPayment->date_add = isset($payment['paidAt']) ? $payment['paidAt'] : date('Y-m-d H:i:s');
 
-            RetailcrmLogger::writeDebug(__METHOD__,
+            RetailcrmLogger::writeDebug(
+                __METHOD__,
                 sprintf(
                     '<Order Reference: %s> %s::%s',
                     $orderToUpdate->reference,

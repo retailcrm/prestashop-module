@@ -46,8 +46,7 @@ class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
         /** @var RetailcrmApiResponse $response */
         $response = $next($request);
 
-        if (
-            null !== $response
+        if (null !== $response
             && $response->isSuccessful()
             && (
                 'ordersCreate' === $request->getMethod()
@@ -57,8 +56,7 @@ class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
             $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
             $crmOrder = $response->order;
 
-            if (
-                $receiveOrderNumber
+            if ($receiveOrderNumber
                 && isset($crmOrder['externalId'], $crmOrder['number'])
             ) {
                 $object = new Order($crmOrder['externalId']);

@@ -87,7 +87,9 @@ class RetailcrmSettingsHelper
         array_multisort(
             array_map(function ($item) use ($orderBy) {
                 return $item[$orderBy];
-            }, $fileNames), $orderDirection, $fileNames
+            }, $fileNames),
+            $orderDirection,
+            $fileNames
         );
 
         return $fileNames;

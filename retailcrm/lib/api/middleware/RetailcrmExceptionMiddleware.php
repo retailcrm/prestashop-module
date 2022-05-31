@@ -86,7 +86,8 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
         RetailcrmLogger::writeNoCaller($exception->getTraceAsString());
 
         return new RetailcrmApiResponse(
-            500, json_encode([
+            500,
+            json_encode([
                 'success' => false,
                 'errorMsg' => $errorMsg,
             ])
