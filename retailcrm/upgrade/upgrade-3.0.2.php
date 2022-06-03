@@ -98,7 +98,9 @@ function upgrade_module_3_0_2_remove_old_files($files)
             }
 
             $fullPath = sprintf(
-                '%s/../%s', __DIR__, str_replace('retailcrm/', '', $file)
+                '%s/../%s',
+                dirname(__FILE__),
+                str_replace('retailcrm/', '', $file)
             );
 
             if (!file_exists($fullPath)) {
@@ -106,7 +108,8 @@ function upgrade_module_3_0_2_remove_old_files($files)
             }
 
             RetailcrmLogger::writeCaller(
-                __METHOD__, sprintf('Remove `%s`', $file)
+                __METHOD__,
+                sprintf('Remove `%s`', $file)
             );
 
             unlink($fullPath);

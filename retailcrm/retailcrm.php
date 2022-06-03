@@ -111,7 +111,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.4.0';
+        $this->version = '3.4.1';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('Simla.com');
         $this->description = $this->l('Integration module for Simla.com');
@@ -235,7 +235,8 @@ class RetailCRM extends Module
                     $tab->delete();
                 } catch (PrestaShopException $e) {
                     RetailcrmLogger::writeCaller(
-                        __METHOD__, sprintf('Error while deleting old tabs: %s', $e->getMessage())
+                        __METHOD__,
+                        sprintf('Error while deleting old tabs: %s', $e->getMessage())
                     );
                     RetailcrmLogger::writeDebug(__METHOD__, $e->getTraceAsString());
 
@@ -369,7 +370,9 @@ class RetailCRM extends Module
 
                 $relativePath = str_replace('retailcrm/', '', $file);
                 $fullPath = sprintf(
-                    '%s/%s', __DIR__, $relativePath
+                    '%s/%s',
+                    __DIR__,
+                    $relativePath
                 );
 
                 if (!file_exists($fullPath)) {
@@ -377,7 +380,8 @@ class RetailCRM extends Module
                 }
 
                 RetailcrmLogger::writeCaller(
-                    __METHOD__, sprintf('Remove `%s`', $file)
+                    __METHOD__,
+                    sprintf('Remove `%s`', $file)
                 );
 
                 unlink($fullPath); // todo maybe check and remove empty directories

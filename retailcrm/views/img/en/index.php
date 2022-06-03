@@ -36,35 +36,10 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
-{
-    /**
-     * {@inheritDoc}
-     */
-    public function __invoke(RetailcrmApiRequest $request, callable $next = null)
-    {
-        /** @var RetailcrmApiResponse $response */
-        $response = $next($request);
-
-        if (null !== $response
-            && $response->isSuccessful()
-            && (
-                'ordersCreate' === $request->getMethod()
-                || 'ordersEdit' === $request->getMethod()
-            )
-        ) {
-            $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
-            $crmOrder = $response->order;
-
-            if ($receiveOrderNumber
-                && isset($crmOrder['externalId'], $crmOrder['number'])
-            ) {
-                $object = new Order($crmOrder['externalId']);
-                $object->reference = $crmOrder['number'];
-                $object->update();
-            }
-        }
-
-        return $response;
-    }
-}
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('Location: ../');
+exit;
