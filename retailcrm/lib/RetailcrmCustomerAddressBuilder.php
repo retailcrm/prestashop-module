@@ -180,6 +180,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     {
         if (empty($this->customerAddress)) {
             $this->customerAddress = new Address();
+            $this->setAddressField('id_country', Configuration::get('PS_COUNTRY_DEFAULT'));
         }
 
         $this->customerAddress->id_customer = $this->idCustomer;
@@ -197,6 +198,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
 
         if (array_key_exists('countryIso', $this->dataCrm)) {
             $countryIso = null;
+
             if (Validate::isLanguageIsoCode($this->dataCrm['countryIso'])) {
                 $countryIso = Country::getByIso($this->dataCrm['countryIso']);
             }
