@@ -236,8 +236,11 @@ class RetailcrmCatalog
 
                             if (!$pictures) {
                                 $image = Image::getCover($product['id_product']);
-                                $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $image['id_image'], 'large_default');
-                                $pictures[] = $picture;
+
+                                if (isset($image['id_image'])) {
+                                    $picture = $this->protocol . $this->link->getImageLink($product['link_rewrite'], $image['id_image'], 'large_default');
+                                    $pictures[] = $picture;
+                                }
                             }
 
                             if ('1.3' == $this->version) {
