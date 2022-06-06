@@ -36,18 +36,17 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmApiPaginatedRequestTest extends RetailcrmApiRequestTestAbstract
+class RetailcrmApiSinceIdRequestTest extends RetailcrmApiRequestTestAbstract
 {
     public function doApiHistoryRequest($limit, $pageLimit)
     {
-        $request = new RetailcrmApiPaginatedRequest();
+        $request = new RetailcrmApiSinceIdRequest();
 
         return $request
             ->setApi($this->apiMock)
             ->setMethod('ordersHistory')
-            ->setParams([[], '{{page}}'])
+            ->setParams([[]])
             ->setDataKey('history')
-            ->setLimit($limit)
             ->setPageLimit($pageLimit)
             ->execute()
             ->getData()

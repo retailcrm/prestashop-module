@@ -36,27 +36,17 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmApiPaginatedRequest
+class RetailcrmApiPaginatedRequest extends RetailcrmApiRequest
 {
-    /**
-     * @var \RetailcrmProxy|\RetailcrmApiClientV5
-     */
-    private $api;
-
-    /**
-     * @var string
-     */
-    private $method;
-
     /**
      * @var array
      */
-    private $params;
+    protected $params;
 
     /**
      * @var string
      */
-    private $dataKey;
+    protected $dataKey;
 
     /**
      * @var int
@@ -66,12 +56,7 @@ class RetailcrmApiPaginatedRequest
     /**
      * @var int|null
      */
-    private $pageLimit;
-
-    /**
-     * @var array
-     */
-    private $data;
+    protected $pageLimit;
 
     /**
      * RetailcrmApiPaginatedRequest constructor.
@@ -79,34 +64,6 @@ class RetailcrmApiPaginatedRequest
     public function __construct()
     {
         $this->reset();
-    }
-
-    /**
-     * Sets retailCRM api client to request
-     *
-     * @param \RetailcrmApiClientV5|\RetailcrmProxy $api
-     *
-     * @return RetailcrmApiPaginatedRequest
-     */
-    public function setApi($api)
-    {
-        $this->api = $api;
-
-        return $this;
-    }
-
-    /**
-     * Sets API client method to request
-     *
-     * @param string $method
-     *
-     * @return RetailcrmApiPaginatedRequest
-     */
-    public function setMethod($method)
-    {
-        $this->method = $method;
-
-        return $this;
     }
 
     /**
@@ -184,7 +141,10 @@ class RetailcrmApiPaginatedRequest
 
             if ($response instanceof RetailcrmApiResponse && $response->offsetExists($this->dataKey)) {
                 $this->data = array_merge($this->data, $response[$this->dataKey]);
-                $page = $response['pagination']['currentPage'] + 1;
+
+                echo "page: $page ";
+                $page = $this->getNextPageNumber($page, $response);
+                echo "-> $page\n";
             }
 
             if (null !== $this->pageLimit && $page > $this->pageLimit) {
@@ -196,16 +156,6 @@ class RetailcrmApiPaginatedRequest
             && $response['pagination']['currentPage'] < $response['pagination']['totalPageCount']));
 
         return $this;
-    }
-
-    /**
-     * Returns data
-     *
-     * @return array
-     */
-    public function getData()
-    {
-        return $this->data;
     }
 
     /**
@@ -224,14 +174,14 @@ class RetailcrmApiPaginatedRequest
     }
 
     /**
-     * buildParams
+     * buildParams for the request
      *
      * @param array $placeholderParams
      * @param int $currentPage
      *
      * @return mixed
      */
-    private function buildParams($placeholderParams, $currentPage)
+    protected function buildParams($placeholderParams, $currentPage)
     {
         foreach ($placeholderParams as $key => $param) {
             if ('{{page}}' == $param) {
@@ -244,5 +194,18 @@ class RetailcrmApiPaginatedRequest
         }
 
         return $placeholderParams;
+    }
+
+    /**
+     * Get the next page number from the response
+     *
+     * @param int $page
+     * @param RetailcrmApiResponse $response
+     *
+     * @return int
+     */
+    protected function getNextPageNumber($page, $response)
+    {
+        return $response['pagination']['currentPage'] + 1;
     }
 }
