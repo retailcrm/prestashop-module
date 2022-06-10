@@ -142,9 +142,7 @@ class RetailcrmApiPaginatedRequest extends RetailcrmApiRequest
             if ($response instanceof RetailcrmApiResponse && $response->offsetExists($this->dataKey)) {
                 $this->data = array_merge($this->data, $response[$this->dataKey]);
 
-                echo "page: $page ";
                 $page = $this->getNextPageNumber($page, $response);
-                echo "-> $page\n";
             }
 
             if (null !== $this->pageLimit && $page > $this->pageLimit) {
