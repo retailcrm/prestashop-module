@@ -38,11 +38,17 @@
 
 class RetailcrmApiRequest
 {
-    private $api;
+    /**
+     * @var \RetailcrmProxy|\RetailcrmApiClientV5
+     */
+    protected $api;
 
-    private $data;
+    protected $data;
 
-    private $method;
+    /**
+     * @var string
+     */
+    protected $method;
 
     /**
      * @return mixed

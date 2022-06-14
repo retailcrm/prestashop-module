@@ -78,25 +78,22 @@ class RetailcrmHistory
     {
         $lastSync = Configuration::get('RETAILCRM_LAST_CUSTOMERS_SYNC');
 
-        $customerFix = [];
-
         $filter = false === $lastSync
             ? ['startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s'))))]
             : ['sinceId' => $lastSync];
 
-        $request = new RetailcrmApiPaginatedRequest();
-        $historyChanges = [];
+        $request = new RetailcrmApiSinceIdRequest();
         $history = $request
             ->setApi(self::$api)
             ->setMethod('customersHistory')
-            ->setParams([$filter, '{{page}}'])
+            ->setParams([$filter])
             ->setDataKey('history')
-            ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
             ->getData()
         ;
 
+        $historyChanges = [];
         if (0 < count($history)) {
             $historyChanges = static::filterHistory($history, 'customer');
             $end = end($history);
@@ -106,6 +103,8 @@ class RetailcrmHistory
         if (count($historyChanges)) {
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
             RetailcrmLogger::writeDebugArray(__METHOD__, ['Assembled history:', $customersHistory]);
+
+            $customerFix = [];
 
             foreach ($customersHistory as $customerHistory) {
                 $customerHistory = RetailcrmTools::filter(
@@ -211,37 +210,23 @@ class RetailcrmHistory
     public static function ordersHistory()
     {
         $lastSync = Configuration::get('RETAILCRM_LAST_ORDERS_SYNC');
-        $lastDate = Configuration::get('RETAILCRM_LAST_SYNC');
 
-        if (false === $lastSync && false === $lastDate) {
-            $filter = [
-                'startDate' => date(
-                    'Y-m-d H:i:s',
-                    strtotime('-1 days', strtotime(date('Y-m-d H:i:s')))
-                ),
-            ];
-        } elseif (false === $lastSync && false !== $lastDate) {
-            $filter = ['startDate' => $lastDate];
-        } elseif (false !== $lastSync) {
-            $filter = ['sinceId' => $lastSync];
-        } else {
-            $filter = [];
-        }
+        $filter = false === $lastSync
+            ? ['startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s'))))]
+            : ['sinceId' => $lastSync];
 
-        $historyChanges = [];
-
-        $request = new RetailcrmApiPaginatedRequest();
+        $request = new RetailcrmApiSinceIdRequest();
         $history = $request
             ->setApi(self::$api)
             ->setMethod('ordersHistory')
-            ->setParams([$filter, '{{page}}'])
+            ->setParams([$filter])
             ->setDataKey('history')
-            ->setLimit(100)
             ->setPageLimit(50)
             ->execute()
             ->getData()
         ;
 
+        $historyChanges = [];
         if (0 < count($history)) {
             $historyChanges = static::filterHistory($history, 'order');
             $end = end($history);

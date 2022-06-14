@@ -49,6 +49,7 @@ require_once __DIR__ . '/../retailcrm/retailcrm.php';
 require_once __DIR__ . '/../../PrestaShop/init.php';
 require_once __DIR__ . '/helpers/RetailcrmTestCase.php';
 require_once __DIR__ . '/helpers/RetailcrmTestHelper.php';
+require_once __DIR__ . '/lib/api/RetailcrmApiRequestTestAbstract.php';
 
 $module = new RetailCRM();
 $module->install();

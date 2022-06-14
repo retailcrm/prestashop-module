@@ -36,21 +36,32 @@
  * to avoid any conflicts with others containers.
  */
 
-class RetailcrmApiPaginatedRequestTest extends RetailcrmApiRequestTestAbstract
+class RetailcrmApiSinceIdRequest extends RetailcrmApiPaginatedRequest
 {
-    public function doApiHistoryRequest($limit, $pageLimit)
-    {
-        $request = new RetailcrmApiPaginatedRequest();
+    private $currentSinceId;
 
-        return $request
-            ->setApi($this->apiMock)
-            ->setMethod('ordersHistory')
-            ->setParams([[], '{{page}}'])
-            ->setDataKey('history')
-            ->setLimit($limit)
-            ->setPageLimit($pageLimit)
-            ->execute()
-            ->getData()
-        ;
+    protected function buildParams($placeholderParams, $currentPage = null)
+    {
+        if (null !== $this->currentSinceId) {
+            $placeholderParams[0]['sinceId'] = $this->currentSinceId;
+
+            if (isset($placeholderParams[0]['startDate'])) {
+                unset($placeholderParams[0]['startDate']);
+            }
+        }
+
+        return parent::buildParams($placeholderParams, 1);
+    }
+
+    protected function getNextPageNumber($page, $response)
+    {
+        $resultData = $response[$this->dataKey];
+        $lastRecord = end($resultData);
+
+        if (isset($lastRecord['id'])) {
+            $this->currentSinceId = $lastRecord['id'];
+        }
+
+        return $page + 1;
     }
 }
