@@ -38,20 +38,57 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
+class RetailcrmReferencesController extends RetailcrmAdminPostAbstractController
 {
-    protected function postHandler()
-    {
-        $settings = new RetailcrmSettings($this->module);
-
-        return $settings->save();
-    }
-
     protected function getHandler()
     {
+        if (Tools::getIsset('delivery') || Tools::getIsset('payment') || Tools::getIsset('status')) {
+            return $this->getSpecifiedReferences();
+        }
+
         return [
             'success' => true,
-            'settings' => RetailcrmSettingsHelper::getSettings(),
+            'references' => RetailcrmSettingsHelper::getReferences(),
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function getSpecifiedReferences()
+    {
+        $references = [];
+        $errors = [];
+
+        $client = RetailcrmTools::getApiClient();
+
+        if (null === $client) {
+            $errors[] = 'errors.connect';
+        }
+
+        $moduleReferences = new RetailcrmReferences($client);
+
+        switch (true) {
+        case Tools::getIsset('delivery'):
+            $references['deliveryTypesCRM'] = $moduleReferences->getApiDeliveryTypes();
+
+            break;
+        case Tools::getIsset('payment'):
+            $references['paymentTypesCRM'] = $moduleReferences->getApiPaymentTypes();
+
+            break;
+        case Tools::getIsset('status'):
+            $references['statusesCRM'] = $moduleReferences->getApiStatusesWithGroup();
+
+            break;
+        default:
+            throw new Exception('Invalid request data');
+        }
+
+        return [
+            'success' => true,
+            'references' => $references,
+            'errors' => $errors,
         ];
     }
 }

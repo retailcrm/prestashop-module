@@ -107,7 +107,7 @@ class RetailcrmExportOrdersHelper
         $totalCount = Db::getInstance()->getValue($sqlPagination);
 
         $pagination = [
-            'totalCount' => $totalCount,
+            'totalCount' => (int) $totalCount,
             'currentPage' => $page,
             'totalPageCount' => ceil($totalCount / self::ROWS_PER_PAGE),
         ];

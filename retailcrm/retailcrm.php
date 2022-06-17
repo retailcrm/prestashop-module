@@ -118,6 +118,8 @@ class RetailCRM extends Module
         = [
             RetailcrmSettingsLinkController::class,
             RetailcrmSettingsController::class,
+            RetailcrmReferencesController::class,
+            RetailcrmCatalogController::class,
             RetailcrmJobsController::class,
             RetailcrmLogsController::class,
             RetailcrmOrdersController::class,

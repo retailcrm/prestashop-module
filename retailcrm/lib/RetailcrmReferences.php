@@ -172,7 +172,10 @@ class RetailcrmReferences
         $request = $this->api->statusesList();
         $requestGroups = $this->api->statusGroupsList();
 
-        if (!$request || !$requestGroups) {
+        if (!($request instanceof RetailcrmApiResponse) || !$request->isSuccessful()
+            || !($requestGroups instanceof RetailcrmApiResponse)
+            || !$requestGroups->isSuccessful()
+        ) {
             return [];
         }
 
@@ -229,7 +232,7 @@ class RetailcrmReferences
         $crmDeliveryTypes = [];
         $request = $this->api->deliveryTypesList();
 
-        if (!$request) {
+        if (!($request instanceof RetailcrmApiResponse) || !$request->isSuccessful()) {
             return [];
         }
 
@@ -261,7 +264,7 @@ class RetailcrmReferences
         $crmStatusTypes = [];
         $request = $this->api->statusesList();
 
-        if (!$request) {
+        if (!($request instanceof RetailcrmApiResponse) || !$request->isSuccessful()) {
             return [];
         }
 
@@ -296,7 +299,7 @@ class RetailcrmReferences
         $crmPaymentTypes = [];
         $request = $this->api->paymentTypesList();
 
-        if (!$request) {
+        if (!($request instanceof RetailcrmApiResponse) || !$request->isSuccessful()) {
             return [];
         }
 

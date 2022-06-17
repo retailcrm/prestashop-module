@@ -38,127 +38,22 @@
 
 class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
 {
-    /**
-     * @var RetailcrmSettingsItems
-     */
-    private $settings;
-
-    /**
-     * @var RetailcrmSettingsItemHtml
-     */
-    private $consultantScript;
-
-    /**
-     * RetailcrmSettingsTemplate constructor.
-     *
-     * @param \Module $module
-     * @param $smarty
-     * @param $assets
-     */
-    public function __construct(Module $module, $smarty, $assets)
-    {
-        parent::__construct($module, $smarty, $assets);
-
-        $this->settings = new RetailcrmSettingsItems();
-        $this->consultantScript = new RetailcrmSettingsItemHtml('consultantScript', RetailCRM::CONSULTANT_SCRIPT);
-    }
-
     protected function buildParams()
     {
         $this->data = [
             'assets' => $this->assets,
-            'appData' => $this->getParams(),
-        ];
-    }
-
-    /**
-     * Build params for template
-     *
-     * @return mixed
-     */
-    protected function getParams()
-    {
-        $deliveryTypesCMS = $this->module->reference->getDeliveryTypes();
-        $paymentTypesCMS = $this->module->reference->getSystemPaymentModules();
-        $statusesCMS = $this->module->reference->getStatuses();
-
-        $deliveryTypesCRM = $this->module->reference->getApiDeliveryTypes();
-        $paymentTypesCRM = $this->module->reference->getApiPaymentTypes();
-        $statusesCRM = $this->module->reference->getApiStatusesWithGroup();
-
-        return [
-            'locale' => $this->getCurrentLanguageISO(),
-            'controller' => [
-                'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
-                'payments' => RetailcrmTools::getAdminControllerUrl(AdminPaymentPreferencesController::class),
-                'orders' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
-                'export' => RetailcrmTools::getAdminControllerUrl(RetailcrmExportController::class),
-                'link' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
-                'jobs' => RetailcrmTools::getAdminControllerUrl(RetailcrmJobsController::class),
-                'logs' => RetailcrmTools::getAdminControllerUrl(RetailcrmLogsController::class),
-            ],
-            'main' => [
-                'connection' => [
-                    'url' => $this->settings->getValueStored('url'),
-                    'apiKey' => $this->settings->getValueStored('apiKey'),
+            'appData' => [
+                'locale' => $this->getCurrentLanguageISO(),
+                'debug' => RetailcrmTools::isDebug(),
+                'routes' => [
+                    'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
+                    'references' => RetailcrmTools::getAdminControllerUrl(RetailcrmReferencesController::class),
+                    'catalog' => RetailcrmTools::getAdminControllerUrl(RetailcrmCatalogController::class),
+                    'orders' => RetailcrmTools::getAdminControllerUrl(RetailcrmOrdersController::class),
+                    'export' => RetailcrmTools::getAdminControllerUrl(RetailcrmExportController::class),
+                    'jobs' => RetailcrmTools::getAdminControllerUrl(RetailcrmJobsController::class),
+                    'logs' => RetailcrmTools::getAdminControllerUrl(RetailcrmLogsController::class),
                 ],
-                'delivery' => [
-                    'setting' => $this->settings->getValueStored('delivery'),
-                    'cms' => $deliveryTypesCMS,
-                    'crm' => $deliveryTypesCRM,
-                ],
-                'payment' => [
-                    'setting' => $this->settings->getValueStored('payment'),
-                    'cms' => $paymentTypesCMS,
-                    'crm' => $paymentTypesCRM,
-                ],
-                'status' => [
-                    'setting' => $this->settings->getValueStored('status'),
-                    'cms' => $statusesCMS,
-                    'crm' => $statusesCRM,
-                ],
-            ],
-            'additional' => [
-                'settings' => [
-                    'corporate' => $this->settings->getValueStored('enableCorporate'),
-                    'numberSend' => $this->settings->getValueStored('enableOrderNumberSending'),
-                    'numberReceive' => $this->settings->getValueStored('enableOrderNumberReceiving'),
-                    'webJobs' => $this->settings->getValueStored('webJobs'),
-                    'debug' => $this->settings->getValueStored('debugMode'),
-                ],
-                'history' => [
-                    'enabled' => $this->settings->getValueStored('enableHistoryUploads'),
-                    'deliveryDefault' => $this->settings->getValueStored('deliveryDefault'),
-                    'paymentDefault' => $this->settings->getValueStored('paymentDefault'),
-                    'delivery' => $deliveryTypesCMS,
-                    'payment' => $paymentTypesCMS,
-                ],
-                'stocks' => [
-                    'enabled' => $this->settings->getValueStored('enableBalancesReceiving'),
-                    'statuses' => $this->settings->getValueStored('outOfStockStatus'),
-                ],
-                'carts' => [
-                    'synchronizeCartsActive' => $this->settings->getValueStored('synchronizeCartsActive'),
-                    'synchronizedCartStatus' => $this->settings->getValueStored('synchronizedCartStatus'),
-                    'synchronizedCartDelay' => $this->settings->getValueStored('synchronizedCartDelay'),
-                    'delays' => RetailcrmSettingsHelper::getCartDelays(),
-                ],
-                'collector' => [
-                    'collectorActive' => $this->settings->getValueStored('collectorActive'),
-                    'collectorKey' => $this->settings->getValueStored('collectorKey'),
-                ],
-                'consultant' => [
-                    'consultantScript' => $this->consultantScript->getValueStored(),
-                ],
-            ],
-            'catalog' => [
-                'info' => RetailcrmSettingsHelper::getIcmlFileInfo(),
-                'generateName' => RetailcrmIcmlEvent::class,
-                'updateURLName' => RetailcrmIcmlUpdateUrlEvent::class,
-            ],
-            'advanced' => [
-                'jobs' => RetailcrmSettingsHelper::getJobsInfo(),
-                'logs' => RetailcrmSettingsHelper::getLogFilesInfo(),
             ],
         ];
     }

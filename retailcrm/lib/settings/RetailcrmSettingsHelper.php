@@ -95,7 +95,7 @@ class RetailcrmSettingsHelper
         return $fileNames;
     }
 
-    public static function getIcmlFileInfo()
+    public static function getCatalogInfo()
     {
         $icmlInfo = json_decode((string) Configuration::get(RetailcrmCatalogHelper::ICML_INFO_NAME), true);
 
@@ -145,5 +145,34 @@ class RetailcrmSettingsHelper
         }
 
         return $icmlInfo;
+    }
+
+    public static function getSettings()
+    {
+        $settings = new RetailcrmSettingsItems();
+        $result = $settings->getValueStoredAll();
+
+        $consultantScript = new RetailcrmSettingsItemHtml('consultantScript', RetailCRM::CONSULTANT_SCRIPT);
+        $result['consultantScript'] = $consultantScript->getValueStored();
+
+        return $result;
+    }
+
+    public static function getReferences()
+    {
+        $client = RetailcrmTools::getApiClient();
+        $moduleReferences = new RetailcrmReferences($client);
+
+        return [
+            'deliveryTypesCMS' => $moduleReferences->getDeliveryTypes(),
+            'deliveryTypesCRM' => $moduleReferences->getApiDeliveryTypes(),
+            'paymentTypesCMS' => $moduleReferences->getSystemPaymentModules(),
+            'paymentTypesCRM' => $moduleReferences->getApiPaymentTypes(),
+            'statusesCMS' => $moduleReferences->getStatuses(),
+            'statusesCRM' => $moduleReferences->getApiStatusesWithGroup(),
+            'cartsDelays' => RetailcrmSettingsHelper::getCartDelays(),
+            'linkPayments' => RetailcrmTools::getAdminControllerUrl(AdminPaymentPreferencesController::class),
+            'linkOrders' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
+        ];
     }
 }
