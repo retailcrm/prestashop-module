@@ -115,7 +115,6 @@ class RetailcrmCatalog
         $offersCount = 0;
 
         $id_lang = $this->default_lang;
-        $homeCategory = $this->home_category;
 
         $inactiveCategories = [];
         $categoriesIds = [];
@@ -149,11 +148,7 @@ class RetailcrmCatalog
                     $currentProductCategories = Product::getProductCategories($product['id_product']);
                     $categoriesLeft = array_filter(
                         $currentProductCategories,
-                        function ($val) use ($inactiveCategories, $categoriesIds, $homeCategory) {
-                            if ($val == $homeCategory) {
-                                return false;
-                            }
-
+                        function ($val) use ($inactiveCategories, $categoriesIds) {
                             if (in_array($val, $inactiveCategories)) {
                                 return false;
                             }
