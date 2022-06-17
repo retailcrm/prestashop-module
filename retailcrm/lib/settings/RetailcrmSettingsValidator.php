@@ -89,19 +89,16 @@ class RetailcrmSettingsValidator
             $urlAndApiKeyValidated = false;
         }
 
-        if ($this->settings->issetValue('apiKey') && !$this->settings->getValue('apiKey')) {
+        if ($this->settings->issetValue('apiKey') && !RetailcrmTools::validateCrmApiKey($this->settings->getValue('apiKey'))) {
             $this->addError('errors.key');
             $urlAndApiKeyValidated = false;
         }
 
         if ($urlAndApiKeyValidated && ($this->settings->issetValue('url') || $this->settings->issetValue('apiKey'))) {
-            if (!$this->validateApiVersion(
+            $this->validateApiCredentials(
                 $this->settings->getValueWithStored('url'),
                 $this->settings->getValueWithStored('apiKey')
-            )
-            ) {
-                $this->addError('errors.version');
-            }
+            );
         }
 
         //  check abandoned carts status
@@ -269,12 +266,7 @@ class RetailcrmSettingsValidator
         return true;
     }
 
-    /**
-     * Returns true if provided connection supports API v5
-     *
-     * @return bool
-     */
-    private function validateApiVersion($url, $apiKey)
+    public function validateApiCredentials($url, $apiKey)
     {
         /** @var RetailcrmProxy|RetailcrmApiClientV5 $api */
         $api = new RetailcrmProxy(
@@ -282,17 +274,78 @@ class RetailcrmSettingsValidator
             $apiKey
         );
 
+        return $this->validateApiVersion($api) && $this->validateApiAccess($api);
+    }
+
+    /**
+     * Returns true if provided connection supports API v5
+     *
+     * @return bool
+     */
+    private function validateApiVersion($api)
+    {
         $response = $api->apiVersions();
 
-        if (false !== $response && isset($response['versions']) && !empty($response['versions'])) {
-            foreach ($response['versions'] as $version) {
-                if ($version == static::LATEST_API_VERSION
-                    || Tools::substr($version, 0, 1) == static::LATEST_API_VERSION
-                ) {
-                    return true;
+        if (false !== $response && isset($response['success']) && $response['success']) {
+            if (isset($response['versions']) && !empty($response['versions'])) {
+                foreach ($response['versions'] as $version) {
+                    if ($version == static::LATEST_API_VERSION
+                        || Tools::substr($version, 0, 1) == static::LATEST_API_VERSION
+                    ) {
+                        return true;
+                    }
                 }
+
+                $this->addError('errors.version');
             }
+        } else {
+            $this->addError('errors.connect');
         }
+
+        return false;
+    }
+
+    /**
+     * Returns true if provided connection support necessary scopes and access_selective
+     *
+     * @return bool
+     */
+    private function validateApiAccess($api)
+    {
+        $response = $api->credentials();
+
+        if (false !== $response) {
+            return $this->validateApiSiteAccess($response) && $this->validateApiScopes($response);
+        }
+
+        return false;
+    }
+
+    private function validateApiSiteAccess($credentials)
+    {
+        if (isset($credentials['siteAccess'], $credentials['sitesAvailable'])
+            && RetailCRM::REQUIRED_CRM_SITE_ACCESS === $credentials['siteAccess']
+            && is_array($credentials['sitesAvailable'])
+            && RetailCRM::REQUIRED_CRM_SITE_COUNT === count($credentials['sitesAvailable'])
+        ) {
+            return true;
+        }
+
+        $this->addError('errors.access');
+
+        return false;
+    }
+
+    private function validateApiScopes($credentials)
+    {
+        if (isset($credentials['scopes'])
+            && is_array($credentials['scopes'])
+            && !array_diff(RetailCRM::REQUIRED_CRM_SCOPES, $credentials['scopes'])
+        ) {
+            return true;
+        }
+
+        $this->addError('errors.scopes');
 
         return false;
     }

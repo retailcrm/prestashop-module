@@ -76,6 +76,43 @@ class RetailCRM extends Module
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
 
+    const REQUIRED_CRM_SITE_ACCESS = 'access_selective';
+    const REQUIRED_CRM_SITE_COUNT = 1;
+    const REQUIRED_CRM_SCOPES = [
+        'order_read',
+        'order_write',
+        'customer_read',
+        'customer_write',
+        'store_read',
+        'store_write',
+        'reference_read',
+        'reference_write',
+        'analytics_write',
+        'telephony_read',
+        'telephony_write',
+        'delivery_read',
+        'delivery_write',
+        'user_read',
+        'user_write',
+        'segment_read',
+        'custom_fields_write',
+        'custom_fields_read',
+        'task_read',
+        'task_write',
+        'integration_read',
+        'integration_write',
+        'cost_read',
+        'cost_write',
+        'payments_read',
+        'payments_write',
+        'file_read',
+        'file_write',
+        'loyalty_read',
+        'loyalty_write',
+        'verification_write',
+        'verification_read',
+    ];
+
     // todo dynamically define controller classes
     const ADMIN_CONTROLLERS
         = [
