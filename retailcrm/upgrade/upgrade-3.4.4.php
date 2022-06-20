@@ -36,22 +36,22 @@
  * to avoid any conflicts with others containers.
  */
 
-require_once dirname(__FILE__) . '/../../bootstrap.php';
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
 
-class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
+/**
+ * Upgrade module to version 3.4.4
+ *
+ * @param \RetailCRM $module
+ *
+ * @return bool
+ */
+function upgrade_module_3_4_4($module)
 {
-    protected function postHandler()
-    {
-        $settings = new RetailcrmSettings($this->module);
-
-        return $settings->save();
+    if ('retailcrm' != $module->name) {
+        return false;
     }
 
-    protected function getHandler()
-    {
-        return [
-            'success' => true,
-            'settings' => RetailcrmSettingsHelper::getSettings(),
-        ];
-    }
+    return $module->installTab();
 }

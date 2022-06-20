@@ -38,20 +38,28 @@
 
 require_once dirname(__FILE__) . '/../../bootstrap.php';
 
-class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
+class RetailcrmCatalogController extends RetailcrmAdminPostAbstractController
 {
     protected function postHandler()
     {
-        $settings = new RetailcrmSettings($this->module);
+        if (!Tools::getIsset('generate') && !Tools::getIsset('updateUrl')) {
+            throw new Exception('Invalid request data');
+        }
 
-        return $settings->save();
+        $jobName = (Tools::getIsset('generate') ? RetailcrmIcmlEvent::class : RetailcrmIcmlUpdateUrlEvent::class);
+        $result = RetailcrmJobManager::execManualJob($jobName);
+
+        return [
+            'success' => true,
+            'result' => $result,
+        ];
     }
 
     protected function getHandler()
     {
         return [
             'success' => true,
-            'settings' => RetailcrmSettingsHelper::getSettings(),
+            'catalog' => RetailcrmSettingsHelper::getCatalogInfo(),
         ];
     }
 }

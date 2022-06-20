@@ -118,6 +118,8 @@ class RetailCRM extends Module
         = [
             RetailcrmSettingsLinkController::class,
             RetailcrmSettingsController::class,
+            RetailcrmReferencesController::class,
+            RetailcrmCatalogController::class,
             RetailcrmJobsController::class,
             RetailcrmLogsController::class,
             RetailcrmOrdersController::class,
@@ -148,7 +150,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.4.3';
+        $this->version = '3.4.4';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('Simla.com');
         $this->description = $this->l('Integration module for Simla.com');

@@ -131,6 +131,17 @@ class RetailcrmSettingsItems
         return $this->settings[$key]->getValueStored();
     }
 
+    public function getValueStoredAll()
+    {
+        $result = [];
+
+        foreach ($this->settings as $key => $item) {
+            $result[$key] = $item->getValueStored();
+        }
+
+        return $result;
+    }
+
     public function getValueWithStored($key)
     {
         $this->checkKey($key);
