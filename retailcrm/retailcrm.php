@@ -290,10 +290,7 @@ class RetailCRM extends Module
     public function hookHeader()
     {
         if (!empty($this->context) && !empty($this->context->controller)) {
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-compat.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-jobs.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-collector.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-consultant.min.js');
+            $this->context->controller->addJS($this->assetsBase . '/js/worker.umd.min.js');
         }
     }
 
