@@ -150,7 +150,7 @@ class RetailCRM extends Module
     {
         $this->name = 'retailcrm';
         $this->tab = 'export';
-        $this->version = '3.4.4';
+        $this->version = '3.4.5';
         $this->author = 'DIGITAL RETAIL TECHNOLOGIES SL';
         $this->displayName = $this->l('Simla.com');
         $this->description = $this->l('Integration module for Simla.com');
@@ -290,10 +290,7 @@ class RetailCRM extends Module
     public function hookHeader()
     {
         if (!empty($this->context) && !empty($this->context->controller)) {
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-compat.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-jobs.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-collector.min.js');
-            $this->context->controller->addJS($this->assetsBase . '/js/retailcrm-consultant.min.js');
+            $this->context->controller->addJS($this->assetsBase . '/js/worker.umd.min.js');
         }
     }
 
