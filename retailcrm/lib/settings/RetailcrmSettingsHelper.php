@@ -178,7 +178,8 @@ class RetailcrmSettingsHelper
         ];
     }
 
-    private static function getLatestVersion() {
+    private static function getLatestVersion()
+    {
         $latestInfo = self::getLatestInfo();
 
         if (
@@ -192,7 +193,7 @@ class RetailcrmSettingsHelper
         ) {
             return [
                 'isSuccess' => true,
-                'isLatest' => 'v'. RetailCRM::VERSION === $latestInfo['tag_name'],
+                'isLatest' => 'v' . RetailCRM::VERSION === $latestInfo['tag_name'],
                 'url' => current($latestInfo['assets'])['browser_download_url'],
                 'body' => $latestInfo['body'],
             ];
@@ -203,7 +204,8 @@ class RetailcrmSettingsHelper
         ];
     }
 
-    private static function getLatestInfo() {
+    private static function getLatestInfo()
+    {
         $curlHandler = curl_init();
 
         curl_setopt($curlHandler, CURLOPT_URL, 'https://api.github.com/repos/retailcrm/prestashop-module/releases/latest');
