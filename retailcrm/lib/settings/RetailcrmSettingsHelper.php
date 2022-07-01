@@ -193,9 +193,9 @@ class RetailcrmSettingsHelper
         ) {
             return [
                 'isSuccess' => true,
-                'isLatest' => 'v' . RetailCRM::VERSION === $latestInfo['tag_name'],
+                'isLatest' => (bool) mb_stristr($latestInfo['tag_name'], RetailCRM::VERSION),
                 'url' => current($latestInfo['assets'])['browser_download_url'],
-                'body' => $latestInfo['body'],
+                'critical' => (bool) mb_stristr($latestInfo['body'], '[important]'),
             ];
         }
 
