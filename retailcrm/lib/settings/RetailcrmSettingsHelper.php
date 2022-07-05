@@ -152,6 +152,8 @@ class RetailcrmSettingsHelper
         $settings = new RetailcrmSettingsItems();
         $result = $settings->getValueStoredAll();
 
+        $result['latestVersion'] = self::getLatestVersion();
+
         $consultantScript = new RetailcrmSettingsItemHtml('consultantScript', RetailCRM::CONSULTANT_SCRIPT);
         $result['consultantScript'] = $consultantScript->getValueStored();
 
@@ -174,5 +176,50 @@ class RetailcrmSettingsHelper
             'linkPayments' => RetailcrmTools::getAdminControllerUrl(AdminPaymentPreferencesController::class),
             'linkOrders' => RetailcrmTools::getAdminControllerUrl(AdminOrdersController::class),
         ];
+    }
+
+    private static function getLatestVersion()
+    {
+        $latestInfo = self::getLatestInfo();
+
+        if (
+            $latestInfo
+            && isset(
+                $latestInfo['tag_name'],
+                $latestInfo['body'],
+                $latestInfo['assets'],
+                current($latestInfo['assets'])['browser_download_url']
+            )
+        ) {
+            return [
+                'isSuccess' => true,
+                'isLatest' => (bool) mb_stristr($latestInfo['tag_name'], RetailCRM::VERSION),
+                'url' => current($latestInfo['assets'])['browser_download_url'],
+                'critical' => (bool) mb_stristr($latestInfo['body'], '[important]'),
+            ];
+        }
+
+        return [
+            'isSuccess' => false,
+        ];
+    }
+
+    private static function getLatestInfo()
+    {
+        $curlHandler = curl_init();
+
+        curl_setopt($curlHandler, CURLOPT_URL, 'https://api.github.com/repos/retailcrm/prestashop-module/releases/latest');
+        curl_setopt($curlHandler, CURLOPT_USERAGENT, 'Simla integration module for PrestaShop');
+        curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curlHandler, CURLOPT_FAILONERROR, false);
+        curl_setopt($curlHandler, CURLOPT_TIMEOUT, 10);
+        curl_setopt($curlHandler, CURLOPT_CONNECTTIMEOUT, 10);
+
+        $responseBody = curl_exec($curlHandler);
+        $statusCode = curl_getinfo($curlHandler, CURLINFO_HTTP_CODE);
+
+        curl_close($curlHandler);
+
+        return 200 === $statusCode ? json_decode($responseBody, true) : null;
     }
 }
