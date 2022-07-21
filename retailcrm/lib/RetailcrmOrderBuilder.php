@@ -876,7 +876,6 @@ class RetailcrmOrderBuilder
      * @param Order|\OrderCore $order PrestaShop Order
      * @param Customer|\CustomerCore|null $customer PrestaShop Customer
      * @param Cart|\CartCore|null $orderCart Cart for provided order. Optional
-     * @param bool $isStatusExport Use status for export
      * @param bool $preferCustomerAddress Use customer address even if delivery address is
      *                                    provided
      * @param bool $dataFromCart Prefer data from cart
@@ -893,7 +892,6 @@ class RetailcrmOrderBuilder
         $order,
         $customer = null,
         $orderCart = null,
-        $isStatusExport = false, // todo always false -> remove unused parameter
         $preferCustomerAddress = false,
         $dataFromCart = false,
         $contactPersonId = '',
@@ -901,7 +899,6 @@ class RetailcrmOrderBuilder
         $customerId = '',
         $site = ''
     ) {
-        $statusExport = Configuration::get(RetailCRM::STATUS_EXPORT);
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
         $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
         $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
@@ -914,19 +911,9 @@ class RetailcrmOrderBuilder
             $paymentType = $order->payment;
         }
 
-        if (0 == $order->current_state) { // todo refactor
-            $order_status = $statusExport;
-
-            if (!$isStatusExport) {
-                $order_status =
-                    array_key_exists($order->current_state, $status)
-                        ? $status[$order->current_state] : 'new';
-            }
-        } else {
-            $order_status = array_key_exists($order->current_state, $status)
-                ? $status[$order->current_state]
-                : $statusExport;
-        }
+        $order_status = array_key_exists($order->current_state, $status)
+            ? $status[$order->current_state]
+            : null;
 
         $cart = $orderCart;
 

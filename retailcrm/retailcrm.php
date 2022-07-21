@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.4.7';
+    const VERSION = '3.4.8';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -58,7 +58,6 @@ class RetailCRM extends Module
     const PAYMENT = 'RETAILCRM_API_PAYMENT';
     const DELIVERY_DEFAULT = 'RETAILCRM_API_DELIVERY_DEFAULT';
     const PAYMENT_DEFAULT = 'RETAILCRM_API_PAYMENT_DEFAULT';
-    const STATUS_EXPORT = 'RETAILCRM_STATUS_EXPORT';
     const CLIENT_ID = 'RETAILCRM_CLIENT_ID';
     const COLLECTOR_ACTIVE = 'RETAILCRM_DAEMON_COLLECTOR_ACTIVE';
     const COLLECTOR_KEY = 'RETAILCRM_DAEMON_COLLECTOR_KEY';
@@ -317,7 +316,6 @@ class RetailCRM extends Module
             && Configuration::deleteByName(static::PAYMENT)
             && Configuration::deleteByName(static::DELIVERY_DEFAULT)
             && Configuration::deleteByName(static::PAYMENT_DEFAULT)
-            && Configuration::deleteByName(static::STATUS_EXPORT)
             && Configuration::deleteByName(static::CLIENT_ID)
             && Configuration::deleteByName(static::COLLECTOR_ACTIVE)
             && Configuration::deleteByName(static::COLLECTOR_KEY)
