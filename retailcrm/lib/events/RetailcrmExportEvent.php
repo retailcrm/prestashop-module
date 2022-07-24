@@ -54,7 +54,7 @@ class RetailcrmExportEvent extends RetailcrmAbstractEvent implements RetailcrmEv
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) $shop['id_shop']);
 
             $api = RetailcrmTools::getApiClient();
 

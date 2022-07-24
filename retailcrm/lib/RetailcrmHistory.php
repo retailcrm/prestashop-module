@@ -56,9 +56,9 @@ class RetailcrmHistory
 
     private static function init()
     {
-        self::$receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
-        self::$sendOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
-        self::$cartStatus = (string) (Configuration::get(RetailCRM::SYNC_CARTS_STATUS));
+        self::$receiveOrderNumber = (bool) Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING);
+        self::$sendOrderNumber = (bool) Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING);
+        self::$cartStatus = (string) Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
         self::$statuses = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::STATUS), true)));
         self::$deliveries = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::DELIVERY), true)));
         self::$payments = array_flip(array_filter(json_decode(Configuration::get(RetailCRM::PAYMENT), true)));
@@ -1002,7 +1002,7 @@ class RetailcrmHistory
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
         $newOrder = new Order();
         $newOrder->id_shop = Context::getContext()->shop->id;
-        $newOrder->id_shop_group = (int) (Context::getContext()->shop->id_shop_group);
+        $newOrder->id_shop_group = (int) Context::getContext()->shop->id_shop_group;
         $newOrder->id_address_delivery = isset($addressDelivery->id) ? (int) $addressDelivery->id : 0;
         $newOrder->id_address_invoice = isset($addressInvoice->id) ? (int) $addressInvoice->id : 0;
         $newOrder->id_cart = (int) $cart->id;
@@ -1289,7 +1289,7 @@ class RetailcrmHistory
             ->setAlias($orderAddress->alias)
             ->build()
             ->getData()
-            ;
+        ;
     }
 
     private static function checkDeliveryTypeAndCost($order, $orderToUpdate)
@@ -1299,12 +1299,12 @@ class RetailcrmHistory
             $orderDeliveryCost = !empty($order['delivery']['cost']) ? $order['delivery']['cost'] : null;
 
             if ((
-                    null !== $orderDeliveryCode
-                    && isset(self::$deliveries[$orderDeliveryCode])
-                    && null !== self::$deliveries[$orderDeliveryCode]
-                    && self::$deliveries[$orderDeliveryCode] !== $orderToUpdate->id_carrier
-                )
-                || null !== $orderDeliveryCost
+                null !== $orderDeliveryCode
+                && isset(self::$deliveries[$orderDeliveryCode])
+                && null !== self::$deliveries[$orderDeliveryCode]
+                && self::$deliveries[$orderDeliveryCode] !== $orderToUpdate->id_carrier
+            )
+            || null !== $orderDeliveryCost
             ) {
                 $orderCarrier = self::getOrderCarrier($orderToUpdate);
 

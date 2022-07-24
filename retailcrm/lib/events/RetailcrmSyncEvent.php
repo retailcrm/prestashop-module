@@ -54,7 +54,7 @@ class RetailcrmSyncEvent extends RetailcrmAbstractEvent implements RetailcrmEven
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) $shop['id_shop']);
 
             if (!Configuration::get(RetailCRM::ENABLE_HISTORY_UPLOADS)) {
                 RetailcrmLogger::writeDebug(

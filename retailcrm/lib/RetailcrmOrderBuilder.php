@@ -900,7 +900,7 @@ class RetailcrmOrderBuilder
         $delivery = json_decode(Configuration::get(RetailCRM::DELIVERY), true);
         $payment = json_decode(Configuration::get(RetailCRM::PAYMENT), true);
         $status = json_decode(Configuration::get(RetailCRM::STATUS), true);
-        $sendOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING));
+        $sendOrderNumber = (bool) Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_SENDING);
         $orderNumber = $sendOrderNumber ? $order->reference : null;
 
         if (false === Module::getInstanceByName('advancedcheckout')) {

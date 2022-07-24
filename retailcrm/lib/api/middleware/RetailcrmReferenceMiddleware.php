@@ -53,7 +53,7 @@ class RetailcrmReferenceMiddleware implements RetailcrmMiddlewareInterface
                 || 'ordersEdit' === $request->getMethod()
             )
         ) {
-            $receiveOrderNumber = (bool) (Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING));
+            $receiveOrderNumber = (bool) Configuration::get(RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING);
             $crmOrder = $response->order;
 
             if ($receiveOrderNumber

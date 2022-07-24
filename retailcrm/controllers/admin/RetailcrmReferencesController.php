@@ -69,20 +69,20 @@ class RetailcrmReferencesController extends RetailcrmAdminPostAbstractController
         $moduleReferences = new RetailcrmReferences($client);
 
         switch (true) {
-        case Tools::getIsset('delivery'):
-            $references['deliveryTypesCRM'] = $moduleReferences->getApiDeliveryTypes();
+            case Tools::getIsset('delivery'):
+                $references['deliveryTypesCRM'] = $moduleReferences->getApiDeliveryTypes();
 
-            break;
-        case Tools::getIsset('payment'):
-            $references['paymentTypesCRM'] = $moduleReferences->getApiPaymentTypes();
+                break;
+            case Tools::getIsset('payment'):
+                $references['paymentTypesCRM'] = $moduleReferences->getApiPaymentTypes();
 
-            break;
-        case Tools::getIsset('status'):
-            $references['statusesCRM'] = $moduleReferences->getApiStatusesWithGroup();
+                break;
+            case Tools::getIsset('status'):
+                $references['statusesCRM'] = $moduleReferences->getApiStatusesWithGroup();
 
-            break;
-        default:
-            throw new Exception('Invalid request data');
+                break;
+            default:
+                throw new Exception('Invalid request data');
         }
 
         return [
