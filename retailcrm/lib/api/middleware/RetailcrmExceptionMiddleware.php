@@ -66,7 +66,7 @@ class RetailcrmExceptionMiddleware implements RetailcrmMiddlewareInterface
                 sprintf(
                     'Expected instance of `%s`, but `%s` given',
                     RetailcrmApiResponse::class,
-                    (is_object($response) ? get_class($response) : gettype($response))
+                    is_object($response) ? get_class($response) : gettype($response)
                 )
             );
         }

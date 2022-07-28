@@ -208,6 +208,111 @@ class RetailcrmApiClientV5
     }
 
     /**
+     * Get files list
+     *
+     * @param array $filter
+     * @param null $limit
+     * @param null $page
+     *
+     * @return RetailcrmApiResponse
+     */
+    public function filesList(array $filter = [], $limit = null, $page = null)
+    {
+        $parameters = [];
+
+        if (count($filter)) {
+            $parameters['filter'] = $filter;
+        }
+        if (null !== $page) {
+            $parameters['page'] = (int) $page;
+        }
+        if (null !== $limit) {
+            $parameters['limit'] = (int) $limit;
+        }
+
+        return $this->client->makeRequest(
+            '/files',
+            RetailcrmHttpClient::METHOD_GET,
+            $parameters
+        );
+    }
+
+    /**
+     * Upload file
+     *
+     * @param $file
+     *
+     * @return RetailcrmApiResponse
+     */
+    public function filesUpload($file)
+    {
+        return $this->client->makeRequest(
+            '/files/upload',
+            RetailcrmHttpClient::METHOD_POST,
+            ['file' => $file]
+        );
+    }
+
+    /**
+     * Returns file data
+     *
+     * @param int $id file ID
+     *
+     * @throws \RetailCrm\Exception\InvalidJsonException
+     * @throws \RetailCrm\Exception\CurlException
+     * @throws \InvalidArgumentException
+     *
+     * @return RetailcrmApiResponse
+     */
+    public function filesGet($id)
+    {
+        return $this->client->makeRequest("/files/$id", RetailcrmHttpClient::METHOD_GET);
+    }
+
+    /**
+     * Delete file
+     *
+     * @param string $id file id
+     *
+     * @return RetailcrmApiResponse
+     */
+    public function filesDelete($id)
+    {
+        if (!$id) {
+            throw new \InvalidArgumentException(
+                'Parameter `id` must be set'
+            );
+        }
+
+        return $this->client->makeRequest(
+            sprintf('/files/%s/delete', $id),
+            RetailcrmHttpClient::METHOD_POST
+        );
+    }
+
+    /**
+     * Edit file
+     *
+     * @param array $file
+     *
+     * @return RetailcrmApiResponse
+     */
+    public function filesEdit(array $file)
+    {
+        if (!count($file)) {
+            throw new \InvalidArgumentException(
+                'Parameter `file` must contains a data'
+            );
+        }
+
+        return $this->client->makeRequest(
+            "/files/{$file['id']}/edit",
+            RetailcrmHttpClient::METHOD_POST,
+            ['file' => json_encode($file), 'id' => $file['id']]
+        );
+    }
+
+    /**
      * Get custom fields list
      *
      * @param array $filter

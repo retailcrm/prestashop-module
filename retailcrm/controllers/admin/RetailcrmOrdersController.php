@@ -52,7 +52,7 @@ class RetailcrmOrdersController extends RetailcrmAdminPostAbstractController
     protected function getHandler()
     {
         $orders = Tools::getValue('orders', []);
-        $page = (int) (Tools::getValue('page', 1));
+        $page = (int) Tools::getValue('page', 1);
 
         switch (Tools::getValue('filter')) {
             case '1':

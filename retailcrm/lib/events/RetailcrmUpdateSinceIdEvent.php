@@ -54,7 +54,7 @@ class RetailcrmUpdateSinceIdEvent extends RetailcrmAbstractEvent implements Reta
         $shops = $this->getShops();
 
         foreach ($shops as $shop) {
-            RetailcrmContextSwitcher::setShopContext((int) ($shop['id_shop']));
+            RetailcrmContextSwitcher::setShopContext((int) $shop['id_shop']);
 
             $api = RetailcrmTools::getApiClient();
 

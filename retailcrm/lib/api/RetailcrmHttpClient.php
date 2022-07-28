@@ -114,6 +114,10 @@ class RetailcrmHttpClient
             $url .= '?' . http_build_query($parameters, '', '&');
         }
 
+        if (self::METHOD_POST === $method && '/files/upload' === $path) {
+            $url .= '?apiKey=' . $parameters['apiKey'];
+        }
+
         $curlHandler = curl_init();
         curl_setopt($curlHandler, CURLOPT_URL, $url);
         curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, 1);
@@ -126,7 +130,12 @@ class RetailcrmHttpClient
 
         if (self::METHOD_POST === $method) {
             curl_setopt($curlHandler, CURLOPT_POST, true);
-            curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $parameters);
+
+            if ('/files/upload' === $path) {
+                curl_setopt($curlHandler, CURLOPT_POSTFIELDS, file_get_contents($parameters['file']));
+            } else {
+                curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $parameters);
+            }
         }
 
         $responseBody = curl_exec($curlHandler);

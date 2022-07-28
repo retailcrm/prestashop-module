@@ -132,7 +132,7 @@ class RetailcrmExportOrdersMiddleware implements RetailcrmMiddlewareInterface
         $uploadedOrders = [];
         foreach ($orders as $order) {
             RetailcrmExportOrdersHelper::updateExportState($order['externalId'], $order['id']);
-            $uploadedOrders[] = (int) ($order['externalId']);
+            $uploadedOrders[] = (int) $order['externalId'];
         }
 
         $notUploadedOrders = array_filter($requestedOrders, function ($orderId) use ($uploadedOrders) {
