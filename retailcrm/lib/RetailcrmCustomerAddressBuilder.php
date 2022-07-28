@@ -172,6 +172,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function reset()
     {
         $this->customerAddress = new Address();
+        $this->setAddressField('id_country', Configuration::get('PS_COUNTRY_DEFAULT'));
 
         return $this;
     }
@@ -179,8 +180,7 @@ class RetailcrmCustomerAddressBuilder extends RetailcrmAbstractBuilder implement
     public function build()
     {
         if (empty($this->customerAddress)) {
-            $this->customerAddress = new Address();
-            $this->setAddressField('id_country', Configuration::get('PS_COUNTRY_DEFAULT'));
+            $this->reset();
         }
 
         $this->customerAddress->id_customer = $this->idCustomer;
