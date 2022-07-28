@@ -53,6 +53,7 @@ class RetailcrmHistory
     private static $newItemsIdsByOrderId = [];
     private static $updateOrderIds = [];
     private static $orderFix = [];
+    private static $customerFix = [];
 
     private static function init()
     {
@@ -69,10 +70,7 @@ class RetailcrmHistory
     /**
      * Get customers history
      *
-     * @return mixed
-     *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @return bool|string
      */
     public static function customersHistory()
     {
@@ -104,7 +102,7 @@ class RetailcrmHistory
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
             RetailcrmLogger::writeDebugArray(__METHOD__, ['Assembled history:', $customersHistory]);
 
-            $customerFix = [];
+            self::$customerFix = [];
 
             foreach ($customersHistory as $customerHistory) {
                 $customerHistory = RetailcrmTools::filter(
@@ -116,86 +114,94 @@ class RetailcrmHistory
                     continue;
                 }
 
-                $customerBuilder = new RetailcrmCustomerBuilder();
-
                 if (isset($customerHistory['externalId'])) {
-                    $crmCustomerResponse = self::$api->customersGet($customerHistory['externalId']);
-
-                    if (null === $crmCustomerResponse
-                        || !$crmCustomerResponse->isSuccessful()
-                        || !$crmCustomerResponse->offsetExists('customer')
-                    ) {
-                        continue;
-                    }
-
-                    $customerData = RetailcrmTools::filter(
-                        'RetailcrmFilterCustomersHistoryUpdate',
-                        $crmCustomerResponse['customer']
-                    );
-
-                    $foundCustomer = new Customer($customerHistory['externalId']);
-                    $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
-                    $addressBuilder = new RetailcrmCustomerAddressBuilder();
-
-                    $addressBuilder
-                        ->setCustomerAddress($customerAddress)
-                    ;
-
-                    $customerBuilder
-                        ->setCustomer($foundCustomer)
-                        ->setAddressBuilder($addressBuilder)
-                        ->setDataCrm($customerData)
-                        ->build()
-                    ;
-
-                    $customer = $customerBuilder->getData()->getCustomer();
-                    $address = $customerBuilder->getData()->getCustomerAddress();
-
-                    if (false === self::loadInPrestashop($customer, 'update')) {
-                        continue;
-                    }
-
-                    if (!empty($address)) {
-                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
-
-                        self::loadInPrestashop($address, 'update');
-                    }
+                    self::updateCustomerInPrestashop($customerHistory['externalId']);
                 } else {
-                    $customerBuilder
-                        ->setDataCrm($customerHistory)
-                        ->build()
-                    ;
-
-                    $customer = $customerBuilder->getData()->getCustomer();
-
-                    if (false === self::loadInPrestashop($customer, 'save')) {
-                        continue;
-                    }
-
-                    $customerFix[] = [
-                        'id' => $customerHistory['id'],
-                        'externalId' => $customer->id,
-                    ];
-
-                    $customer->update();
-
-                    if (isset($customerHistory['address'])) {
-                        $address = $customerBuilder->getData()->getCustomerAddress();
-
-                        $address->id_customer = $customer->id;
-
-                        self::loadInPrestashop($address, 'save');
-                    }
+                    self::createCustomerInPrestashop($customerHistory);
                 }
             }
 
-            if (!empty($customerFix)) {
-                self::$api->customersFixExternalIds($customerFix);
+            if (!empty(self::$customerFix)) {
+                self::$api->customersFixExternalIds(self::$customerFix);
             }
 
             return true;
         } else {
             return 'Nothing to sync';
+        }
+    }
+
+    private static function updateCustomerInPrestashop($externalId)
+    {
+        $customerBuilder     = new RetailcrmCustomerBuilder();
+        $crmCustomerResponse = self::$api->customersGet($externalId);
+
+        if (null === $crmCustomerResponse
+            || !$crmCustomerResponse->isSuccessful()
+            || !$crmCustomerResponse->offsetExists('customer')
+        ) {
+            return;
+        }
+
+        $customerData = RetailcrmTools::filter(
+            'RetailcrmFilterCustomersHistoryUpdate',
+            $crmCustomerResponse['customer']
+        );
+
+        $foundCustomer   = new Customer($externalId);
+        $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
+        $addressBuilder  = new RetailcrmCustomerAddressBuilder();
+
+        $addressBuilder
+            ->setCustomerAddress($customerAddress);
+
+        $customerBuilder
+            ->setCustomer($foundCustomer)
+            ->setAddressBuilder($addressBuilder)
+            ->setDataCrm($customerData)
+            ->build();
+
+        $customer = $customerBuilder->getData()->getCustomer();
+        $address  = $customerBuilder->getData()->getCustomerAddress();
+
+        if (false === self::loadInPrestashop($customer, 'update')) {
+            return;
+        }
+
+        if (!empty($address)) {
+            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+
+            self::loadInPrestashop($address, 'update');
+        }
+    }
+
+    private static function createCustomerInPrestashop($customerHistory)
+    {
+        $customerBuilder = new RetailcrmCustomerBuilder();
+
+        $customerBuilder
+            ->setDataCrm($customerHistory)
+            ->build();
+
+        $customer = $customerBuilder->getData()->getCustomer();
+
+        if (false === self::loadInPrestashop($customer, 'save')) {
+            return;
+        }
+
+        self::$customerFix[] = [
+            'id'         => $customerHistory['id'],
+            'externalId' => $customer->id,
+        ];
+
+        $customer->update();
+
+        if (isset($customerHistory['address'])) {
+            $address = $customerBuilder->getData()->getCustomerAddress();
+
+            $address->id_customer = $customer->id;
+
+            self::loadInPrestashop($address, 'save');
         }
     }
 
