@@ -218,7 +218,7 @@ class RetailcrmTools
      *
      * @throws PrestaShopException
      */
-    public static function validateEntity($object, $relatedObject = null)
+    public static function validateEntity($object, $relatedObject = null, $throwError = false)
     {
         $validate = $object->validateFields(false, true);
         if (true === $validate) {
@@ -234,13 +234,19 @@ class RetailcrmTools
             );
         }
 
-        RetailcrmLogger::writeCaller(__METHOD__, sprintf(
+        $message = sprintf(
             'Error validating %s with id %s%s: %s',
             get_class($object),
             $object->id,
             $msg,
             $validate
-        ));
+        );
+
+        if($throwError) {
+            throw new Exception($message);
+        }
+
+        RetailcrmLogger::writeCaller(__METHOD__, $message);
 
         return false;
     }
@@ -947,9 +953,9 @@ class RetailcrmTools
             RetailcrmLogger::writeDebug($filter . '::after', print_r(self::dumpEntity($result), true));
 
             return (null === $result || false === $result) ? $object : $result;
-        } catch (Exception $e) {
-            RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
         } catch (Error $e) {
+            RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
+        } catch (Exception $e) {
             RetailcrmLogger::writeException(__METHOD__, $e, 'Error in custom filter', true);
         }
 
