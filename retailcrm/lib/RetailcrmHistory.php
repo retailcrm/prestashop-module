@@ -263,18 +263,29 @@ class RetailcrmHistory
             }
 
             $newOrder = null;
-            if (!$orderExists) {
-                $newOrder = self::createOrderInPrestashop($orderHistory);
-            } else {
-                $newOrder = self::updateOrderInPrestashop($orderHistory);
+
+            try {
+                if (!$orderExists) {
+                    $newOrder = self::createOrderInPrestashop($orderHistory);
+                } else {
+                    $newOrder = self::updateOrderInPrestashop($orderHistory);
+                }
+            } catch (Exception $e) {
+                self::handleError($orderHistory, $e);
+            } catch (Error $e) {
+                self::handleError($orderHistory, $e);
             }
 
-            // collect orders id and reference if option sendOrderNumber enabled
-            if (self::$sendOrderNumber && isset($newOrder->id)) {
-                self::$updateOrderIds[] = [
-                    'externalId' => $newOrder->id,
-                    'number' => $newOrder->reference,
-                ];
+            if (null !== $newOrder && null !== $newOrder->id) {
+                RetailcrmExportOrdersHelper::updateExportState($newOrder->id, $orderHistory['id']);
+
+                // collect orders id and reference if option sendOrderNumber enabled
+                if (self::$sendOrderNumber) {
+                    self::$updateOrderIds[] = [
+                        'externalId' => $newOrder->id,
+                        'number'     => $newOrder->reference,
+                    ];
+                }
             }
         }
 
@@ -1925,5 +1936,26 @@ class RetailcrmHistory
         $orderDetail->id_warehouse = !empty($prestashopOrder->id_warehouse) ? $prestashopOrder->id_warehouse : 0;
 
         return $orderDetail;
+    }
+
+    private static function handleError($order, $e)
+    {
+        RetailcrmLogger::writeCaller(
+            __METHOD__,
+            sprintf(
+                'Error %s order id=%d: %s',
+                (isset($order['externalId']) ? 'updating' : 'creating'),
+                $order['id'],
+                $e->getMessage()
+            )
+        );
+
+        RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+
+        RetailcrmExportOrdersHelper::updateExportState(
+            isset($order['externalId']) ? $order['externalId'] : null,
+            $order['id'],
+            [$e->getMessage()]
+        );
     }
 }
