@@ -45,10 +45,20 @@ class RetailcrmExportOrdersHelper
      * @param int|null $id_order_crm
      * @param array|null $errors
      */
-    public static function updateExportState($id_order, $id_order_crm = null, array $errors = null)
+    public static function updateExportState($id_order = null, $id_order_crm = null, array $errors = null)
     {
-        if (null === $id_order) {
+        if (null === $id_order && null === $id_order_crm) {
             return false;
+        }
+
+        if (null === $id_order) {
+            $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders`
+                WHERE `id_order_crm` = \'' . pSQL($id_order_crm) . '\';';
+
+            $orderInfo = Db::getInstance()->executeS($sql);
+            if (0 < count($orderInfo) && isset($orderInfo[0]['id_order'])) {
+                $id_order = $orderInfo[0]['id_order'];
+            }
         }
 
         if (null === $id_order_crm) {
@@ -90,7 +100,7 @@ class RetailcrmExportOrdersHelper
 
         $sqlOrdersInfo = 'FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` eo
             LEFT JOIN `' . _DB_PREFIX_ . 'orders` o on o.`id_order` = eo.`id_order`
-            WHERE 1 ' . Shop::addSqlRestriction(false, 'o')
+            WHERE ( eo.`id_order` IS NULL OR ( 1 ' . Shop::addSqlRestriction(false, 'o') . ' ) )'
         ;
 
         if (0 < count($ordersIds)) {
