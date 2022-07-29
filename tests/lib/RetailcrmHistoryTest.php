@@ -65,6 +65,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         Configuration::updateValue(RetailCRM::DELIVERY_DEFAULT, 2);
         Configuration::updateValue(RetailCRM::PAYMENT_DEFAULT, 'bankwire');
 
+        RetailcrmExportOrdersHelper::removeOrders();
+
         $this->setConfig();
     }
 
