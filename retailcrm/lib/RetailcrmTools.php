@@ -242,7 +242,7 @@ class RetailcrmTools
             $validate
         );
 
-        if($throwError) {
+        if ($throwError) {
             throw new Exception($message);
         }
 

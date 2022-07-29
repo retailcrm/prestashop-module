@@ -140,7 +140,7 @@ class RetailcrmHistory
      */
     private static function updateCustomerInPrestashop($externalId)
     {
-        $customerBuilder     = new RetailcrmCustomerBuilder();
+        $customerBuilder = new RetailcrmCustomerBuilder();
         $crmCustomerResponse = self::$api->customersGet($externalId);
 
         if (null === $crmCustomerResponse
@@ -155,21 +155,23 @@ class RetailcrmHistory
             $crmCustomerResponse['customer']
         );
 
-        $foundCustomer   = new Customer($externalId);
+        $foundCustomer = new Customer($externalId);
         $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
-        $addressBuilder  = new RetailcrmCustomerAddressBuilder();
+        $addressBuilder = new RetailcrmCustomerAddressBuilder();
 
         $addressBuilder
-            ->setCustomerAddress($customerAddress);
+            ->setCustomerAddress($customerAddress)
+        ;
 
         $customerBuilder
             ->setCustomer($foundCustomer)
             ->setAddressBuilder($addressBuilder)
             ->setDataCrm($customerData)
-            ->build();
+            ->build()
+        ;
 
         $customer = $customerBuilder->getData()->getCustomer();
-        $address  = $customerBuilder->getData()->getCustomerAddress();
+        $address = $customerBuilder->getData()->getCustomerAddress();
 
         self::loadInPrestashop($customer, 'update');
 
@@ -190,14 +192,15 @@ class RetailcrmHistory
 
         $customerBuilder
             ->setDataCrm($customerHistory)
-            ->build();
+            ->build()
+        ;
 
         $customer = $customerBuilder->getData()->getCustomer();
 
         self::loadInPrestashop($customer, 'save');
 
         self::$customerFix[] = [
-            'id'         => $customerHistory['id'],
+            'id' => $customerHistory['id'],
             'externalId' => $customer->id,
         ];
 
@@ -296,7 +299,7 @@ class RetailcrmHistory
                 if (self::$sendOrderNumber) {
                     self::$updateOrderIds[] = [
                         'externalId' => $newOrder->id,
-                        'number'     => $newOrder->reference,
+                        'number' => $newOrder->reference,
                     ];
                 }
             }
@@ -323,6 +326,7 @@ class RetailcrmHistory
      * @param $orderHistory
      *
      * @return Order|null
+     *
      * @throws Exception
      */
     private static function createOrderInPrestashop($orderHistory)
@@ -400,6 +404,7 @@ class RetailcrmHistory
      * @param $crmOrder
      *
      * @return Order|null
+     *
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
@@ -726,9 +731,10 @@ class RetailcrmHistory
      * load and catch exception
      *
      * @param \ObjectModel|\ObjectModelCore $object
-     * @param string                        $action
+     * @param string $action
      *
      * @return void
+     *
      * @throws Exception
      */
     private static function loadInPrestashop($object, $action)
@@ -1967,7 +1973,7 @@ class RetailcrmHistory
             __METHOD__,
             sprintf(
                 'Error %s order id=%d: %s',
-                (isset($order['externalId']) ? 'updating' : 'creating'),
+                isset($order['externalId']) ? 'updating' : 'creating',
                 $order['id'],
                 $e->getMessage()
             )
