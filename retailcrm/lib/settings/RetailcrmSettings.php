@@ -68,7 +68,7 @@ class RetailcrmSettings
      */
     public function save()
     {
-        if ($this->validator->validate()) {
+        if ($this->validator->validate(true)) {
             $this->settings->updateValueAll();
         }
 

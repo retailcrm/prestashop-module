@@ -49,9 +49,14 @@ class RetailcrmSettingsController extends RetailcrmAdminPostAbstractController
 
     protected function getHandler()
     {
+        $validator = new RetailcrmSettingsValidator(new RetailcrmSettingsItems(), $this->module->reference);
+        $validator->validate();
+
         return [
             'success' => true,
             'settings' => RetailcrmSettingsHelper::getSettings(),
+            'warnings' => $validator->getWarnings(),
+            'errors' => $validator->getErrors(),
         ];
     }
 }
