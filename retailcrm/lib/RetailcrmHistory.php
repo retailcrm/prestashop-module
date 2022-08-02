@@ -53,6 +53,7 @@ class RetailcrmHistory
     private static $newItemsIdsByOrderId = [];
     private static $updateOrderIds = [];
     private static $orderFix = [];
+    private static $customerFix = [];
 
     private static function init()
     {
@@ -69,10 +70,7 @@ class RetailcrmHistory
     /**
      * Get customers history
      *
-     * @return mixed
-     *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @return bool|string
      */
     public static function customersHistory()
     {
@@ -104,7 +102,7 @@ class RetailcrmHistory
             $customersHistory = RetailcrmHistoryHelper::assemblyCustomer($historyChanges);
             RetailcrmLogger::writeDebugArray(__METHOD__, ['Assembled history:', $customersHistory]);
 
-            $customerFix = [];
+            self::$customerFix = [];
 
             foreach ($customersHistory as $customerHistory) {
                 $customerHistory = RetailcrmTools::filter(
@@ -116,86 +114,104 @@ class RetailcrmHistory
                     continue;
                 }
 
-                $customerBuilder = new RetailcrmCustomerBuilder();
-
-                if (isset($customerHistory['externalId'])) {
-                    $crmCustomerResponse = self::$api->customersGet($customerHistory['externalId']);
-
-                    if (null === $crmCustomerResponse
-                        || !$crmCustomerResponse->isSuccessful()
-                        || !$crmCustomerResponse->offsetExists('customer')
-                    ) {
-                        continue;
+                try {
+                    if (isset($customerHistory['externalId'])) {
+                        self::updateCustomerInPrestashop($customerHistory['externalId']);
+                    } else {
+                        self::createCustomerInPrestashop($customerHistory);
                     }
-
-                    $customerData = RetailcrmTools::filter(
-                        'RetailcrmFilterCustomersHistoryUpdate',
-                        $crmCustomerResponse['customer']
-                    );
-
-                    $foundCustomer = new Customer($customerHistory['externalId']);
-                    $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
-                    $addressBuilder = new RetailcrmCustomerAddressBuilder();
-
-                    $addressBuilder
-                        ->setCustomerAddress($customerAddress)
-                    ;
-
-                    $customerBuilder
-                        ->setCustomer($foundCustomer)
-                        ->setAddressBuilder($addressBuilder)
-                        ->setDataCrm($customerData)
-                        ->build()
-                    ;
-
-                    $customer = $customerBuilder->getData()->getCustomer();
-                    $address = $customerBuilder->getData()->getCustomerAddress();
-
-                    if (false === self::loadInPrestashop($customer, 'update')) {
-                        continue;
-                    }
-
-                    if (!empty($address)) {
-                        RetailcrmTools::assignAddressIdsByFields($customer, $address);
-
-                        self::loadInPrestashop($address, 'update');
-                    }
-                } else {
-                    $customerBuilder
-                        ->setDataCrm($customerHistory)
-                        ->build()
-                    ;
-
-                    $customer = $customerBuilder->getData()->getCustomer();
-
-                    if (false === self::loadInPrestashop($customer, 'save')) {
-                        continue;
-                    }
-
-                    $customerFix[] = [
-                        'id' => $customerHistory['id'],
-                        'externalId' => $customer->id,
-                    ];
-
-                    $customer->update();
-
-                    if (isset($customerHistory['address'])) {
-                        $address = $customerBuilder->getData()->getCustomerAddress();
-
-                        $address->id_customer = $customer->id;
-
-                        self::loadInPrestashop($address, 'save');
-                    }
+                } catch (Exception $e) {
+                    continue;
                 }
             }
 
-            if (!empty($customerFix)) {
-                self::$api->customersFixExternalIds($customerFix);
+            if (!empty(self::$customerFix)) {
+                self::$api->customersFixExternalIds(self::$customerFix);
             }
 
             return true;
         } else {
             return 'Nothing to sync';
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private static function updateCustomerInPrestashop($externalId)
+    {
+        $customerBuilder = new RetailcrmCustomerBuilder();
+        $crmCustomerResponse = self::$api->customersGet($externalId);
+
+        if (null === $crmCustomerResponse
+            || !$crmCustomerResponse->isSuccessful()
+            || !$crmCustomerResponse->offsetExists('customer')
+        ) {
+            return;
+        }
+
+        $customerData = RetailcrmTools::filter(
+            'RetailcrmFilterCustomersHistoryUpdate',
+            $crmCustomerResponse['customer']
+        );
+
+        $foundCustomer = new Customer($externalId);
+        $customerAddress = new Address(RetailcrmTools::searchIndividualAddress($foundCustomer));
+        $addressBuilder = new RetailcrmCustomerAddressBuilder();
+
+        $addressBuilder
+            ->setCustomerAddress($customerAddress)
+        ;
+
+        $customerBuilder
+            ->setCustomer($foundCustomer)
+            ->setAddressBuilder($addressBuilder)
+            ->setDataCrm($customerData)
+            ->build()
+        ;
+
+        $customer = $customerBuilder->getData()->getCustomer();
+        $address = $customerBuilder->getData()->getCustomerAddress();
+
+        self::loadInPrestashop($customer, 'update');
+
+        if (!empty($address)) {
+            RetailcrmTools::assignAddressIdsByFields($customer, $address);
+
+            self::loadInPrestashop($address, 'update');
+        }
+    }
+
+    /**
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     */
+    private static function createCustomerInPrestashop($customerHistory)
+    {
+        $customerBuilder = new RetailcrmCustomerBuilder();
+
+        $customerBuilder
+            ->setDataCrm($customerHistory)
+            ->build()
+        ;
+
+        $customer = $customerBuilder->getData()->getCustomer();
+
+        self::loadInPrestashop($customer, 'save');
+
+        self::$customerFix[] = [
+            'id' => $customerHistory['id'],
+            'externalId' => $customer->id,
+        ];
+
+        $customer->update();
+
+        if (isset($customerHistory['address'])) {
+            $address = $customerBuilder->getData()->getCustomerAddress();
+
+            $address->id_customer = $customer->id;
+
+            self::loadInPrestashop($address, 'save');
         }
     }
 
@@ -263,18 +279,29 @@ class RetailcrmHistory
             }
 
             $newOrder = null;
-            if (!$orderExists) {
-                $newOrder = self::createOrderInPrestashop($orderHistory);
-            } else {
-                $newOrder = self::updateOrderInPrestashop($orderHistory);
+
+            try {
+                if (!$orderExists) {
+                    $newOrder = self::createOrderInPrestashop($orderHistory);
+                } else {
+                    $newOrder = self::updateOrderInPrestashop($orderHistory);
+                }
+            } catch (Error $e) {
+                self::handleError($orderHistory, $e);
+            } catch (Exception $e) {
+                self::handleError($orderHistory, $e);
             }
 
-            // collect orders id and reference if option sendOrderNumber enabled
-            if (self::$sendOrderNumber && isset($newOrder->id)) {
-                self::$updateOrderIds[] = [
-                    'externalId' => $newOrder->id,
-                    'number' => $newOrder->reference,
-                ];
+            if (null !== $newOrder && null !== $newOrder->id) {
+                RetailcrmExportOrdersHelper::updateExportState($newOrder->id, $orderHistory['id']);
+
+                // collect orders id and reference if option sendOrderNumber enabled
+                if (self::$sendOrderNumber) {
+                    self::$updateOrderIds[] = [
+                        'externalId' => $newOrder->id,
+                        'number' => $newOrder->reference,
+                    ];
+                }
             }
         }
 
@@ -295,6 +322,13 @@ class RetailcrmHistory
         }
     }
 
+    /**
+     * @param $orderHistory
+     *
+     * @return Order|null
+     *
+     * @throws Exception
+     */
     private static function createOrderInPrestashop($orderHistory)
     {
         $crmOrder = self::getOrderFromCrm($orderHistory['id'], 'id');
@@ -303,7 +337,7 @@ class RetailcrmHistory
         $orderStatus = self::getInternalOrderStatus($crmOrder['status']);
 
         if (self::$cartStatus && (string) $orderStatus === (string) self::$cartStatus) {
-            return;
+            return null;
         }
 
         $paymentTypeCRM = self::getPaymentTypeFromCRM($crmOrder);
@@ -347,9 +381,7 @@ class RetailcrmHistory
         );
 
         if (!isset($prestashopOrder->id) || !$prestashopOrder->id) {
-            RetailcrmLogger::writeDebug(__METHOD__, 'Order not created');
-
-            return;
+            throw new Exception('Unknown error');
         }
 
         self::createPayments($crmOrder, $prestashopOrder);
@@ -368,11 +400,21 @@ class RetailcrmHistory
         return $prestashopOrder;
     }
 
+    /**
+     * @param $crmOrder
+     *
+     * @return Order|null
+     *
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
     private static function updateOrderInPrestashop($crmOrder)
     {
         $prestashopOrder = new Order((int) $crmOrder['externalId']);
         if (!Validate::isLoadedObject($prestashopOrder)) {
-            return;
+            RetailcrmLogger::writeDebug(__METHOD__, sprintf("Order with id %s doesn't exist", $crmOrder['externalId']));
+
+            return null;
         }
 
         $crmOrder = RetailcrmTools::filter('RetailcrmFilterOrdersHistoryUpdate', $crmOrder, [
@@ -691,20 +733,26 @@ class RetailcrmHistory
      * @param \ObjectModel|\ObjectModelCore $object
      * @param string $action
      *
-     * @return bool
+     * @return void
+     *
+     * @throws Exception
      */
     private static function loadInPrestashop($object, $action)
     {
-        try {
-            $prefix = $object->id;
-            if (empty($object->id)) {
-                if (property_exists(get_class($object), 'id_customer')) {
-                    $prefix = sprintf('Customer ID: %d', $object->id_customer);
-                }
+        $prefix = '';
 
-                if (property_exists(get_class($object), 'id_order')) {
-                    $prefix = sprintf('Order ID: %d', $object->id_order);
-                }
+        try {
+            if (property_exists(get_class($object), 'id')) {
+                $prefix = $object->id;
+            }
+            if (property_exists(get_class($object), 'id_customer')) {
+                $prefix .= sprintf(' Customer ID: %d', $object->id_customer);
+            }
+            if (property_exists(get_class($object), 'id_order')) {
+                $prefix .= sprintf(' Order ID: %d', $object->id_order);
+            }
+            if (property_exists(get_class($object), 'order_reference')) {
+                $prefix .= sprintf(' Order Reference: %d', $object->order_reference);
             }
 
             RetailcrmLogger::writeDebug(
@@ -717,7 +765,7 @@ class RetailcrmHistory
                 )
             );
             $object->$action();
-        } catch (PrestaShopException $e) {
+        } catch (Error $e) {
             RetailcrmLogger::writeCaller(
                 'loadInCMS',
                 sprintf(
@@ -728,10 +776,20 @@ class RetailcrmHistory
             );
             RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
-            return false;
-        }
+            throw $e;
+        } catch (Exception $e) {
+            RetailcrmLogger::writeCaller(
+                'loadInCMS',
+                sprintf(
+                    ' > %s %s',
+                    (string) $action,
+                    $e->getMessage()
+                )
+            );
+            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
 
-        return true;
+            throw $e;
+        }
     }
 
     /**
@@ -997,6 +1055,10 @@ class RetailcrmHistory
         return $products;
     }
 
+    /**
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     */
     private static function createOrder($cart, $customer, $order, $deliveryType, $paymentId, $paymentType, $addressDelivery, $addressInvoice, $orderStatus)
     {
         $default_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
@@ -1050,36 +1112,31 @@ class RetailcrmHistory
         $newOrder->valid = 1;
         $newOrder->secure_key = md5(time());
 
-        try {
-            RetailcrmLogger::writeDebug(__METHOD__, sprintf(
-                '<Customer ID: %d> %s::%s',
-                $newOrder->id_customer,
-                get_class($newOrder),
-                'add'
-            ));
-            $newOrder->add(false, false);
+        RetailcrmLogger::writeDebug(__METHOD__, sprintf(
+            '<Customer ID: %d> %s::%s',
+            $newOrder->id_customer,
+            get_class($newOrder),
+            'add'
+        ));
+        $newOrder->add(false, false);
 
-            $newOrderHistoryRecord = new OrderHistory(null, static::$default_lang, Context::getContext()->shop->id);
+        $newOrderHistoryRecord = new OrderHistory(null, static::$default_lang, Context::getContext()->shop->id);
 
-            $newOrderHistoryRecord->id_order = $newOrder->id;
-            $newOrderHistoryRecord->id_order_state = $newOrder->current_state;
-            $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
-            $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
-            $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
+        $newOrderHistoryRecord->id_order = $newOrder->id;
+        $newOrderHistoryRecord->id_order_state = $newOrder->current_state;
+        $newOrderHistoryRecord->id_employee = static::getFirstEmployeeId();
+        $newOrderHistoryRecord->date_add = date('Y-m-d H:i:s');
+        $newOrderHistoryRecord->date_upd = $newOrderHistoryRecord->date_add;
 
-            self::loadInPrestashop($newOrderHistoryRecord, 'save');
-        } catch (\Exception $e) {
-            RetailcrmLogger::writeCaller(
-                __METHOD__,
-                sprintf('Error adding order id=%d: %s', $order['id'], $e->getMessage())
-            );
-
-            RetailcrmLogger::writeNoCaller($e->getTraceAsString());
-        }
+        self::loadInPrestashop($newOrderHistoryRecord, 'save');
 
         return $newOrder;
     }
 
+    /**
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
     private static function createOrderDetails($crmOrder, $prestashopOrder)
     {
         $newItemsIds = [];
@@ -1137,8 +1194,10 @@ class RetailcrmHistory
                 $orderDetail->total_price_tax_incl = $orderDetail->product_price * $orderDetail->product_quantity;
             }
 
-            if (self::loadInPrestashop($orderDetail, 'save')) {
+            try {
+                self::loadInPrestashop($orderDetail, 'save');
                 $newItemsIds[Db::getInstance()->Insert_ID()] = $item['id'];
+            } catch (Exception $e) {
             }
         }
 
@@ -1191,7 +1250,7 @@ class RetailcrmHistory
             ->getData()
         ;
 
-        if (RetailcrmTools::validateEntity($address)) {
+        if (RetailcrmTools::validateEntity($address, null, true)) {
             RetailcrmTools::assignAddressIdsByFields($customer, $address);
             self::loadInPrestashop($address, 'save');
         }
@@ -1208,7 +1267,7 @@ class RetailcrmHistory
         ) {
             $address = self::createOrderAddress($order, $orderToUpdate);
 
-            if (RetailcrmTools::validateEntity($address, $orderToUpdate)) {
+            if (RetailcrmTools::validateEntity($address, $orderToUpdate, true)) {
                 $address->id = null;
                 RetailcrmTools::assignAddressIdsByFields(new Customer($orderToUpdate->id_customer), $address);
 
@@ -1397,6 +1456,10 @@ class RetailcrmHistory
         return $paymentId;
     }
 
+    /**
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
     private static function saveCarrier($orderId, $deliveryType, $cost)
     {
         // delivery save
@@ -1458,21 +1521,7 @@ class RetailcrmHistory
             $orderPayment->amount = $payment['amount'];
             $orderPayment->date_add = $payment['paidAt'];
 
-            RetailcrmLogger::writeDebug(
-                __METHOD__,
-                sprintf(
-                    '<Order Reference: %s> %s::%s',
-                    $newOrder->reference,
-                    get_class($orderPayment),
-                    'save'
-                )
-            );
-
-            try {
-                $orderPayment->save();
-            } catch (PrestaShopException $exception) {
-                RetailcrmLogger::writeDebug(__METHOD__, $exception->getMessage());
-            }
+            self::loadInPrestashop($orderPayment, 'save');
         }
     }
 
@@ -1483,7 +1532,7 @@ class RetailcrmHistory
 
             return;
         }
-        if (RetailcrmTools::validateEntity($addressInvoice)) {
+        if (RetailcrmTools::validateEntity($addressInvoice, null, true)) {
             $addressInvoice->id_customer = $customer->id;
             RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
 
@@ -1859,15 +1908,6 @@ class RetailcrmHistory
         $orderHistory->date_add = date('Y-m-d H:i:s');
 
         self::loadInPrestashop($orderHistory, 'save');
-        RetailcrmLogger::writeDebug(
-            __METHOD__,
-            sprintf(
-                '<Order ID: %d> %s::%s',
-                $prestashopOrder->id,
-                get_class($orderHistory),
-                'changeIdOrderState'
-            )
-        );
 
         $orderHistory->changeIdOrderState(self::$statuses[$orderStatus], $prestashopOrder->id, true);
     }
@@ -1925,5 +1965,26 @@ class RetailcrmHistory
         $orderDetail->id_warehouse = !empty($prestashopOrder->id_warehouse) ? $prestashopOrder->id_warehouse : 0;
 
         return $orderDetail;
+    }
+
+    private static function handleError($order, $e)
+    {
+        RetailcrmLogger::writeCaller(
+            __METHOD__,
+            sprintf(
+                'Error %s order id=%d: %s',
+                isset($order['externalId']) ? 'updating' : 'creating',
+                $order['id'],
+                $e->getMessage()
+            )
+        );
+
+        RetailcrmLogger::writeNoCaller($e->getTraceAsString());
+
+        RetailcrmExportOrdersHelper::updateExportState(
+            isset($order['externalId']) ? $order['externalId'] : null,
+            $order['id'],
+            [$e->getMessage()]
+        );
     }
 }

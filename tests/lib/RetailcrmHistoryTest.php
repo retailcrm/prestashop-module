@@ -65,6 +65,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         Configuration::updateValue(RetailCRM::DELIVERY_DEFAULT, 2);
         Configuration::updateValue(RetailCRM::PAYMENT_DEFAULT, 'bankwire');
 
+        RetailcrmExportOrdersHelper::removeOrders();
+
         $this->setConfig();
     }
 
@@ -198,9 +200,9 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
     {
         return [
             [
-                'orderData' => $this->getApiOrder(), ],
+                'orderData' => $this->getApiOrder(11), ],
             [
-                'orderData' => $this->getApiOrderWitchCorporateCustomer(),
+                'orderData' => $this->getApiOrderWitchCorporateCustomer(12),
             ],
         ];
     }
@@ -316,6 +318,21 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals(10, $order->current_state);
         $this->assertEquals(1, $order->id_carrier);
         $this->assertEquals($orderData['payments'][0]['type'], $order->module);
+
+        // orders table
+        $orders = RetailcrmExportOrdersHelper::getOrders([$orderData['id']]);
+        $this->assertArrayHasKey('orders', $orders);
+        $this->assertArrayHasKey('pagination', $orders);
+        $this->assertCount(1, $orders['orders']);
+
+        $exportResult = $orders['orders'][0];
+
+        if (version_compare(_PS_VERSION_, '1.7.4.0', '!=')) { // workaround – on 1.7.4.0 id_order always 1
+            $this->assertEquals($exportResult['id_order'], $newLastId);
+        }
+
+        $this->assertEquals($exportResult['id_order_crm'], $orderData['id']);
+        $this->assertNull($exportResult['errors']);
     }
 
     private function switchCustomer()
@@ -653,11 +670,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         ];
     }
 
-    private function getApiOrder()
+    private function getApiOrder($id = 1)
     {
         $order = [
-            'slug' => 1,
-            'id' => 1,
+            'slug' => $id,
+            'id' => $id,
             'number' => '1C',
             'orderType' => 'eshop-individual',
             'orderMethod' => 'phone',
@@ -769,11 +786,11 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         return $order;
     }
 
-    private function getApiOrderWitchCorporateCustomer()
+    private function getApiOrderWitchCorporateCustomer($id = 2)
     {
         $orderWithCorporateCustomer = [
-            'slug' => 1,
-            'id' => 2,
+            'slug' => $id,
+            'id' => $id,
             'number' => '1C',
             'orderType' => 'eshop-individual',
             'orderMethod' => 'phone',
