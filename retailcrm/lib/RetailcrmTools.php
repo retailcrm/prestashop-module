@@ -379,38 +379,6 @@ class RetailcrmTools
         return $phonesArray;
     }
 
-    /**
-     * Validate crm address
-     *
-     * @param $address
-     *
-     * @return bool
-     */
-    public static function validateCrmAddress($address)
-    {
-        if (preg_match("/https:\/\/(.*).(retailcrm.(pro|ru|es)|simla.com)/", $address)) {
-            return Validate::isGenericName($address);
-        }
-
-        return false;
-    }
-
-    /**
-     * Validate crm api key
-     *
-     * @param $apiKey
-     *
-     * @return bool
-     */
-    public static function validateCrmApiKey($apiKey)
-    {
-        if (32 === mb_strlen($apiKey)) {
-            return Validate::isGenericName($apiKey);
-        }
-
-        return false;
-    }
-
     public static function getDate($file)
     {
         if (file_exists($file)) {
