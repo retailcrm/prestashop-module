@@ -283,7 +283,7 @@ class RetailcrmOrderBuilder
 
                 $by = 'externalId';
 
-                if (!isset($crmCustomer['externalId'])) {
+                if (!isset($crmCustomer['externalId']) || $crmCustomer['externalId'] !== $this->cmsCustomer->id) {
                     $crmCustomer['externalId'] = $this->cmsCustomer->id;
                     $by = 'id';
                 }
