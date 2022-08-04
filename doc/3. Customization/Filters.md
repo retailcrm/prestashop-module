@@ -25,6 +25,7 @@ There are list of available filters:
 * *RetailcrmFilterOrdersHistoryCreate* - array with order info, loaded from CRM
 * *RetailcrmFilterOrdersHistoryUpdate* - array with assembled history for order, loaded from CRM
 
+* *RetailcrmFilterFindCustomerByEmail* - customer array, found by email in CRM (to prevent duplicating)
 * *RetailcrmFilterSaveCustomer* - built customer object, which will be saved to CMS
 * *RetailcrmFilterSaveCustomerAddress* - built customer address object, which will be saved to CMS
 * *RetailcrmFilterSaveCorporateCustomer* - built corporate customer object, which will be saved to CMS
