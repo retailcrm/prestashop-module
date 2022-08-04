@@ -646,7 +646,7 @@ class RetailcrmOrderBuilder
                         [
                             'cmsCustomer' => $this->cmsCustomer,
                         ]
-                    );;
+                    );
                 }
             }
         }
