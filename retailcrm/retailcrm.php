@@ -460,9 +460,14 @@ class RetailCRM extends Module
     {
         if ($this->api) {
             $customer = $params['newCustomer'];
-            $customerSend = RetailcrmOrderBuilder::buildCrmCustomer($customer);
 
-            $this->api->customersCreate($customerSend);
+            $orderBuilder = new RetailcrmOrderBuilder();
+            $orderBuilder
+                ->defaultLangFromConfiguration()
+                ->setApi($this->api)
+                ->setCmsCustomer($customer)
+                ->createCustomerIfNotExist()
+            ;
 
             return true;
         }

@@ -251,7 +251,7 @@ class RetailcrmOrderBuilder
      *
      * @return array|bool
      */
-    private function createCustomerIfNotExist()
+    public function createCustomerIfNotExist()
     {
         $this->validateCmsCustomer();
 
@@ -271,12 +271,24 @@ class RetailcrmOrderBuilder
             $customer = $this->createdCustomer;
         } else {
             $crmCustomer = RetailcrmTools::mergeCustomerAddress($customer, $this->buildRegularAddress());
-            if (!RetailcrmTools::isEqualCustomerAddress($customer, $crmCustomer)) {
+
+            if (
+                !RetailcrmTools::isEqualCustomerAddress($customer, $crmCustomer)
+                || !isset($crmCustomer['externalId'])
+                || $crmCustomer['externalId'] !== $this->cmsCustomer->id
+            ) {
                 if (isset($crmCustomer['tags'])) {
                     unset($crmCustomer['tags']);
                 }
 
-                $response = $this->api->customersEdit($crmCustomer);
+                $by = 'externalId';
+
+                if (!isset($crmCustomer['externalId']) || $crmCustomer['externalId'] !== $this->cmsCustomer->id) {
+                    $crmCustomer['externalId'] = $this->cmsCustomer->id;
+                    $by = 'id';
+                }
+
+                $response = $this->api->customersEdit($crmCustomer, $by);
 
                 if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
                     $customer = $crmCustomer;
@@ -609,25 +621,33 @@ class RetailcrmOrderBuilder
     {
         $this->validateCmsCustomer();
 
-        if (empty($this->cmsCustomer->id) || $this->cmsCustomer->is_guest) {
-            if (!empty($this->cmsCustomer->email)) {
-                $customers = $this->api->customersList(['email' => $this->cmsCustomer->email]);
-
-                if ($customers
-                    && $customers->isSuccessful()
-                    && $customers->offsetExists('customers')
-                    && !empty($customers['customers'])
-                ) {
-                    $customers = $customers['customers'];
-
-                    return reset($customers);
-                }
-            }
-        } else {
+        if (!empty($this->cmsCustomer->id) && !$this->cmsCustomer->is_guest) {
             $customer = $this->api->customersGet($this->cmsCustomer->id);
 
             if ($customer && $customer->isSuccessful() && $customer->offsetExists('customer')) {
                 return $customer['customer'];
+            }
+        }
+
+        if (!empty($this->cmsCustomer->email)) {
+            $customers = $this->api->customersList(['email' => $this->cmsCustomer->email]);
+
+            if ($customers
+                && $customers->isSuccessful()
+                && $customers->offsetExists('customers')
+                && !empty($customers['customers'])
+            ) {
+                $customer = reset($customers['customers']);
+
+                if ($customer['email'] === $this->cmsCustomer->email) {
+                    return RetailcrmTools::filter(
+                        'RetailcrmFilterFindCustomerByEmail',
+                        $customer,
+                        [
+                            'cmsCustomer' => $this->cmsCustomer,
+                        ]
+                    );
+                }
             }
         }
 
