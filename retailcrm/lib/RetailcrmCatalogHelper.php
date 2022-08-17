@@ -87,6 +87,34 @@ class RetailcrmCatalogHelper
         return _PS_ROOT_DIR_ . '/' . self::getIcmlFileName();
     }
 
+    public static function isIcmlFileLinkActual()
+    {
+        $api = RetailcrmTools::getApiClient();
+        if (empty($api)) {
+            return null;
+        }
+
+        $reference = new RetailcrmReferences($api);
+        $site = $reference->getSite();
+
+        if (empty($site)) {
+            return null;
+        }
+
+        $newYmlUrl = RetailcrmCatalogHelper::getIcmlFileLink();
+
+        RetailcrmLogger::writeDebug(
+            __METHOD__, sprintf(
+                'Comparing %s and %s: %s',
+                $newYmlUrl,
+                $site['ymlUrl'],
+                $newYmlUrl === $site['ymlUrl'] ? 'true' : 'false'
+            )
+        );
+
+        return $newYmlUrl === $site['ymlUrl'];
+    }
+
     /**
      * @param int $productsCount
      * @param int $offersCount
