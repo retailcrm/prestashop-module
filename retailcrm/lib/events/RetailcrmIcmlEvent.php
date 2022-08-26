@@ -61,6 +61,20 @@ class RetailcrmIcmlEvent extends RetailcrmAbstractEvent implements RetailcrmEven
 
             $icml = new RetailcrmIcml($shop['name'], RetailcrmCatalogHelper::getIcmlFilePath());
             $icml->generate($data[0], $data[1]);
+
+            if (true !== RetailcrmCatalogHelper::isIcmlFileLinkActual()) {
+                RetailcrmLogger::writeDebug(
+                    __METHOD__,
+                    'Skip statistic update due to non consistent ICML file link'
+                );
+
+                continue;
+            }
+
+            $api = RetailcrmTools::getApiClient();
+            if (null !== $api) {
+                $api->statisticUpdate();
+            }
         }
 
         return true;
