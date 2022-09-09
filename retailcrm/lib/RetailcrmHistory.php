@@ -813,8 +813,8 @@ class RetailcrmHistory
         $organizedHistory = [];
         $notOurChanges = [];
 
-        $fieldsToSkip = [ 'segments' ];
-        $fieldsToKeep = [ 'externalId', 'status'];
+        $fieldsToSkip = ['segments'];
+        $fieldsToKeep = ['externalId', 'status'];
 
         foreach ($historyEntries as $entry) {
             $field = $entry['field'];
