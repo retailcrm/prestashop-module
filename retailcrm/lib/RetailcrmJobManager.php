@@ -412,7 +412,7 @@ class RetailcrmJobManager
      */
     private static function setLastRunDetails($lastRuns = [])
     {
-        RetailcrmLogger::writeCaller(__METHOD__ . ':before', json_encode($lastRuns));
+        RetailcrmLogger::writeDebug(__METHOD__ . ':before', json_encode($lastRuns));
         if (!is_array($lastRuns)) {
             $lastRuns = [];
         }
@@ -425,7 +425,7 @@ class RetailcrmJobManager
             }
         }
 
-        RetailcrmLogger::writeCaller(__METHOD__ . ':after', json_encode($lastRuns));
+        RetailcrmLogger::writeDebug(__METHOD__ . ':after', json_encode($lastRuns));
         Configuration::updateGlobalValue(self::LAST_RUN_DETAIL_NAME, (string) json_encode($lastRuns));
     }
 

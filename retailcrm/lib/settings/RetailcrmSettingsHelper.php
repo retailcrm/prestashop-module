@@ -136,7 +136,7 @@ class RetailcrmSettingsHelper
         if (null !== $api) {
             $reference = new RetailcrmReferences($api);
 
-            $site = $reference->getSite();
+            $site = $reference->getSite();                      // todo remove duplicated code
             $icmlInfo['isUrlActual'] = !empty($site['ymlUrl'])
                                        && $site['ymlUrl'] === RetailcrmCatalogHelper::getIcmlFileLink();
             if (!empty($site['catalogId'])) {

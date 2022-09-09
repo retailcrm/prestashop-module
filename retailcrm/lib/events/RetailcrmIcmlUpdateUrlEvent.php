@@ -66,7 +66,7 @@ class RetailcrmIcmlUpdateUrlEvent extends RetailcrmAbstractEvent implements Reta
             }
 
             $reference = new RetailcrmReferences($api);
-            $site = $reference->getSite();
+            $site = $reference->getSite();          // todo remove duplicated code
             if (empty($site)) {
                 continue;
             }
