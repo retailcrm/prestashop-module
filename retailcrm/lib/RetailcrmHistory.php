@@ -811,7 +811,16 @@ class RetailcrmHistory
         $organizedHistory = [];
         $notOurChanges = [];
 
+        $fieldsToSkip = [ 'segments' ];
+        $fieldsToKeep = [ 'externalId', 'status'];
+
         foreach ($historyEntries as $entry) {
+            $field = $entry['field'];
+
+            if (in_array($field, $fieldsToSkip)) {
+                continue;
+            }
+
             if (!isset($entry[$recordType]['externalId'])) {
                 if ('api' == $entry['source']
                     && isset($change['apiKey']['current'])
@@ -827,7 +836,6 @@ class RetailcrmHistory
             }
 
             $externalId = $entry[$recordType]['externalId'];
-            $field = $entry['field'];
 
             if (!isset($organizedHistory[$externalId])) {
                 $organizedHistory[$externalId] = [];
@@ -841,7 +849,7 @@ class RetailcrmHistory
                 && isset($entry['apiKey']['current'])
                 && true == $entry['apiKey']['current']
             ) {
-                if (isset($notOurChanges[$externalId][$field]) || 'externalId' == $field || 'status' == $field) {
+                if (isset($notOurChanges[$externalId][$field]) || in_array($field, $fieldsToKeep)) {
                     $organizedHistory[$externalId][] = $entry;
                 }
             } else {
