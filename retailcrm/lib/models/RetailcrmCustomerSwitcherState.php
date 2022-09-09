@@ -208,9 +208,9 @@ class RetailcrmCustomerSwitcherState
     /**
      * Throws an exception if state is not valid
      *
-     * @throws \InvalidArgumentException
-     *
      * @return void
+     *
+     * @throws \InvalidArgumentException
      */
     public function validate()
     {

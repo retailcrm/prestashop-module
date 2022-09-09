@@ -55,6 +55,8 @@ endif
 lint:
 	php-cs-fixer fix --config=$(ROOT_DIR)/.php-cs-fixer.php -v
 
+lint-docker:
+	docker run --rm -it -w=/app -v ${PWD}:/app oskarstark/php-cs-fixer-ga:latest --config=.php-cs-fixer.php -v
 
 test:
 ifeq ($(COMPOSERV1),1)
