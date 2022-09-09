@@ -227,6 +227,7 @@ class RetailCRMTest extends RetailcrmTestCase
 
     /**
      * @param $newOrder
+     *
      * @dataProvider dataProvider
      */
     public function testHookActionOrderStatusPostUpdate($newOrder)
@@ -281,6 +282,7 @@ class RetailCRMTest extends RetailcrmTestCase
 
     /**
      * @param $ordersGet
+     *
      * @dataProvider ordersGetDataProvider
      */
     public function testHookActionPaymentCCAdd($ordersGet)

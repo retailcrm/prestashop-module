@@ -83,11 +83,11 @@ class RetailcrmHttpClient
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws CurlException
      * @throws InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function makeRequest(
         $path,

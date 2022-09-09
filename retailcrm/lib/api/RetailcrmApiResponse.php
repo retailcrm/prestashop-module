@@ -106,9 +106,9 @@ class RetailcrmApiResponse implements \ArrayAccess
      * @param string $name method name
      * @param mixed $arguments method parameters
      *
-     * @throws \InvalidArgumentException
-     *
      * @return mixed
+     *
+     * @throws \InvalidArgumentException
      */
     public function __call($name, $arguments)
     {
@@ -127,9 +127,9 @@ class RetailcrmApiResponse implements \ArrayAccess
      *
      * @param string $name property name
      *
-     * @throws \InvalidArgumentException
-     *
      * @return mixed
+     *
+     * @throws \InvalidArgumentException
      */
     public function __get($name)
     {
@@ -146,9 +146,9 @@ class RetailcrmApiResponse implements \ArrayAccess
      * @param mixed $offset offset
      * @param mixed $value value
      *
-     * @throws \BadMethodCallException
-     *
      * @return void
+     *
+     * @throws \BadMethodCallException
      */
     public function offsetSet($offset, $value)
     {
@@ -160,9 +160,9 @@ class RetailcrmApiResponse implements \ArrayAccess
      *
      * @param mixed $offset offset
      *
-     * @throws \BadMethodCallException
-     *
      * @return void
+     *
+     * @throws \BadMethodCallException
      */
     public function offsetUnset($offset)
     {
@@ -186,9 +186,9 @@ class RetailcrmApiResponse implements \ArrayAccess
      *
      * @param mixed $offset offset
      *
-     * @throws \InvalidArgumentException
-     *
      * @return mixed
+     *
+     * @throws \InvalidArgumentException
      */
     public function offsetGet($offset)
     {

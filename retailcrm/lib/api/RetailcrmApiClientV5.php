@@ -60,9 +60,9 @@ class RetailcrmApiClientV5
      * @param string $apiKey api key
      * @param string $site site code
      *
-     * @throws \InvalidArgumentException
-     *
      * @return mixed
+     *
+     * @throws \InvalidArgumentException
      */
     public function __construct($url, $apiKey, $site = null)
     {
@@ -109,11 +109,11 @@ class RetailcrmApiClientV5
      * @param null $page
      * @param null $limit
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function usersList(array $filter = [], $page = null, $limit = null)
     {
@@ -141,11 +141,11 @@ class RetailcrmApiClientV5
      *
      * @param int $id user ID
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function usersGet($id)
     {
@@ -258,11 +258,11 @@ class RetailcrmApiClientV5
      *
      * @param int $id file ID
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function filesGet($id)
     {
@@ -540,11 +540,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersList(array $filter = [], $page = null, $limit = null)
     {
@@ -573,11 +573,11 @@ class RetailcrmApiClientV5
      * @param array $order order data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersCreate(array $order, $site = null)
     {
@@ -599,11 +599,11 @@ class RetailcrmApiClientV5
      *
      * @param array $ids order identificators
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersFixExternalIds(array $ids)
     {
@@ -627,11 +627,11 @@ class RetailcrmApiClientV5
      * @param array $ids (default: array())
      * @param array $externalIds (default: array())
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersStatuses(array $ids = [], array $externalIds = [])
     {
@@ -657,11 +657,11 @@ class RetailcrmApiClientV5
      * @param array $orders array of orders
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersUpload(array $orders, $site = null)
     {
@@ -685,11 +685,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersGet($id, $by = 'externalId', $site = null)
     {
@@ -709,11 +709,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersEdit(array $order, $by = 'externalId', $site = null)
     {
@@ -812,11 +812,11 @@ class RetailcrmApiClientV5
      *
      * @param array $payment order data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPaymentCreate(array $payment)
     {
@@ -896,11 +896,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersList(array $filter = [], $page = null, $limit = null)
     {
@@ -929,11 +929,11 @@ class RetailcrmApiClientV5
      * @param array $customer customer data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCreate(array $customer, $site = null)
     {
@@ -955,11 +955,11 @@ class RetailcrmApiClientV5
      *
      * @param array $ids ids mapping
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersFixExternalIds(array $ids)
     {
@@ -982,11 +982,11 @@ class RetailcrmApiClientV5
      * @param array $customers array of customers
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersUpload(array $customers, $site = null)
     {
@@ -1010,11 +1010,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersGet($id, $by = 'externalId', $site = null)
     {
@@ -1034,11 +1034,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersEdit(array $customer, $by = 'externalId', $site = null)
     {
@@ -1129,11 +1129,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersNotesList(array $filter = [], $page = null, $limit = null)
     {
@@ -1161,11 +1161,11 @@ class RetailcrmApiClientV5
      * @param array $note (default: array())
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersNotesCreate($note, $site = null)
     {
@@ -1187,11 +1187,11 @@ class RetailcrmApiClientV5
      *
      * @param int $id
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersNotesDelete($id)
     {
@@ -1214,11 +1214,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateList(array $filter = [], $page = null, $limit = null)
     {
@@ -1252,11 +1252,11 @@ class RetailcrmApiClientV5
      * @param array $customerCorporate corporate customer data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateCreate(array $customerCorporate, $site = null)
     {
@@ -1278,11 +1278,11 @@ class RetailcrmApiClientV5
      *
      * @param array $ids ids mapping
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateFixExternalIds(array $ids)
     {
@@ -1337,11 +1337,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateNotesList(array $filter = [], $page = null, $limit = null)
     {
@@ -1369,11 +1369,11 @@ class RetailcrmApiClientV5
      * @param array $note (default: array())
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateNotesCreate($note, $site = null)
     {
@@ -1395,11 +1395,11 @@ class RetailcrmApiClientV5
      *
      * @param int $id
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateNotesDelete($id)
     {
@@ -1449,11 +1449,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateGet($id, $by = 'externalId', $site = null)
     {
@@ -1476,11 +1476,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateAddresses(
         $id,
@@ -1517,11 +1517,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateAddressesCreate($id, array $address = [], $by = 'externalId', $site = null)
     {
@@ -1543,11 +1543,11 @@ class RetailcrmApiClientV5
      * @param string $addressBy (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateAddressesEdit(
         $customerId,
@@ -1589,11 +1589,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateCompanies(
         $id,
@@ -1630,11 +1630,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateCompaniesCreate($id, array $company = [], $by = 'externalId', $site = null)
     {
@@ -1692,11 +1692,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateContacts(
         $id,
@@ -1792,11 +1792,11 @@ class RetailcrmApiClientV5
      * @param string $by (default: 'externalId')
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function customersCorporateEdit(array $customerCorporate, $by = 'externalId', $site = null)
     {
@@ -1829,11 +1829,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksList(array $filter = [], $page = null, $limit = null)
     {
@@ -1862,11 +1862,11 @@ class RetailcrmApiClientV5
      * @param array $pack pack data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksCreate(array $pack, $site = null)
     {
@@ -1890,11 +1890,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksHistory(array $filter = [], $page = null, $limit = null)
     {
@@ -1922,11 +1922,11 @@ class RetailcrmApiClientV5
      *
      * @param string $id pack identificator
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksGet($id)
     {
@@ -1945,11 +1945,11 @@ class RetailcrmApiClientV5
      *
      * @param string $id pack identificator
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksDelete($id)
     {
@@ -1969,11 +1969,11 @@ class RetailcrmApiClientV5
      * @param array $pack pack data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function ordersPacksEdit(array $pack, $site = null)
     {
@@ -2100,11 +2100,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeProductsGroups(array $filter = [], $page = null, $limit = null)
     {
@@ -2134,11 +2134,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeInventories(array $filter = [], $page = null, $limit = null)
     {
@@ -2167,12 +2167,11 @@ class RetailcrmApiClientV5
      * @param string $code get settings code
      *
      * @return RetailcrmApiResponse
+     * @return RetailcrmApiResponse
      *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeSettingsGet($code)
     {
@@ -2191,11 +2190,11 @@ class RetailcrmApiClientV5
      *
      * @param array $configuration
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeSettingsEdit(array $configuration)
     {
@@ -2218,11 +2217,11 @@ class RetailcrmApiClientV5
      * @param array $offers offers data
      * @param string $site (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeInventoriesUpload(array $offers, $site = null)
     {
@@ -2246,11 +2245,11 @@ class RetailcrmApiClientV5
      * @param int $page (default: null)
      * @param int $limit (default: null)
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storeProducts(array $filter = [], $page = null, $limit = null)
     {
@@ -2278,11 +2277,11 @@ class RetailcrmApiClientV5
      *
      * @param string $code
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliverySettingsGet($code)
     {
@@ -2301,11 +2300,11 @@ class RetailcrmApiClientV5
      *
      * @param array $configuration
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliverySettingsEdit(array $configuration)
     {
@@ -2328,11 +2327,11 @@ class RetailcrmApiClientV5
      * @param string $code
      * @param array $statusUpdate
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliveryTracking($code, array $statusUpdate)
     {
@@ -2356,11 +2355,11 @@ class RetailcrmApiClientV5
     /**
      * Returns available county list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function countriesList()
     {
@@ -2373,11 +2372,11 @@ class RetailcrmApiClientV5
     /**
      * Returns deliveryServices list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliveryServicesList()
     {
@@ -2392,11 +2391,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data delivery service data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliveryServicesEdit(array $data)
     {
@@ -2416,11 +2415,11 @@ class RetailcrmApiClientV5
     /**
      * Returns deliveryTypes list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliveryTypesList()
     {
@@ -2435,11 +2434,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data delivery type data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function deliveryTypesEdit(array $data)
     {
@@ -2459,11 +2458,11 @@ class RetailcrmApiClientV5
     /**
      * Returns orderMethods list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function orderMethodsList()
     {
@@ -2478,11 +2477,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data order method data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function orderMethodsEdit(array $data)
     {
@@ -2502,11 +2501,11 @@ class RetailcrmApiClientV5
     /**
      * Returns orderTypes list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function orderTypesList()
     {
@@ -2521,11 +2520,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data order type data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function orderTypesEdit(array $data)
     {
@@ -2545,11 +2544,11 @@ class RetailcrmApiClientV5
     /**
      * Returns paymentStatuses list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function paymentStatusesList()
     {
@@ -2564,11 +2563,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data payment status data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function paymentStatusesEdit(array $data)
     {
@@ -2588,11 +2587,11 @@ class RetailcrmApiClientV5
     /**
      * Returns paymentTypes list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function paymentTypesList()
     {
@@ -2607,11 +2606,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data payment type data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function paymentTypesEdit(array $data)
     {
@@ -2631,11 +2630,11 @@ class RetailcrmApiClientV5
     /**
      * Returns productStatuses list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function productStatusesList()
     {
@@ -2650,11 +2649,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data product status data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function productStatusesEdit(array $data)
     {
@@ -2674,11 +2673,11 @@ class RetailcrmApiClientV5
     /**
      * Returns sites list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function sitesList()
     {
@@ -2693,11 +2692,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data site data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function sitesEdit(array $data)
     {
@@ -2717,11 +2716,11 @@ class RetailcrmApiClientV5
     /**
      * Returns statusGroups list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function statusGroupsList()
     {
@@ -2734,11 +2733,11 @@ class RetailcrmApiClientV5
     /**
      * Returns statuses list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function statusesList()
     {
@@ -2753,11 +2752,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data status data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function statusesEdit(array $data)
     {
@@ -2777,11 +2776,11 @@ class RetailcrmApiClientV5
     /**
      * Returns stores list
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storesList()
     {
@@ -2796,11 +2795,11 @@ class RetailcrmApiClientV5
      *
      * @param array $data site data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function storesEdit(array $data)
     {
@@ -2828,11 +2827,11 @@ class RetailcrmApiClientV5
      *
      * @param string $code
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function telephonySettingsGet($code)
     {
@@ -3003,11 +3002,11 @@ class RetailcrmApiClientV5
      *
      * @param array $calls calls data
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function telephonyCallsUpload(array $calls)
     {
@@ -3030,11 +3029,11 @@ class RetailcrmApiClientV5
      * @param string $phone phone number
      * @param bool $details detailed information
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function telephonyCallManager($phone, $details)
     {
@@ -3055,11 +3054,11 @@ class RetailcrmApiClientV5
     /**
      * Update CRM basic statistic
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \InvalidArgumentException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
-     *
-     * @return RetailcrmApiResponse
      */
     public function statisticUpdate()
     {
@@ -3074,11 +3073,11 @@ class RetailcrmApiClientV5
      *
      * @param array $configuration
      *
+     * @return RetailcrmApiResponse
+     *
      * @throws \RetailCrm\Exception\InvalidJsonException
      * @throws \RetailCrm\Exception\CurlException
      * @throws \InvalidArgumentException
-     *
-     * @return RetailcrmApiResponse
      */
     public function integrationModulesEdit(array $configuration)
     {
@@ -3102,9 +3101,9 @@ class RetailcrmApiClientV5
      *
      * @param string $by identify by
      *
-     * @throws \InvalidArgumentException
-     *
      * @return bool
+     *
+     * @throws \InvalidArgumentException
      */
     protected function checkIdParameter($by)
     {
