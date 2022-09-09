@@ -120,6 +120,8 @@ class RetailcrmHistory
                     } else {
                         self::createCustomerInPrestashop($customerHistory);
                     }
+                } catch (Error $e) {
+                    continue;
                 } catch (Exception $e) {
                     continue;
                 }
