@@ -295,7 +295,7 @@ class RetailcrmCatalog
 
                             unset($arComb);
 
-                            yield RetailcrmTools::filter(
+                            $item = RetailcrmTools::filter(
                                 'RetailcrmFilterProcessOffer',
                                 $item,
                                 [
@@ -303,6 +303,10 @@ class RetailcrmCatalog
                                     'offer' => $offer,
                                 ]
                             );
+
+                            if ([] !== $item) {
+                                yield $item;
+                            }
                         }
                     } else {
                         ++$offersCount;
@@ -316,32 +320,34 @@ class RetailcrmCatalog
                             $quantity = (int) StockAvailable::getQuantityAvailableByProduct($product['id_product']);
                         }
 
-                        $item = [
-                            'id' => $product['id_product'],
-                            'productId' => $product['id_product'],
-                            'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                            'name' => htmlspecialchars(strip_tags($product['name'])),
-                            'productName' => htmlspecialchars(strip_tags($product['name'])),
-                            'categoryId' => $categoriesLeft,
-                            'picture' => $pictures,
-                            'url' => $url,
-                            'quantity' => 0 < $quantity ? $quantity : 0,
-                            'purchasePrice' => round($purchasePrice, 2),
-                            'price' => $price,
-                            'vendor' => $vendor,
-                            'article' => $article,
-                            'weight' => $weight,
-                            'dimensions' => $dimensions,
-                            'vatRate' => $product['rate'],
-                        ];
-
-                        yield RetailcrmTools::filter(
+                        $item = RetailcrmTools::filter(
                             'RetailcrmFilterProcessOffer',
-                            $item,
+                            [
+                                'id' => $product['id_product'],
+                                'productId' => $product['id_product'],
+                                'productActivity' => ($available_for_order) ? 'Y' : 'N',
+                                'name' => htmlspecialchars(strip_tags($product['name'])),
+                                'productName' => htmlspecialchars(strip_tags($product['name'])),
+                                'categoryId' => $categoriesLeft,
+                                'picture' => $pictures,
+                                'url' => $url,
+                                'quantity' => 0 < $quantity ? $quantity : 0,
+                                'purchasePrice' => round($purchasePrice, 2),
+                                'price' => $price,
+                                'vendor' => $vendor,
+                                'article' => $article,
+                                'weight' => $weight,
+                                'dimensions' => $dimensions,
+                                'vatRate' => $product['rate'],
+                            ],
                             [
                                 'product' => $product,
                             ]
                         );
+
+                        if ([] !== $item) {
+                            yield $item;
+                        }
                     }
                 }
 
