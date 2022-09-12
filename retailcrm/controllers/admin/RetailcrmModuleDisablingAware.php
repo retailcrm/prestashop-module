@@ -36,46 +36,6 @@
  * to avoid any conflicts with others containers.
  */
 
-require_once dirname(__FILE__) . '/../../bootstrap.php';
-
-class RetailcrmSettingsLinkController extends RetailcrmAdminAbstractController implements RetailcrmModuleDisablingAware
+interface RetailcrmModuleDisablingAware
 {
-    public static function getParentId()
-    {
-        return (int) Tab::getIdFromClassName('IMPROVE');
-    }
-
-    public static function getIcon()
-    {
-        return 'shop';
-    }
-
-    public static function getPosition()
-    {
-        return 7;
-    }
-
-    public static function getName()
-    {
-        $name = [];
-
-        foreach (Language::getLanguages(true) as $lang) {
-            $name[$lang['id_lang']] = 'Simla.com';
-        }
-
-        return $name;
-    }
-
-    public function postProcess()
-    {
-        $link = $this->context->link->getAdminLink('AdminModules', true, [], [
-            'configure' => 'retailcrm',
-        ]);
-
-        if (version_compare(_PS_VERSION_, '1.7.0.3', '<')) {
-            $link .= '&module_name=retailcrm&configure=retailcrm';
-        }
-
-        $this->setRedirectAfter($link);
-    }
 }

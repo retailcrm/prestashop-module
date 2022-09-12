@@ -240,12 +240,12 @@ class RetailCRM extends Module
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
-    public function uninstallTab()
+    public function uninstallTab($forceAll = true)
     {
         /** @var RetailcrmAdminAbstractController $controller */
         foreach (self::ADMIN_CONTROLLERS as $controller) {
             $tabId = $controller::getId();
-            if (!$tabId) {
+            if (!$tabId || (!$forceAll && !is_subclass_of($controller, RetailcrmModuleDisablingAware::class))) {
                 continue;
             }
 
@@ -354,9 +354,18 @@ class RetailCRM extends Module
 
     public function disable($force_all = false)
     {
-        return parent::disable($force_all)
-            && $this->uninstallTab()
-        ;
+        if (!parent::disable($force_all)) {
+            return false;
+        }
+
+        $sql = 'SELECT COUNT(`id_shop`) FROM `' . _DB_PREFIX_ . 'module_shop`
+                WHERE `id_module` = ' . (int) $this->id;
+
+        if ('0' === Db::getInstance($sql)->getValue($sql)) {
+            return $this->uninstallTab(false);
+        }
+
+        return true;
     }
 
     public function installDB()
