@@ -40,11 +40,13 @@ class RetailcrmSettingsItem
 {
     private $paramKey;
     protected $configKey;
+    private $default;
 
-    public function __construct($paramKey, $configKey)
+    public function __construct($paramKey, $configKey, $default = '')
     {
         $this->paramKey = $paramKey;
         $this->configKey = $configKey;
+        $this->default = $default;
     }
 
     public function updateValue()
@@ -80,7 +82,7 @@ class RetailcrmSettingsItem
 
     public function getValueStored()
     {
-        return Configuration::get($this->configKey, null, null, null, '');
+        return Configuration::get($this->configKey, null, null, null, $this->default);
     }
 
     public function getValueWithStored()
