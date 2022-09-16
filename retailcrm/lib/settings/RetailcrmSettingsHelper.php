@@ -64,6 +64,18 @@ class RetailcrmSettingsHelper
             $jobsInfo[] = $lastRunDetails[$job]; // todo refactor
         }
 
+        $orderBy = 'lastRun';
+        $orderDirection = SORT_DESC;
+
+        array_multisort(
+            array_map(function ($item) use ($orderBy) {
+                return $item[$orderBy];
+            }, $jobsInfo),
+            $orderDirection,
+            $jobsInfo
+        );
+
+
         return $jobsInfo;
     }
 
