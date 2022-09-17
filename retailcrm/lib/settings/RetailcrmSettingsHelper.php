@@ -53,9 +53,22 @@ class RetailcrmSettingsHelper
     {
         $jobsInfo = [];
 
+        $allJobsList = RetailcrmJobManager::getAllowedJobs();
         $lastRunDetails = RetailcrmJobManager::getLastRunDetails();
         $currentJob = Configuration::get(RetailcrmJobManager::CURRENT_TASK);
         $currentJobCli = Configuration::get(RetailcrmCli::CURRENT_TASK_CLI);
+
+        foreach ($allJobsList as $job) {
+            if (!isset($lastRunDetails[$job])) {
+                $jobsInfo[] = [
+                    'name' => $job,
+                    'running' => $job === $currentJob || $job === $currentJobCli,
+                    'lastRun' => null,
+                    'success' => null,
+                    'error' => null,
+                ];
+            }
+        }
 
         foreach ($lastRunDetails as $job => $detail) {
             $lastRunDetails[$job]['name'] = $job;
@@ -74,7 +87,6 @@ class RetailcrmSettingsHelper
             $orderDirection,
             $jobsInfo
         );
-
 
         return $jobsInfo;
     }
