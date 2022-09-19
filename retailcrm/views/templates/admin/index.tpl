@@ -34,8 +34,24 @@
  * Don't forget to prefix your containers with your own identifier
  * to avoid any conflicts with others containers.
  *}
-<script>
-    window.$appData = {$appData|default:'{}'|@json_encode};
-</script>
 
-{include file='./../../index.html'}
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="../modules/retailcrm/views/favicon.ico">
+    <title>prestashop</title>
+    <link href="../modules/retailcrm/views/js/app.js?version={$appVersioning['app']}" rel="preload" as="script">
+    <link href="../modules/retailcrm/views/js/chunk-vendors.js?version={$appVersioning['chunk-vendors']}" rel="preload" as="script">
+</head>
+<body>
+<noscript><strong>We're sorry but prestashop doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong></noscript>
+<div id="app"></div>
+<script>window.$appData = {$appData|default:'{}'|@json_encode};</script>
+<script src="../modules/retailcrm/views/js/chunk-vendors.js?version={$appVersioning['chunk-vendors']}"></script>
+<script src="../modules/retailcrm/views/js/app.js?version={$appVersioning['app']}"></script>
+</body>
+</html>
