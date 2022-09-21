@@ -42,6 +42,10 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
     {
         $this->data = [
             'assets' => $this->assets,
+            'appVersioning' => [
+                'app' => filemtime(_PS_MODULE_DIR_ . '/retailcrm/views/js/app.js'),
+                'chunk-vendors' => filemtime(_PS_MODULE_DIR_ . '/retailcrm/views/js/chunk-vendors.js'),
+            ],
             'appData' => [
                 'locale' => $this->getCurrentLanguageISO(),
                 'debug' => RetailcrmTools::isDebug(),
