@@ -40,18 +40,25 @@ class RetailcrmIcml
 {
     protected $shop;
     protected $file;
+    protected $tmpFile;
     protected $properties;
     protected $params;
     protected $dd;
     protected $eCategories;
     protected $eOffers;
+    /**
+     * @var XMLWriter
+     */
+    private $writer;
 
     public function __construct($shop, $file)
     {
         $this->shop = $shop;
         $this->file = $file;
+        $this->tmpFile = sprintf('%s.tmp', $this->file);
 
         $this->properties = [
+            'categoryId',
             'name',
             'productName',
             'price',
@@ -75,129 +82,200 @@ class RetailcrmIcml
 
     public function generate($categories, $offers)
     {
-        $string = '<?xml version="1.0" encoding="UTF-8"?>
-            <yml_catalog date="' . date('Y-m-d H:i:s') . '">
-                <shop>
-                    <name>' . $this->shop . '</name>
-                    <categories/>
-                    <offers/>
-                </shop>
-            </yml_catalog>
-        ';
+        if (file_exists($this->tmpFile)) {
+            unlink($this->tmpFile);
+        }
 
-        $xml = new SimpleXMLElement(
-            $string,
-            LIBXML_NOENT | LIBXML_NOCDATA | LIBXML_COMPACT | LIBXML_PARSEHUGE
-        );
+        $this->loadWriter();
+        $this->writeHead();
 
-        $this->dd = new DOMDocument();
-        $this->dd->preserveWhiteSpace = false;
-        $this->dd->formatOutput = true;
-        $this->dd->loadXML($xml->asXML());
+        if (!empty($categories)) {
+            $this->writeCategories($categories);
+            unset($categories);
+        }
 
-        $this->eCategories = $this->dd
-            ->getElementsByTagName('categories')->item(0);
-        $this->eOffers = $this->dd
-            ->getElementsByTagName('offers')->item(0);
+        if (!empty($offers)) {
+            $this->writeOffers($offers);
+            unset($offers);
+        }
+
+        $this->writeEnd();
+        $this->formatXml();
+
+        rename($this->tmpFile, $this->file);
+    }
+
+    private function loadWriter()
+    {
+        if (!$this->writer) {
+            $writer = new \XMLWriter();
+            $writer->openUri($this->tmpFile);
+
+            $this->writer = $writer;
+        }
+    }
+
+    private function writeHead()
+    {
+        $this->writer->startDocument('1.0', 'UTF-8');
+        $this->writer->startElement('yml_catalog'); // start <yml_catalog>
+        $this->writer->writeAttribute('date', date('Y-m-d H:i:s'));
+        $this->writer->startElement('shop'); // start <shop>
+        $this->writer->WriteElement('name', $this->shop);
+    }
+
+    /**
+     * @param $categories
+     */
+    private function writeCategories($categories)
+    {
+        $this->writer->startElement('categories'); // start <categories>
 
         $this->addCategories($categories);
-        $this->addOffers($offers);
 
-        $this->dd->saveXML();
-        $this->dd->save($this->file);
+        $this->writer->endElement(); // end </categories>
     }
 
     private function addCategories($categories)
     {
         foreach ($categories as $category) {
-            $e = $this->eCategories->appendChild(
-                $this->dd->createElement(
-                    'category'
-                )
-            );
-
-            $e->setAttribute('id', $category['id']);
-            $e->appendChild($this->dd->createElement('name', $category['name']));
-
-            if ($category['picture']) {
-                $e->appendChild($this->dd->createElement('picture', $category['picture']));
+            if (!array_key_exists('name', $category) || !array_key_exists('id', $category)) {
+                continue;
             }
 
-            if (0 < $category['parentId']) {
-                $e->setAttribute('parentId', $category['parentId']);
+            $this->writer->startElement('category'); // start <category>
+
+            $this->writer->writeAttribute('id', $category['id']);
+
+            if (array_key_exists('parentId', $category) && 0 < $category['parentId']) {
+                $this->writer->writeAttribute('parentId', $category['parentId']);
             }
+
+            $this->writer->writeElement('name', $category['name']);
+
+            if (array_key_exists('picture', $category) && $category['picture']) {
+                $this->writer->writeElement('picture', $category['picture']);
+            }
+
+            $this->writer->endElement(); // end </category>
         }
+    }
+
+    /**
+     * @param $offers
+     */
+    private function writeOffers($offers)
+    {
+        $this->writer->startElement('offers'); // start <offers>
+        $this->addOffers($offers);
+        $this->writer->endElement(); // end </offers>
     }
 
     private function addOffers($offers)
     {
         foreach ($offers as $offer) {
-            $e = $this->eOffers->appendChild(
-                $this->dd->createElement('offer')
-            );
+            if (!array_key_exists('id', $offer)) {
+                continue;
+            }
 
-            $e->setAttribute('id', $offer['id']);
-            $e->setAttribute('productId', $offer['productId']);
+            $this->writer->startElement('offer'); // start <offer>
 
-            if (!empty($offer['quantity'])) {
-                $e->setAttribute('quantity', (int) $offer['quantity']);
+            $this->writer->writeAttribute('id', $offer['id']);
+            $this->writer->writeAttribute('productId', $offer['productId']);
+            $this->writer->writeAttribute('quantity', (int) $offer['quantity']);
+
+            unset($offer['id'], $offer['productId'], $offer['quantity']);
+
+            $this->setOffersProperties($offer);
+            $this->setOffersParams($offer);
+            $this->setOffersCombinations($offer);
+
+            $this->writer->endElement(); // end </offer>
+        }
+    }
+
+    private function setOffersProperties($offer)
+    {
+        foreach ($offer as $key => $value) {
+            if (!in_array($key, $this->properties)) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                foreach ($value as $element) {
+                    $this->writer->writeElement($key, $element);
+                }
             } else {
-                $e->setAttribute('quantity', 0);
-            }
-
-            foreach ($offer['categoryId'] as $categoryId) {
-                $e->appendChild(
-                    $this->dd->createElement('categoryId', $categoryId)
-                );
-            }
-
-            $offerKeys = array_keys($offer);
-
-            foreach ($offerKeys as $key) {
-                if (null == $offer[$key]) {
-                    continue;
-                }
-
-                if (in_array($key, $this->properties)) {
-                    if (is_array($offer[$key])) {
-                        foreach ($offer[$key] as $property) {
-                            $e->appendChild(
-                                $this->dd->createElement($key)
-                            )->appendChild(
-                                $this->dd->createTextNode(trim($property))
-                            );
-                        }
-                    } else {
-                        $e->appendChild(
-                            $this->dd->createElement($key)
-                        )->appendChild(
-                            $this->dd->createTextNode(trim($offer[$key]))
-                        );
-                    }
-                }
-
-                if (in_array($key, array_keys($this->params))) {
-                    $param = $this->dd->createElement('param');
-                    $param->setAttribute('code', $key);
-                    $param->setAttribute('name', $this->params[$key]);
-                    $param->appendChild(
-                        $this->dd->createTextNode($offer[$key])
-                    );
-                    $e->appendChild($param);
-                }
-            }
-
-            if (isset($offer['combination'])) {
-                foreach ($offer['combination'] as $id => $comb) {
-                    $param = $this->dd->createElement('param');
-                    $param->setAttribute('code', $id);
-                    $param->setAttribute('name', $comb['group_name']);
-                    $param->appendChild(
-                        $this->dd->createTextNode($comb['attribute_name'])
-                    );
-                    $e->appendChild($param);
-                }
+                $this->writer->writeElement($key, $value);
             }
         }
+    }
+
+    private function setOffersParams($offer)
+    {
+        foreach ($offer as $key => $value) {
+            if (!in_array($key, $this->params)) {
+                continue;
+            }
+
+            if (
+                !array_key_exists('code', $value)
+                || !array_key_exists('name', $value)
+                || !array_key_exists('value', $value)
+                || empty($value['code'])
+                || empty($value['name'])
+                || empty($value['value'])
+            ) {
+                continue;
+            }
+
+            $this->writer->startElement('param');
+            $this->writer->writeAttribute('code', $value['code']);
+            $this->writer->writeAttribute('name', $value['name']);
+            $this->writer->text($value['value']);
+            $this->writer->endElement();
+        }
+    }
+
+    private function setOffersCombinations($offer)
+    {
+        if (!isset($offer['combination'])) {
+            return;
+        }
+
+        foreach ($offer['combination'] as $id => $combination) {
+            if (
+                !array_key_exists('group_name', $combination)
+                || !array_key_exists('attribute_name', $combination)
+                || empty($combination['group_name'])
+                || empty($combination['attribute_name'])
+            ) {
+                continue;
+            }
+
+            $this->writer->startElement('param');
+            $this->writer->writeAttribute('code', $id);
+            $this->writer->writeAttribute('name', $combination['group_name']);
+            $this->writer->text($combination['attribute_name']);
+            $this->writer->endElement();
+        }
+    }
+
+    private function writeEnd()
+    {
+        $this->writer->endElement(); // end </yml_catalog>
+        $this->writer->endElement(); // end </shop>
+        $this->writer->endDocument();
+    }
+
+    private function formatXml()
+    {
+        $dom = dom_import_simplexml(simplexml_load_file($this->tmpFile))->ownerDocument;
+        $dom->formatOutput = true;
+        $formatted = $dom->saveXML();
+
+        unset($dom, $this->writer);
+
+        file_put_contents($this->tmpFile, $formatted);
     }
 }

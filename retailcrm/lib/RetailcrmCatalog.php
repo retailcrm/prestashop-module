@@ -193,6 +193,8 @@ class RetailcrmCatalog
                         $article = null;
                     }
 
+                    $productName = htmlspecialchars(strip_tags($product['name']));
+
                     $weight = $this->getWeightInKg($product['weight']);
 
                     $width = round($product['width'], 3);
@@ -265,16 +267,22 @@ class RetailcrmCatalog
                                 $offerArticle = $article;
                             }
 
+                            $name = htmlspecialchars(
+                                strip_tags(
+                                    Product::getProductName($product['id_product'], $offer['id_product_attribute'])
+                                )
+                            );
+
                             $item = [
                                 'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
                                 'productId' => $product['id_product'],
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                                'name' => htmlspecialchars(strip_tags(Product::getProductName($product['id_product'], $offer['id_product_attribute']))),
-                                'productName' => htmlspecialchars(strip_tags($product['name'])),
+                                'name' => ('' === $name) ? $productName : $name,
+                                'productName' => $productName,
                                 'categoryId' => $categoriesLeft,
                                 'picture' => $pictures,
                                 'url' => $url,
-                                'quantity' => 0 < $quantity ? $quantity : 0,
+                                'quantity' => (0 < $quantity) ? $quantity : 0,
                                 'purchasePrice' => $offerPurchasePrice,
                                 'price' => round($offerPrice, 2),
                                 'vendor' => $vendor,
@@ -326,8 +334,8 @@ class RetailcrmCatalog
                                 'id' => $product['id_product'],
                                 'productId' => $product['id_product'],
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
-                                'name' => htmlspecialchars(strip_tags($product['name'])),
-                                'productName' => htmlspecialchars(strip_tags($product['name'])),
+                                'name' => $productName,
+                                'productName' => $productName,
                                 'categoryId' => $categoriesLeft,
                                 'picture' => $pictures,
                                 'url' => $url,
