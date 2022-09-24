@@ -327,7 +327,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
 
         $exportResult = $orders['orders'][0];
 
-        if (version_compare(_PS_VERSION_, '1.7.4.0', '!=')) { // workaround – on 1.7.4.0 id_order always 1
+        if (version_compare(_PS_VERSION_, '1.7.4.0', '<')) { // workaround – on 1.7.4.0 id_order always 1
             $this->assertEquals($exportResult['id_order'], $newLastId);
         }
 
