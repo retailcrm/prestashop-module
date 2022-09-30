@@ -86,13 +86,53 @@ jobs:
             phpunit-version: 'phpunit:6.4.3'
 
           - php-version: '7.1'
-            branch: '1.7.4.0'
+            branch: '1.7.4.4'
             composerv1: 1
             phpunit-version: 'phpunit:6.4.3'
           - php-version: '7.2'
-            branch: '1.7.4.0'
+            branch: '1.7.4.4'
             composerv1: 1
             phpunit-version: 'phpunit:6.4.3'
+
+#          - php-version: '7.1'
+#            branch: '1.7.5.2'
+#            composerv1: 1
+#            phpunit-version: 'phpunit:6.4.3'
+#          - php-version: '7.2'
+#            branch: '1.7.5.2'
+#            composerv1: 1
+#            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '7.1'
+            branch: '1.7.6.9'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.2'
+            branch: '1.7.6.9'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+
+          - php-version: '7.1'
+            branch: '1.7.7.8'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.2'
+            branch: '1.7.7.8'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.3'
+            branch: '1.7.7.8'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+
+#          - php-version: '7.1'
+#            branch: '1.7.8.7'
+#            composerv1: 1
+#            phpunit-version: 'phpunit:6.4.3'
+#          - php-version: '7.2'
+#            branch: '1.7.8.7'
+#            composerv1: 1
+#            phpunit-version: 'phpunit:6.4.3'
 
     services:
       mysql:
