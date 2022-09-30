@@ -214,32 +214,21 @@ class RetailcrmIcml
     private function setOffersParams($offer)
     {
         foreach ($offer as $key => $value) {
-            if (!in_array($key, $this->params)) {
-                continue;
-            }
-
-            if (
-                !array_key_exists('code', $value)
-                || !array_key_exists('name', $value)
-                || !array_key_exists('value', $value)
-                || empty($value['code'])
-                || empty($value['name'])
-                || empty($value['value'])
-            ) {
+            if (!array_key_exists($key, $this->params)) {
                 continue;
             }
 
             $this->writer->startElement('param');
-            $this->writer->writeAttribute('code', $value['code']);
-            $this->writer->writeAttribute('name', $value['name']);
-            $this->writer->text($value['value']);
+            $this->writer->writeAttribute('code', $key);
+            $this->writer->writeAttribute('name', $this->params[$key]);
+            $this->writer->text($value);
             $this->writer->endElement();
         }
     }
 
     private function setOffersCombinations($offer)
     {
-        if (!isset($offer['combination'])) {
+        if (!array_key_exists('combination', $offer)) {
             return;
         }
 
