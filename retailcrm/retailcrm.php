@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.4.12';
+    const VERSION = '3.4.13';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -295,7 +295,7 @@ class RetailCRM extends Module
         }
     }
 
-    public function uninstall()
+    public static function updateCrmModuleState($idShop, $active = true)
     {
         $apiUrl = Configuration::get(static::API_URL);
         $apiKey = Configuration::get(static::API_KEY);
@@ -303,8 +303,25 @@ class RetailCRM extends Module
         if (!empty($apiUrl) && !empty($apiKey)) {
             $api = new RetailcrmProxy($apiUrl, $apiKey);
 
-            $clientId = Configuration::get(static::CLIENT_ID);
-            $this->integrationModule($api, $clientId, false);
+            $clientId = Configuration::get(static::CLIENT_ID, null, null, $idShop);
+            self::integrationModule($api, $clientId, $active);
+        }
+
+        return true;
+    }
+
+    public function uninstall()
+    {
+        if (Shop::isFeatureActive()) {
+            $shops = Shop::getShops();
+        } else {
+            $shops[] = Shop::getContext();
+        }
+
+        foreach ($shops as $shop) {
+            if (isset($shop['id_shop'])) {
+                self::updateCrmModuleState($shop['id_shop'], false);
+            }
         }
 
         return parent::uninstall()
@@ -347,6 +364,10 @@ class RetailCRM extends Module
 
     public function enable($force_all = false)
     {
+        $context = Context::getContext();
+
+        self::updateCrmModuleState($context->shop->id);
+
         return parent::enable($force_all)
             && $this->installTab()
         ;
@@ -357,6 +378,10 @@ class RetailCRM extends Module
         if (!parent::disable($force_all)) {
             return false;
         }
+
+        $context = Shop::getContext();
+
+        self::updateCrmModuleState($context->shop->id, false);
 
         $sql = 'SELECT COUNT(`id_shop`) FROM `' . _DB_PREFIX_ . 'module_shop`
                 WHERE `id_module` = ' . (int) $this->id;
@@ -782,13 +807,14 @@ class RetailCRM extends Module
      *
      * @return bool
      */
-    private function integrationModule($apiClient, $clientId, $active = true)
+    public static function integrationModule($apiClient, $clientId, $active = true)
     {
-        $scheme = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+        $context = Context::getContext();
+
         $logo = 'https://s3.eu-central-1.amazonaws.com/retailcrm-billing/images/5b845ce986911-prestashop2.svg';
         $integrationCode = 'prestashop';
         $name = 'PrestaShop';
-        $accountUrl = $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        $accountUrl = $context->link->getAdminLink('AdminModules') . '&configure=retailcrm';
         $configuration = [
             'clientId' => $clientId,
             'code' => $integrationCode . '-' . $clientId,
