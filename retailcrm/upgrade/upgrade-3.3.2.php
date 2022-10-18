@@ -70,11 +70,11 @@ function upgrade_module_3_3_2($module)
         }
 
         if ($isMultiStoreActive) {
-            $oldFile = _PS_ROOT_DIR_ . '/' . 'retailcrm_' . $shop['id_shop'] . '.xml';
-            $newFile = _PS_ROOT_DIR_ . '/' . 'simla_' . $shop['id_shop'] . '.xml';
+            $oldFile = _PS_ROOT_DIR_ . '/retailcrm_' . $shop['id_shop'] . '.xml';
+            $newFile = _PS_ROOT_DIR_ . '/simla_' . $shop['id_shop'] . '.xml';
         } else {
-            $oldFile = _PS_ROOT_DIR_ . '/' . 'retailcrm.xml';
-            $newFile = _PS_ROOT_DIR_ . '/' . 'simla.xml';
+            $oldFile = _PS_ROOT_DIR_ . '/retailcrm.xml';
+            $newFile = _PS_ROOT_DIR_ . '/simla.xml';
         }
 
         if (file_exists($oldFile) && !file_exists($newFile)) {

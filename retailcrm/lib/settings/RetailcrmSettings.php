@@ -70,6 +70,11 @@ class RetailcrmSettings
     {
         if ($this->validator->validate(true)) {
             $this->settings->updateValueAll();
+
+            if (array_key_exists('apiKey', $this->settings->getChanged())) {
+                $this->setClientId();
+                RetailCRM::updateCrmModuleState(Context::getContext()->shop->id);
+            }
         }
 
         $changed = $this->settings->getChanged();
@@ -85,6 +90,18 @@ class RetailcrmSettings
             'warnings' => $this->validator->getWarnings(),
             'changed' => $changed,
         ];
+    }
+
+    private function setClientId()
+    {
+        $context = Context::getContext();
+
+        Configuration::updateValue(RetailCRM::CLIENT_ID, hash(
+            'sha256',
+            $context->shop->id . Configuration::get('PS_SHOP_DOMAIN')
+        ));
+
+        return true;
     }
 
     private function updateConsultantCode()
