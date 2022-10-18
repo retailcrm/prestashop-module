@@ -68,16 +68,16 @@ class RetailcrmSettings
      */
     public function save()
     {
-        $changed = $this->settings->getChanged();
-
         if ($this->validator->validate(true)) {
             $this->settings->updateValueAll();
 
-            if (array_key_exists('apiKey', $changed)) {
+            if (array_key_exists('apiKey', $this->settings->getChanged())) {
                 $this->setClientId();
                 RetailCRM::updateCrmModuleState(Context::getContext()->shop->id);
             }
         }
+
+        $changed = $this->settings->getChanged();
 
         if ($this->consultantScript->issetValue()) {
             $this->updateConsultantCode();
