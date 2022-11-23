@@ -149,35 +149,33 @@ class RetailcrmCartUploader
 
             $response = static::$api->ordersGet($cartExternalId);
 
-            if (!($response instanceof RetailcrmApiResponse)) {
-                // TODO
-                // Extract address from cart (if exists) and append to customer?
-                // Or maybe this customer will not order anything, so we don't need it's address...
-                static::$api->customersCreate(RetailcrmOrderBuilder::buildCrmCustomer(new Customer($cart->id_customer)));
+            if ($response instanceof RetailcrmApiResponse) {
+                if (empty($response['order'])) {
+                    // TODO
+                    // Extract address from cart (if exists) and append to customer?
+                    // Or maybe this customer will not order anything, so we don't need it's address...
+                    static::$api->customersCreate(RetailcrmOrderBuilder::buildCrmCustomer(new Customer($cart->id_customer)));
 
-                $order = static::buildCartOrder($cart, $cartExternalId);
+                    $order = static::buildCartOrder($cart, $cartExternalId);
 
-                if (empty($order)) {
-                    continue;
-                }
+                    if (empty($order)) {
+                        continue;
+                    }
 
-                if (false !== static::$api->ordersCreate($order)) {
-                    $cart->date_upd = date('Y-m-d H:i:s');
-                    $cart->save();
-                }
+                    if (false !== static::$api->ordersCreate($order)) {
+                        $cart->date_upd = date('Y-m-d H:i:s');
+                        $cart->save();
+                    }
+                } elseif (!empty($response['order']['externalId'])) {
+                    $order = static::buildCartOrder($cart, $response['order']['externalId']);
 
-                continue;
-            }
+                    if (empty($order)) {
+                        continue;
+                    }
 
-            if (isset($response['order']) && !empty($response['order'])) {
-                $order = static::buildCartOrder($cart, $response['order']['externalId']);
-
-                if (empty($order)) {
-                    continue;
-                }
-
-                if (false !== static::$api->ordersEdit($order)) {
-                    static::registerAbandonedCartSync($cart->id);
+                    if (false !== static::$api->ordersEdit($order)) {
+                        static::registerAbandonedCartSync($cart->id);
+                    }
                 }
             }
         }
