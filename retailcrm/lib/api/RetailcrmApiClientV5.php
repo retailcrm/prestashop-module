@@ -1208,6 +1208,84 @@ class RetailcrmApiClientV5
     }
 
     /**
+     * Get cart by id or externalId
+     *
+     * @param string $customerId order identificator
+     * @param string $site
+     * @param string $by (default: 'externalId')
+     *
+     * @return RetailcrmApiResponse
+     *
+     * @throws \InvalidArgumentException
+     * @throws \RetailCrm\Exception\CurlException
+     * @throws \RetailCrm\Exception\InvalidJsonException
+     */
+    public function cartsGet(string $customerId, string $site, string $by = 'externalId')
+    {
+        $this->checkIdParameter($by);
+
+        return $this->client->makeRequest(
+            sprintf('/customer-interaction/%s/cart/%s', $site, $customerId),
+            RetailcrmHttpClient::METHOD_GET,
+            ['by' => $by]
+        );
+    }
+
+    /**
+     * Create or update cart
+     *
+     * @param array $cart
+     * @param string $site
+     *
+     * @return RetailcrmApiResponse
+     *
+     * @throws \InvalidArgumentException
+     * @throws \RetailCrm\Exception\CurlException
+     * @throws \RetailCrm\Exception\InvalidJsonException
+     */
+    public function cartsSet(array $cart, string $site)
+    {
+        if (empty($site)) {
+            throw new \InvalidArgumentException(
+                'Site must be set'
+            );
+        }
+
+        return $this->client->makeRequest(
+            sprintf('/customer-interaction/%s/cart/set', $site),
+            RetailcrmHttpClient::METHOD_POST,
+            ['cart' => json_encode($cart)]
+        );
+    }
+
+    /**
+     * Clear cart
+     *
+     * @param array $cart
+     * @param string $site
+     *
+     * @return RetailcrmApiResponse
+     *
+     * @throws \InvalidArgumentException
+     * @throws \RetailCrm\Exception\CurlException
+     * @throws \RetailCrm\Exception\InvalidJsonException
+     */
+    public function cartsClear(array $cart, string $site)
+    {
+        if (empty($site)) {
+            throw new \InvalidArgumentException(
+                'Site must be set'
+            );
+        }
+
+        return $this->client->makeRequest(
+            sprintf('/customer-interaction/%s/cart/clear', $site),
+            RetailcrmHttpClient::METHOD_POST,
+            ['cart' => json_encode($cart)]
+        );
+    }
+
+    /**
      * Returns filtered corporate customers list
      *
      * @param array $filter (default: array())
