@@ -70,14 +70,16 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
 
             $api = RetailcrmTools::getApiClient();
 
-            if (empty($api)) {
+            if ($api === null) {
                 continue;
             }
 
+            $reference = new RetailcrmReferences($api);
+            $site = $reference->getSite();
+
             RetailcrmCartUploader::init();
             RetailcrmCartUploader::$api = $api;
-            RetailcrmCartUploader::$paymentTypes = array_keys(json_decode(Configuration::get(RetailCRM::PAYMENT), true));
-            RetailcrmCartUploader::$syncStatus = Configuration::get(RetailCRM::SYNC_CARTS_STATUS);
+            RetailcrmCartUploader::$site = $site['code'] ?? '';
             RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
             RetailcrmCartUploader::run();
         }

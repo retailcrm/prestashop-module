@@ -1220,9 +1220,15 @@ class RetailcrmApiClientV5
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
      */
-    public function cartsGet(string $customerId, string $site, string $by = 'externalId')
+    public function cartsGet($customerId, $site, $by = 'externalId')
     {
         $this->checkIdParameter($by);
+
+        if (empty($site)) {
+            throw new \InvalidArgumentException(
+                'Site must be set'
+            );
+        }
 
         return $this->client->makeRequest(
             sprintf('/customer-interaction/%s/cart/%s', $site, $customerId),

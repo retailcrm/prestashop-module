@@ -1181,67 +1181,6 @@ class RetailcrmOrderBuilder
     }
 
     /**
-     * Build array with order data for retailCRM from PrestaShop cart data
-     *
-     * @param \RetailcrmProxy|\RetailcrmApiClientV5 $api
-     * @param Cart $cart Cart with data
-     * @param string $externalId External ID for order
-     * @param string $paymentType Payment type (buildCrmOrder requires it)
-     * @param string $status Status for order
-     *
-     * @return array
-     *
-     * @throws \Exception
-     */
-    public static function buildCrmOrderFromCart($api, $cart = null, $externalId = '', $paymentType = '', $status = '')
-    {
-        if (empty($cart) || empty($paymentType) || empty($status)) {
-            return [];
-        }
-
-        try {
-            $order = new Order();
-            $order->id_cart = $cart->id;
-            $order->id_customer = $cart->id_customer;
-            $order->id_address_delivery = $cart->id_address_delivery;
-            $order->id_address_invoice = $cart->id_address_invoice;
-            $order->id_currency = $cart->id_currency;
-            $order->id_carrier = $cart->id_carrier;
-            $order->total_discounts = $cart->getOrderTotal(true, Cart::ONLY_DISCOUNTS);
-            $order->module = $paymentType;
-            $order->payment = $paymentType;
-
-            if (!empty($cart->id_carrier)) {
-                $order->total_shipping = $cart->getPackageShippingCost();
-                $order->total_shipping_tax_excl = $cart->getPackageShippingCost(null, false);
-            }
-
-            $orderBuilder = new RetailcrmOrderBuilder();
-            $orderData = $orderBuilder
-                ->defaultLangFromConfiguration()
-                ->setApi($api)
-                ->setCmsOrder($order)
-                ->setCmsCart($cart)
-                ->setCmsCustomer(new Customer($cart->id_customer))
-                ->buildOrderWithPreparedCustomer(true)
-            ;
-            $orderData['externalId'] = $externalId;
-            $orderData['status'] = $status;
-
-            unset($orderData['payments']);
-
-            return RetailcrmTools::clearArray($orderData);
-        } catch (\InvalidArgumentException $exception) {
-            RetailcrmLogger::writeCaller(
-                'buildCrmOrderFromCart',
-                $exception->getMessage()
-            );
-
-            return [];
-        }
-    }
-
-    /**
      * Builds retailCRM customer data from PrestaShop customer data
      *
      * @param Customer $object
