@@ -1,25 +1,22 @@
 version: '3'
 services:
   app:
+    container_name: app_test
     build:
       context: ./.docker
     volumes:
       - ./:/code
-    links:
-      - "mysql"
-    depends_on:
-      - mysql
+    env_file:
+      - ./.env
     environment:
-      - DB_NAME=presta
-      - DB_USER=presta
-      - DB_PASS=presta
-      - DB_HOST=presta
-  mysql:
+      - BRANCH=${BRANCH}
+    links:
+      - db
+    depends_on:
+      - db
+  db:
     image: mysql:5.7
     environment:
-      - MYSQL_DATABASE=presta
-      - MYSQL_USER=presta
-      - MYSQL_PASSWORD=presta
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     ports:
       - "3306:3306"

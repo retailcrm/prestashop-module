@@ -70,7 +70,7 @@ class RetailcrmAbandonedCartsEvent extends RetailcrmAbstractEvent implements Ret
 
             $api = RetailcrmTools::getApiClient();
 
-            if ($api === null) {
+            if (null === $api) {
                 continue;
             }
 
