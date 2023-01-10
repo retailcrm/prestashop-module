@@ -272,7 +272,7 @@ class RetailcrmCartUploader
                     'offer' => [
                         'externalId' => !empty($offers)
                             ? $product['id_product'] . '#' . $product['id_product_attribute']
-                            : $product['id_product']
+                            : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
                     'price' => $product['price'],
