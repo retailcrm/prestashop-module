@@ -136,13 +136,12 @@ class RetailcrmCartUploader
             )) {
                 continue;
             }
-
             static::populateContextWithCart($cart);
 
-            RetailcrmLogger::writeDebug(__METHOD__, 'Test');
-            RetailcrmLogger::writeDebug(__METHOD__, $cart->getProducts());
+//            RetailcrmLogger::writeDebug(__METHOD__, 'Test');
+//            RetailcrmLogger::writeDebug(__METHOD__, $cart->getProducts());
 
-            $response = static::$api->cartsGet($cartExternalId, static::$site);
+            $response = static::$api->cartGet($cartExternalId, static::$site);
 
             if ($response instanceof RetailcrmApiResponse) {
                 if (empty($response['cart'])) {
@@ -157,7 +156,7 @@ class RetailcrmCartUploader
                         continue;
                     }
 
-                    if (false !== static::$api->cartsSet($crmCart, static::$site)) {
+                    if (false !== static::$api->cartSet($crmCart, static::$site)) {
                         $cart->date_upd = date('Y-m-d H:i:s');
                         $cart->save();
                     }
@@ -275,8 +274,10 @@ class RetailcrmCartUploader
                             : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
-                    'price' => $product['price'],
                     'createdAt' => $product['date_add'],
+                    'price' => !empty($product['rate'])
+                        ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
+                        : round($product['price'], 2),
                 ];
             }
         } catch (Exception $exception) {

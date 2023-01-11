@@ -1220,7 +1220,7 @@ class RetailcrmApiClientV5
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
      */
-    public function cartsGet($customerId, $site, $by = 'externalId')
+    public function cartGet($customerId, $site, $by = 'externalId')
     {
         $this->checkIdParameter($by);
 
@@ -1249,7 +1249,7 @@ class RetailcrmApiClientV5
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
      */
-    public function cartsSet(array $cart, string $site)
+    public function cartSet(array $cart, string $site)
     {
         if (empty($site)) {
             throw new \InvalidArgumentException(
@@ -1276,7 +1276,7 @@ class RetailcrmApiClientV5
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
      */
-    public function cartsClear(array $cart, string $site)
+    public function cartClear(array $cart, string $site)
     {
         if (empty($site)) {
             throw new \InvalidArgumentException(
