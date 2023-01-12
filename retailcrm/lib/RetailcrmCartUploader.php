@@ -136,6 +136,7 @@ class RetailcrmCartUploader
             )) {
                 continue;
             }
+
             static::populateContextWithCart($cart);
 
             $response = static::$api->cartGet($cart->id_customer, static::$site);

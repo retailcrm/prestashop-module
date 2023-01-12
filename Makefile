@@ -52,7 +52,7 @@ ifeq ($(LOCAL_TEST),1)
 	cd $(PRESTASHOP_DIR) && php install-dev/index_cli.php --db_server=db --db_user=root --db_create=1
 else
 	mkdir coverage
-	cd $(PRESTASHOP_DIR) && php install-dev/index_cli.php --db_server=127.0.0.1:$(MYSQL_PORT)--db_user=root --db_create=1
+	cd $(PRESTASHOP_DIR) && php install-dev/index_cli.php --db_server=127.0.0.1:$(MYSQL_PORT) --db_user=root --db_create=1
 endif
 endif
 

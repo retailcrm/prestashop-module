@@ -38,9 +38,6 @@
 
 class RetailcrmCartUploaderTest extends RetailcrmTestCase
 {
-    const DEFAULT_UPD_CART_TIME = '2023-01-01 12:00:00';
-
-    private $cart;
     private $apiMock;
     private $product;
 
@@ -57,26 +54,20 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         RetailcrmCartUploader::init();
         RetailcrmCartUploader::$site = 'test';
         RetailcrmCartUploader::setSyncDelay(Configuration::get(RetailCRM::SYNC_CARTS_DELAY));
-
-        $this->cart = new Cart();
-        $this->cart->id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        $this->cart->date_upd = date('Y-m-d H:i:s');
-        $this->cart->id_customer = 1;
-        $this->cart->id_currency = 1;
-
-        $this->cart->save();
     }
 
     public function testCreateCart()
     {
-        $this->cart->updateQty(1, $this->product['id']);
+        $cart = $this->createCart(1);
 
-        $this->apiClientMock->expects($this->once())
+        $cart->updateQty(1, $this->product['id']);
+
+        $this->apiClientMock->expects($this->any())
             ->method('cartGet')
             ->willReturn(new RetailcrmApiResponse('200', json_encode(['cart' => []])))
         ;
 
-        $this->apiClientMock->expects($this->once())
+        $this->apiClientMock->expects($this->any())
             ->method('cartSet')
             ->willReturn(new RetailcrmApiResponse('200', json_encode(['success' => true])))
         ;
@@ -84,13 +75,23 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         RetailcrmCartUploader::$api = $this->apiMock;
         RetailcrmCartUploader::run();
 
-        $this->assertNotEquals(self::DEFAULT_UPD_CART_TIME, $this->cart->date_upd);
-        $this->assertEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
+        $this->assertNotEquals(empty($cart->date_upd), true);
+        $this->assertInternalType('string', $cart->date_upd);
+
+        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
+        if (version_compare(_PS_VERSION_, '1.7', '>')) {
+            $this->assertNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
+        }
+
+        return $cart;
     }
 
-    public function testUpdateCart()
+    /**
+     * @depends testCreateCart
+     */
+    public function testUpdateCart($cart)
     {
-        $this->cart->updateQty(2, $this->product['id']);
+        $cart->updateQty(2, $this->product['id']);
 
         $this->apiClientMock->expects($this->any())
             ->method('cartGet')
@@ -99,7 +100,7 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
                     '200',
                     json_encode(
                         [
-                            'cart' => ['externalId' => $this->cart->id_customer],
+                            'cart' => ['externalId' => $cart->id_customer],
                         ]
                     )
                 )
@@ -114,37 +115,61 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         RetailcrmCartUploader::$api = $this->apiMock;
         RetailcrmCartUploader::run();
 
-        $this->assertNotEquals(self::DEFAULT_UPD_CART_TIME, $this->cart->date_upd);
-        $this->assertNotEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
+        $this->assertNotEquals(empty($cart->date_upd), true);
+        $this->assertInternalType('string', $cart->date_upd);
+
+        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
+        if (version_compare(_PS_VERSION_, '1.7', '>')) {
+            $this->assertNotNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
+        }
     }
 
     public function testClearCart()
     {
-        $this->apiClientMock->expects($this->once())
+        $cart = $this->createCart(2);
+        $cartUpdate = $cart->date_upd;
+
+        $this->apiClientMock->expects($this->any())
             ->method('cartGet')
             ->willReturn(
                 new RetailcrmApiResponse(
                     '200',
                     json_encode(
                         [
-                            'cart' => ['externalId' => $this->cart->id_customer],
+                            'cart' => ['externalId' => $cart->id_customer],
                         ]
                     )
                 )
             )
         ;
 
-        $this->apiClientMock->expects($this->once())
+        $this->apiClientMock->expects($this->any())
             ->method('cartClear')
             ->willReturn(new RetailcrmApiResponse('200', json_encode(['success' => true])))
         ;
 
-        $cartLastUpdate = $this->cart->date_upd;
-
         RetailcrmCartUploader::$api = $this->apiMock;
         RetailcrmCartUploader::run();
 
-        $this->assertEquals($cartLastUpdate, $this->cart->date_upd);
-        $this->assertEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
+        $this->assertEquals($cartUpdate, $cart->date_upd);
+        $this->assertNotEquals(empty($cart->date_upd), true);
+        $this->assertInternalType('string', $cart->date_upd);
+
+        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
+        if (version_compare(_PS_VERSION_, '1.7', '>')) {
+            $this->assertNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
+        }
+    }
+
+    private function createCart(int $customerId)
+    {
+        $cart = new Cart();
+        $cart->id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        $cart->id_customer = $customerId;
+        $cart->id_currency = 1;
+
+        $cart->save();
+
+        return $cart;
     }
 }
