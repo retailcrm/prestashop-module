@@ -73,4 +73,17 @@ class RetailcrmTestHelper
             'SELECT MAX(id_customer) FROM `' . _DB_PREFIX_ . 'customer`'
         );
     }
+
+    public static function getAbandonedCartLastSync($cartId)
+    {
+        $sql = 'SELECT `last_uploaded` FROM `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`
+                WHERE `id_cart` = \'' . pSQL((int) $cartId) . '\'';
+        $when = Db::getInstance()->getValue($sql);
+
+        if (empty($when)) {
+            return null;
+        }
+
+        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
+    }
 }

@@ -60,16 +60,17 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
 
         $this->cart = new Cart();
         $this->cart->id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
-        $this->cart->date_add = self::DEFAULT_UPD_CART_TIME;
+        $this->cart->date_upd = date('Y-m-d H:i:s');
         $this->cart->id_customer = 1;
         $this->cart->id_currency = 1;
 
         $this->cart->save();
-        $this->cart->updateQty(1, $this->product['id']);
     }
 
     public function testCreateCart()
     {
+        $this->cart->updateQty(1, $this->product['id']);
+
         $this->apiClientMock->expects($this->once())
             ->method('cartGet')
             ->willReturn(new RetailcrmApiResponse('200', json_encode(['cart' => []])))
@@ -84,13 +85,25 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         RetailcrmCartUploader::run();
 
         $this->assertNotEquals(self::DEFAULT_UPD_CART_TIME, $this->cart->date_upd);
+        $this->assertEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
     }
 
     public function testUpdateCart()
     {
+        $this->cart->updateQty(2, $this->product['id']);
+
         $this->apiClientMock->expects($this->any())
             ->method('cartGet')
-            ->willReturn(new RetailcrmApiResponse('200', json_encode(['cart' => ['externalId' => $this->cart->id]])))
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'cart' => ['externalId' => $this->cart->id_customer],
+                        ]
+                    )
+                )
+            )
         ;
 
         $this->apiClientMock->expects($this->any())
@@ -98,27 +111,40 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
             ->willReturn(new RetailcrmApiResponse('200', json_encode(['success' => true])))
         ;
 
-        $this->cart->updateQty(2, $this->product['id']);
-
         RetailcrmCartUploader::$api = $this->apiMock;
         RetailcrmCartUploader::run();
 
         $this->assertNotEquals(self::DEFAULT_UPD_CART_TIME, $this->cart->date_upd);
-        $this->assertNotEquals($this->getAbandonedCartLastSync($this->cart->id), null);
+        $this->assertNotEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
     }
 
-    private function getAbandonedCartLastSync($cartId)
+    public function testClearCart()
     {
-        $sql = 'SELECT `last_uploaded` FROM `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`
-                WHERE `id_cart` = \'' . pSQL((int) $cartId) . '\'';
-        $when = Db::getInstance()->getValue($sql);
+        $this->apiClientMock->expects($this->once())
+            ->method('cartGet')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(
+                        [
+                            'cart' => ['externalId' => $this->cart->id_customer],
+                        ]
+                    )
+                )
+            )
+        ;
 
-        if (empty($when)) {
-            return null;
-        }
+        $this->apiClientMock->expects($this->once())
+            ->method('cartClear')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode(['success' => true])))
+        ;
 
-        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $when);
+        $cartLastUpdate = $this->cart->date_upd;
+
+        RetailcrmCartUploader::$api = $this->apiMock;
+        RetailcrmCartUploader::run();
+
+        $this->assertEquals($cartLastUpdate, $this->cart->date_upd);
+        $this->assertEquals(RetailcrmTestHelper::getAbandonedCartLastSync($this->cart->id), null);
     }
-
-    // TODO: add method for work cart.
 }

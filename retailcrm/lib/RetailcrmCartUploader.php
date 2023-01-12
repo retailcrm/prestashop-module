@@ -122,7 +122,7 @@ class RetailcrmCartUploader
             $cartExternalId = RetailcrmTools::getCartOrderExternalId($cart);
             $cartLastUpdateDate = null;
 
-            if (static::isGuestCart($cart) || static::isCartEmpty($cart)) {
+            if (static::isGuestCart($cart)) {
                 continue;
             }
 
@@ -138,37 +138,39 @@ class RetailcrmCartUploader
             }
             static::populateContextWithCart($cart);
 
-//            RetailcrmLogger::writeDebug(__METHOD__, 'Test');
-//            RetailcrmLogger::writeDebug(__METHOD__, $cart->getProducts());
-
-            $response = static::$api->cartGet($cartExternalId, static::$site);
+            $response = static::$api->cartGet($cart->id_customer, static::$site);
 
             if ($response instanceof RetailcrmApiResponse) {
-                if (empty($response['cart'])) {
-                    // TODO
-                    // Extract address from cart (if exists) and append to customer?
-                    // Or maybe this customer will not order anything, so we don't need it's address...
-                    static::$api->customersCreate(RetailcrmOrderBuilder::buildCrmCustomer(new Customer($cart->id_customer)));
+                $isExistExternalId = !empty($response['cart']['externalId']);
 
-                    $crmCart = static::buildCrmCart($cart, $cartExternalId);
-
-                    if (empty($crmCart)) {
-                        continue;
+                if (static::isCartEmpty($cart)) {
+                    if ($isExistExternalId) {
+                        static::$api->cartClear(
+                            [
+                                'clearedAt' => date('Y-m-d H:i:s'),
+                                'customer' => ['externalId' => $cart->id_customer],
+                            ],
+                            static::$site
+                        );
                     }
 
-                    if (false !== static::$api->cartSet($crmCart, static::$site)) {
+                    continue;
+                }
+
+                $crmCart = static::buildCrmCart($cart, $cartExternalId, $isExistExternalId);
+
+                if (empty($crmCart)) {
+                    continue;
+                }
+
+                $response = static::$api->cartSet($crmCart, static::$site);
+
+                if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
+                    if ($isExistExternalId) {
+                        static::registerAbandonedCartSync($cart->id);
+                    } else {
                         $cart->date_upd = date('Y-m-d H:i:s');
                         $cart->save();
-                    }
-                } elseif (!empty($response['cart']['externalId'])) {
-                    $crmCart = static::buildCrmCart($cart, $response['cart']['externalId']);
-
-                    if (empty($crmCart)) {
-                        continue;
-                    }
-
-                    if (false !== static::$api->ordersEdit($crmCart)) {
-                        static::registerAbandonedCartSync($cart->id);
                     }
                 }
             }
@@ -241,21 +243,25 @@ class RetailcrmCartUploader
     /**
      * Build order for abandoned cart
      *
-     * @param Cart|\CartCore $cart
+     * @param Cart|CartCore $cart
      * @param string $cartExternalId
+     * @param bool $isExistExternalId
      *
      * @return array
      */
-    private static function buildCrmCart($cart, $cartExternalId)
+    private static function buildCrmCart($cart, string $cartExternalId, bool $isExistExternalId)
     {
         try {
             $crmCart = [
-                'externalId' => $cartExternalId,
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
                 'createdAt' => $cart->date_add,
                 'droppedAt' => date('Y-m-d H:i:s'),
             ];
+
+            if (!$isExistExternalId) {
+                $crmCart['externalId'] = $cartExternalId . uniqid('_', true);
+            }
 
             if (!empty($cart->date_upd)) {
                 $crmCart['updatedAt'] = $cart->date_upd;
