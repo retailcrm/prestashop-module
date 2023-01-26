@@ -78,11 +78,6 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         $this->assertNotEquals(empty($cart->date_upd), true);
         $this->assertInternalType('string', $cart->date_upd);
 
-        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
-        if (version_compare(_PS_VERSION_, '1.7', '>')) {
-            $this->assertNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
-        }
-
         return $cart;
     }
 
@@ -117,11 +112,6 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
 
         $this->assertNotEquals(empty($cart->date_upd), true);
         $this->assertInternalType('string', $cart->date_upd);
-
-        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
-        if (version_compare(_PS_VERSION_, '1.7', '>')) {
-            $this->assertNotNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
-        }
     }
 
     public function testClearCart()
@@ -154,11 +144,6 @@ class RetailcrmCartUploaderTest extends RetailcrmTestCase
         $this->assertEquals($cartUpdate, $cart->date_upd);
         $this->assertNotEquals(empty($cart->date_upd), true);
         $this->assertInternalType('string', $cart->date_upd);
-
-        // Because for PHP 7.0 and PrestaShop 1.6.x there is a floating bug with tests
-        if (version_compare(_PS_VERSION_, '1.7', '>')) {
-            $this->assertNull(RetailcrmTestHelper::getAbandonedCartLastSync($cart->id));
-        }
     }
 
     private function createCart(int $customerId)

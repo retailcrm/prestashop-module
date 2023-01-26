@@ -257,7 +257,6 @@ class RetailcrmCartUploader
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
                 'createdAt' => $cart->date_add,
-                'droppedAt' => date('Y-m-d H:i:s'),
             ];
 
             if (!$isExistExternalId) {
