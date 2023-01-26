@@ -28,6 +28,12 @@ Module allows integrate CMS Prestashop with [Simla.com](https://simla.com) ([Doc
 
 You can customize your module behavior using [Custom Filters](doc/3.%20Customization/Filters.md) or [Custom Classes](doc/3.%20Customization/Classes.md)
 
+#### Local testing
+
+To local testing:
+* cp .env.dist .env
+* make run_local_tests
+
 #### Documentation
 
 [Here](doc/README.md) you can find more information about module setup and workflow

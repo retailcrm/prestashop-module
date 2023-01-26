@@ -43,6 +43,11 @@ class RetailcrmCartUploader
      */
     static $api;
 
+    /**
+     * @var string
+     */
+    static $site;
+
     /** @var \Context|\ContextCore */
     static $context;
 
@@ -56,12 +61,6 @@ class RetailcrmCartUploader
      * @var array
      */
     static $cartsIds;
-
-    /**
-     * @var array
-     */
-    static $paymentTypes;
-
     /**
      * @var int
      */
@@ -71,11 +70,6 @@ class RetailcrmCartUploader
      * @var int
      */
     static $allowedUpdateInterval;
-
-    /**
-     * @var string
-     */
-    static $syncStatus;
 
     /**
      * @var \DateTime
@@ -103,10 +97,8 @@ class RetailcrmCartUploader
     {
         static::$api = null;
         static::$cartsIds = [];
-        static::$paymentTypes = [];
         static::$syncDelay = 0;
         static::$allowedUpdateInterval = 86400;
-        static::$syncStatus = '';
         static::$now = new DateTimeImmutable();
         static::$context = Context::getContext();
     }
@@ -116,7 +108,7 @@ class RetailcrmCartUploader
      */
     public static function run()
     {
-        if (!static::validateState()) {
+        if (null === static::$now || null === static::$api) {
             return;
         }
 
@@ -130,7 +122,7 @@ class RetailcrmCartUploader
             $cartExternalId = RetailcrmTools::getCartOrderExternalId($cart);
             $cartLastUpdateDate = null;
 
-            if (static::isGuestCart($cart) || static::isCartEmpty($cart)) {
+            if (static::isGuestCart($cart)) {
                 continue;
             }
 
@@ -147,34 +139,39 @@ class RetailcrmCartUploader
 
             static::populateContextWithCart($cart);
 
-            $response = static::$api->ordersGet($cartExternalId);
+            $response = static::$api->cartGet($cart->id_customer, static::$site);
 
             if ($response instanceof RetailcrmApiResponse) {
-                if (empty($response['order'])) {
-                    // TODO
-                    // Extract address from cart (if exists) and append to customer?
-                    // Or maybe this customer will not order anything, so we don't need it's address...
-                    static::$api->customersCreate(RetailcrmOrderBuilder::buildCrmCustomer(new Customer($cart->id_customer)));
+                $isExistExternalId = !empty($response['cart']['externalId']);
 
-                    $order = static::buildCartOrder($cart, $cartExternalId);
-
-                    if (empty($order)) {
-                        continue;
+                if (static::isCartEmpty($cart)) {
+                    if ($isExistExternalId) {
+                        static::$api->cartClear(
+                            [
+                                'clearedAt' => date('Y-m-d H:i:s'),
+                                'customer' => ['externalId' => $cart->id_customer],
+                            ],
+                            static::$site
+                        );
                     }
 
-                    if (false !== static::$api->ordersCreate($order)) {
+                    continue;
+                }
+
+                $crmCart = static::buildCrmCart($cart, $cartExternalId, $isExistExternalId);
+
+                if (empty($crmCart)) {
+                    continue;
+                }
+
+                $response = static::$api->cartSet($crmCart, static::$site);
+
+                if ($response instanceof RetailcrmApiResponse && $response->isSuccessful()) {
+                    if ($isExistExternalId) {
+                        static::registerAbandonedCartSync($cart->id);
+                    } else {
                         $cart->date_upd = date('Y-m-d H:i:s');
                         $cart->save();
-                    }
-                } elseif (!empty($response['order']['externalId'])) {
-                    $order = static::buildCartOrder($cart, $response['order']['externalId']);
-
-                    if (empty($order)) {
-                        continue;
-                    }
-
-                    if (false !== static::$api->ordersEdit($order)) {
-                        static::registerAbandonedCartSync($cart->id);
                     }
                 }
             }
@@ -247,30 +244,55 @@ class RetailcrmCartUploader
     /**
      * Build order for abandoned cart
      *
-     * @param Cart|\CartCore $cart
+     * @param Cart|CartCore $cart
      * @param string $cartExternalId
+     * @param bool $isExistExternalId
      *
      * @return array
      */
-    private static function buildCartOrder($cart, $cartExternalId)
+    private static function buildCrmCart($cart, string $cartExternalId, bool $isExistExternalId)
     {
-        $order = [];
-
         try {
-            $order = RetailcrmOrderBuilder::buildCrmOrderFromCart(
-                static::$api,
-                $cart,
-                $cartExternalId,
-                static::$paymentTypes[0],
-                static::$syncStatus
-            );
+            $crmCart = [
+                'customer' => ['externalId' => $cart->id_customer],
+                'clearAt' => null,
+                'createdAt' => $cart->date_add,
+            ];
+
+            if (!$isExistExternalId) {
+                $crmCart['externalId'] = $cartExternalId . uniqid('_', true);
+            }
+
+            if (!empty($cart->date_upd)) {
+                $crmCart['updatedAt'] = $cart->date_upd;
+            }
+
+            $products = $cart->getProducts();
+
+            foreach ($products as $product) {
+                // Check variable products
+                $offers = Product::getProductAttributesIds($product['id_product']);
+
+                $crmCart['items'][] = [
+                    'offer' => [
+                        'externalId' => !empty($offers)
+                            ? $product['id_product'] . '#' . $product['id_product_attribute']
+                            : $product['id_product'],
+                    ],
+                    'quantity' => $product['cart_quantity'],
+                    'createdAt' => $product['date_add'],
+                    'price' => !empty($product['rate'])
+                        ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
+                        : round($product['price'], 2),
+                ];
+            }
         } catch (Exception $exception) {
             RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
         } catch (Error $exception) {
             RetailcrmLogger::writeException(__METHOD__, $exception, null, true);
         }
 
-        return $order;
+        return $crmCart;
     }
 
     /**
@@ -352,24 +374,6 @@ class RetailcrmCartUploader
         }
 
         return $lastUploadDate < $lastUpdatedDate;
-    }
-
-    /**
-     * Returns false if inner state is not correct
-     *
-     * @return bool
-     */
-    private static function validateState()
-    {
-        if (empty(static::$syncStatus)
-            || (1 > count(static::$paymentTypes))
-            || null === static::$now
-            || !static::$api
-        ) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

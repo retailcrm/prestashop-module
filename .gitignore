@@ -12,3 +12,4 @@ upgrade/upgrade-*.php
 !upgrade/upgrade-sample.php
 coverage.xml
 .php-cs-fixer.cache
+.env
