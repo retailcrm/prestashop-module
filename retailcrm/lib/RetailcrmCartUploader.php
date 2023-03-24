@@ -148,7 +148,7 @@ class RetailcrmCartUploader
                     if ($isExistExternalId) {
                         static::$api->cartClear(
                             [
-                                'clearedAt' => date('Y-m-d H:i:s'),
+                                'clearedAt' => date('Y-m-d H:i:sP'),
                                 'customer' => ['externalId' => $cart->id_customer],
                             ],
                             static::$site
@@ -253,10 +253,11 @@ class RetailcrmCartUploader
     private static function buildCrmCart($cart, string $cartExternalId, bool $isExistExternalId)
     {
         try {
+            $dateTimeAdd = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_add);
             $crmCart = [
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
-                'createdAt' => $cart->date_add,
+                'createdAt' => $dateTimeAdd->format('Y-m-d H:i:sP'),
             ];
 
             if (!$isExistExternalId) {
@@ -264,7 +265,8 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $crmCart['updatedAt'] = $cart->date_upd;
+                $dateTimeAdd = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
+                $crmCart['updatedAt'] = $dateTimeAdd->format('Y-m-d H:i:sP');
             }
 
             $products = $cart->getProducts();
@@ -272,6 +274,7 @@ class RetailcrmCartUploader
             foreach ($products as $product) {
                 // Check variable products
                 $offers = Product::getProductAttributesIds($product['id_product']);
+                $dateItemAdd = DateTime::createFromFormat('Y-m-d H:i:s', $product['date_add']);
 
                 $crmCart['items'][] = [
                     'offer' => [
@@ -280,7 +283,7 @@ class RetailcrmCartUploader
                             : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
-                    'createdAt' => $product['date_add'],
+                    'createdAt' => $dateItemAdd->format('Y-m-d H:i:sP'),
                     'price' => !empty($product['rate'])
                         ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
                         : round($product['price'], 2),
