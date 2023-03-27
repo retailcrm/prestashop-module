@@ -77,6 +77,11 @@ class RetailcrmCartUploader
     static $now;
 
     /**
+     * @var string
+     */
+    static $crmCartDateFormat;
+
+    /**
      * Cast provided sync delay to integer
      *
      * @param $time
@@ -101,6 +106,7 @@ class RetailcrmCartUploader
         static::$allowedUpdateInterval = 86400;
         static::$now = new DateTimeImmutable();
         static::$context = Context::getContext();
+        static::$crmCartDateFormat = 'Y-m-d H:i:sP';
     }
 
     /**
@@ -148,7 +154,7 @@ class RetailcrmCartUploader
                     if ($isExistExternalId) {
                         static::$api->cartClear(
                             [
-                                'clearedAt' => date('Y-m-d H:i:sP'),
+                                'clearedAt' => date(static::$crmCartDateFormat),
                                 'customer' => ['externalId' => $cart->id_customer],
                             ],
                             static::$site
@@ -253,11 +259,10 @@ class RetailcrmCartUploader
     private static function buildCrmCart($cart, string $cartExternalId, bool $isExistExternalId)
     {
         try {
-            $dateTimeAdd = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_add);
             $crmCart = [
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
-                'createdAt' => $dateTimeAdd->format('Y-m-d H:i:sP'),
+                'createdAt' => DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
             ];
 
             if (!$isExistExternalId) {
@@ -265,8 +270,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $dateTimeAdd = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd);
-                $crmCart['updatedAt'] = $dateTimeAdd->format('Y-m-d H:i:sP');
+                $crmCart['updatedAt'] = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
             }
 
             $products = $cart->getProducts();
@@ -274,7 +278,6 @@ class RetailcrmCartUploader
             foreach ($products as $product) {
                 // Check variable products
                 $offers = Product::getProductAttributesIds($product['id_product']);
-                $dateItemAdd = DateTime::createFromFormat('Y-m-d H:i:s', $product['date_add']);
 
                 $crmCart['items'][] = [
                     'offer' => [
@@ -283,7 +286,7 @@ class RetailcrmCartUploader
                             : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
-                    'createdAt' => $dateItemAdd->format('Y-m-d H:i:sP'),
+                    'createdAt' => DateTime::createFromFormat('Y-m-d H:i:s', $product['date_add'])->format(static::$crmCartDateFormat),
                     'price' => !empty($product['rate'])
                         ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
                         : round($product['price'], 2),
