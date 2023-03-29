@@ -262,7 +262,7 @@ class RetailcrmCartUploader
             $crmCart = [
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
-                'createdAt' => DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
+                'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
             ];
 
             if (!$isExistExternalId) {
@@ -270,7 +270,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $crmCart['updatedAt'] = DateTime::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
+                $crmCart['updatedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
             }
 
             $products = $cart->getProducts();
@@ -286,7 +286,7 @@ class RetailcrmCartUploader
                             : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
-                    'createdAt' => DateTime::createFromFormat('Y-m-d H:i:s', $product['date_add'])->format(static::$crmCartDateFormat),
+                    'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $product['date_add'])->format(static::$crmCartDateFormat),
                     'price' => !empty($product['rate'])
                         ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
                         : round($product['price'], 2),
