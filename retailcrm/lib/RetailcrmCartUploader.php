@@ -77,6 +77,11 @@ class RetailcrmCartUploader
     static $now;
 
     /**
+     * @var string
+     */
+    static $crmCartDateFormat;
+
+    /**
      * Cast provided sync delay to integer
      *
      * @param $time
@@ -101,6 +106,7 @@ class RetailcrmCartUploader
         static::$allowedUpdateInterval = 86400;
         static::$now = new DateTimeImmutable();
         static::$context = Context::getContext();
+        static::$crmCartDateFormat = 'Y-m-d H:i:sP';
     }
 
     /**
@@ -148,7 +154,7 @@ class RetailcrmCartUploader
                     if ($isExistExternalId) {
                         static::$api->cartClear(
                             [
-                                'clearedAt' => date('Y-m-d H:i:s'),
+                                'clearedAt' => date(static::$crmCartDateFormat),
                                 'customer' => ['externalId' => $cart->id_customer],
                             ],
                             static::$site
@@ -256,7 +262,7 @@ class RetailcrmCartUploader
             $crmCart = [
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
-                'createdAt' => $cart->date_add,
+                'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
             ];
 
             if (!$isExistExternalId) {
@@ -264,7 +270,7 @@ class RetailcrmCartUploader
             }
 
             if (!empty($cart->date_upd)) {
-                $crmCart['updatedAt'] = $cart->date_upd;
+                $crmCart['updatedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
             }
 
             $products = $cart->getProducts();
@@ -280,7 +286,7 @@ class RetailcrmCartUploader
                             : $product['id_product'],
                     ],
                     'quantity' => $product['cart_quantity'],
-                    'createdAt' => $product['date_add'],
+                    'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $product['date_add'])->format(static::$crmCartDateFormat),
                     'price' => !empty($product['rate'])
                         ? round($product['price'], 2) + (round($product['price'], 2) * $product['rate'] / 100)
                         : round($product['price'], 2),
