@@ -146,8 +146,7 @@ function upgrade_module_3_4_0($module)
         'retailcrm/views/templates/admin/settings.tpl',
     ])
     && $module->uninstallOldTabs()
-    && $module->installTab()
-    ;
+    && $module->installTab();
 }
 
 function retailcrm_convert_old_default_values_format()

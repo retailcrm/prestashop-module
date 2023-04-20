@@ -100,8 +100,7 @@ class RetailcrmExportOrdersHelper
 
         $sqlOrdersInfo = 'FROM `' . _DB_PREFIX_ . 'retailcrm_exported_orders` eo
             LEFT JOIN `' . _DB_PREFIX_ . 'orders` o on o.`id_order` = eo.`id_order`
-            WHERE ( eo.`id_order` IS NULL OR ( 1 ' . Shop::addSqlRestriction(false, 'o') . ' ) )'
-        ;
+            WHERE ( eo.`id_order` IS NULL OR ( 1 ' . Shop::addSqlRestriction(false, 'o') . ' ) )';
 
         if (0 < count($ordersIds)) {
             $sqlOrdersInfo .= ' AND (eo.`id_order` IN ( ' . pSQL(implode(', ', $ordersIds)) . ')
