@@ -45,7 +45,7 @@ class RetailcrmApiPaginatedRequestTest extends RetailcrmApiRequestTestAbstract
         return $request
             ->setApi($this->apiMock)
             ->setMethod('ordersHistory')
-            ->setParams([[], '{{page}}'])
+            ->setParams([[]])
             ->setDataKey('history')
             ->setLimit($limit)
             ->setPageLimit($pageLimit)

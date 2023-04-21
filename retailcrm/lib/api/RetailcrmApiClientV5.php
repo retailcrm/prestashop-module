@@ -745,21 +745,18 @@ class RetailcrmApiClientV5
      * Get orders history
      *
      * @param array $filter
-     * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function ordersHistory(array $filter = [], $page = null, $limit = null)
+    public function ordersHistory(array $filter = [], $limit = null)
     {
         $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if (null !== $page) {
-            $parameters['page'] = (int) $page;
-        }
+
         if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
@@ -1070,21 +1067,18 @@ class RetailcrmApiClientV5
      * Get customers history
      *
      * @param array $filter
-     * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function customersHistory(array $filter = [], $page = null, $limit = null)
+    public function customersHistory(array $filter = [], $limit = null)
     {
         $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if (null !== $page) {
-            $parameters['page'] = (int) $page;
-        }
+
         if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
@@ -1387,21 +1381,18 @@ class RetailcrmApiClientV5
      * Get corporate customers history
      *
      * @param array $filter
-     * @param null $page
      * @param null $limit
      *
      * @return RetailcrmApiResponse
      */
-    public function customersCorporateHistory(array $filter = [], $page = null, $limit = null)
+    public function customersCorporateHistory(array $filter = [], $limit = null)
     {
         $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if (null !== $page) {
-            $parameters['page'] = (int) $page;
-        }
+
         if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
@@ -1971,7 +1962,6 @@ class RetailcrmApiClientV5
      * Get orders assembly history
      *
      * @param array $filter (default: array())
-     * @param int $page (default: null)
      * @param int $limit (default: null)
      *
      * @return RetailcrmApiResponse
@@ -1980,16 +1970,14 @@ class RetailcrmApiClientV5
      * @throws \RetailCrm\Exception\CurlException
      * @throws \RetailCrm\Exception\InvalidJsonException
      */
-    public function ordersPacksHistory(array $filter = [], $page = null, $limit = null)
+    public function ordersPacksHistory(array $filter = [], $limit = null)
     {
         $parameters = [];
 
         if (count($filter)) {
             $parameters['filter'] = $filter;
         }
-        if (null !== $page) {
-            $parameters['page'] = (int) $page;
-        }
+
         if (null !== $limit) {
             $parameters['limit'] = (int) $limit;
         }
