@@ -120,8 +120,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         } else {
             $order['status'] = array_key_exists($orderInstance->current_state, $status)
                 ? $status[$orderInstance->current_state]
-                : 'completed'
-            ;
+                : 'completed';
         }
 
         /**
@@ -134,8 +133,7 @@ class RetailcrmMissingEvent extends RetailcrmAbstractEvent implements RetailcrmE
         if ($address instanceof Address) {
             $phone = null === $address->phone
                 ? null === $address->phone_mobile ? '' : $address->phone_mobile
-                : $address->phone
-            ;
+                : $address->phone;
 
             $postcode = $address->postcode;
             $city = $address->city;

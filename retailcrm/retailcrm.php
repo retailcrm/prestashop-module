@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.5.1';
+    const VERSION = '3.5.2';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -203,8 +203,7 @@ class RetailCRM extends Module
             && ($this->use_new_hooks ? $this->registerHook('actionCustomerAccountUpdate') : true)
             && ($this->use_new_hooks ? $this->registerHook('actionValidateCustomerAddressForm') : true)
             && $this->installDB()
-            && $this->installTab()
-        ;
+            && $this->installTab();
     }
 
     /**
@@ -358,8 +357,7 @@ class RetailCRM extends Module
             && Configuration::deleteByName(RetailcrmJobManager::CURRENT_TASK)
             && Configuration::deleteByName(RetailcrmCli::CURRENT_TASK_CLI)
             && $this->uninstallDB()
-            && $this->uninstallTab()
-        ;
+            && $this->uninstallTab();
     }
 
     public function enable($force_all = false)
@@ -369,8 +367,7 @@ class RetailCRM extends Module
         self::updateCrmModuleState($context->shop->id);
 
         return parent::enable($force_all)
-            && $this->installTab()
-        ;
+            && $this->installTab();
     }
 
     public function disable($force_all = false)

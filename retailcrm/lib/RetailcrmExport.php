@@ -396,7 +396,8 @@ class RetailcrmExport
             throw new RetailcrmNotFoundException('Order not found');
         }
 
-        $customer = new Customer($object->id_customer);
+        $customerId = $object->id_customer;
+        $customer = new Customer($customerId);
         $apiResponse = static::$api->ordersGet($object->id);
         $existingOrder = [];
 
@@ -418,6 +419,29 @@ class RetailcrmExport
         }
 
         if (empty($existingOrder)) {
+            try {
+                $reference = new RetailcrmReferences(static::$api);
+                $site = $reference->getSite()['code'];
+                $crmCart = static::$api->cartGet($customerId, $site);
+
+                if (!empty($crmCart['cart'])) {
+                    // If the order is from a corporate customer, need to clear the cart for the contact person
+                    if (!empty($crmOrder['contragent']['legalName']) && !empty($crmOrder['contact'])) {
+                        static::$api->cartClear(
+                            [
+                                'clearedAt' => date('Y-m-d H:i:sP'),
+                                'customer' => ['externalId' => $customerId],
+                            ],
+                            $site
+                        );
+                    } else {
+                        $crmOrder['isFromCart'] = true;
+                    }
+                }
+            } catch (Throwable $exception) {
+                self::handleError($customerId, $exception);
+            }
+
             $response = static::$api->ordersCreate($crmOrder);
         } else {
             $response = static::$api->ordersEdit($crmOrder);
