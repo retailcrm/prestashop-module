@@ -196,7 +196,7 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($updReference, $secondUpdOrder->reference);
     }
 
-    public function tetsLastSinceId()
+    public function testLastSinceId()
     {
         RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         RetailcrmHistory::$api = $this->apiMock;
@@ -206,13 +206,21 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
             ->willReturn(new RetailcrmApiResponse('200', json_encode($this->getLastSinceId())))
         ;
 
+        $this->apiClientMock->expects($this->any())
+            ->method('customersHistory')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode($this->getLastSinceId())))
+        ;
+
         $lastSinceId = 0;
+
         Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $lastSinceId);
+        Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $lastSinceId);
 
-        $isUpdate = RetailcrmHistory::updateSinceId('orders');
-
-        $this->assertTrue($isUpdate);
+        $this->assertTrue(RetailcrmHistory::updateSinceId('orders'));
+        $this->assertTrue(RetailcrmHistory::updateSinceId('customers'));
         $this->assertNotEquals($lastSinceId, Configuration::get('RETAILCRM_LAST_ORDERS_SYNC'));
+        $this->assertNotEquals($lastSinceId, Configuration::get('RETAILCRM_LAST_CUSTOMERS_SYNC'));
+        $this->assertFalse(RetailcrmHistory::updateSinceId('test_test'));
     }
 
     public function orderCreateDataProvider()
