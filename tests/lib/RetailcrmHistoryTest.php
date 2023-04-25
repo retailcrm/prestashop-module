@@ -196,6 +196,33 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $this->assertEquals($updReference, $secondUpdOrder->reference);
     }
 
+    public function testLastSinceId()
+    {
+        RetailcrmHistory::$default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+        RetailcrmHistory::$api = $this->apiMock;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('ordersHistory')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode($this->getLastSinceId())))
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('customersHistory')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode($this->getLastSinceId())))
+        ;
+
+        $lastSinceId = 0;
+
+        Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $lastSinceId);
+        Configuration::updateValue('RETAILCRM_LAST_CUSTOMERS_SYNC', $lastSinceId);
+
+        $this->assertTrue(RetailcrmHistory::updateSinceId('orders'));
+        $this->assertTrue(RetailcrmHistory::updateSinceId('customers'));
+        $this->assertNotEquals($lastSinceId, Configuration::get('RETAILCRM_LAST_ORDERS_SYNC'));
+        $this->assertNotEquals($lastSinceId, Configuration::get('RETAILCRM_LAST_CUSTOMERS_SYNC'));
+        $this->assertFalse(RetailcrmHistory::updateSinceId('test_test'));
+    }
+
     public function orderCreateDataProvider()
     {
         return [
@@ -1200,5 +1227,47 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         $order['phone'] = '222222';
 
         return $order;
+    }
+
+    private function getLastSinceId()
+    {
+        return [
+            'success' => true,
+            'history' => [
+                [
+                    'id' => 1,
+                    'createdAt' => '2018-01-01 00:00:00',
+                    'created' => true,
+                    'source' => 'api',
+                    'field' => 'id',
+                    'oldValue' => null,
+                    'newValue' => 4949,
+                ],
+                [
+                    'id' => 2,
+                    'createdAt' => '2018-02-01 00:00:00',
+                    'created' => true,
+                    'source' => 'api',
+                    'field' => 'id',
+                    'oldValue' => null,
+                    'newValue' => 5050,
+                ],
+                [
+                    'id' => 3,
+                    'createdAt' => '2018-03-01 00:00:00',
+                    'created' => true,
+                    'source' => 'api',
+                    'field' => 'id',
+                    'oldValue' => null,
+                    'newValue' => 5151,
+                ],
+            ],
+            'pagination' => [
+                'limit' => 100,
+                'totalCount' => 1,
+                'currentPage' => 1,
+                'totalPageCount' => 1,
+            ],
+        ];
     }
 }

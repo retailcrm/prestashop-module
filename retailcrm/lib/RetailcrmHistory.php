@@ -92,6 +92,7 @@ class RetailcrmHistory
         ;
 
         $historyChanges = [];
+
         if (0 < count($history)) {
             $historyChanges = static::filterHistory($history, 'customer');
             $end = end($history);
@@ -245,9 +246,11 @@ class RetailcrmHistory
         ;
 
         $historyChanges = [];
+
         if (0 < count($history)) {
             $historyChanges = static::filterHistory($history, 'order');
             $end = end($history);
+
             Configuration::updateValue('RETAILCRM_LAST_ORDERS_SYNC', $end['id']);
         }
 
@@ -471,42 +474,32 @@ class RetailcrmHistory
             return false;
         }
 
+        $lastSinceId = 0;
         $currentSinceID = Configuration::get($key);
         RetailcrmLogger::writeDebug(__METHOD__, "Current $entity sinceId: $currentSinceID");
 
-        $historyResponse = call_user_func_array(
+        $historyResponse = call_user_func(
             [self::$api, $method],
-            [
-                ['sinceId' => $currentSinceID],
-                null,
-                20,
-            ]
+            ['startDate' => date('Y-m-d H:i:s', strtotime('-1 days', strtotime(date('Y-m-d H:i:s'))))],
+            100
         );
 
-        if ($historyResponse instanceof RetailcrmApiResponse && $historyResponse->offsetExists('pagination')) {
+        if ($historyResponse instanceof RetailcrmApiResponse && !empty($historyResponse['pagination'])) {
+            $startPage = $historyResponse['pagination']['currentPage'];
             $lastPage = $historyResponse['pagination']['totalPageCount'];
-            if (1 < $lastPage) {
-                $historyResponse = call_user_func_array(
-                    [self::$api, $method],
-                    [
-                        ['sinceId' => $currentSinceID],
-                        $lastPage,
-                        20,
-                    ]
-                );
+
+            for ($startPage; $startPage <= $lastPage; ++$startPage) {
+                if ($historyResponse instanceof RetailcrmApiResponse && !empty($historyResponse['history'])) {
+                    $history = $historyResponse['history'];
+                    $lastSinceId = end($history)['id'];
+
+                    $historyResponse = call_user_func([self::$api, $method], ['sinceId' => $lastSinceId], 100);
+                }
             }
 
-            if ($historyResponse instanceof RetailcrmApiResponse
-                && $historyResponse->offsetExists('history')
-                && !empty($historyResponse['history'])
-            ) {
-                $history = $historyResponse['history'];
-                $lastSinceId = end($history)['id'];
-
-                if ($currentSinceID !== (string) $lastSinceId) {
-                    RetailcrmLogger::writeDebug(__METHOD__, "Updating to: $lastSinceId");
-                    Configuration::updateValue($key, $lastSinceId);
-                }
+            if (0 !== $lastSinceId && $currentSinceID !== (string) $lastSinceId) {
+                RetailcrmLogger::writeDebug(__METHOD__, "Updating to: $lastSinceId");
+                Configuration::updateValue($key, $lastSinceId);
             }
         }
 

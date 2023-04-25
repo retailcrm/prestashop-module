@@ -134,13 +134,12 @@ class RetailcrmApiPaginatedRequest extends RetailcrmApiRequest
         $page = 1;
 
         do {
-            $response = call_user_func_array(
-                [$this->api, $this->method],
-                $this->buildParams($this->params, $page)
-            );
+            $response = call_user_func_array([$this->api, $this->method], $this->buildParams($this->params, $page));
 
             if ($response instanceof RetailcrmApiResponse && $response->offsetExists($this->dataKey)) {
-                $this->data = array_merge($this->data, $response[$this->dataKey]);
+                foreach ($response[$this->dataKey] as $data) {
+                    $this->data[] = $data;
+                }
 
                 $page = $this->getNextPageNumber($page, $response);
             }
@@ -182,6 +181,7 @@ class RetailcrmApiPaginatedRequest extends RetailcrmApiRequest
     protected function buildParams($placeholderParams, $currentPage)
     {
         foreach ($placeholderParams as $key => $param) {
+            // Set page and limit for customersCorporateAddresses method
             if ('{{page}}' == $param) {
                 $placeholderParams[$key] = $currentPage;
             }
@@ -195,7 +195,7 @@ class RetailcrmApiPaginatedRequest extends RetailcrmApiRequest
     }
 
     /**
-     * Get the next page number from the response
+     * Get the next page number from the response. Use for customersCorporateAddresses method
      *
      * @param int $page
      * @param RetailcrmApiResponse $response
