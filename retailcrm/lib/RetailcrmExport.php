@@ -184,8 +184,18 @@ class RetailcrmExport
             try {
                 $orders[] = $orderBuilder->buildOrderWithPreparedCustomer();
             } catch (Exception $exception) {
+                RetailcrmExportOrdersHelper::updateExportState(
+                    $record['id_order'],
+                    null,
+                    [$exception->getMessage()]
+                );
                 self::handleError($record['id_order'], $exception);
             } catch (Error $exception) {
+                RetailcrmExportOrdersHelper::updateExportState(
+                    $record['id_order'],
+                    null,
+                    [$exception->getMessage()]
+                );
                 self::handleError($record['id_order'], $exception);
             }
 
