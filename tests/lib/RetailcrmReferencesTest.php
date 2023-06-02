@@ -38,6 +38,8 @@
 
 class RetailcrmReferencesTest extends RetailcrmTestCase
 {
+    private $retailcrmReferences;
+
     protected function setUp()
     {
         parent::setUp();
