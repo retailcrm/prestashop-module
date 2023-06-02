@@ -38,15 +38,36 @@
 
 class RetailcrmReferencesTest extends RetailcrmTestCase
 {
-    private $retailcrmReferences;
-
     protected function setUp()
     {
         parent::setUp();
 
-        $apiMock = $this->createMock('RetailcrmProxy');
+        $apiMock = $this->getApiMock(
+            [
+                'sitesList',
+                'credentials',
+                'isSuccessful',
+                'paymentTypesList',
+                'deliveryTypesList',
+            ]
+        );
+
+        $this->apiClientMock->expects($this->any())
+            ->method('isSuccessful')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode(['success' => true])))
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('credentials')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode(DataRetailcrmReferences::getCredentials())))
+        ;
+
+        $this->apiClientMock->expects($this->any())
+            ->method('sitesList')
+            ->willReturn(new RetailcrmApiResponse('200', json_encode(['sites' => [['code' => 'prestashop']]])))
+        ;
+
         $this->retailcrmReferences = new RetailcrmReferences($apiMock);
-        $this->retailcrmReferences->getSystemPaymentModules(false);
     }
 
     public function testCarriers()
@@ -59,14 +80,14 @@ class RetailcrmReferencesTest extends RetailcrmTestCase
 
     public function testGetSystemPaymentModules()
     {
+        $this->retailcrmReferences->getSystemPaymentModules(false);
+
         $this->assertInternalType('array', $this->retailcrmReferences->payment_modules);
 
-        if (version_compare(_PS_VERSION_, '1.7', '>')) {
-            $this->assertNotEmpty($this->retailcrmReferences->payment_modules);
-            $this->assertArrayHasKey('name', $this->retailcrmReferences->payment_modules[0]);
-            $this->assertArrayHasKey('code', $this->retailcrmReferences->payment_modules[0]);
-            $this->assertArrayHasKey('id', $this->retailcrmReferences->payment_modules[0]);
-        }
+        $this->assertNotEmpty($this->retailcrmReferences->payment_modules);
+        $this->assertArrayHasKey('name', $this->retailcrmReferences->payment_modules[0]);
+        $this->assertArrayHasKey('code', $this->retailcrmReferences->payment_modules[0]);
+        $this->assertArrayHasKey('id', $this->retailcrmReferences->payment_modules[0]);
     }
 
     public function testGetStatuses()
@@ -75,5 +96,48 @@ class RetailcrmReferencesTest extends RetailcrmTestCase
 
         $this->assertInternalType('array', $statuses);
         $this->assertNotEmpty($statuses);
+    }
+
+    public function testGetApiDeliveryTypes()
+    {
+        $this->apiClientMock->expects($this->once())
+            ->method('deliveryTypesList')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(DataRetailcrmReferences::getApiDeliveryTypes())
+                )
+            )
+        ;
+
+        $deliveryTypes = $this->retailcrmReferences->getApiDeliveryTypes();
+
+        $this->assertInternalType('array', $deliveryTypes);
+        $this->assertArrayHasKey('code', $deliveryTypes[0]);
+        $this->assertArrayHasKey('code', $deliveryTypes[1]);
+        $this->assertEquals('delivery1', $deliveryTypes[0]['code']);
+        $this->assertEquals('delivery3', $deliveryTypes[1]['code']);
+    }
+
+    public function testGetApiPaymentTypes()
+    {
+        $this->apiClientMock->expects($this->once())
+            ->method('paymentTypesList')
+            ->willReturn(
+                new RetailcrmApiResponse(
+                    '200',
+                    json_encode(DataRetailcrmReferences::getApiPaymentTypes())
+                )
+            )
+        ;
+
+        $paymentTypes = $this->retailcrmReferences->getApiPaymentTypes();
+
+        $this->assertInternalType('array', $paymentTypes);
+        $this->assertInternalType('array', $paymentTypes);
+        $this->assertArrayHasKey('code', $paymentTypes[0]);
+        $this->assertArrayHasKey('code', $paymentTypes[1]);
+        $this->assertEquals('payment1', $paymentTypes[0]['code']);
+        $this->assertEquals('payment3', $paymentTypes[1]['code']);
     }
 }
