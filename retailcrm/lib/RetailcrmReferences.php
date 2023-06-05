@@ -229,6 +229,12 @@ class RetailcrmReferences
             return [];
         }
 
+        $crmSite = $this->getSite()['code'] ?? null;
+
+        if (null === $crmSite) {
+            return [];
+        }
+
         $crmDeliveryTypes = [];
         $request = $this->api->deliveryTypesList();
 
@@ -238,6 +244,10 @@ class RetailcrmReferences
 
         foreach ($request->deliveryTypes as $dType) {
             if (!$dType['active']) {
+                continue;
+            }
+
+            if (!empty($dType['sites']) && false === in_array($crmSite, $dType['sites'])) {
                 continue;
             }
 
@@ -296,6 +306,12 @@ class RetailcrmReferences
             return [];
         }
 
+        $crmSite = $this->getSite()['code'] ?? null;
+
+        if (null === $crmSite) {
+            return [];
+        }
+
         $crmPaymentTypes = [];
         $request = $this->api->paymentTypesList();
 
@@ -305,6 +321,10 @@ class RetailcrmReferences
 
         foreach ($request->paymentTypes as $pType) {
             if (!$pType['active']) {
+                continue;
+            }
+
+            if (!empty($pType['sites']) && false === in_array($crmSite, $pType['sites'])) {
                 continue;
             }
 
