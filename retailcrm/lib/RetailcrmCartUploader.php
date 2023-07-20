@@ -271,6 +271,7 @@ class RetailcrmCartUploader
 
             if (!empty($cart->date_upd)) {
                 $crmCart['updatedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
+                $crmCart['droppedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
             }
 
             $products = $cart->getProducts();
