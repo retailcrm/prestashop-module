@@ -263,6 +263,7 @@ class RetailcrmCartUploader
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
                 'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
+                'droppedAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat)
             ];
 
             if (!$isExistExternalId) {
@@ -271,6 +272,7 @@ class RetailcrmCartUploader
 
             if (!empty($cart->date_upd)) {
                 $crmCart['updatedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
+                $crmCart['droppedAt'] = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_upd)->format(static::$crmCartDateFormat);
             }
 
             $products = $cart->getProducts();

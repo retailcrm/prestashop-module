@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.5.5';
+    const VERSION = '3.5.6';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
