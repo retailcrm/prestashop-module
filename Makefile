@@ -61,13 +61,8 @@ ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) \
         && sed -i 's/throw new Exception/#throw new Exception/g' src/PrestaShopBundle/Install/DatabaseDump.php
 endif
-ifeq ($(BRANCH), 1.7.4.4)
-	cd $(PRESTASHOP_DIR) \
-		&&  sed -i 's/$$install->installModules();/$$install->setTranslator(\\Context::getContext()->getTranslator());\n\t$$install->installModules();/g' tests/PrestaShopBundle/Utils/DatabaseCreator.php
-	cat $(PRESTASHOP_DIR)/tests/PrestaShopBundle/Utils/DatabaseCreator.php | grep -A 3 -B 3 'install->installModules()'
-endif
 
-ifeq ($(BRANCH),$(filter $(BRANCH),1.7.6.9 1.7.7.8))
+ifeq ($(BRANCH),$(filter $(BRANCH), 1.7.7.8))
 	cd $(PRESTASHOP_DIR) \
 		&&  sed -i "s/SymfonyContainer::getInstance()->get('translator')/\\\\Context::getContext()->getTranslator()/g" classes/lang/DataLang.php
 	cat $(PRESTASHOP_DIR)/classes/lang/DataLang.php | grep -A 3 -B 3 'this->translator = '

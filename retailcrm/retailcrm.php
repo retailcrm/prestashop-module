@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.5.6';
+    const VERSION = '3.5.7';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -161,7 +161,7 @@ class RetailCRM extends Module
         $this->default_country = (int) Configuration::get('PS_COUNTRY_DEFAULT');
         $this->apiUrl = Configuration::get(static::API_URL);
         $this->apiKey = Configuration::get(static::API_KEY);
-        $this->ps_versions_compliancy = ['min' => '1.6.1.0', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '1.7.7.0', 'max' => _PS_VERSION_];
         $this->psVersion = Tools::substr(_PS_VERSION_, 0, 3);
         $this->log = RetailcrmLogger::getLogFile();
         $this->module_key = 'dff3095326546f5fe8995d9e86288491';
@@ -171,11 +171,6 @@ class RetailCRM extends Module
             'modules/' .
             $this->name .
             '/views';
-
-        if ('1.6' == $this->psVersion) {
-            $this->bootstrap = true;
-            $this->use_new_hooks = false;
-        }
 
         if ($this->apiUrl && $this->apiKey) {
             $this->api = new RetailcrmProxy($this->apiUrl, $this->apiKey);
