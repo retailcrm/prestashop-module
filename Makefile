@@ -14,7 +14,7 @@ delete_archive:
 	rm -f $(ARCHIVE_NAME)
 	rm -f /tmp/retailcrm.zip
 
-composer: clone_prestashop clone_composer fix-version-bugs
+composer: clone_prestashop clone_composer fix-version-lang-bugs
 ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) && php composer.phar install --prefer-dist --no-interaction --no-progress
 else
@@ -56,13 +56,13 @@ else
 endif
 endif
 
-fix-version-bugs:
+# Required for versions 1.7.7.x
+fix-version-lang-bugs:
 ifeq ($(COMPOSERV1),1)
 	cd $(PRESTASHOP_DIR) \
         && sed -i 's/throw new Exception/#throw new Exception/g' src/PrestaShopBundle/Install/DatabaseDump.php
 endif
 
-ifeq ($(BRANCH),$(filter $(BRANCH), 1.7.7.8))
 	cd $(PRESTASHOP_DIR) \
 		&&  sed -i "s/SymfonyContainer::getInstance()->get('translator')/\\\\Context::getContext()->getTranslator()/g" classes/lang/DataLang.php
 	cat $(PRESTASHOP_DIR)/classes/lang/DataLang.php | grep -A 3 -B 3 'this->translator = '
@@ -70,7 +70,6 @@ ifeq ($(BRANCH),$(filter $(BRANCH), 1.7.7.8))
 	cd $(PRESTASHOP_DIR) \
 		&&  sed -i "s/SymfonyContainer::getInstance()->get('translator')/\\\\Context::getContext()->getTranslator()/g" classes/Language.php
 	cat $(PRESTASHOP_DIR)/classes/Language.php | grep -A 3 -B 3 'translator = '
-endif
 
 lint:
 	php-cs-fixer fix --config=$(ROOT_DIR)/.php-cs-fixer.php -v
