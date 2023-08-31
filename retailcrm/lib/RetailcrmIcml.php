@@ -213,6 +213,7 @@ class RetailcrmIcml
 
     private function setOffersParams($offer)
     {
+        RetailcrmLogger::writeCaller('inventories', print_r($offer, true));
         foreach ($offer as $key => $value) {
             if (!array_key_exists($key, $this->params)) {
                 continue;
