@@ -208,6 +208,7 @@ class RetailcrmCatalog
                     }
 
                     $offers = Product::getProductAttributesIds($product['id_product']);
+                    $features = Product::getFrontFeaturesStatic($id_lang, $product['id_product']);
 
                     if (!empty($offers)) {
                         $offersCount += count($offers);
@@ -290,6 +291,7 @@ class RetailcrmCatalog
                                 'weight' => $weight,
                                 'dimensions' => $dimensions,
                                 'vatRate' => $product['rate'],
+                                'features' => $features,
                             ];
 
                             if (!empty($combinations)) {
@@ -347,6 +349,7 @@ class RetailcrmCatalog
                                 'weight' => $weight,
                                 'dimensions' => $dimensions,
                                 'vatRate' => $product['rate'],
+                                'features' => $features,
                             ],
                             [
                                 'product' => $product,

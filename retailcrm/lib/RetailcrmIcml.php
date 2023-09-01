@@ -189,6 +189,7 @@ class RetailcrmIcml
             $this->setOffersProperties($offer);
             $this->setOffersParams($offer);
             $this->setOffersCombinations($offer);
+            $this->setOffersFeatures($offer);
 
             $this->writer->endElement(); // end </offer>
         }
@@ -247,6 +248,35 @@ class RetailcrmIcml
             $this->writer->writeAttribute('name', $combination['group_name']);
             $this->writer->text($combination['attribute_name']);
             $this->writer->endElement();
+        }
+    }
+
+    private function setOffersFeatures($offer)
+    {
+        $lastFeaturesNumberCode = [];
+
+        foreach ($offer['features'] as $feature) {
+            if (
+                empty($feature['id_feature'])
+                || empty($feature['name'])
+                || null === $feature['value']
+            ) {
+                continue;
+            }
+
+            $numberCode = 1;
+
+            if (isset($lastFeaturesNumberCode[$feature['id_feature']])) {
+                $numberCode = 1 + $lastFeaturesNumberCode[$feature['id_feature']];
+            }
+
+            $this->writer->startElement('param');
+            $this->writer->writeAttribute('code', 'feature_' . $feature['id_feature'] . '_' . $numberCode);
+            $this->writer->writeAttribute('name', $feature['name']);
+            $this->writer->text($feature['value']);
+            $this->writer->endElement();
+
+            $lastFeaturesNumberCode[$feature['id_feature']] = $numberCode;
         }
     }
 

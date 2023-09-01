@@ -126,9 +126,47 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
     public function testIcmlGenerate()
     {
         $icml = new RetailcrmIcml(Configuration::get('PS_SHOP_NAME'), _PS_ROOT_DIR_ . '/retailcrm.xml');
-        $icml->generate($this->data[0], $this->data[1]);
+        $offers = [];
+
+        foreach ($this->data[1] as $offer) {
+            $offer['features'] = $this->getFeaturesData();
+            $offers[] = $offer;
+        }
+
+        $icml->generate($this->data[0], $offers);
         $this->assertFileExists(_PS_ROOT_DIR_ . '/retailcrm.xml');
         $xml = simplexml_load_file(_PS_ROOT_DIR_ . '/retailcrm.xml');
         $this->assertNotFalse($xml);
+    }
+
+    private function getFeaturesData()
+    {
+        return [
+            [
+                'id_feature' => 1,
+                'name' => 'test',
+                'value' => 'value1',
+            ],
+            [
+                'id_feature' => 1,
+                'name' => 'test',
+                'value' => 'value2',
+            ],
+            [
+                'id_feature' => 1,
+                'name' => 'test',
+                'value' => 'value3',
+            ],
+            [
+                'id_feature' => 2,
+                'name' => 'test',
+                'value' => 'value1',
+            ],
+            [
+                'id_feature' => 2,
+                'name' => 'test',
+                'value' => 'value2',
+            ],
+        ];
     }
 }
