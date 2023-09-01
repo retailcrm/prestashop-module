@@ -208,7 +208,7 @@ class RetailcrmCatalog
                     }
 
                     $offers = Product::getProductAttributesIds($product['id_product']);
-                    $features = Product::getFeaturesStatic($product['id_product']);
+                    $features = Product::getFrontFeaturesStatic($id_lang, $product['id_product']);
 
                     if (!empty($offers)) {
                         $offersCount += count($offers);

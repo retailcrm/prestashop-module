@@ -189,6 +189,7 @@ class RetailcrmIcml
             $this->setOffersProperties($offer);
             $this->setOffersParams($offer);
             $this->setOffersCombinations($offer);
+            $this->setOffersFeatures($offer);
 
             $this->writer->endElement(); // end </offer>
         }
@@ -213,7 +214,6 @@ class RetailcrmIcml
 
     private function setOffersParams($offer)
     {
-        RetailcrmLogger::writeCaller('inventories', print_r($offer, true));
         foreach ($offer as $key => $value) {
             if (!array_key_exists($key, $this->params)) {
                 continue;
@@ -247,6 +247,25 @@ class RetailcrmIcml
             $this->writer->writeAttribute('code', $id);
             $this->writer->writeAttribute('name', $combination['group_name']);
             $this->writer->text($combination['attribute_name']);
+            $this->writer->endElement();
+        }
+    }
+
+    private function setOffersFeatures($offer)
+    {
+        foreach ($offer['features'] as $feature) {
+            if (
+                empty($feature['id_feature'])
+                || empty($feature['name'])
+                || $feature['value'] === null
+            ) {
+                continue;
+            }
+
+            $this->writer->startElement('param');
+            $this->writer->writeAttribute('code', 'feature_' . $feature['id_feature']);
+            $this->writer->writeAttribute('name' , $feature['name']);
+            $this->writer->text($feature['value']);
             $this->writer->endElement();
         }
     }
