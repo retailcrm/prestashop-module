@@ -259,7 +259,7 @@ class RetailcrmIcml
             if (
                 empty($feature['id_feature'])
                 || empty($feature['name'])
-                || $feature['value'] === null
+                || null === $feature['value']
             ) {
                 continue;
             }
@@ -272,7 +272,7 @@ class RetailcrmIcml
 
             $this->writer->startElement('param');
             $this->writer->writeAttribute('code', 'feature_' . $feature['id_feature'] . '_' . $numberCode);
-            $this->writer->writeAttribute('name' , $feature['name']);
+            $this->writer->writeAttribute('name', $feature['name']);
             $this->writer->text($feature['value']);
             $this->writer->endElement();
 

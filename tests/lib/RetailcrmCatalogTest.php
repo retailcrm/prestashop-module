@@ -139,7 +139,8 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
         $this->assertNotFalse($xml);
     }
 
-    private function getFeaturesData() {
+    private function getFeaturesData()
+    {
         return [
             [
                 'id_feature' => 1,
@@ -165,7 +166,7 @@ class RetailcrmCatalogTest extends RetailcrmTestCase
                 'id_feature' => 2,
                 'name' => 'test',
                 'value' => 'value2',
-            ]
+            ],
         ];
     }
 }
