@@ -253,6 +253,8 @@ class RetailcrmIcml
 
     private function setOffersFeatures($offer)
     {
+        $lastFeaturesNumberCode = [];
+
         foreach ($offer['features'] as $feature) {
             if (
                 empty($feature['id_feature'])
@@ -262,11 +264,19 @@ class RetailcrmIcml
                 continue;
             }
 
+            $numberCode = 1;
+
+            if (isset($lastFeaturesNumberCode[$feature['id_feature']])) {
+                $numberCode = 1 + $lastFeaturesNumberCode[$feature['id_feature']];
+            }
+
             $this->writer->startElement('param');
-            $this->writer->writeAttribute('code', 'feature_' . $feature['id_feature']);
+            $this->writer->writeAttribute('code', 'feature_' . $feature['id_feature'] . '_' . $numberCode);
             $this->writer->writeAttribute('name' , $feature['name']);
             $this->writer->text($feature['value']);
             $this->writer->endElement();
+
+            $lastFeaturesNumberCode[$feature['id_feature']] = $numberCode;
         }
     }
 
