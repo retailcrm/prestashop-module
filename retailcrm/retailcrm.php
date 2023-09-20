@@ -396,7 +396,6 @@ class RetailCRM extends Module
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;');
 
-
         $resultQuery2 = Db::getInstance()->execute('
                 CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders` (
                     `id_order` INT UNSIGNED UNIQUE NULL,
@@ -408,7 +407,6 @@ class RetailCRM extends Module
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'
         );
-
 
         return $resultQuery1 && $resultQuery2;
     }
