@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.5.8';
+    const VERSION = '3.6.0';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -387,32 +387,36 @@ class RetailCRM extends Module
 
     public function installDB()
     {
-        return Db::getInstance()->execute(
+        $resultQuery1 = Db::getInstance()->execute(
             'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts` (
                     `id_cart` INT UNSIGNED UNIQUE NOT NULL,
                     `last_uploaded` DATETIME,
-                    FOREIGN KEY (id_cart) REFERENCES ' . _DB_PREFIX_ . 'cart (id_cart)
+                    FOREIGN KEY (id_cart) REFERENCES `' . _DB_PREFIX_ . 'cart` (`id_cart`)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
-                ) DEFAULT CHARSET=utf8;
+                ) DEFAULT CHARSET=utf8;');
+
+
+        $resultQuery2 = Db::getInstance()->execute('
                 CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders` (
                     `id_order` INT UNSIGNED UNIQUE NULL,
                     `id_order_crm` INT UNSIGNED UNIQUE NULL,
                     `errors` TEXT NULL,
                     `last_uploaded` DATETIME,
-                    FOREIGN KEY (id_order) REFERENCES ' . _DB_PREFIX_ . 'orders (id_order)
+                    FOREIGN KEY (id_order) REFERENCES `' . _DB_PREFIX_ . 'orders` (`id_order`)
                         ON DELETE CASCADE
                         ON UPDATE CASCADE
                 ) DEFAULT CHARSET=utf8;'
         );
+
+
+        return $resultQuery1 && $resultQuery2;
     }
 
     public function uninstallDB()
     {
-        return Db::getInstance()->execute(
-            'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`;
-            DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders`;'
-        );
+        return Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_abandonedcarts`')
+            && Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'retailcrm_exported_orders`');
     }
 
     /**

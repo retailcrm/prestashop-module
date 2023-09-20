@@ -1890,10 +1890,7 @@ class RetailcrmHistory
 
     private static function getPrestashopOutOfStockStatusFromModuleConfig(array $crmOrder)
     {
-        $statusArray = json_decode(
-            Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS),
-            true
-        );
+        $statusArray = json_decode(Configuration::get(RetailCRM::OUT_OF_STOCK_STATUS), true);
 
         if (!empty($crmOrder['fullPaidAt'])) {
             return $statusArray['out_of_stock_paid'];

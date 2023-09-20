@@ -55,9 +55,9 @@ class RetailcrmJobManagerException extends Exception
      * @param string $job
      * @param array $jobs
      * @param int $code
-     * @param \Exception|null $previous
+     * @param $previous
      */
-    public function __construct($message = '', $job = '', $jobs = [], $code = 0, Exception $previous = null)
+    public function __construct($message = '', $job = '', $jobs = [], $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
 
