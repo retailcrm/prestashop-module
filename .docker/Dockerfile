@@ -1,23 +1,14 @@
-FROM php:7.4-fpm
+FROM php:7.2-fpm
 
-RUN apt-get update && apt-get install -y \
-    zlib1g-dev \
-    libpq-dev \
-    git \
-    libzip \
-    libicu-dev \
-    libxml2-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libmcrypt-dev \
-    libxslt-dev \
-    unzip nano \
+RUN apt-get update
+
+RUN apt-get install -y zlib1g-dev libpq-dev git libicu-dev libxml2-dev libpng-dev libjpeg-dev libmcrypt-dev libxslt-dev libfreetype6-dev unzip nano\
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl \
     && docker-php-ext-install mysqli pdo pdo_mysql \
     && docker-php-ext-install zip \
     && docker-php-ext-install xml \
-    && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
+    && docker-php-ext-configure gd --with-png-dir=/usr/local/ --with-jpeg-dir=/usr/local/ --with-freetype-dir=/usr/local/ \
     && docker-php-ext-install gd \
     && docker-php-ext-install bcmath \
     && docker-php-ext-install soap \
