@@ -32,10 +32,10 @@ jobs:
             branch: '1.7.8.10'
           - php-version: '7.3'
             branch: '1.7.8.10'
-#          - php-version: '7.4'
-#            branch: '1.7.7.8'
-#            composerv1: 1
-#            coverage: 1
+          - php-version: '7.4'
+            branch: '1.7.7.8'
+            composerv1: 1
+            coverage: 1
 
     services:
       mysql:
