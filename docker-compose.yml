@@ -6,6 +6,8 @@ services:
       context: ./.docker
     volumes:
       - ./:/code
+    env_file:
+      - ./.env
     depends_on:
       - db
   db:

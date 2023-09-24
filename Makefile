@@ -1,5 +1,3 @@
-include .env
-
 ROOT_DIR=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PRESTASHOP_DIR=$(ROOT_DIR)/../PrestaShop
 FILE = $(ROOT_DIR)/VERSION
