@@ -15,7 +15,7 @@ RUN apt-get install -y zlib1g-dev libpq-dev git libicu-dev libxml2-dev libpng-de
     && docker-php-ext-install xsl \
     && docker-php-ext-install mbstring \
     && pecl install mcrypt-1.0.1 \
-    && docker-php-ext-enable mcryp
+    && docker-php-ext-enable mcrypt
 
 RUN curl -sSL https://phar.phpunit.de/phpunit-6.phar -o /usr/bin/phpunit && chmod +x /usr/bin/phpunit \
     && curl -sSL https://getcomposer.org/composer.phar -o /usr/bin/composer && chmod +x /usr/bin/composer

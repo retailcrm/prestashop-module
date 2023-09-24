@@ -23,18 +23,13 @@ jobs:
           - php-version: '7.3'
             branch: '1.7.7.0'
             composerv1: 1
-#          - php-version: '7.4'
-#            branch: '1.7.7.0'
-#            composerv1: 1
           - php-version: '7.1'
             branch: '1.7.8.10'
+            coverage: 1
           - php-version: '7.2'
             branch: '1.7.8.10'
           - php-version: '7.3'
             branch: '1.7.8.10'
-          - php-version: '7.4'
-            branch: '1.7.7.8'
-            coverage: 1
     services:
       mysql:
         image: mysql:5.7
