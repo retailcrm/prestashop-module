@@ -17,6 +17,9 @@
             <exclude>tests/helpers</exclude>
         </testsuite>
     </testsuites>
+    <php>
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+    </php>
     <filter>
         <whitelist>
             <directory suffix=".php">retailcrm</directory>

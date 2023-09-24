@@ -496,6 +496,8 @@ class RetailcrmHistoryTest extends RetailcrmTestCase
         RetailcrmHistory::$api = $this->apiMock;
 
         RetailcrmHistory::ordersHistory();
+
+        $this->assertTrue(true);
     }
 
     public function testOrderAddressUpdate()

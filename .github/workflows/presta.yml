@@ -21,12 +21,28 @@ jobs:
           - php-version: '7.2'
             branch: '1.7.7.0'
             composerv1: 1
+          - php-version: '7.3'
+            branch: '1.7.7.0'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.4'
+            branch: '1.7.7.0'
+            composerv1: 1
             phpunit-version: 'phpunit:6.4.3'
           - php-version: '7.1'
             branch: '1.7.7.8'
             composerv1: 1
             phpunit-version: 'phpunit:6.4.3'
           - php-version: '7.2'
+            branch: '1.7.7.8'
+            composerv1: 1
+            coverage: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.3'
+            branch: '1.7.7.8'
+            composerv1: 1
+            phpunit-version: 'phpunit:6.4.3'
+          - php-version: '7.4'
             branch: '1.7.7.8'
             composerv1: 1
             coverage: 1
@@ -60,7 +76,7 @@ jobs:
           BRANCH: ${{ matrix.branch }}
           COMPOSERV1: ${{ matrix.composerv1 }}
           MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
-        run: make before_script
+        run: make install_prestashop
       - name: Run tests
         env:
           BRANCH: ${{ matrix.branch }}

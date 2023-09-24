@@ -1,22 +1,17 @@
 version: '3'
 services:
   app:
-    container_name: app_test
+    container_name: app_prestashop_test
     build:
       context: ./.docker
     volumes:
       - ./:/code
-    env_file:
-      - ./.env
-    environment:
-      - BRANCH=${BRANCH}
-    links:
-      - db
     depends_on:
       - db
   db:
+    container_name: mysql_prestashop_test
     image: mysql:5.7
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     ports:
-      - "3306:3306"
+      - '3306:3306'
