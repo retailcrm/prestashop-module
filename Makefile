@@ -14,62 +14,34 @@ delete_archive:
 	rm -f $(ARCHIVE_NAME)
 	rm -f /tmp/retailcrm.zip
 
-composer: clone_prestashop clone_composer fix-version-lang-bugs
-ifeq ($(COMPOSERV1),1)
-	cd $(PRESTASHOP_DIR) && php composer.phar install --prefer-dist --no-interaction --no-progress
-else
-	cd $(PRESTASHOP_DIR)/tests && composer install
-endif
-
 clone_prestashop:
 	cd $(ROOT_DIR)/../ && git clone https://github.com/PrestaShop/PrestaShop
 	cd $(PRESTASHOP_DIR) && git checkout $(BRANCH)
 
-clone_composer:
+# Required for versions 1.7.7.x - 1.7.8.x
+# Only this command work in Makefile for replace $sfContainer->get('translator')
+# sed -i 's/$$sfContainer->get('"'"'translator'"'"')/Context::getContext()->getTranslator()/g' classes/Language.php
+fix_lang_bugs:
+	cd $(PRESTASHOP_DIR) && sed -i \
+		-e "s/throw new Exception/#throw new Exception/g" \
+        -e "s/SymfonyContainer::getInstance()->get('translator')/Context::getContext()->getTranslator()/g" \
+        -e 's/$$sfContainer->get('"'"'translator'"'"')/Context::getContext()->getTranslator()/g' \
+			src/PrestaShopBundle/Install/DatabaseDump.php classes/lang/DataLang.php classes/Language.php
+
+install_composer:
+# Required for versions 1.7.7.x
 ifeq ($(COMPOSERV1),1)
-	cd $(PRESTASHOP_DIR) \
-        && php -r "copy('https://getcomposer.org/download/1.10.17/composer.phar', 'composer.phar');"
+	 composer self-update --1
 endif
+	cd $(PRESTASHOP_DIR) && composer install
 
-before_script: composer
-ifneq ("$(wildcard $(PRESTASHOP_DIR)/travis-scripts/install-prestashop)","")
-	ifeq ($(COMPOSERV1),1)
-		cd $(PRESTASHOP_DIR) \
-			&& sed -i 's/mysql -u root/mysql -u root --port $(MYSQL_PORT)/g' travis-scripts/install-prestashop \
-			&& sed -i 's/--db_server=127.0.0.1 --db_name=prestashop/--db_server=127.0.0.1:$(MYSQL_PORT) --db_name=prestashop --db_user=root/g' travis-scripts/install-prestashop \
-			&& bash travis-scripts/install-prestashop
-	else
-		cd $(PRESTASHOP_DIR) \
-			&& sed -i 's/mysql -u root/mysql -u root -proot --port $(MYSQL_PORT)/g' travis-scripts/install-prestashop.sh \
-			&& sed -i 's/--db_server=127.0.0.1 --db_name=prestashop/--db_server=127.0.0.1:$(MYSQL_PORT) --db_name=prestashop --db_user=root/g' travis-scripts/install-prestashop.sh \
-			&& bash travis-scripts/install-prestashop.sh
-	endif
-else
-	rm -rf var/cache/*
-	echo "* Installing PrestaShop, this may take a while ...";
-
+install_prestashop: clone_prestashop fix_lang_bugs install_composer
 ifeq ($(LOCAL_TEST),1)
 	cd $(PRESTASHOP_DIR) && php install-dev/index_cli.php --db_server=db --db_user=root --db_create=1
 else
-	mkdir coverage
 	cd $(PRESTASHOP_DIR) && php install-dev/index_cli.php --db_server=127.0.0.1:$(MYSQL_PORT) --db_user=root --db_create=1
+	mkdir coverage
 endif
-endif
-
-# Required for versions 1.7.7.x
-fix-version-lang-bugs:
-ifeq ($(COMPOSERV1),1)
-	cd $(PRESTASHOP_DIR) \
-        && sed -i 's/throw new Exception/#throw new Exception/g' src/PrestaShopBundle/Install/DatabaseDump.php
-endif
-
-	cd $(PRESTASHOP_DIR) \
-		&&  sed -i "s/SymfonyContainer::getInstance()->get('translator')/\\\\Context::getContext()->getTranslator()/g" classes/lang/DataLang.php
-	cat $(PRESTASHOP_DIR)/classes/lang/DataLang.php | grep -A 3 -B 3 'this->translator = '
-
-	cd $(PRESTASHOP_DIR) \
-		&&  sed -i "s/SymfonyContainer::getInstance()->get('translator')/\\\\Context::getContext()->getTranslator()/g" classes/Language.php
-	cat $(PRESTASHOP_DIR)/classes/Language.php | grep -A 3 -B 3 'translator = '
 
 lint:
 	php-cs-fixer fix --config=$(ROOT_DIR)/.php-cs-fixer.php -v
@@ -77,11 +49,11 @@ lint:
 lint-docker:
 	docker run --rm -it -w=/app -v ${PWD}:/app oskarstark/php-cs-fixer-ga:latest --config=.php-cs-fixer.php -v
 
-	# todo moveto version
 test:
+	cd $(PRESTASHOP_DIR) && composer run-script create-test-db --timeout=0
+
 ifeq ($(COMPOSERV1),1)
-	cd $(PRESTASHOP_DIR) && php composer.phar run-script create-test-db --timeout=0
-	cd $(PRESTASHOP_DIR) && php vendor/bin/phpunit -c $(ROOT_DIR)/phpunit.xml.dist
+	phpunit -c $(ROOT_DIR)/phpunit.xml.dist
 else
 	phpunit -c phpunit.xml.dist
 endif
@@ -91,5 +63,5 @@ coverage:
 
 run_local_tests:
 	docker-compose up -d --build
-	docker exec app_test make before_script test
+	docker exec app_prestashop_test make install_prestashop test
 	docker-compose down
