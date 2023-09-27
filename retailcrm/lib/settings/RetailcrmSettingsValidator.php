@@ -83,14 +83,12 @@ class RetailcrmSettingsValidator
     public function validate($validateFromRequestOnly = false)
     {
         //  check url and apiKey
+        $crmUrl = $this->settings->getValueWithStored('url');
+        $crmApiKey = $this->settings->getValueWithStored('apiKey');
+
         if (!$validateFromRequestOnly || $this->settings->issetValue('url') || $this->settings->issetValue('apiKey')) {
-            if ($this->validateCrmAddress($this->settings->getValueWithStored('url'))
-                && $this->validateCrmApiKey($this->settings->getValueWithStored('apiKey'))
-            ) {
-                $this->validateApiCredentials(
-                    $this->settings->getValueWithStored('url'),
-                    $this->settings->getValueWithStored('apiKey')
-                );
+            if ($this->validateCrmAddress($crmUrl) && $this->validateCrmApiKey($crmApiKey)) {
+                $this->validateApiCredentials($crmUrl, $crmApiKey);
             }
         }
 
@@ -304,12 +302,31 @@ class RetailcrmSettingsValidator
     public function validateApiCredentials($url, $apiKey)
     {
         /** @var RetailcrmProxy|RetailcrmApiClientV5 $api */
-        $api = new RetailcrmProxy(
-            $url,
-            $apiKey
+        $api = new RetailcrmProxy($url, $apiKey);
+
+        return $this->validateApiVersion($api) && $this->validateApiAccess($api) && $this->validateCurrency($api);
+    }
+
+    private function validateCurrency($api)
+    {
+        $response = $api->sitesList();
+
+        if ($response instanceof RetailcrmApiResponse && $response->isSuccessful() && isset($response['sites'])) {
+            $site = current($response['sites']);
+        }
+
+        $currencyId = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+        $isoCode = Db::getInstance()->getValue(
+            'SELECT `iso_code` FROM ' . _DB_PREFIX_ . 'currency WHERE `id_currency` = ' . $currencyId
         );
 
-        return $this->validateApiVersion($api) && $this->validateApiAccess($api);
+        if (isset($site['currency']) && $site['currency'] !== $isoCode) {
+            $this->addError('apiKey', 'errors.currency');
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
