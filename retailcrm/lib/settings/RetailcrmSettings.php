@@ -71,9 +71,12 @@ class RetailcrmSettings
         if ($this->validator->validate(true)) {
             $this->settings->updateValueAll();
 
-            if (array_key_exists('apiKey', $this->settings->getChanged())) {
+            $shopId = Context::getContext()->shop->id;
+
+            if (array_key_exists('apiKey', $this->settings->getChanged())
+                && !Configuration::get(RetailCRM::CLIENT_ID, null, null, $shopId)) {
                 $this->setClientId();
-                RetailCRM::updateCrmModuleState(Context::getContext()->shop->id);
+                RetailCRM::updateCrmModuleState($shopId);
             }
         }
 
