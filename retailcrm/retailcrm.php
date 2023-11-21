@@ -309,7 +309,8 @@ class RetailCRM extends Module
         if (Shop::isFeatureActive()) {
             $shops = Shop::getShops();
         } else {
-            $shops[] = Shop::getContext();
+            $context = Context::getContext();
+            $shops[]['id_shop'] = $context->shop->id;
         }
 
         foreach ($shops as $shop) {
@@ -371,7 +372,7 @@ class RetailCRM extends Module
             return false;
         }
 
-        $context = Shop::getContext();
+        $context = Context::getContext();
 
         self::updateCrmModuleState($context->shop->id, false);
 

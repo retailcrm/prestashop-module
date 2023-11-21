@@ -95,10 +95,11 @@ class RetailcrmSettings
     private function setClientId()
     {
         $context = Context::getContext();
+        $clientId = uniqid();
 
         Configuration::updateValue(RetailCRM::CLIENT_ID, hash(
             'sha256',
-            $context->shop->id . Configuration::get('PS_SHOP_DOMAIN')
+            $context->shop->id . Configuration::get('PS_SHOP_DOMAIN') . $clientId
         ));
 
         return true;
