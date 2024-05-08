@@ -209,8 +209,7 @@ class RetailcrmCatalog
 
                     $useServices = RetailcrmTools::isIcmlServicesEnabled()
                         && !empty($product['is_virtual'])
-                        && empty($product['uploadable_files'])
-                    ;
+                        && empty($product['uploadable_files']);
 
                     $offers = Product::getProductAttributesIds($product['id_product']);
                     $features = Product::getFrontFeaturesStatic($id_lang, $product['id_product']);
