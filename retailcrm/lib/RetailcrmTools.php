@@ -69,6 +69,16 @@ class RetailcrmTools
     }
 
     /**
+     * Returns true if ICML service transfer is enabled in the settings
+     *
+     * @return bool
+     */
+    public static function isIcmlServicesEnabled()
+    {
+        return (bool) Configuration::get(RetailCRM::ENABLE_ICML_SERVICES);
+    }
+
+    /**
      * Returns true if customer is corporate
      *
      * @param Customer $customer

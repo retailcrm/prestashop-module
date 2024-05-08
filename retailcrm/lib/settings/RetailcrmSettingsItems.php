@@ -58,6 +58,7 @@ class RetailcrmSettingsItems
             'enableBalancesReceiving' => new RetailcrmSettingsItemBool('enableBalancesReceiving', RetailCRM::ENABLE_BALANCES_RECEIVING),
             'collectorActive' => new RetailcrmSettingsItemBool('collectorActive', RetailCRM::COLLECTOR_ACTIVE),
             'synchronizeCartsActive' => new RetailcrmSettingsItemBool('synchronizeCartsActive', RetailCRM::SYNC_CARTS_ACTIVE),
+            'enableIcmlServices' => new RetailcrmSettingsItemBool('enableIcmlServices', RetailCRM::ENABLE_ICML_SERVICES),
             'enableCorporate' => new RetailcrmSettingsItemBool('enableCorporate', RetailCRM::ENABLE_CORPORATE_CLIENTS),
             'enableOrderNumberSending' => new RetailcrmSettingsItemBool('enableOrderNumberSending', RetailCRM::ENABLE_ORDER_NUMBER_SENDING),
             'enableOrderNumberReceiving' => new RetailcrmSettingsItemBool('enableOrderNumberReceiving', RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING),

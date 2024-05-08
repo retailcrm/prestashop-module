@@ -207,6 +207,11 @@ class RetailcrmCatalog
                         $dimensions = null;
                     }
 
+                    $useServices = RetailcrmTools::isIcmlServicesEnabled()
+                        && !empty($product['is_virtual'])
+                        && empty($product['uploadable_files'])
+                    ;
+
                     $offers = Product::getProductAttributesIds($product['id_product']);
                     $features = Product::getFrontFeaturesStatic($id_lang, $product['id_product']);
 
@@ -276,6 +281,7 @@ class RetailcrmCatalog
 
                             $item = [
                                 'id' => $product['id_product'] . '#' . $offer['id_product_attribute'],
+                                'type' => $useServices ? 'service' : 'product',
                                 'productId' => $product['id_product'],
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
                                 'name' => ('' === $name) ? $productName : $name,
@@ -334,6 +340,7 @@ class RetailcrmCatalog
                             'RetailcrmFilterProcessOffer',
                             [
                                 'id' => $product['id_product'],
+                                'type' => $useServices ? 'service' : 'product',
                                 'productId' => $product['id_product'],
                                 'productActivity' => ($available_for_order) ? 'Y' : 'N',
                                 'name' => $productName,
