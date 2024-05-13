@@ -14,20 +14,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - php-version: '7.1'
-            branch: '1.7.7.0'
-            composerv1: 1
-          - php-version: '7.2'
-            branch: '1.7.7.0'
-            composerv1: 1
+#          - php-version: '7.1' - Warning: Invalid argument supplied for foreach() in /home/runner/work/prestashop-module/PrestaShop/classes/Language.php
+#            branch: '1.7.7.0'
+#            composerv1: 1
+#          - php-version: '7.2' - Warning: Invalid argument supplied for foreach() in /home/runner/work/prestashop-module/PrestaShop/classes/Language.php
+#            branch: '1.7.7.0'
+#            composerv1: 1
           - php-version: '7.3'
             branch: '1.7.7.0'
             composerv1: 1
-          - php-version: '7.1'
-            branch: '1.7.8.10'
-            coverage: 1
+#          - php-version: '7.1' - Error install PrestaShop
+#            branch: '1.7.8.10'
           - php-version: '7.2'
             branch: '1.7.8.10'
+            coverage: 1
           - php-version: '7.3'
             branch: '1.7.8.10'
     services:

@@ -48,7 +48,7 @@ require_once dirname(__FILE__) . '/bootstrap.php';
 
 class RetailCRM extends Module
 {
-    const VERSION = '3.6.3';
+    const VERSION = '3.6.4';
 
     const API_URL = 'RETAILCRM_ADDRESS';
     const API_KEY = 'RETAILCRM_API_TOKEN';
@@ -66,6 +66,7 @@ class RetailCRM extends Module
     const SYNC_CARTS_DELAY = 'RETAILCRM_API_SYNCHRONIZED_CART_DELAY';
     const UPLOAD_ORDERS = 'RETAILCRM_UPLOAD_ORDERS_ID';
     const MODULE_LIST_CACHE_CHECKSUM = 'RETAILCRM_MODULE_LIST_CACHE_CHECKSUM';
+    const ENABLE_ICML_SERVICES = 'RETAILCRM_ENABLE_ICML_SERVICES';
     const ENABLE_CORPORATE_CLIENTS = 'RETAILCRM_ENABLE_CORPORATE_CLIENTS';
     const ENABLE_HISTORY_UPLOADS = 'RETAILCRM_ENABLE_HISTORY_UPLOADS';
     const ENABLE_BALANCES_RECEIVING = 'RETAILCRM_ENABLE_BALANCES_RECEIVING';
@@ -336,6 +337,7 @@ class RetailCRM extends Module
             && Configuration::deleteByName(static::SYNC_CARTS_DELAY)
             && Configuration::deleteByName(static::UPLOAD_ORDERS)
             && Configuration::deleteByName(static::MODULE_LIST_CACHE_CHECKSUM)
+            && Configuration::deleteByName(static::ENABLE_ICML_SERVICES)
             && Configuration::deleteByName(static::ENABLE_CORPORATE_CLIENTS)
             && Configuration::deleteByName(static::ENABLE_HISTORY_UPLOADS)
             && Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING)

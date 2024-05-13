@@ -181,6 +181,7 @@ class RetailcrmIcml
             $this->writer->startElement('offer'); // start <offer>
 
             $this->writer->writeAttribute('id', $offer['id']);
+            $this->writer->writeAttribute('type', $offer['type']);
             $this->writer->writeAttribute('productId', $offer['productId']);
             $this->writer->writeAttribute('quantity', (int) $offer['quantity']);
 
