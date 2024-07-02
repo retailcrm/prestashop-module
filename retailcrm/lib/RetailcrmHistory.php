@@ -1137,10 +1137,10 @@ class RetailcrmHistory
     }
 
     /**
+     * @return bool Returns if stock of all items is enough
+     *
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     *
-     * @return bool Returns if stock of all items is enough
      */
     private static function createOrderDetails($crmOrder, $prestashopOrder, $isCreating = false)
     {
@@ -1603,6 +1603,12 @@ class RetailcrmHistory
     private static function checkItemsQuantityAndDiscount($crmOrder, $prestashopOrder)
     {
         $isStockEnough = true;
+
+        if (empty($crmOrder['items'])) {
+            RetailcrmLogger::writeDebug(__METHOD__, 'Empty order items');
+
+            return $isStockEnough;
+        }
 
         foreach ($prestashopOrder->getProductsDetail() as $orderItem) {
             foreach ($crmOrder['items'] as $key => $crmItem) {
