@@ -1174,10 +1174,13 @@ class RetailcrmHistory
 
             $isStockEnough = $product->checkQty($orderDetail->product_quantity);
 
+            // переменная используется для передачи разницы количества товара в метод StockAvailable::updateQuantity
+            $deltaQuantity = -1 * $orderDetail->product_quantity;
+
             StockAvailable::updateQuantity(
                 $product_id,
                 $product_attribute_id,
-                -1 * $orderDetail->product_quantity,
+                $deltaQuantity,
                 Context::getContext()->shop->id
             );
 
