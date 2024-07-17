@@ -263,6 +263,7 @@ class RetailcrmCartUploader
                 'customer' => ['externalId' => $cart->id_customer],
                 'clearAt' => null,
                 'createdAt' => DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $cart->date_add)->format(static::$crmCartDateFormat),
+                'link' => self::generateCartLink(),
             ];
 
             if (!$isExistExternalId) {
@@ -446,5 +447,14 @@ class RetailcrmCartUploader
     private static function populateContextWithEmployee($employee)
     {
         self::$context->employee = $employee;
+    }
+
+    public static function generateCartLink()
+    {
+        return sprintf(
+            '%s://%s/index.php?controller=cart&action=show',
+            !empty($_SERVER['HTTPS']) ? 'https' : 'http',
+            $_SERVER['HTTP_HOST']
+        );
     }
 }
