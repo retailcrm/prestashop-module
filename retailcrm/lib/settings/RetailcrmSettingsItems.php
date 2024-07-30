@@ -62,6 +62,7 @@ class RetailcrmSettingsItems
             'enableCorporate' => new RetailcrmSettingsItemBool('enableCorporate', RetailCRM::ENABLE_CORPORATE_CLIENTS),
             'enableOrderNumberSending' => new RetailcrmSettingsItemBool('enableOrderNumberSending', RetailCRM::ENABLE_ORDER_NUMBER_SENDING),
             'enableOrderNumberReceiving' => new RetailcrmSettingsItemBool('enableOrderNumberReceiving', RetailCRM::ENABLE_ORDER_NUMBER_RECEIVING),
+            'enableCompanyAndVatNumberSend' => new RetailcrmSettingsItemBool('enableCompanyAndVatNumberSend', RetailCRM::ENABLE_COMPANY_AND_VAT_NUMBER_SEND),
             'webJobs' => new RetailcrmSettingsItemBool('webJobs', RetailCRM::ENABLE_WEB_JOBS, '1'),
             'debugMode' => new RetailcrmSettingsItemBool('debugMode', RetailCRM::ENABLE_DEBUG_MODE),
 

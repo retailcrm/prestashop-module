@@ -329,7 +329,7 @@ class RetailcrmOrderBuilder
             ->setAddress($this->invoiceAddress)
             ->build()
             ->getDataArray()
-        ;
+            ;
     }
 
     /**
@@ -354,7 +354,7 @@ class RetailcrmOrderBuilder
             ->setWithExternalId(true)
             ->build()
             ->getDataArray()
-        ;
+            ;
     }
 
     /**
@@ -979,15 +979,26 @@ class RetailcrmOrderBuilder
         ;
         $crmOrder = array_merge($crmOrder, $addressBuilder->getDataArray());
 
-        if ($addressInvoice instanceof Address && !empty($addressInvoice->company)) {
-            $crmOrder['contragent']['legalName'] = $addressInvoice->company;
+        $isCorporateEnabled = RetailcrmTools::isCorporateEnabled();
 
-            if (!empty($addressInvoice->vat_number)) {
-                $crmOrder['contragent']['INN'] = $addressInvoice->vat_number;
+        $crmOrder['contragent']['contragentType'] = $isCorporateEnabled && RetailcrmTools::isOrderCorporate($order)
+            ? 'legal-entity'
+            : 'individual';
+
+        if (!$isCorporateEnabled && RetailcrmTools::isCampanyAndVatNumberSendEnabled()) {
+            $company = $addressDelivery->company;
+            $vatNumber = $addressDelivery->vat_number;
+
+            if ($addressInvoice instanceof Address) {
+                $company = !empty($addressInvoice->company) ? $addressInvoice->company : $company;
+                $vatNumber = !empty($addressInvoice->vat_number) ? $addressInvoice->vat_number : $vatNumber;
             }
+
+            $crmOrder['customFields']['ps_company'] = $company;
+            $crmOrder['customFields']['ps_vat_number'] = $vatNumber;
         }
 
-        if (isset($payment[$paymentType]) && !empty($payment[$paymentType])) {
+        if (!empty($payment[$paymentType])) {
             $order_payment = [
                 'externalId' => $order->id . '#' . $order->reference,
                 'type' => $payment[$paymentType],
@@ -1124,9 +1135,6 @@ class RetailcrmOrderBuilder
                 'productName' => $product['product_name'],
                 'quantity' => $product['product_quantity'],
                 'initialPrice' => round($product['product_price'], 2),
-                /*'initialPrice' => !empty($item['rate'])
-                    ? $item['price'] + ($item['price'] * $item['rate'] / 100)
-                    : $item['price'],*/
                 'purchasePrice' => round($product['purchase_supplier_price'], 2),
             ];
 
@@ -1160,12 +1168,6 @@ class RetailcrmOrderBuilder
 
             if (!empty($site)) {
                 $crmOrder['customer']['site'] = $site;
-            }
-
-            if (RetailcrmTools::isCorporateEnabled() && RetailcrmTools::isOrderCorporate($order)) {
-                $crmOrder['contragent']['contragentType'] = 'legal-entity';
-            } else {
-                $crmOrder['contragent']['contragentType'] = 'individual';
             }
         }
 

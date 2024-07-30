@@ -72,12 +72,11 @@ class RetailCRM extends Module
     const ENABLE_BALANCES_RECEIVING = 'RETAILCRM_ENABLE_BALANCES_RECEIVING';
     const ENABLE_ORDER_NUMBER_SENDING = 'RETAILCRM_ENABLE_ORDER_NUMBER_SENDING';
     const ENABLE_ORDER_NUMBER_RECEIVING = 'RETAILCRM_ENABLE_ORDER_NUMBER_RECEIVING';
+    const ENABLE_COMPANY_AND_VAT_NUMBER_SEND = 'RETAILCRM_ENABLE_COMPANY_AND_VAT_NUMBER_SEND';
     const ENABLE_DEBUG_MODE = 'RETAILCRM_ENABLE_DEBUG_MODE';
-
     const CONSULTANT_SCRIPT = 'RETAILCRM_CONSULTANT_SCRIPT';
     const CONSULTANT_RCCT = 'RETAILCRM_CONSULTANT_RCCT';
     const ENABLE_WEB_JOBS = 'RETAILCRM_ENABLE_WEB_JOBS';
-
     const REQUIRED_CRM_SITE_ACCESS = 'access_selective';
     const REQUIRED_CRM_SITE_COUNT = 1;
     const REQUIRED_CRM_SCOPES = [
@@ -343,6 +342,7 @@ class RetailCRM extends Module
             && Configuration::deleteByName(static::ENABLE_BALANCES_RECEIVING)
             && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_SENDING)
             && Configuration::deleteByName(static::ENABLE_ORDER_NUMBER_RECEIVING)
+            && Configuration::deleteByName(static::ENABLE_COMPANY_AND_VAT_NUMBER_SEND)
             && Configuration::deleteByName(static::ENABLE_DEBUG_MODE)
             && Configuration::deleteByName(static::ENABLE_WEB_JOBS)
             && Configuration::deleteByName('RETAILCRM_LAST_SYNC')

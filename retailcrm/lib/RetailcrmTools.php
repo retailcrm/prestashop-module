@@ -79,6 +79,16 @@ class RetailcrmTools
     }
 
     /**
+     * Returns true if the transfer of company and VAT number is enabled in the settings
+     *
+     * @return bool
+     */
+    public static function isCampanyAndVatNumberSendEnabled()
+    {
+        return (bool) Configuration::get(RetailCRM::ENABLE_COMPANY_AND_VAT_NUMBER_SEND);
+    }
+
+    /**
      * Returns true if customer is corporate
      *
      * @param Customer $customer
@@ -967,22 +977,6 @@ class RetailcrmTools
         } catch (PrestaShopDatabaseException $e) {
             return [];
         }
-    }
-
-    /**
-     * @param $name
-     *
-     * @return DateTime|false
-     */
-    public static function getConfigurationCreatedAtByName($name)
-    {
-        $config = self::getConfigurationByName($name);
-
-        if (empty($config)) {
-            return false;
-        }
-
-        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $config['date_add']);
     }
 
     /**
