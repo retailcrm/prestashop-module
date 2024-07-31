@@ -1235,10 +1235,10 @@ class RetailcrmHistory
         $addressBuilder = new RetailcrmCustomerAddressBuilder();
         $address = $addressBuilder
             ->setIdCustomer($customer->id)
-            ->setDataCrm(isset($order['delivery']['address']) ? $order['delivery']['address'] : [])
-            ->setFirstName(isset($order['firstName']) ? $order['firstName'] : null)
-            ->setLastName(isset($order['lastName']) ? $order['lastName'] : null)
-            ->setPhone(isset($order['phone']) ? $order['phone'] : null)
+            ->setDataCrm($order['delivery']['address'] ?? [])
+            ->setFirstName($order['firstName'] ?? null)
+            ->setLastName($order['lastName'] ?? null)
+            ->setPhone($order['phone'] ?? null)
             ->build()
             ->getData()
         ;
@@ -1525,9 +1525,12 @@ class RetailcrmHistory
 
             return;
         }
+
         if (RetailcrmTools::validateEntity($addressInvoice, null, true)) {
             $addressInvoice->id_customer = $customer->id;
             RetailcrmTools::assignAddressIdsByFields($customer, $addressInvoice);
+
+            self::setCompanyAndVatNumberForInvoiceAddress($order, $addressInvoice);
 
             if (empty($addressInvoice->id)) {
                 self::loadInPrestashop($addressInvoice, 'save');
@@ -1952,6 +1955,24 @@ class RetailcrmHistory
         $orderDetail->id_order_detail = $parsedExtId['id_order_detail'] ?? null;
 
         return $orderDetail;
+    }
+
+    private static function setCompanyAndVatNumberForInvoiceAddress($crmOrder, $addressInvoice)
+    {
+        if (!RetailcrmTools::isCorporateEnabled()
+            && RetailcrmTools::isCampanyAndVatNumberSendEnabled()
+        ) {
+            $company = $crmOrder['customFields']['ps_company'] ?? '';
+            $vatNumber = $crmOrder['customFields']['ps_vat_number'] ?? '';
+
+            if ('' !== $company) {
+                $addressInvoice->company = $company;
+            }
+
+            if ('' !== $vatNumber) {
+                $addressInvoice->vat_number = $vatNumber;
+            }
+        }
     }
 
     private static function handleError($order, $e)

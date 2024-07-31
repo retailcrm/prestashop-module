@@ -59,6 +59,28 @@ class RetailcrmTools
     }
 
     /**
+     * Returns ISO code of current employee language or default language.
+     *
+     * @return string
+     */
+    public static function getCurrentLanguageISO()
+    {
+        global $cookie;
+
+        $context = Context::getContext();
+
+        if (!empty($context) && !empty($context->employee)) {
+            $langId = (int) $context->employee->id_lang;
+        } elseif ($cookie instanceof Cookie) {
+            $langId = (int) $cookie->id_lang;
+        } else {
+            $langId = (int) Configuration::get('PS_LANG_DEFAULT');
+        }
+
+        return (string) Language::getIsoById($langId);
+    }
+
+    /**
      * Returns true if corporate customers are enabled in settings
      *
      * @return bool
@@ -76,6 +98,16 @@ class RetailcrmTools
     public static function isIcmlServicesEnabled()
     {
         return (bool) Configuration::get(RetailCRM::ENABLE_ICML_SERVICES);
+    }
+
+    /**
+     * Returns true if the transfer of company and VAT number is enabled in the settings
+     *
+     * @return bool
+     */
+    public static function isCampanyAndVatNumberSendEnabled()
+    {
+        return (bool) Configuration::get(RetailCRM::ENABLE_COMPANY_AND_VAT_NUMBER_SEND);
     }
 
     /**
@@ -967,22 +999,6 @@ class RetailcrmTools
         } catch (PrestaShopDatabaseException $e) {
             return [];
         }
-    }
-
-    /**
-     * @param $name
-     *
-     * @return DateTime|false
-     */
-    public static function getConfigurationCreatedAtByName($name)
-    {
-        $config = self::getConfigurationByName($name);
-
-        if (empty($config)) {
-            return false;
-        }
-
-        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $config['date_add']);
     }
 
     /**

@@ -47,7 +47,7 @@ class RetailcrmSettingsTemplate extends RetailcrmAbstractTemplate
                 'chunk-vendors' => filemtime(_PS_MODULE_DIR_ . '/retailcrm/views/js/chunk-vendors.js'),
             ],
             'appData' => [
-                'locale' => $this->getCurrentLanguageISO(),
+                'locale' => RetailcrmTools::getCurrentLanguageISO(),
                 'debug' => RetailcrmTools::isDebug(),
                 'routes' => [
                     'settings' => RetailcrmTools::getAdminControllerUrl(RetailcrmSettingsController::class),
