@@ -985,7 +985,19 @@ class RetailcrmOrderBuilder
             ? 'legal-entity'
             : 'individual';
 
-        if (!$isCorporateEnabled && RetailcrmTools::isCampanyAndVatNumberSendEnabled()) {
+        if ($addressInvoice instanceof Address && !empty($addressInvoice->company)) {
+            $crmOrder['contragent']['legalName'] = $addressInvoice->company;
+
+            if (!empty($addressInvoice->vat_number)) {
+                $crmOrder['contragent']['INN'] = $addressInvoice->vat_number;
+            }
+        }
+
+        if (
+            !$isCorporateEnabled
+            && RetailcrmTools::isCampanyAndVatNumberSendEnabled()
+            && Configuration::get(RetailCRM::COMPANY_AND_VAT_NUMBER_CREATED)
+        ) {
             $company = $addressDelivery->company;
             $vatNumber = $addressDelivery->vat_number;
 

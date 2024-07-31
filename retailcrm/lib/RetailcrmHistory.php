@@ -1235,10 +1235,10 @@ class RetailcrmHistory
         $addressBuilder = new RetailcrmCustomerAddressBuilder();
         $address = $addressBuilder
             ->setIdCustomer($customer->id)
-            ->setDataCrm(isset($order['delivery']['address']) ? $order['delivery']['address'] : [])
-            ->setFirstName(isset($order['firstName']) ? $order['firstName'] : null)
-            ->setLastName(isset($order['lastName']) ? $order['lastName'] : null)
-            ->setPhone(isset($order['phone']) ? $order['phone'] : null)
+            ->setDataCrm($order['delivery']['address'] ?? [])
+            ->setFirstName($order['firstName'] ?? null)
+            ->setLastName($order['lastName'] ?? null)
+            ->setPhone($order['phone'] ?? null)
             ->build()
             ->getData()
         ;

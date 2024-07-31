@@ -66,28 +66,6 @@ abstract class RetailcrmAbstractTemplate
     }
 
     /**
-     * Returns ISO code of current employee language or default language.
-     *
-     * @return string
-     */
-    protected function getCurrentLanguageISO()
-    {
-        $langId = 0;
-
-        global $cookie;
-
-        if (!empty($this->context) && !empty($this->context->employee)) {
-            $langId = (int) $this->context->employee->id_lang;
-        } elseif ($cookie instanceof Cookie) {
-            $langId = (int) $cookie->id_lang;
-        } else {
-            $langId = (int) Configuration::get('PS_LANG_DEFAULT');
-        }
-
-        return (string) Language::getIsoById($langId);
-    }
-
-    /**
      * @param $file
      *
      * @return mixed

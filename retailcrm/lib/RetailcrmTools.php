@@ -59,6 +59,28 @@ class RetailcrmTools
     }
 
     /**
+     * Returns ISO code of current employee language or default language.
+     *
+     * @return string
+     */
+    public static function getCurrentLanguageISO()
+    {
+        global $cookie;
+
+        $context = Context::getContext();
+
+        if (!empty($context) && !empty($context->employee)) {
+            $langId = (int) $context->employee->id_lang;
+        } elseif ($cookie instanceof Cookie) {
+            $langId = (int) $cookie->id_lang;
+        } else {
+            $langId = (int) Configuration::get('PS_LANG_DEFAULT');
+        }
+
+        return (string) Language::getIsoById($langId);
+    }
+
+    /**
      * Returns true if corporate customers are enabled in settings
      *
      * @return bool

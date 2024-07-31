@@ -87,6 +87,13 @@ class RetailcrmSettings
             $changed['consultantScript'] = $this->consultantScript->getValueStored();
         }
 
+        if (
+            !empty($changed['enableCompanyAndVatNumberSend'])
+            && !Configuration::get(RetailCRM::COMPANY_AND_VAT_NUMBER_CREATED)
+        ) {
+            $this->createCompanyAndVatNumberFields();
+        }
+
         return [
             'success' => $this->validator->getSuccess(),
             'errors' => $this->validator->getErrors(),
@@ -125,6 +132,32 @@ class RetailcrmSettings
                 Configuration::deleteByName(RetailCRM::CONSULTANT_RCCT);
                 Cache::getInstance()->delete(RetailCRM::CONSULTANT_RCCT);
             }
+        }
+    }
+
+    private function createCompanyAndVatNumberFields()
+    {
+        $api = RetailcrmTools::getApiClient();
+        $locale = RetailcrmTools::getCurrentLanguageISO();
+        $translate = [
+            'ru' => ['company' => 'Компания', 'vat_number' => 'Номер НДС'],
+            'en' => ['company' => 'Company', 'vat_number' => 'VAT number'],
+        ];
+
+        $company = $translate[$locale]['company'] ?? 'Firma';
+        $vatNumber = $translate[$locale]['vat_number'] ?? 'CVR-nummer';
+
+        $customFields = [
+            ['code' => 'ps_company', 'name' => $company, 'type' => 'string', 'displayArea' => 'customer'],
+            ['code' => 'ps_vat_number', 'name' => $vatNumber, 'type' => 'string', 'displayArea' => 'customer']
+        ];
+
+        if (null !== $api) {
+            foreach ($customFields as $field) {
+                $api->customFieldsCreate('order', $field);
+            }
+
+            Configuration::updateValue(RetailCRM::COMPANY_AND_VAT_NUMBER_CREATED, true);
         }
     }
 }

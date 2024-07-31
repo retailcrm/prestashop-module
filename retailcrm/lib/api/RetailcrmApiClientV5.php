@@ -362,7 +362,7 @@ class RetailcrmApiClientV5
             );
         }
 
-        if (empty($entity) || 'customer' != $entity || 'order' != $entity) {
+        if (empty($entity)) {
             throw new \InvalidArgumentException(
                 'Parameter `entity` must contain a data & value must be `order` or `customer`'
             );
