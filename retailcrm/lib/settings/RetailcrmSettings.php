@@ -144,8 +144,8 @@ class RetailcrmSettings
             'en' => ['company' => 'Company', 'vat_number' => 'VAT number'],
         ];
 
-        $company = $translate[$locale]['company'] ?? 'Firma';
-        $vatNumber = $translate[$locale]['vat_number'] ?? 'CVR-nummer';
+        $company = $translate[$locale]['company'] ?? 'Empresa';
+        $vatNumber = $translate[$locale]['vat_number'] ?? 'Número de IVA';
 
         $customFields = [
             ['code' => 'ps_company', 'name' => $company, 'type' => 'string', 'displayArea' => 'customer'],
