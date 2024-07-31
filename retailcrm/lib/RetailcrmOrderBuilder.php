@@ -329,7 +329,7 @@ class RetailcrmOrderBuilder
             ->setAddress($this->invoiceAddress)
             ->build()
             ->getDataArray()
-            ;
+        ;
     }
 
     /**
@@ -354,7 +354,7 @@ class RetailcrmOrderBuilder
             ->setWithExternalId(true)
             ->build()
             ->getDataArray()
-            ;
+        ;
     }
 
     /**

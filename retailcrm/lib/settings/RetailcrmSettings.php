@@ -149,7 +149,7 @@ class RetailcrmSettings
 
         $customFields = [
             ['code' => 'ps_company', 'name' => $company, 'type' => 'string', 'displayArea' => 'customer'],
-            ['code' => 'ps_vat_number', 'name' => $vatNumber, 'type' => 'string', 'displayArea' => 'customer']
+            ['code' => 'ps_vat_number', 'name' => $vatNumber, 'type' => 'string', 'displayArea' => 'customer'],
         ];
 
         if (null !== $api) {
