@@ -981,33 +981,20 @@ class RetailcrmOrderBuilder
 
         $isCorporateEnabled = RetailcrmTools::isCorporateEnabled();
 
-        $crmOrder['contragent']['contragentType'] = $isCorporateEnabled && RetailcrmTools::isOrderCorporate($order)
-            ? 'legal-entity'
-            : 'individual';
+        if ($isCorporateEnabled && RetailcrmTools::isOrderCorporate($order)) {
+            $crmOrder['contragent']['contragentType'] = 'legal-entity';
+            $crmOrder['contragent']['legalName'] = $addressInvoice->company ?? '';
+            $crmOrder['contragent']['INN'] = $addressInvoice->vat_number ?? '';
+        } else {
+            $crmOrder['contragent']['contragentType'] = 'individual';
 
-        if ($addressInvoice instanceof Address && !empty($addressInvoice->company)) {
-            $crmOrder['contragent']['legalName'] = $addressInvoice->company;
-
-            if (!empty($addressInvoice->vat_number)) {
-                $crmOrder['contragent']['INN'] = $addressInvoice->vat_number;
+            if (
+                RetailcrmTools::isCampanyAndVatNumberSendEnabled()
+                && Configuration::get(RetailCRM::COMPANY_AND_VAT_NUMBER_CREATED)
+            ) {
+                $crmOrder['customFields']['ps_company'] = $addressInvoice->company ?? '';
+                $crmOrder['customFields']['ps_vat_number'] = $addressInvoice->vat_number ?? '';
             }
-        }
-
-        if (
-            !$isCorporateEnabled
-            && RetailcrmTools::isCampanyAndVatNumberSendEnabled()
-            && Configuration::get(RetailCRM::COMPANY_AND_VAT_NUMBER_CREATED)
-        ) {
-            $company = $addressDelivery->company;
-            $vatNumber = $addressDelivery->vat_number;
-
-            if ($addressInvoice instanceof Address) {
-                $company = !empty($addressInvoice->company) ? $addressInvoice->company : $company;
-                $vatNumber = !empty($addressInvoice->vat_number) ? $addressInvoice->vat_number : $vatNumber;
-            }
-
-            $crmOrder['customFields']['ps_company'] = $company;
-            $crmOrder['customFields']['ps_vat_number'] = $vatNumber;
         }
 
         if (!empty($payment[$paymentType])) {
