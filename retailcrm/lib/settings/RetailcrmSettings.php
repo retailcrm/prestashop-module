@@ -140,7 +140,7 @@ class RetailcrmSettings
         $api = RetailcrmTools::getApiClient();
         $locale = RetailcrmTools::getCurrentLanguageISO();
         $translate = [
-            'ru' => ['company' => 'Компания', 'vat_number' => 'Номер НДС'],
+            'ru' => ['company' => 'Компания', 'vat_number' => 'ИНН'],
             'en' => ['company' => 'Company', 'vat_number' => 'VAT number'],
         ];
 
