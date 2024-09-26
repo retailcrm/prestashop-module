@@ -404,7 +404,7 @@ class RetailcrmSettingsValidator
 
     private function validateCollector($collectorActive, $collectorKey)
     {
-        return !$collectorActive || '' !== $collectorKey;
+        return !$collectorActive || preg_match("/^RC-[0-9]{10,}-[0-9]{1,2}$/", $collectorKey);
     }
 
     private function addError($field, $message)
