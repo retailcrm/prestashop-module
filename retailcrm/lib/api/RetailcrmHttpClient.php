@@ -106,7 +106,14 @@ class RetailcrmHttpClient
             );
         }
 
-        $parameters = array_merge($this->defaultParameters, $parameters);
+        $parameters = self::METHOD_GET === $method
+            ? array_merge($this->defaultParameters, $parameters, [
+                'cms_source' => 'PrestaShop',
+                'cms_version' => _PS_VERSION_,
+                'php_version' => function_exists('phpversion') ? phpversion() : '',
+                'module_version' => RetailCRM::VERSION,
+            ])
+            : $parameters = array_merge($this->defaultParameters, $parameters);
 
         $url = $this->url . $path;
 
