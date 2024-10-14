@@ -43,6 +43,7 @@ class RetailcrmHttpClient
 
     protected $url;
     protected $defaultParameters;
+    protected $versionData;
 
     /**
      * Client constructor.
@@ -61,7 +62,13 @@ class RetailcrmHttpClient
         }
 
         $this->url = $url;
-        $this->defaultParameters = $defaultParameters;
+        $this->defaultParameters = $defaultParameters;   
+        $this->versionData = [
+            'php_version' => function_exists('phpversion') ? phpversion() : '',
+            'cms_source' => 'PrestaShop',
+            'module_version' => RetailCRM::VERSION,
+            'cms_version' => _PS_VERSION_
+        ];
     }
 
     /**
@@ -106,7 +113,11 @@ class RetailcrmHttpClient
             );
         }
 
-        $parameters = array_merge($this->defaultParameters, $parameters);
+        if (self::METHOD_GET === $method) {
+            $parameters = array_merge($this->defaultParameters, $parameters, $this->versionData);
+        } else {
+            $parameters = array_merge($this->defaultParameters, $parameters);
+        }
 
         $url = $this->url . $path;
 
