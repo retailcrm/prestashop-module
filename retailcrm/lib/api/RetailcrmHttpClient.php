@@ -108,10 +108,10 @@ class RetailcrmHttpClient
 
         $parameters = self::METHOD_GET === $method
             ? array_merge($this->defaultParameters, $parameters, [
-                'php_version' => function_exists('phpversion') ? phpversion() : '',
                 'cms_source' => 'PrestaShop',
-                'module_version' => RetailCRM::VERSION,
                 'cms_version' => _PS_VERSION_,
+                'php_version' => function_exists('phpversion') ? phpversion() : '',
+                'module_version' => RetailCRM::VERSION,
             ])
             : $parameters = array_merge($this->defaultParameters, $parameters);
 
