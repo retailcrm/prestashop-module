@@ -26,10 +26,10 @@ jobs:
 #          - php-version: '7.1' - Error install PrestaShop
 #            branch: '1.7.8.10'
           - php-version: '7.2'
-            branch: '1.7.8.10'
+            branch: '1.7.8.11'
             coverage: 1
           - php-version: '7.3'
-            branch: '1.7.8.10'
+            branch: '1.7.8.11'
     services:
       mysql:
         image: mysql:5.7
